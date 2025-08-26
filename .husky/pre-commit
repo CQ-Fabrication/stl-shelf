@@ -1,0 +1,3 @@
+lint-staged
+
+bun x ultracite format

@@ -1,0 +1,31 @@
+{
+	"name": "my-better-t-app",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"check": "biome check --write .",
+		"dev": "turbo dev",
+		"build": "turbo build",
+		"check-types": "turbo check-types",
+		"dev:native": "turbo -F native dev",
+		"dev:web": "turbo -F web dev",
+		"dev:server": "turbo -F server dev"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"turbo": "^2.5.4",
+		"@biomejs/biome": "2.2.0",
+		"ultracite": "5.2.4",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.1.2"
+	},
+	"lint-staged": {
+		"*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+			"bun x ultracite format"
+		]
+	},
+	"packageManager": "bun@1.2.20"
+}
