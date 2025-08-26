@@ -3,20 +3,25 @@
 	"main": "src/index.ts",
 	"type": "module",
 	"scripts": {
-		"build": "wrangler deploy --dry-run",
+		"build": "bun build --target=bun --outdir=dist ./src/server.ts",
 		"check-types": "tsc -b",
-		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
-		"dev": "wrangler dev --port=3000",
-		"start": "wrangler dev",
-		"deploy": "wrangler deploy",
+		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/server.ts --outfile stl-shelf-server",
+		"dev": "bun run --hot ./src/server.ts",
+		"start": "bun run ./dist/server.js",
+		"deploy": "echo 'Use Docker for deployment'",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings"
 	},
 	"dependencies": {
-		"dotenv": "^17.2.1",
-		"zod": "^4.0.2",
-		"@orpc/server": "^1.8.4",
+		"@amandaghassaei/stl-parser": "^1.7.0",
 		"@orpc/client": "^1.8.4",
-		"hono": "^4.8.2"
+		"@orpc/server": "^1.8.4",
+		"@types/multer": "^2.0.0",
+		"dotenv": "^17.2.1",
+		"hono": "^4.8.2",
+		"multer": "^2.0.2",
+		"simple-git": "^3.28.0",
+		"three": "^0.179.1",
+		"zod": "^4.0.2"
 	},
 	"devDependencies": {
 		"tsdown": "^0.14.1",

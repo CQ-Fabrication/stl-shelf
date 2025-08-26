@@ -28,11 +28,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 	head: () => ({
 		meta: [
 			{
-				title: "my-better-t-app",
+				title: "STL Shelf",
 			},
 			{
 				name: "description",
-				content: "my-better-t-app is a web application",
+				content: "Your personal 3D model library, organized and versioned",
 			},
 		],
 		links: [
