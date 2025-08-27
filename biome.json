@@ -24,5 +24,12 @@
   "extends": ["ultracite"],
   "javascript": {
     "globals": ["Bun"]
+  },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noConsole": "warn"
+      }
+    }
   }
 }

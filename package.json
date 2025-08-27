@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "setup": "bun setup.ts",
     "check": "biome check --write .",
     "dev": "turbo dev",
     "build": "turbo build",

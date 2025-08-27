@@ -20,7 +20,16 @@ const HTTP_NOT_FOUND = 404;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 
 // Initialize services
-const dataDir = process.env.DATA_DIR || '/data';
+// In development, use ./data relative to the server directory
+// In production, use /data or the specified DATA_DIR
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const defaultDataDir = isDevelopment ? './data' : '/data';
+const dataDir = process.env.DATA_DIR || defaultDataDir;
+
+console.log(
+  `Using data directory: ${dataDir} (${isDevelopment ? 'development' : 'production'} mode)`
+);
+
 const fsService = new FileSystemService(dataDir);
 const gitService = new GitService(dataDir);
 
@@ -42,7 +51,9 @@ app.post('/upload', async (c) => {
     const description = body.description as string;
     const tags = body.tags ? JSON.parse(body.tags as string) : [];
     const modelId = body.modelId as string | undefined; // For version uploads
-    const printSettings = body.printSettings ? JSON.parse(body.printSettings as string) : undefined;
+    const printSettings = body.printSettings
+      ? JSON.parse(body.printSettings as string)
+      : undefined;
 
     if (!name) {
       return c.json({ error: 'Name is required' }, HTTP_BAD_REQUEST);
@@ -120,17 +131,17 @@ app.post('/upload', async (c) => {
       printSettings: printSettings || undefined,
     };
 
+    // Save version-level metadata
     await fsService.saveMetadata(finalModelId, version, metadata);
+    
+    // Save or update model-level metadata (for the loadModelFromDirectory to work)
+    await fsService.saveMetadata(finalModelId, null, metadata);
 
     // Commit to git
-    const commitMessage = modelId 
-      ? `Add new version ${version} for ${name}` 
+    const commitMessage = modelId
+      ? `Add new version ${version} for ${name}`
       : `Add ${name} ${version}`;
-    await gitService.commitModelUpload(
-      finalModelId,
-      version,
-      commitMessage
-    );
+    await gitService.commitModelUpload(finalModelId, version, commitMessage);
 
     // Rebuild index
     await fsService.buildIndex();
@@ -144,10 +155,13 @@ app.post('/upload', async (c) => {
     });
   } catch (error) {
     console.error('Upload error:', error);
-    return c.json({ 
-      error: 'Upload failed', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
-    }, HTTP_INTERNAL_SERVER_ERROR);
+    return c.json(
+      {
+        error: 'Upload failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      HTTP_INTERNAL_SERVER_ERROR
+    );
   }
 });
 

@@ -3,7 +3,6 @@ import { AlertCircle, CheckCircle, FileText, Upload, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
-import type { Model } from '../../../../server/src/types/model';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { Model } from '../../../../server/src/types/model';
 
 interface UploadVersionDialogProps {
   model: Model;
@@ -118,21 +118,24 @@ export function UploadVersionDialog({
       const formData = new FormData();
       formData.append('modelId', model.id); // Key addition for version upload
       formData.append('name', model.latestMetadata.name); // Keep the same name
-      
+
       if (description.trim()) {
         formData.append('description', description.trim());
       } else if (model.latestMetadata.description) {
         // Inherit previous description if none provided
         formData.append('description', model.latestMetadata.description);
       }
-      
+
       if (tags.length > 0) {
         formData.append('tags', JSON.stringify(tags));
       }
 
       // Add print settings if they exist
       if (model.latestMetadata.printSettings) {
-        formData.append('printSettings', JSON.stringify(model.latestMetadata.printSettings));
+        formData.append(
+          'printSettings',
+          JSON.stringify(model.latestMetadata.printSettings)
+        );
       }
 
       // Add all files
@@ -168,7 +171,9 @@ export function UploadVersionDialog({
       toast.success(`New version ${result.version} uploaded successfully!`);
 
       // Refresh the model data
-      queryClient.invalidateQueries({ queryKey: ['getModel', { id: model.id }] });
+      queryClient.invalidateQueries({
+        queryKey: ['getModel', { id: model.id }],
+      });
       queryClient.invalidateQueries({ queryKey: ['listModels'] });
 
       // Close dialog and reset form after a short delay
@@ -177,9 +182,7 @@ export function UploadVersionDialog({
         resetForm();
       }, 1000);
     } catch (error) {
-      setFiles((prev) =>
-        prev.map((f) => ({ ...f, status: 'error' as const }))
-      );
+      setFiles((prev) => prev.map((f) => ({ ...f, status: 'error' as const })));
       toast.error(error instanceof Error ? error.message : 'Upload failed');
     } finally {
       setIsUploading(false);
@@ -205,12 +208,13 @@ export function UploadVersionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Upload New Version</DialogTitle>
           <DialogDescription>
-            Add a new version to {model.latestMetadata.name}. The new version will inherit the current metadata unless modified.
+            Add a new version to {model.latestMetadata.name}. The new version
+            will inherit the current metadata unless modified.
           </DialogDescription>
         </DialogHeader>
 
@@ -220,7 +224,7 @@ export function UploadVersionDialog({
             <Label>Model Files</Label>
             <div
               {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+              className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
                 isDragActive
                   ? 'border-primary bg-primary/5'
                   : 'border-muted-foreground/25 hover:border-muted-foreground/50'
@@ -249,27 +253,29 @@ export function UploadVersionDialog({
           {files.length > 0 && (
             <div className="space-y-2">
               <Label>Files to Upload ({files.length})</Label>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
+              <div className="max-h-32 space-y-2 overflow-y-auto">
                 {files.map((uploadFile) => (
                   <div
-                    key={uploadFile.id}
                     className="flex items-center justify-between rounded border p-2 text-sm"
+                    key={uploadFile.id}
                   >
                     <div className="flex items-center gap-2">
                       {getStatusIcon(uploadFile.status)}
                       <div>
-                        <div className="font-medium">{uploadFile.file.name}</div>
+                        <div className="font-medium">
+                          {uploadFile.file.name}
+                        </div>
                         <div className="text-muted-foreground text-xs">
                           {formatFileSize(uploadFile.file.size)}
                         </div>
                       </div>
                     </div>
                     <Button
+                      disabled={isUploading}
+                      onClick={() => removeFile(uploadFile.id)}
+                      size="sm"
                       type="button"
                       variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(uploadFile.id)}
-                      disabled={isUploading}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -283,11 +289,13 @@ export function UploadVersionDialog({
           <div className="space-y-2">
             <Label htmlFor="description">Description (optional)</Label>
             <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={model.latestMetadata.description || 'Version description...'}
               disabled={isUploading}
+              id="description"
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={
+                model.latestMetadata.description || 'Version description...'
+              }
+              value={description}
             />
           </div>
 
@@ -295,21 +303,21 @@ export function UploadVersionDialog({
           <div className="space-y-2">
             <Label htmlFor="tagInput">Tags</Label>
             <Input
+              disabled={isUploading}
               id="tagInput"
-              value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleAddTag}
               placeholder="Add a tag and press Enter..."
-              disabled={isUploading}
+              value={tagInput}
             />
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {tags.map((tag) => (
                   <Badge
-                    key={tag}
-                    variant="secondary"
                     className="cursor-pointer"
+                    key={tag}
                     onClick={() => !isUploading && removeTag(tag)}
+                    variant="secondary"
                   >
                     {tag}
                     {!isUploading && <X className="ml-1 h-3 w-3" />}
@@ -322,16 +330,16 @@ export function UploadVersionDialog({
 
         <DialogFooter>
           <Button
+            disabled={isUploading}
+            onClick={() => onOpenChange(false)}
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isUploading}
           >
             Cancel
           </Button>
           <Button
-            onClick={handleUpload}
             disabled={isUploading || files.length === 0}
+            onClick={handleUpload}
           >
             {isUploading ? 'Uploading...' : 'Upload New Version'}
           </Button>

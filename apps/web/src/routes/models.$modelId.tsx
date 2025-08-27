@@ -1,7 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
-import { toast } from 'sonner';
 import {
   ArrowLeft,
   Calendar,
@@ -13,6 +11,10 @@ import {
   Tag,
   Upload,
 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { EditModelDialog } from '@/components/models/EditModelDialog';
+import { UploadVersionDialog } from '@/components/models/UploadVersionDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,11 +25,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { EditModelDialog } from '@/components/models/EditModelDialog';
-import { UploadVersionDialog } from '@/components/models/UploadVersionDialog';
 import { STLViewerWithSuspense } from '@/components/viewer/stl-viewer';
-import { orpc } from '@/utils/orpc';
 import { downloadAllFiles, downloadFile } from '@/utils/download';
+import { orpc } from '@/utils/orpc';
 
 export const Route = createFileRoute('/models/$modelId')({
   component: ModelDetailComponent,
@@ -73,12 +73,16 @@ function ModelDetailComponent() {
 
   const handleDownloadAll = async () => {
     if (!model) return;
-    
+
     try {
       const latestVersion = model.versions.at(-1);
       if (!latestVersion) return;
-      
-      await downloadAllFiles(model.id, latestVersion.version, latestVersion.files);
+
+      await downloadAllFiles(
+        model.id,
+        latestVersion.version,
+        latestVersion.files
+      );
       toast.success('Download started');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Download failed');
@@ -87,11 +91,11 @@ function ModelDetailComponent() {
 
   const handleDownloadFile = async (filename: string) => {
     if (!model) return;
-    
+
     try {
       const latestVersion = model.versions.at(-1);
       if (!latestVersion) return;
-      
+
       await downloadFile(model.id, latestVersion.version, filename);
       toast.success(`Downloading ${filename}`);
     } catch (error) {
@@ -170,11 +174,11 @@ function ModelDetailComponent() {
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
+            <Button onClick={() => setUploadDialogOpen(true)} variant="outline">
               <Upload className="mr-2 h-4 w-4" />
               New Version
             </Button>
-            <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
+            <Button onClick={() => setEditDialogOpen(true)} variant="outline">
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Button>
@@ -332,10 +336,10 @@ function ModelDetailComponent() {
                       <Badge className="text-xs" variant="outline">
                         {file.extension.slice(1).toUpperCase()}
                       </Badge>
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
+                      <Button
                         onClick={() => handleDownloadFile(file.filename)}
+                        size="sm"
+                        variant="ghost"
                       >
                         <Download className="h-3 w-3" />
                       </Button>
@@ -427,8 +431,8 @@ function ModelDetailComponent() {
       {model && (
         <EditModelDialog
           model={model}
-          open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
+          open={editDialogOpen}
         />
       )}
 
@@ -436,8 +440,8 @@ function ModelDetailComponent() {
       {model && (
         <UploadVersionDialog
           model={model}
-          open={uploadDialogOpen}
           onOpenChange={setUploadDialogOpen}
+          open={uploadDialogOpen}
         />
       )}
     </div>

@@ -47,6 +47,11 @@ export class GitService {
 
   private async isGitRepository(): Promise<boolean> {
     try {
+      // Check if .git directory exists in the data directory specifically
+      const gitDir = join(this.dataDir, '.git');
+      await fs.access(gitDir);
+
+      // Also verify Git status works
       await this.git.status();
       return true;
     } catch {
@@ -55,7 +60,8 @@ export class GitService {
   }
 
   private async initializeRepository(_config?: GitConfig): Promise<void> {
-    // Initialize git repository
+    // Initialize git repository in the data directory (completely separate from main project)
+    console.log(`Initializing Git repository in: ${this.dataDir}`);
     await this.git.init();
 
     // Create initial .gitattributes for LFS
@@ -116,8 +122,23 @@ Icon?
 
       // Install LFS hooks if not already done
       await this.git.raw(['lfs', 'install', '--local']);
-    } catch (_error) {
-      // Continue without LFS - files will still be tracked, just not with LFS
+      console.log('Git LFS is available and configured');
+    } catch (error) {
+      const errorMessage = `Git LFS is required but not installed. Please install Git LFS:
+      
+macOS: brew install git-lfs
+Ubuntu/Debian: sudo apt install git-lfs
+CentOS/RHEL: sudo yum install git-lfs
+Windows: Download from https://git-lfs.github.io/
+
+After installation, run: git lfs install
+
+Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+
+      console.error(errorMessage);
+      throw new Error(
+        'Git LFS is required but not available. Please install Git LFS and restart the server.'
+      );
     }
   }
 
@@ -172,6 +193,11 @@ Icon?
 
     const modelPath = join(modelId, version);
     const commitMessage = message || `Add ${modelId} ${version}`;
+
+    console.log(
+      `Git: Adding model files at ${modelPath} in repository ${this.dataDir}`
+    );
+
     // Add all files in the model version directory
     await this.git.add(modelPath);
 

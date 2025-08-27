@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import type { RouterClient } from '@orpc/server';
+import { ORPCError } from '@orpc/server';
 import { z } from 'zod';
 import { publicProcedure } from '../lib/orpc';
 import { FileSystemService } from '../services/filesystem';
@@ -50,7 +51,10 @@ export const appRouter = {
       await initializeServices();
       const model = fsService.getModel(input.id);
       if (!model) {
-        throw new Error('Model not found');
+        throw new ORPCError({
+          code: 'NOT_FOUND',
+          message: `Model with id '${input.id}' not found`,
+        });
       }
       return model;
     }),
@@ -81,7 +85,10 @@ export const appRouter = {
           exists: true,
         };
       } catch {
-        throw new Error('File not found');
+        throw new ORPCError({
+          code: 'NOT_FOUND',
+          message: 'File not found',
+        });
       }
     }),
 
@@ -178,6 +185,22 @@ export const appRouter = {
     }
 
     return Array.from(tagsSet).sort();
+  }),
+
+  // Get Git configuration status
+  getGitStatus: publicProcedure.handler(async () => {
+    await initializeServices();
+    const repoStatus = await gitService.getRepositoryStatus();
+    const remotes = await gitService.getRemotes();
+    const currentBranch = await gitService.getCurrentBranch();
+
+    return {
+      branch: currentBranch,
+      remotes,
+      repository: repoStatus,
+      hasRemote: remotes.length > 0,
+      isClean: repoStatus.isClean,
+    };
   }),
 };
 

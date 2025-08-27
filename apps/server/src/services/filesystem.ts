@@ -42,7 +42,7 @@ export class FileSystemService {
 
     try {
       const entries = await fs.readdir(this.dataDir, { withFileTypes: true });
-      const modelDirs = entries.filter((entry) => entry.isDirectory());
+      const modelDirs = entries.filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'));
 
       for (const dir of modelDirs) {
         try {

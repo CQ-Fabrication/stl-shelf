@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import type { Model } from '../../../../server/src/types/model';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { orpc } from '@/utils/orpc';
+import type { Model } from '../../../../server/src/types/model';
 
 interface EditModelDialogProps {
   model: Model;
@@ -33,7 +33,8 @@ export function EditModelDialog({
     description: model.latestMetadata.description || '',
     tags: model.latestMetadata.tags.join(', '),
     material: model.latestMetadata.printSettings?.material || '',
-    layerHeight: model.latestMetadata.printSettings?.layerHeight?.toString() || '',
+    layerHeight:
+      model.latestMetadata.printSettings?.layerHeight?.toString() || '',
     infill: model.latestMetadata.printSettings?.infill?.toString() || '',
     printTime: model.latestMetadata.printSettings?.printTime?.toString() || '',
     weight: model.latestMetadata.printSettings?.weight?.toString() || '',
@@ -54,9 +55,13 @@ export function EditModelDialog({
         updatedAt: new Date().toISOString(),
         printSettings: {
           material: data.material || undefined,
-          layerHeight: data.layerHeight ? Number.parseFloat(data.layerHeight) : undefined,
+          layerHeight: data.layerHeight
+            ? Number.parseFloat(data.layerHeight)
+            : undefined,
           infill: data.infill ? Number.parseFloat(data.infill) : undefined,
-          printTime: data.printTime ? Number.parseInt(data.printTime, 10) : undefined,
+          printTime: data.printTime
+            ? Number.parseInt(data.printTime, 10)
+            : undefined,
           weight: data.weight ? Number.parseFloat(data.weight) : undefined,
         },
       };
@@ -67,7 +72,9 @@ export function EditModelDialog({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['getModel', { id: model.id }] });
+      queryClient.invalidateQueries({
+        queryKey: ['getModel', { id: model.id }],
+      });
       queryClient.invalidateQueries({ queryKey: ['listModels'] });
       toast.success('Model updated successfully');
       onOpenChange(false);
@@ -92,7 +99,7 @@ export function EditModelDialog({
     .filter(Boolean);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Model</DialogTitle>
@@ -109,18 +116,20 @@ export function EditModelDialog({
                 <Label htmlFor="name">Model Name</Label>
                 <Input
                   id="name"
-                  value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   required
+                  value={formData.name}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Input
                   id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange('description', e.target.value)
+                  }
                   placeholder="Optional description"
+                  value={formData.description}
                 />
               </div>
             </div>
@@ -130,9 +139,9 @@ export function EditModelDialog({
               <Label htmlFor="tags">Tags</Label>
               <Input
                 id="tags"
-                value={formData.tags}
                 onChange={(e) => handleInputChange('tags', e.target.value)}
                 placeholder="Enter tags separated by commas"
+                value={formData.tags}
               />
               {currentTags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
@@ -153,57 +162,65 @@ export function EditModelDialog({
                   <Label htmlFor="material">Material</Label>
                   <Input
                     id="material"
-                    value={formData.material}
-                    onChange={(e) => handleInputChange('material', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('material', e.target.value)
+                    }
                     placeholder="e.g., PLA, ABS, PETG"
+                    value={formData.material}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="layerHeight">Layer Height (mm)</Label>
                   <Input
                     id="layerHeight"
-                    type="number"
-                    step="0.01"
-                    value={formData.layerHeight}
-                    onChange={(e) => handleInputChange('layerHeight', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('layerHeight', e.target.value)
+                    }
                     placeholder="0.2"
+                    step="0.01"
+                    type="number"
+                    value={formData.layerHeight}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="infill">Infill (%)</Label>
                   <Input
                     id="infill"
-                    type="number"
-                    min="0"
                     max="100"
-                    value={formData.infill}
-                    onChange={(e) => handleInputChange('infill', e.target.value)}
+                    min="0"
+                    onChange={(e) =>
+                      handleInputChange('infill', e.target.value)
+                    }
                     placeholder="20"
+                    type="number"
+                    value={formData.infill}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="printTime">Print Time (minutes)</Label>
                   <Input
                     id="printTime"
-                    type="number"
                     min="0"
-                    value={formData.printTime}
-                    onChange={(e) => handleInputChange('printTime', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('printTime', e.target.value)
+                    }
                     placeholder="120"
+                    type="number"
+                    value={formData.printTime}
                   />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="weight">Weight (grams)</Label>
                 <Input
+                  className="w-full"
                   id="weight"
-                  type="number"
-                  step="0.1"
                   min="0"
-                  value={formData.weight}
                   onChange={(e) => handleInputChange('weight', e.target.value)}
                   placeholder="25.5"
-                  className="w-full"
+                  step="0.1"
+                  type="number"
+                  value={formData.weight}
                 />
               </div>
             </div>
@@ -211,14 +228,14 @@ export function EditModelDialog({
 
           <DialogFooter className="mt-6">
             <Button
+              disabled={updateMutation.isPending}
+              onClick={() => onOpenChange(false)}
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={updateMutation.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
+            <Button disabled={updateMutation.isPending} type="submit">
               {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
