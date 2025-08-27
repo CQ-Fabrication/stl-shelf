@@ -65,7 +65,12 @@ const MAX_PAGE_SIZE = 100;
 
 export const ModelListQuerySchema = z.object({
   page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .max(MAX_PAGE_SIZE)
+    .default(DEFAULT_PAGE_SIZE),
   search: z.string().optional(),
   tags: z.array(z.string()).optional(),
   sortBy: z
