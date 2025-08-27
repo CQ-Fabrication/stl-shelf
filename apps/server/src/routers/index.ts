@@ -15,6 +15,7 @@ const gitService = new GitService(dataDir);
 // Initialize services on startup
 let servicesInitialized = false;
 const initializeServices = async () => {
+  // biome-ignore lint/correctness/noConstantCondition: servicesInitialized is modified at runtime after initialization
   if (servicesInitialized) {
     return;
   }

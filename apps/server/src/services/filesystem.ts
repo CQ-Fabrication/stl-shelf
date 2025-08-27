@@ -160,6 +160,7 @@ export class FileSystemService {
         await fs.access(thumbnailPath);
         hasThumbnail = true;
       } catch {
+        // biome-ignore lint/correctness/noConstantCondition: hasThumbnail is conditionally set based on file existence check
         // No thumbnail exists
       }
 
