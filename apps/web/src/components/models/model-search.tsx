@@ -1,157 +1,158 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { orpc } from "@/utils/orpc";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { X, Search, Tag } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { Search, Tag, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { orpc } from '@/utils/orpc';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuCheckboxItem,
-	DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import { Input } from '../ui/input';
 
-interface ModelSearchProps {
-	defaultSearch?: string;
-	defaultTags?: string[];
-	onSearchChange?: (search: string, tags: string[]) => void;
-}
+type ModelSearchProps = {
+  defaultSearch?: string;
+  defaultTags?: string[];
+  onSearchChange?: (search: string, tags: string[]) => void;
+};
 
-export function ModelSearch({ 
-	defaultSearch = "", 
-	defaultTags = [],
-	onSearchChange 
+export function ModelSearch({
+  defaultSearch = '',
+  defaultTags = [],
+  onSearchChange,
 }: ModelSearchProps) {
-	const [searchInput, setSearchInput] = useState(defaultSearch);
-	const [selectedTags, setSelectedTags] = useState<string[]>(defaultTags);
-	
-	// Debounced search
-	const [debouncedSearch, setDebouncedSearch] = useState(defaultSearch);
+  const [searchInput, setSearchInput] = useState(defaultSearch);
+  const [selectedTags, setSelectedTags] = useState<string[]>(defaultTags);
 
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedSearch(searchInput);
-		}, 300);
+  // Debounced search
+  const [debouncedSearch, setDebouncedSearch] = useState(defaultSearch);
 
-		return () => clearTimeout(timer);
-	}, [searchInput]);
+  useEffect(() => {
+    const DEBOUNCE_DELAY = 300;
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+    }, DEBOUNCE_DELAY);
 
-	// Notify parent of changes
-	useEffect(() => {
-		onSearchChange?.(debouncedSearch, selectedTags);
-	}, [debouncedSearch, selectedTags, onSearchChange]);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
-	// Fetch available tags
-	const { data: allTags = [] } = useQuery(orpc.getAllTags.queryOptions({}));
+  // Notify parent of changes
+  useEffect(() => {
+    onSearchChange?.(debouncedSearch, selectedTags);
+  }, [debouncedSearch, selectedTags, onSearchChange]);
 
-	const handleTagToggle = (tag: string) => {
-		setSelectedTags(prev => 
-			prev.includes(tag)
-				? prev.filter(t => t !== tag)
-				: [...prev, tag]
-		);
-	};
+  // Fetch available tags
+  const { data: allTags = [] } = useQuery(orpc.getAllTags.queryOptions({}));
 
-	const handleClearSearch = () => {
-		setSearchInput("");
-		setDebouncedSearch("");
-	};
+  const handleTagToggle = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
 
-	const handleClearTag = (tag: string) => {
-		setSelectedTags(prev => prev.filter(t => t !== tag));
-	};
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setDebouncedSearch('');
+  };
 
-	const handleClearAll = () => {
-		setSearchInput("");
-		setDebouncedSearch("");
-		setSelectedTags([]);
-	};
+  const handleClearTag = (tag: string) => {
+    setSelectedTags((prev) => prev.filter((t) => t !== tag));
+  };
 
-	const hasFilters = debouncedSearch || selectedTags.length > 0;
+  const handleClearAll = () => {
+    setSearchInput('');
+    setDebouncedSearch('');
+    setSelectedTags([]);
+  };
 
-	return (
-		<div className="space-y-3">
-			{/* Search input */}
-			<div className="relative">
-				<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-				<Input
-					placeholder="Search models..."
-					value={searchInput}
-					onChange={(e) => setSearchInput(e.target.value)}
-					className="pl-10 pr-10"
-				/>
-				{searchInput && (
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={handleClearSearch}
-						className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-					>
-						<X className="h-4 w-4" />
-					</Button>
-				)}
-			</div>
+  const hasFilters = debouncedSearch || selectedTags.length > 0;
 
-			{/* Filters row */}
-			<div className="flex flex-wrap items-center gap-2">
-				{/* Tag filter dropdown */}
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="outline" size="sm">
-							<Tag className="h-4 w-4 mr-2" />
-							Tags
-							{selectedTags.length > 0 && (
-								<Badge variant="secondary" className="ml-2 h-5 px-1 text-xs">
-									{selectedTags.length}
-								</Badge>
-							)}
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="start" className="w-48">
-						{allTags.length === 0 ? (
-							<div className="p-2 text-sm text-muted-foreground">No tags available</div>
-						) : (
-							allTags.map((tag) => (
-								<DropdownMenuCheckboxItem
-									key={tag}
-									checked={selectedTags.includes(tag)}
-									onCheckedChange={() => handleTagToggle(tag)}
-								>
-									{tag}
-								</DropdownMenuCheckboxItem>
-							))
-						)}
-					</DropdownMenuContent>
-				</DropdownMenu>
+  return (
+    <div className="space-y-3">
+      {/* Search input */}
+      <div className="relative">
+        <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+        <Input
+          className="pr-10 pl-10"
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search models..."
+          value={searchInput}
+        />
+        {searchInput && (
+          <Button
+            className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8 transform p-0"
+            onClick={handleClearSearch}
+            size="sm"
+            variant="ghost"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
-				{/* Selected tags */}
-				{selectedTags.map((tag) => (
-					<Badge key={tag} variant="secondary" className="gap-1">
-						{tag}
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => handleClearTag(tag)}
-							className="h-auto w-auto p-0 hover:bg-transparent"
-						>
-							<X className="h-3 w-3" />
-						</Button>
-					</Badge>
-				))}
+      {/* Filters row */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Tag filter dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline">
+              <Tag className="mr-2 h-4 w-4" />
+              Tags
+              {selectedTags.length > 0 && (
+                <Badge className="ml-2 h-5 px-1 text-xs" variant="secondary">
+                  {selectedTags.length}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            {allTags.length === 0 ? (
+              <div className="p-2 text-muted-foreground text-sm">
+                No tags available
+              </div>
+            ) : (
+              allTags.map((tag) => (
+                <DropdownMenuCheckboxItem
+                  checked={selectedTags.includes(tag)}
+                  key={tag}
+                  onCheckedChange={() => handleTagToggle(tag)}
+                >
+                  {tag}
+                </DropdownMenuCheckboxItem>
+              ))
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-				{/* Clear all filters */}
-				{hasFilters && (
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={handleClearAll}
-						className="text-muted-foreground hover:text-foreground"
-					>
-						Clear all
-					</Button>
-				)}
-			</div>
-		</div>
-	);
+        {/* Selected tags */}
+        {selectedTags.map((tag) => (
+          <Badge className="gap-1" key={tag} variant="secondary">
+            {tag}
+            <Button
+              className="h-auto w-auto p-0 hover:bg-transparent"
+              onClick={() => handleClearTag(tag)}
+              size="sm"
+              variant="ghost"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </Badge>
+        ))}
+
+        {/* Clear all filters */}
+        {hasFilters && (
+          <Button
+            className="text-muted-foreground hover:text-foreground"
+            onClick={handleClearAll}
+            size="sm"
+            variant="ghost"
+          >
+            Clear all
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 }

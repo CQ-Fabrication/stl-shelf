@@ -6,7 +6,10 @@
       "Bash(bun remove:*)",
       "Bash(bun run:*)",
       "Bash(bun dev:server:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(bun check:*)",
+      "Bash(bun x biome check:*)",
+      "Bash(bun x:*)"
     ],
     "deny": [],
     "ask": []

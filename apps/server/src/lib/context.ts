@@ -1,14 +1,14 @@
-import type { Context as HonoContext } from "hono";
+import type { Context as HonoContext } from 'hono';
 
 export type CreateContextOptions = {
-	context: HonoContext;
+  context: HonoContext;
 };
 
-export async function createContext({ context }: CreateContextOptions) {
-	// No auth configured
-	return {
-		session: null,
-	};
+export function createContext(_options: CreateContextOptions) {
+  // No auth configured
+  return {
+    session: null,
+  };
 }
 
-export type Context = Awaited<ReturnType<typeof createContext>>;
+export type Context = ReturnType<typeof createContext>;
