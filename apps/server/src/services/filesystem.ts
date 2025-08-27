@@ -42,7 +42,9 @@ export class FileSystemService {
 
     try {
       const entries = await fs.readdir(this.dataDir, { withFileTypes: true });
-      const modelDirs = entries.filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'));
+      const modelDirs = entries.filter(
+        (entry) => entry.isDirectory() && !entry.name.startsWith('.')
+      );
 
       for (const dir of modelDirs) {
         try {
@@ -160,7 +162,6 @@ export class FileSystemService {
         await fs.access(thumbnailPath);
         hasThumbnail = true;
       } catch {
-        // biome-ignore lint/correctness/noConstantCondition: hasThumbnail is conditionally set based on file existence check
         // No thumbnail exists
       }
 
