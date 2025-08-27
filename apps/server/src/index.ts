@@ -94,7 +94,7 @@ app.post('/upload', async (c) => {
     let finalModelId: string;
     if (modelId) {
       // Check if model exists using shared filesystem service
-      if (!context.services.filesystem.modelExists(modelId)) {
+      if (!context.services.filesystem.getModel(modelId)) {
         return c.json({ error: 'Model not found' }, HTTP_NOT_FOUND);
       }
       finalModelId = modelId;

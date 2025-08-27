@@ -71,7 +71,7 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
   return (
     <mesh geometry={geometry} ref={meshRef} scale={[scale, scale, scale]}>
       <meshPhongMaterial
-        color="#4f46e5"
+        color="#e5e7eb"
         opacity={0.9}
         shininess={100}
         side={THREE.DoubleSide}
@@ -83,20 +83,8 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
 
 function ViewerControls({
   onResetCamera,
-  onToggleGrid,
-  showGrid,
-  onToggleWireframe,
-  showWireframe,
-  autoRotate,
-  onToggleAutoRotate,
 }: {
   onResetCamera: () => void;
-  onToggleGrid: () => void;
-  showGrid: boolean;
-  onToggleWireframe: () => void;
-  showWireframe: boolean;
-  autoRotate: boolean;
-  onToggleAutoRotate: () => void;
 }) {
   return (
     <div className="absolute top-4 right-4 flex flex-col gap-2">
@@ -108,45 +96,6 @@ function ViewerControls({
         variant="secondary"
       >
         <RotateCcw className="h-4 w-4" />
-      </Button>
-      <Button
-        className="bg-background/80 backdrop-blur-sm"
-        onClick={onToggleAutoRotate}
-        size="sm"
-        title={autoRotate ? 'Stop Auto-Rotation' : 'Start Auto-Rotation'}
-        variant="secondary"
-      >
-        {autoRotate ? (
-          <Pause className="h-4 w-4" />
-        ) : (
-          <Play className="h-4 w-4" />
-        )}
-      </Button>
-      <Button
-        className="bg-background/80 backdrop-blur-sm"
-        onClick={onToggleGrid}
-        size="sm"
-        title={showGrid ? 'Hide Grid' : 'Show Grid'}
-        variant="secondary"
-      >
-        {showGrid ? (
-          <EyeOff className="h-4 w-4" />
-        ) : (
-          <Grid3X3 className="h-4 w-4" />
-        )}
-      </Button>
-      <Button
-        className="bg-background/80 backdrop-blur-sm"
-        onClick={onToggleWireframe}
-        size="sm"
-        title={showWireframe ? 'Solid View' : 'Wireframe View'}
-        variant="secondary"
-      >
-        {showWireframe ? (
-          <Eye className="h-4 w-4" />
-        ) : (
-          <EyeOff className="h-4 w-4" />
-        )}
       </Button>
     </div>
   );
@@ -200,7 +149,7 @@ export function STLViewer({
   className = '',
 }: STLViewerProps) {
   const controlsRef = useRef<any>(null);
-  const [showGrid, setShowGrid] = useState(true);
+  const [showGrid, setShowGrid] = useState(false);
   const [showWireframe, setShowWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false); // Start with auto-rotation off
   const [error, _setError] = useState<Error | null>(null);
@@ -292,13 +241,7 @@ export function STLViewer({
 
       {/* Overlay controls */}
       <ViewerControls
-        autoRotate={autoRotate}
         onResetCamera={handleResetCamera}
-        onToggleAutoRotate={handleToggleAutoRotate}
-        onToggleGrid={handleToggleGrid}
-        onToggleWireframe={handleToggleWireframe}
-        showGrid={showGrid}
-        showWireframe={showWireframe}
       />
 
       {/* Model info */}
