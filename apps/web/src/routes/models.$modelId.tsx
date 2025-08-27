@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import {
   ArrowLeft,
   Calendar,
@@ -9,6 +11,7 @@ import {
   HardDrive,
   History,
   Tag,
+  Upload,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,8 +23,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EditModelDialog } from '@/components/models/EditModelDialog';
+import { UploadVersionDialog } from '@/components/models/UploadVersionDialog';
 import { STLViewerWithSuspense } from '@/components/viewer/stl-viewer';
 import { orpc } from '@/utils/orpc';
+import { downloadAllFiles, downloadFile } from '@/utils/download';
 
 export const Route = createFileRoute('/models/$modelId')({
   component: ModelDetailComponent,
@@ -29,6 +35,8 @@ export const Route = createFileRoute('/models/$modelId')({
 
 function ModelDetailComponent() {
   const { modelId } = Route.useParams();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const {
     data: model,
@@ -61,6 +69,34 @@ function ModelDetailComponent() {
     }
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${Math.round((bytes / 1024 ** i) * 100) / 100} ${sizes[i]}`;
+  };
+
+  const handleDownloadAll = async () => {
+    if (!model) return;
+    
+    try {
+      const latestVersion = model.versions.at(-1);
+      if (!latestVersion) return;
+      
+      await downloadAllFiles(model.id, latestVersion.version, latestVersion.files);
+      toast.success('Download started');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Download failed');
+    }
+  };
+
+  const handleDownloadFile = async (filename: string) => {
+    if (!model) return;
+    
+    try {
+      const latestVersion = model.versions.at(-1);
+      if (!latestVersion) return;
+      
+      await downloadFile(model.id, latestVersion.version, filename);
+      toast.success(`Downloading ${filename}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Download failed');
+    }
   };
 
   if (isLoading) {
@@ -134,11 +170,15 @@ function ModelDetailComponent() {
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              New Version
+            </Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Button>
-            <Button>
+            <Button onClick={handleDownloadAll}>
               <Download className="mr-2 h-4 w-4" />
               Download
             </Button>
@@ -292,7 +332,11 @@ function ModelDetailComponent() {
                       <Badge className="text-xs" variant="outline">
                         {file.extension.slice(1).toUpperCase()}
                       </Badge>
-                      <Button size="sm" variant="ghost">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleDownloadFile(file.filename)}
+                      >
                         <Download className="h-3 w-3" />
                       </Button>
                     </div>
@@ -378,6 +422,24 @@ function ModelDetailComponent() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Model Dialog */}
+      {model && (
+        <EditModelDialog
+          model={model}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+        />
+      )}
+
+      {/* Upload Version Dialog */}
+      {model && (
+        <UploadVersionDialog
+          model={model}
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+        />
+      )}
     </div>
   );
 }

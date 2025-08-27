@@ -173,7 +173,7 @@ Icon?
     const modelPath = join(modelId, version);
     const commitMessage = message || `Add ${modelId} ${version}`;
     // Add all files in the model version directory
-    await this.git.add(`${modelPath}/*`);
+    await this.git.add(modelPath);
 
     // Also add the model's base meta.json if it exists
     const modelMetaPath = join(modelId, 'meta.json');

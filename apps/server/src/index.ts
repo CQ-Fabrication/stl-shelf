@@ -41,6 +41,8 @@ app.post('/upload', async (c) => {
     const name = body.name as string;
     const description = body.description as string;
     const tags = body.tags ? JSON.parse(body.tags as string) : [];
+    const modelId = body.modelId as string | undefined; // For version uploads
+    const printSettings = body.printSettings ? JSON.parse(body.printSettings as string) : undefined;
 
     if (!name) {
       return c.json({ error: 'Name is required' }, HTTP_BAD_REQUEST);
@@ -60,10 +62,30 @@ app.post('/upload', async (c) => {
       return c.json({ error: 'No files uploaded' }, HTTP_BAD_REQUEST);
     }
 
-    // Create model directory
-    const modelId = await fsService.createModelDirectory(name);
-    const version = await fsService.getNextVersionNumber(modelId);
-    const versionPath = join(dataDir, modelId, version);
+    // Initialize services first
+    await fsService.initialize();
+    await gitService.initialize({
+      userEmail: process.env.GIT_USER_EMAIL,
+      userName: process.env.GIT_USER_NAME,
+      remoteUrl: process.env.GIT_REMOTE_URL,
+    });
+
+    // Determine if this is a new model or new version
+    let finalModelId: string;
+    if (modelId) {
+      // Check if model exists
+      const existingModel = fsService.getModel(modelId);
+      if (!existingModel) {
+        return c.json({ error: 'Model not found' }, HTTP_NOT_FOUND);
+      }
+      finalModelId = modelId;
+    } else {
+      // Create new model directory
+      finalModelId = await fsService.createModelDirectory(name);
+    }
+
+    const version = await fsService.getNextVersionNumber(finalModelId);
+    const versionPath = join(dataDir, finalModelId, version);
 
     await fs.mkdir(versionPath, { recursive: true });
 
@@ -95,16 +117,19 @@ app.post('/upload', async (c) => {
       tags: tags || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      printSettings: printSettings || undefined,
     };
 
-    await fsService.saveMetadata(modelId, version, metadata);
+    await fsService.saveMetadata(finalModelId, version, metadata);
 
     // Commit to git
-    await gitService.initialize();
+    const commitMessage = modelId 
+      ? `Add new version ${version} for ${name}` 
+      : `Add ${name} ${version}`;
     await gitService.commitModelUpload(
-      modelId,
+      finalModelId,
       version,
-      `Add ${name} ${version}`
+      commitMessage
     );
 
     // Rebuild index
@@ -112,12 +137,17 @@ app.post('/upload', async (c) => {
 
     return c.json({
       success: true,
-      modelId,
+      modelId: finalModelId,
       version,
       files: savedFiles.length,
+      isNewVersion: !!modelId,
     });
-  } catch (_error) {
-    return c.json({ error: 'Upload failed' }, HTTP_INTERNAL_SERVER_ERROR);
+  } catch (error) {
+    console.error('Upload error:', error);
+    return c.json({ 
+      error: 'Upload failed', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    }, HTTP_INTERNAL_SERVER_ERROR);
   }
 });
 

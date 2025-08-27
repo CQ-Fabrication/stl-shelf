@@ -9,7 +9,8 @@
       "Bash(curl:*)",
       "Bash(bun check:*)",
       "Bash(bun x biome check:*)",
-      "Bash(bun x:*)"
+      "Bash(bun x:*)",
+      "Bash(bunx shadcn@latest add:*)"
     ],
     "deny": [],
     "ask": []
