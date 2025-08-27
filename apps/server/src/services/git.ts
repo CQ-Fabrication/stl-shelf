@@ -125,7 +125,7 @@ Icon?
       console.log('Git LFS is available and configured');
     } catch (error) {
       const errorMessage = `Git LFS is required but not installed. Please install Git LFS:
-      
+
 macOS: brew install git-lfs
 Ubuntu/Debian: sudo apt install git-lfs
 CentOS/RHEL: sudo yum install git-lfs
@@ -152,18 +152,21 @@ Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
         } else if (!existingName) {
           await this.git.addConfig('user.name', 'STL Shelf');
         }
-      } catch (error) {
+      } catch (_error) {
         // Config doesn't exist or can't access - try to set if we have config
         if (config?.userName) {
           try {
             await this.git.addConfig('user.name', config.userName);
           } catch (lockError) {
-            console.warn('Could not configure Git user.name (possibly already configured):', lockError.message);
+            console.warn(
+              'Could not configure Git user.name (possibly already configured):',
+              lockError instanceof Error ? lockError.message : 'Unknown error'
+            );
           }
         }
       }
 
-      // Check and set user.email - only if not already configured  
+      // Check and set user.email - only if not already configured
       try {
         const existingEmail = await this.git.getConfig('user.email');
         if (!existingEmail && config?.userEmail) {
@@ -171,13 +174,16 @@ Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
         } else if (!existingEmail) {
           await this.git.addConfig('user.email', 'stl-shelf@localhost');
         }
-      } catch (error) {
+      } catch (_error) {
         // Config doesn't exist or can't access - try to set if we have config
         if (config?.userEmail) {
           try {
             await this.git.addConfig('user.email', config.userEmail);
           } catch (lockError) {
-            console.warn('Could not configure Git user.email (possibly already configured):', lockError.message);
+            console.warn(
+              'Could not configure Git user.email (possibly already configured):',
+              lockError instanceof Error ? lockError.message : 'Unknown error'
+            );
           }
         }
       }
@@ -186,13 +192,19 @@ Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
       if (config?.remoteUrl) {
         try {
           await this.addRemote('origin', config.remoteUrl);
-        } catch (error) {
-          console.warn('Could not add Git remote (possibly already exists):', error.message);
+        } catch (_error) {
+          console.warn(
+            'Could not add Git remote (possibly already exists):',
+            _error instanceof Error ? _error.message : 'Unknown error'
+          );
         }
       }
     } catch (error) {
       // Log warning but don't fail initialization - Git can work without explicit config
-      console.warn('Git configuration encountered issues but continuing:', error.message);
+      console.warn(
+        'Git configuration encountered issues but continuing:',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
     }
   }
 
@@ -298,7 +310,7 @@ Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
         },
       });
 
-      return log.all;
+      return [...log.all];
     } catch (_error) {
       return [];
     }
@@ -390,3 +402,5 @@ Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
   }
 }
+
+export const gitService = new GitService();

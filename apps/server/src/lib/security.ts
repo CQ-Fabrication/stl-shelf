@@ -1,22 +1,48 @@
-import { resolve, join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
 /**
  * Security utilities for input validation and path traversal prevention
  */
 
+// Constants for validation limits
+const MAX_MODEL_ID_LENGTH = 100;
+const MAX_FILENAME_LENGTH = 255;
+const KILOBYTE = 1024;
+const MEGABYTE_SIZE = 100;
+const DEFAULT_MAX_FILE_SIZE = MEGABYTE_SIZE * KILOBYTE * KILOBYTE; // 100MB
+const BYTES_PER_MB = KILOBYTE * KILOBYTE;
+const MAX_TAGS_COUNT = 20;
+const MAX_TAG_LENGTH = 50;
+const MAX_TEXT_LENGTH = 1000;
+const MAX_GIT_INPUT_LENGTH = 255;
+const MAX_COMMIT_MESSAGE_LENGTH = 200;
+
 // Regex patterns for input validation
 const SAFE_MODEL_ID_REGEX = /^[a-z0-9][a-z0-9\-_]*[a-z0-9]$/i;
 const SAFE_VERSION_REGEX = /^v\d+$/;
-const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9._\-]*[a-zA-Z0-9]$/;
-const ALLOWED_FILE_EXTENSIONS = new Set(['.stl', '.obj', '.3mf', '.ply', '.png', '.jpg', '.jpeg', '.json']);
+const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$/;
+const TAG_REGEX = /^[a-zA-Z0-9\-_\s]+$/;
+const ALLOWED_FILE_EXTENSIONS = new Set([
+  '.stl',
+  '.obj',
+  '.3mf',
+  '.ply',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.json',
+]);
 
 /**
  * Security error types for better error handling
  */
 export class SecurityError extends Error {
-  constructor(message: string, public readonly code: string) {
+  readonly code: string;
+
+  constructor(message: string, code: string) {
     super(message);
     this.name = 'SecurityError';
+    this.code = code;
   }
 }
 
@@ -44,9 +70,9 @@ export function validateModelId(modelId: string): string {
   }
 
   const trimmed = modelId.trim();
-  
-  if (!trimmed || trimmed.length > 100) {
-    throw new InvalidInputError('modelId', 'must be 1-100 characters');
+
+  if (!trimmed || trimmed.length > MAX_MODEL_ID_LENGTH) {
+    throw new InvalidInputError('modelId', `must be 1-${MAX_MODEL_ID_LENGTH} characters`);
   }
 
   if (!SAFE_MODEL_ID_REGEX.test(trimmed)) {
@@ -68,7 +94,7 @@ export function validateVersion(version: string): string {
   }
 
   const trimmed = version.trim();
-  
+
   if (!SAFE_VERSION_REGEX.test(trimmed)) {
     throw new InvalidInputError('version', 'must match format v[number]');
   }
@@ -88,9 +114,9 @@ export function validateFilename(filename: string): string {
   }
 
   const trimmed = filename.trim();
-  
-  if (!trimmed || trimmed.length > 255) {
-    throw new InvalidInputError('filename', 'must be 1-255 characters');
+
+  if (!trimmed || trimmed.length > MAX_FILENAME_LENGTH) {
+    throw new InvalidInputError('filename', `must be 1-${MAX_FILENAME_LENGTH} characters`);
   }
 
   if (!SAFE_FILENAME_REGEX.test(trimmed)) {
@@ -100,7 +126,10 @@ export function validateFilename(filename: string): string {
   // Check file extension
   const ext = trimmed.toLowerCase().substring(trimmed.lastIndexOf('.'));
   if (!ALLOWED_FILE_EXTENSIONS.has(ext)) {
-    throw new InvalidInputError('filename', `unsupported file extension: ${ext}`);
+    throw new InvalidInputError(
+      'filename',
+      `unsupported file extension: ${ext}`
+    );
   }
 
   return trimmed;
@@ -109,10 +138,10 @@ export function validateFilename(filename: string): string {
 /**
  * Safely constructs and validates a file path within the data directory
  * Prevents path traversal attacks by ensuring the resolved path is within the base directory
- * 
+ *
  * @param baseDir - The base data directory
  * @param modelId - The model ID (will be validated)
- * @param version - The version (will be validated) 
+ * @param version - The version (will be validated)
  * @param filename - Optional filename (will be validated if provided)
  * @returns The safe, resolved file path
  * @throws {PathTraversalError} If path traversal is detected
@@ -136,22 +165,24 @@ export function constructSecurePath(
   }
 
   const requestedPath = join(...pathComponents);
-  
+
   // Resolve both paths to get absolute paths
   const resolvedBasePath = resolve(baseDir);
   const resolvedRequestedPath = resolve(requestedPath);
-  
+
   // Check if the resolved path is within the base directory
   const relativePath = relative(resolvedBasePath, resolvedRequestedPath);
-  
+
   // If the relative path starts with '..' or is empty, it's outside the base directory
   if (relativePath.startsWith('..') || relativePath === '') {
     throw new PathTraversalError(requestedPath);
   }
 
   // Additional check: ensure the resolved path actually starts with the base path
-  if (!resolvedRequestedPath.startsWith(resolvedBasePath + '/') && 
-      resolvedRequestedPath !== resolvedBasePath) {
+  if (
+    !resolvedRequestedPath.startsWith(`${resolvedBasePath}/`) &&
+    resolvedRequestedPath !== resolvedBasePath
+  ) {
     throw new PathTraversalError(requestedPath);
   }
 
@@ -164,11 +195,17 @@ export function constructSecurePath(
  * @param maxSize - Maximum allowed size in bytes (default: 100MB)
  * @throws {InvalidInputError} If file size exceeds limit
  */
-export function validateFileSize(size: number, maxSize: number = 100 * 1024 * 1024): void {
+export function validateFileSize(
+  size: number,
+  maxSize: number = DEFAULT_MAX_FILE_SIZE
+): void {
   if (size > maxSize) {
-    const maxSizeMB = Math.round(maxSize / (1024 * 1024));
-    const actualSizeMB = Math.round(size / (1024 * 1024));
-    throw new InvalidInputError('fileSize', `${actualSizeMB}MB exceeds limit of ${maxSizeMB}MB`);
+    const maxSizeMB = Math.round(maxSize / BYTES_PER_MB);
+    const actualSizeMB = Math.round(size / BYTES_PER_MB);
+    throw new InvalidInputError(
+      'fileSize',
+      `${actualSizeMB}MB exceeds limit of ${maxSizeMB}MB`
+    );
   }
 }
 
@@ -178,7 +215,7 @@ export function validateFileSize(size: number, maxSize: number = 100 * 1024 * 10
  * @param maxLength - Maximum allowed length (default: 1000)
  * @returns The sanitized string
  */
-export function sanitizeText(input: string, maxLength: number = 1000): string {
+export function sanitizeText(input: string, maxLength = MAX_TEXT_LENGTH): string {
   if (!input || typeof input !== 'string') {
     return '';
   }
@@ -203,23 +240,19 @@ export function validateTags(tags: unknown): string[] {
     return [];
   }
 
-  const MAX_TAGS = 20;
-  const MAX_TAG_LENGTH = 50;
-  const TAG_REGEX = /^[a-zA-Z0-9\-_\s]+$/;
-
-  if (tags.length > MAX_TAGS) {
-    throw new InvalidInputError('tags', `maximum ${MAX_TAGS} tags allowed`);
+  if (tags.length > MAX_TAGS_COUNT) {
+    throw new InvalidInputError('tags', `maximum ${MAX_TAGS_COUNT} tags allowed`);
   }
 
   const sanitizedTags: string[] = [];
-  
+
   for (const tag of tags) {
     if (typeof tag !== 'string') {
       continue;
     }
 
     const trimmed = tag.trim().toLowerCase();
-    
+
     if (!trimmed || trimmed.length > MAX_TAG_LENGTH) {
       continue;
     }
@@ -250,9 +283,9 @@ export function sanitizeGitInput(input: string): string {
   // Allow only alphanumeric, hyphens, underscores, dots, and forward slashes
   return input
     .trim()
-    .replace(/[^a-zA-Z0-9\-_\.\/\s]/g, '') // Remove dangerous characters
+    .replace(/[^a-zA-Z0-9\-_./\s]/g, '') // Remove dangerous characters
     .replace(/\s+/g, ' ') // Collapse multiple spaces
-    .substring(0, 255); // Limit length
+    .substring(0, MAX_GIT_INPUT_LENGTH); // Limit length
 }
 
 /**
@@ -266,11 +299,13 @@ export function validateGitCommitMessage(message: string): string {
   }
 
   // Sanitize commit message
-  return message
-    .trim()
-    .replace(/[<>'"&$`|;]/g, '') // Remove potentially dangerous characters
-    .replace(/\r\n|\r|\n/g, ' ') // Replace newlines with spaces
-    .replace(/\s+/g, ' ') // Collapse multiple spaces
-    .substring(0, 200) // Limit length
-    || 'Update files'; // Fallback if empty after sanitization
+  return (
+    message
+      .trim()
+      .replace(/[<>'"&$`|;]/g, '') // Remove potentially dangerous characters
+      .replace(/\r\n|\r|\n/g, ' ') // Replace newlines with spaces
+      .replace(/\s+/g, ' ') // Collapse multiple spaces
+      .substring(0, MAX_COMMIT_MESSAGE_LENGTH) || // Limit length
+    'Update files'
+  ); // Fallback if empty after sanitization
 }

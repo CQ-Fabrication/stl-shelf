@@ -51,7 +51,7 @@ export const createTagHandlers = (
 
 // Form validation utilities
 export const validateRequiredField = (value: string, fieldName: string) => {
-  if (!value || !value.trim()) {
+  if (!(value && value.trim())) {
     return `${fieldName} is required`;
   }
   return;
@@ -80,13 +80,13 @@ export const validateNumericField = (
 
 // Form data conversion utilities
 export const parseNumericValue = (value: string): number | undefined => {
-  if (!value || !value.trim()) return undefined;
+  if (!(value && value.trim())) return;
   const parsed = Number.parseFloat(value);
   return Number.isNaN(parsed) ? undefined : parsed;
 };
 
 export const parseIntegerValue = (value: string): number | undefined => {
-  if (!value || !value.trim()) return undefined;
+  if (!(value && value.trim())) return;
   const parsed = Number.parseInt(value, 10);
   return Number.isNaN(parsed) ? undefined : parsed;
 };

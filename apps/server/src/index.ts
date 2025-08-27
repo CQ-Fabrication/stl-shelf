@@ -1,17 +1,28 @@
 // import { env } from "cloudflare:workers";
 import 'dotenv/config';
-import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
+import { env } from './env';
+import { extname, join } from 'node:path';
 import { RPCHandler } from '@orpc/server/fetch';
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/bun';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { createContext } from './lib/context';
-import { constructSecurePath, SecurityError, validateFilename, validateFileSize } from './lib/security';
+import {
+  SecurityError,
+  validateFilename,
+  validateFileSize,
+} from './lib/security';
 import { appRouter } from './routers/index';
-import { FileSystemService } from './services/filesystem';
-import { GitService } from './services/git';
+import { cacheService } from './services/cache';
+import { modelFileService } from './services/files/model-file.service';
+import { gitService } from './services/git';
+// Direct imports - NO BARREL EXPORTS
+import { modelService } from './services/models/model.service';
+import { modelVersionService } from './services/models/model-version.service';
+// getServicesHealth function moved here since it's only used in this file
+import { storageService } from './services/storage';
+import { tagService } from './services/tags/tag.service';
 
 const app = new Hono();
 
@@ -20,13 +31,11 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 
-// Data directory configuration
+// Development mode check
 const isDevelopment = process.env.NODE_ENV !== 'production';
-const defaultDataDir = isDevelopment ? './data' : '/data';
-const dataDir = process.env.DATA_DIR || defaultDataDir;
 
 console.log(
-  `Using data directory: ${dataDir} (${isDevelopment ? 'development' : 'production'} mode)`
+  `STL Shelf API starting in ${isDevelopment ? 'development' : 'production'} mode`
 );
 
 app.use(logger());
@@ -35,28 +44,27 @@ app.use(
   cors({
     // Improved CORS configuration - no more wildcard in production
     origin: (origin) => {
-      const allowedOrigins = process.env.CORS_ORIGIN 
-        ? process.env.CORS_ORIGIN.split(',') 
+      const allowedOrigins = env.CORS_ORIGIN
+        ? env.CORS_ORIGIN.split(',')
         : ['http://localhost:3001', 'http://127.0.0.1:3001'];
-      
+
       // Allow no origin for non-browser requests (like Postman)
-      if (!origin) return true;
-      
-      return allowedOrigins.includes(origin) ? origin : false;
+      if (!origin) {
+        return '*';
+      }
+
+      return allowedOrigins.includes(origin) ? origin : null;
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-    maxAge: 86400, // 24 hours
+    maxAge: 86_400, // 24 hours
   })
 );
 
-// File upload endpoint - with security and new service architecture
+// File upload endpoint - using new database architecture
 app.post('/upload', async (c) => {
   try {
-    // Create context with shared services
-    const context = await createContext({ context: c });
-
     const body = await c.req.parseBody();
     const name = body.name as string;
     const description = body.description as string;
@@ -75,8 +83,13 @@ app.post('/upload', async (c) => {
     const formData = await c.req.formData();
 
     for (const [key, value] of formData.entries()) {
-      if (key === 'files' && value instanceof File) {
-        files.push(value);
+      if (
+        key === 'files' &&
+        typeof value === 'object' &&
+        value !== null &&
+        'name' in value
+      ) {
+        files.push(value as File);
       }
     }
 
@@ -90,26 +103,62 @@ app.post('/upload', async (c) => {
       validateFileSize(file.size);
     }
 
-    // Determine if this is a new model or new version
     let finalModelId: string;
+    let version: string;
+    let isNewVersion = false;
+
     if (modelId) {
-      // Check if model exists using shared filesystem service
-      if (!context.services.filesystem.getModel(modelId)) {
+      // Adding version to existing model
+      const existingModel = await modelService.getModel(modelId);
+      if (!existingModel) {
         return c.json({ error: 'Model not found' }, HTTP_NOT_FOUND);
       }
+
       finalModelId = modelId;
+      // For now, just increment the total versions count to get next version
+      const nextVersionNumber = existingModel.totalVersions + 1;
+      version = `v${nextVersionNumber}`;
+      isNewVersion = true;
     } else {
-      // Create new model directory with validation
-      finalModelId = await context.services.filesystem.createModelDirectory(name);
+      // Create new model
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-');
+      const model = await modelService.createModel({
+        name,
+        slug,
+        description,
+      });
+
+      // Add tags if provided
+      if (tags && tags.length > 0) {
+        await tagService.addTagsToModel(model.id, tags);
+      }
+
+      if (!model) {
+        throw new Error('Failed to create model');
+      }
+
+      finalModelId = model.id;
+      version = 'v1';
     }
 
-    const version = await context.services.filesystem.getNextVersionNumber(finalModelId);
-    const versionPath = context.services.filesystem.getModelPath(finalModelId, version);
+    // Create version in database
+    const dbVersion = await modelVersionService.createModelVersion({
+      modelId: finalModelId,
+      version,
+      name: isNewVersion ? `${name} ${version}` : name,
+      description,
+      printSettings,
+    });
 
-    await fs.mkdir(versionPath, { recursive: true });
+    if (!dbVersion) {
+      throw new Error('Failed to create model version');
+    }
 
-    // Save uploaded files with security validation
-    const savedFiles: Array<{
+    // Process and upload files
+    const uploadedFiles: Array<{
       filename: string;
       originalName: string;
       size: number;
@@ -117,59 +166,79 @@ app.post('/upload', async (c) => {
     }> = [];
 
     for (const file of files) {
-      const buffer = await file.arrayBuffer();
       const safeFilename = validateFilename(file.name);
-      const filePath = constructSecurePath(context.dataDir, finalModelId, version, safeFilename);
+      const ext = extname(safeFilename).toLowerCase();
 
-      await fs.writeFile(filePath, new Uint8Array(buffer));
-      savedFiles.push({
+      // Generate storage key
+      const storageKey = storageService.generateStorageKey({
+        modelId: finalModelId,
+        version,
+        filename: safeFilename,
+      });
+
+      // Upload to storage
+      const uploadResult = await storageService.uploadFile({
+        key: storageKey,
+        file,
+        contentType: file.type,
+        metadata: {
+          originalName: file.name,
+          modelId: finalModelId,
+          version,
+        },
+      });
+
+      // Add file record to database
+      await modelFileService.addFileToVersion({
+        versionId: dbVersion.id,
         filename: safeFilename,
         originalName: file.name,
-        size: buffer.byteLength,
+        size: file.size,
+        mimeType: file.type,
+        extension: ext,
+        storageKey: uploadResult.key,
+        storageUrl: uploadResult.url,
+        storageBucket: storageService.defaultModelsBucket,
+        fileMetadata: {
+          processed: false, // Will be processed later for 3D analysis
+        },
+      });
+
+      uploadedFiles.push({
+        filename: safeFilename,
+        originalName: file.name,
+        size: file.size,
         mimeType: file.type,
       });
     }
 
-    // Create metadata with validation
-    const metadata = {
-      name,
-      description: description || undefined,
-      tags: tags || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      printSettings: printSettings || undefined,
-    };
-
-    // Save version-level metadata (this will sanitize inputs)
-    await context.services.filesystem.saveMetadata(finalModelId, version, metadata);
-    
-    // Save or update model-level metadata (for the loadModelFromDirectory to work)
-    await context.services.filesystem.saveMetadata(finalModelId, null, metadata);
+    // Invalidate cache
+    await cacheService.invalidateModel(finalModelId);
 
     // Try to commit to git - but don't fail if Git has issues
     try {
-      const commitMessage = modelId
+      const commitMessage = isNewVersion
         ? `Add new version ${version} for ${name}`
         : `Add ${name} ${version}`;
-      await context.services.git.commitModelUpload(finalModelId, version, commitMessage);
+      await gitService.commitModelUpload(finalModelId, version, commitMessage);
     } catch (error) {
-      console.error('Git commit failed for upload:', error.message);
+      console.error(
+        'Git commit failed for upload:',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
       // Continue without Git - files are still saved
     }
-
-    // Rebuild index and update cache - this is the key fix!
-    await context.services.filesystem.buildIndex();
 
     return c.json({
       success: true,
       modelId: finalModelId,
       version,
-      files: savedFiles.length,
-      isNewVersion: !!modelId,
+      files: uploadedFiles.length,
+      isNewVersion,
     });
   } catch (error) {
     console.error('Upload error:', error);
-    
+
     // Handle security errors appropriately
     if (error instanceof SecurityError) {
       return c.json(
@@ -180,7 +249,7 @@ app.post('/upload', async (c) => {
         HTTP_BAD_REQUEST
       );
     }
-    
+
     return c.json(
       {
         error: 'Upload failed',
@@ -191,76 +260,112 @@ app.post('/upload', async (c) => {
   }
 });
 
-// File serving endpoint - with path traversal protection
+// File serving endpoint - redirect to presigned URL
 app.get('/files/:modelId/:version/:filename', async (c) => {
   try {
     const { modelId, version, filename } = c.req.param();
-    
-    // Validate inputs and construct secure path - prevents path traversal
-    const filePath = constructSecurePath(dataDir, modelId, version, filename);
 
-    await fs.access(filePath);
-    const file = await fs.readFile(filePath);
-
-    // Validate filename again to ensure safe response headers
+    // Validate filename for security
     const safeFilename = validateFilename(filename);
 
-    // Set appropriate headers
-    const ext = safeFilename.split('.').pop()?.toLowerCase();
-    const mimeTypes: Record<string, string> = {
-      stl: 'application/sla',
-      obj: 'application/x-obj',
-      '3mf': 'application/x-3mf',
-      ply: 'application/x-ply',
-      png: 'image/png',
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-    };
-
-    const mimeType = mimeTypes[ext || ''] || 'application/octet-stream';
-
-    return new Response(new Uint8Array(file), {
-      headers: {
-        'Content-Type': mimeType,
-        'Content-Disposition': `inline; filename="${safeFilename}"`,
-      },
+    // Generate storage key
+    const storageKey = storageService.generateStorageKey({
+      modelId,
+      version,
+      filename: safeFilename,
     });
+
+    // Check if file exists in storage
+    const exists = await storageService.fileExists(storageKey);
+    if (!exists) {
+      return c.json({ error: 'File not found' }, HTTP_NOT_FOUND);
+    }
+
+    // Check cache for presigned URL first
+    const cachedUrl = await cacheService.getCachedPresignedUrl(storageKey);
+    if (cachedUrl) {
+      return c.redirect(cachedUrl.url);
+    }
+
+    // Generate new presigned URL
+    const downloadUrl = await storageService.generateDownloadUrl(storageKey);
+
+    // Cache the presigned URL
+    await cacheService.cachePresignedUrl(storageKey, downloadUrl, 60); // 1 hour
+
+    // Redirect to presigned URL
+    return c.redirect(downloadUrl);
   } catch (error) {
     // Handle security errors with appropriate status codes
     if (error instanceof SecurityError) {
-      return c.json({ 
-        error: 'Invalid request', 
-        code: error.code 
-      }, HTTP_BAD_REQUEST);
+      return c.json(
+        {
+          error: 'Invalid request',
+          code: error.code,
+        },
+        HTTP_BAD_REQUEST
+      );
     }
     return c.json({ error: 'File not found' }, HTTP_NOT_FOUND);
   }
 });
 
-// Thumbnail serving endpoint - with path traversal protection
+// Thumbnail serving endpoint - redirect to presigned URL
 app.get('/thumbnails/:modelId/:version', async (c) => {
   try {
     const { modelId, version } = c.req.param();
-    
-    // Validate inputs and construct secure path - prevents path traversal
-    const thumbnailPath = constructSecurePath(dataDir, modelId, version, 'thumbnail.png');
 
-    await fs.access(thumbnailPath);
-    const file = await fs.readFile(thumbnailPath);
-
-    return new Response(new Uint8Array(file), {
-      headers: {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=3600',
-      },
+    // Generate storage key for thumbnail
+    const storageKey = storageService.generateStorageKey({
+      modelId,
+      version,
+      filename: 'thumbnail.png',
+      type: 'thumbnail',
     });
+
+    // Check if thumbnail exists in storage
+    const exists = await storageService.fileExists(
+      storageKey,
+      storageService.defaultThumbnailsBucket
+    );
+    if (!exists) {
+      return c.json({ error: 'Thumbnail not found' }, HTTP_NOT_FOUND);
+    }
+
+    // Check cache for presigned URL first
+    const cachedUrl = await cacheService.getCachedPresignedUrl(
+      `thumbnail:${storageKey}`
+    );
+    if (cachedUrl) {
+      return c.redirect(cachedUrl.url);
+    }
+
+    // Generate new presigned URL
+    const downloadUrl = await storageService.generateDownloadUrl(
+      storageKey,
+      storageService.defaultThumbnailsBucket,
+      60 // 1 hour
+    );
+
+    // Cache the presigned URL
+    await cacheService.cachePresignedUrl(
+      `thumbnail:${storageKey}`,
+      downloadUrl,
+      60
+    );
+
+    // Redirect to presigned URL
+    return c.redirect(downloadUrl);
   } catch (error) {
     // Handle security errors with appropriate status codes
     if (error instanceof SecurityError) {
-      return c.json({ 
-        error: 'Invalid request', 
-        code: error.code 
-      }, HTTP_BAD_REQUEST);
+      return c.json(
+        {
+          error: 'Invalid request',
+          code: error.code,
+        },
+        HTTP_BAD_REQUEST
+      );
     }
     return c.json({ error: 'Thumbnail not found' }, HTTP_NOT_FOUND);
   }
@@ -268,7 +373,7 @@ app.get('/thumbnails/:modelId/:version', async (c) => {
 
 const handler = new RPCHandler(appRouter);
 app.use('/rpc/*', async (c, next) => {
-  // Await context creation since it's now async
+  // Create minimal context (services now imported directly)
   const context = await createContext({ context: c });
   const { matched, response } = await handler.handle(c.req.raw, {
     prefix: '/rpc',
@@ -288,7 +393,7 @@ if (process.env.NODE_ENV === 'production') {
     '/*',
     serveStatic({
       root: webDistPath,
-      onNotFound: (path, c) => {
+      onNotFound: async (path, c) => {
         // For SPA routing, return index.html for non-API routes
         if (
           !(
@@ -298,16 +403,37 @@ if (process.env.NODE_ENV === 'production') {
             path.startsWith('/thumbnails')
           )
         ) {
-          return c.html(Bun.file(join(webDistPath, 'index.html')).text());
+          const indexContent = await Bun.file(
+            join(webDistPath, 'index.html')
+          ).text();
+          c.html(indexContent);
         }
-        return;
       },
     })
   );
 }
 
-app.get('/health', (c) => {
-  return c.json({ status: 'ok', service: 'STL Shelf API' });
+app.get('/health', async (c) => {
+  // Health check for all services
+  const health = {
+    cache: await cacheService.health(),
+    storage: await storageService.health(),
+    timestamp: new Date().toISOString(),
+  };
+
+  const isHealthy =
+    health.cache.status === 'healthy' && health.storage.status === 'healthy';
+
+  const servicesHealth = {
+    ...health,
+    overall: isHealthy ? 'healthy' : 'unhealthy',
+  };
+
+  return c.json({
+    status: servicesHealth.overall,
+    service: 'STL Shelf API',
+    services: servicesHealth,
+  });
 });
 
 export default app;

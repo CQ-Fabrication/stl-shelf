@@ -81,11 +81,7 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
   );
 }
 
-function ViewerControls({
-  onResetCamera,
-}: {
-  onResetCamera: () => void;
-}) {
+function ViewerControls({ onResetCamera }: { onResetCamera: () => void }) {
   return (
     <div className="absolute top-4 right-4 flex flex-col gap-2">
       <Button
@@ -240,9 +236,7 @@ export function STLViewer({
       </Canvas>
 
       {/* Overlay controls */}
-      <ViewerControls
-        onResetCamera={handleResetCamera}
-      />
+      <ViewerControls onResetCamera={handleResetCamera} />
 
       {/* Model info */}
       <ModelInfo filename={filename} modelId={modelId} version={version} />

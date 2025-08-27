@@ -28,7 +28,7 @@
   "linter": {
     "rules": {
       "suspicious": {
-        "noConsole": "warn"
+        "noConsole": "off"
       }
     }
   }
