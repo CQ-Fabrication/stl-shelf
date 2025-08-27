@@ -143,31 +143,56 @@ Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
   }
 
   private async configureGitSettings(config?: GitConfig): Promise<void> {
-    if (config?.userName) {
-      await this.git.addConfig('user.name', config.userName);
-    } else {
-      // Set default if not configured
+    try {
+      // Check and set user.name - only if not already configured
       try {
-        await this.git.getConfig('user.name');
-      } catch {
-        await this.git.addConfig('user.name', 'STL Shelf');
+        const existingName = await this.git.getConfig('user.name');
+        if (!existingName && config?.userName) {
+          await this.git.addConfig('user.name', config.userName);
+        } else if (!existingName) {
+          await this.git.addConfig('user.name', 'STL Shelf');
+        }
+      } catch (error) {
+        // Config doesn't exist or can't access - try to set if we have config
+        if (config?.userName) {
+          try {
+            await this.git.addConfig('user.name', config.userName);
+          } catch (lockError) {
+            console.warn('Could not configure Git user.name (possibly already configured):', lockError.message);
+          }
+        }
       }
-    }
 
-    if (config?.userEmail) {
-      await this.git.addConfig('user.email', config.userEmail);
-    } else {
-      // Set default if not configured
+      // Check and set user.email - only if not already configured  
       try {
-        await this.git.getConfig('user.email');
-      } catch {
-        await this.git.addConfig('user.email', 'stl-shelf@localhost');
+        const existingEmail = await this.git.getConfig('user.email');
+        if (!existingEmail && config?.userEmail) {
+          await this.git.addConfig('user.email', config.userEmail);
+        } else if (!existingEmail) {
+          await this.git.addConfig('user.email', 'stl-shelf@localhost');
+        }
+      } catch (error) {
+        // Config doesn't exist or can't access - try to set if we have config
+        if (config?.userEmail) {
+          try {
+            await this.git.addConfig('user.email', config.userEmail);
+          } catch (lockError) {
+            console.warn('Could not configure Git user.email (possibly already configured):', lockError.message);
+          }
+        }
       }
-    }
 
-    // Configure remote if provided
-    if (config?.remoteUrl) {
-      await this.addRemote('origin', config.remoteUrl);
+      // Configure remote if provided - but don't fail if it already exists
+      if (config?.remoteUrl) {
+        try {
+          await this.addRemote('origin', config.remoteUrl);
+        } catch (error) {
+          console.warn('Could not add Git remote (possibly already exists):', error.message);
+        }
+      }
+    } catch (error) {
+      // Log warning but don't fail initialization - Git can work without explicit config
+      console.warn('Git configuration encountered issues but continuing:', error.message);
     }
   }
 

@@ -1,55 +1,28 @@
 import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
 import type { RouterClient } from '@orpc/server';
 import { ORPCError } from '@orpc/server';
 import { z } from 'zod';
 import { publicProcedure } from '../lib/orpc';
-import { FileSystemService } from '../services/filesystem';
-import { GitService } from '../services/git';
+import { constructSecurePath } from '../lib/security';
 import { ModelListQuerySchema, ModelMetadataSchema } from '../types/model';
-
-// Initialize services
-const dataDir = process.env.DATA_DIR || '/data';
-const fsService = new FileSystemService(dataDir);
-const gitService = new GitService(dataDir);
-
-// Initialize services on startup
-let servicesInitialized = false;
-const initializeServices = async () => {
-  // biome-ignore lint/nursery/noUnnecessaryConditions: servicesInitialized is modified at runtime after initialization
-  if (servicesInitialized) {
-    return;
-  }
-
-  await fsService.initialize();
-  await gitService.initialize({
-    userEmail: process.env.GIT_USER_EMAIL,
-    userName: process.env.GIT_USER_NAME,
-    remoteUrl: process.env.GIT_REMOTE_URL,
-  });
-
-  servicesInitialized = true;
-};
 
 export const appRouter = {
   healthCheck: publicProcedure.handler(() => {
     return 'OK';
   }),
 
-  // List all models with pagination and filtering
+  // List all models with pagination and filtering - using read service with cache
   listModels: publicProcedure
     .input(ModelListQuerySchema)
-    .handler(async ({ input }) => {
-      await initializeServices();
-      return await fsService.listModels(input);
+    .handler(async ({ input, context }) => {
+      return await context.services.filesystem.listModels(input);
     }),
 
-  // Get a single model with all versions
+  // Get a single model with all versions - using read service with cache
   getModel: publicProcedure
     .input(z.object({ id: z.string() }))
-    .handler(async ({ input }) => {
-      await initializeServices();
-      const model = fsService.getModel(input.id);
+    .handler(async ({ input, context }) => {
+      const model = await context.services.filesystem.getModel(input.id);
       if (!model) {
         throw new ORPCError('NOT_FOUND', {
           message: `Model with id '${input.id}' not found`,
@@ -58,7 +31,7 @@ export const appRouter = {
       return model;
     }),
 
-  // Get model file content (for downloads)
+  // Get model file content (for downloads) - with security validation
   getModelFile: publicProcedure
     .input(
       z.object({
@@ -67,10 +40,10 @@ export const appRouter = {
         filename: z.string(),
       })
     )
-    .handler(async ({ input }) => {
-      await initializeServices();
-      const filePath = join(
-        dataDir,
+    .handler(async ({ input, context }) => {
+      // Use secure path construction
+      const filePath = constructSecurePath(
+        context.dataDir,
         input.modelId,
         input.version,
         input.filename
@@ -90,7 +63,7 @@ export const appRouter = {
       }
     }),
 
-  // Update model metadata
+  // Update model metadata - using shared filesystem service
   updateModelMetadata: publicProcedure
     .input(
       z.object({
@@ -99,35 +72,44 @@ export const appRouter = {
         metadata: ModelMetadataSchema,
       })
     )
-    .handler(async ({ input }) => {
-      await initializeServices();
-
-      await fsService.saveMetadata(
+    .handler(async ({ input, context }) => {
+      // Save metadata (this will validate and sanitize inputs)
+      await context.services.filesystem.saveMetadata(
         input.modelId,
         input.version || null,
         input.metadata
       );
 
-      // Commit the changes
-      const commitMessage = `Update metadata for ${input.modelId}${input.version ? ` ${input.version}` : ''}`;
-      await gitService.commitModelUpdate(input.modelId, commitMessage);
+      // Try to commit the changes - but don't fail if Git has issues
+      try {
+        const commitMessage = `Update metadata for ${input.modelId}${input.version ? ` ${input.version}` : ''}`;
+        await context.services.git.commitModelUpdate(input.modelId, commitMessage);
+      } catch (error) {
+        console.error('Git commit failed for metadata update:', error.message);
+        // Continue without Git - metadata is still saved
+      }
 
       return { success: true };
     }),
 
-  // Delete a model completely
+  // Delete a model completely - using shared filesystem service
   deleteModel: publicProcedure
     .input(z.object({ id: z.string() }))
-    .handler(async ({ input }) => {
-      await initializeServices();
-
-      await fsService.deleteModel(input.id);
-      await gitService.commitModelDeletion(input.id);
+    .handler(async ({ input, context }) => {
+      await context.services.filesystem.deleteModel(input.id);
+      
+      // Try to commit the deletion - but don't fail if Git has issues
+      try {
+        await context.services.git.commitModelDeletion(input.id);
+      } catch (error) {
+        console.error('Git commit failed for model deletion:', error.message);
+        // Continue without Git - model is still deleted
+      }
 
       return { success: true };
     }),
 
-  // Delete a specific version
+  // Delete a specific version - using shared filesystem service
   deleteModelVersion: publicProcedure
     .input(
       z.object({
@@ -135,18 +117,22 @@ export const appRouter = {
         version: z.string(),
       })
     )
-    .handler(async ({ input }) => {
-      await initializeServices();
+    .handler(async ({ input, context }) => {
+      await context.services.filesystem.deleteVersion(input.modelId, input.version);
 
-      await fsService.deleteVersion(input.modelId, input.version);
-
-      const commitMessage = `Delete ${input.modelId} ${input.version}`;
-      await gitService.commitModelUpdate(input.modelId, commitMessage);
+      // Try to commit the version deletion - but don't fail if Git has issues
+      try {
+        const commitMessage = `Delete ${input.modelId} ${input.version}`;
+        await context.services.git.commitModelUpdate(input.modelId, commitMessage);
+      } catch (error) {
+        console.error('Git commit failed for version deletion:', error.message);
+        // Continue without Git - version is still deleted
+      }
 
       return { success: true };
     }),
 
-  // Get model history from git
+  // Get model history from git - using git service
   getModelHistory: publicProcedure
     .input(
       z.object({
@@ -154,21 +140,35 @@ export const appRouter = {
         limit: z.number().optional().default(10),
       })
     )
-    .handler(async ({ input }) => {
-      await initializeServices();
-      return await gitService.getModelHistory(input.modelId, input.limit);
+    .handler(async ({ input, context }) => {
+      try {
+        return await context.services.git.getModelHistory(input.modelId, input.limit);
+      } catch (error) {
+        console.error('Git history failed:', error.message);
+        // Return empty history if Git fails
+        return [];
+      }
     }),
 
-  // Get repository status
-  getRepositoryStatus: publicProcedure.handler(async () => {
-    await initializeServices();
-    return await gitService.getRepositoryStatus();
+  // Get repository status - using git service
+  getRepositoryStatus: publicProcedure.handler(async ({ context }) => {
+    try {
+      return await context.services.git.getRepositoryStatus();
+    } catch (error) {
+      console.error('Git status failed:', error.message);
+      // Return default status if Git fails
+      return {
+        isClean: true,
+        staged: [],
+        modified: [],
+        untracked: [],
+      };
+    }
   }),
 
-  // Get available tags across all models
-  getAllTags: publicProcedure.handler(async () => {
-    await initializeServices();
-    const allModels = await fsService.listModels({
+  // Get available tags across all models - using read service
+  getAllTags: publicProcedure.handler(async ({ context }) => {
+    const allModels = await context.services.filesystem.listModels({
       page: 1,
       limit: 1000,
       sortBy: 'name',
@@ -185,20 +185,36 @@ export const appRouter = {
     return Array.from(tagsSet).sort();
   }),
 
-  // Get Git configuration status
-  getGitStatus: publicProcedure.handler(async () => {
-    await initializeServices();
-    const repoStatus = await gitService.getRepositoryStatus();
-    const remotes = await gitService.getRemotes();
-    const currentBranch = await gitService.getCurrentBranch();
+  // Get Git configuration status - using git service
+  getGitStatus: publicProcedure.handler(async ({ context }) => {
+    try {
+      const repoStatus = await context.services.git.getRepositoryStatus();
+      const remotes = await context.services.git.getRemotes();
+      const currentBranch = await context.services.git.getCurrentBranch();
 
-    return {
-      branch: currentBranch,
-      remotes,
-      repository: repoStatus,
-      hasRemote: remotes.length > 0,
-      isClean: repoStatus.isClean,
-    };
+      return {
+        branch: currentBranch,
+        remotes,
+        repository: repoStatus,
+        hasRemote: remotes.length > 0,
+        isClean: repoStatus.isClean,
+      };
+    } catch (error) {
+      console.error('Git status check failed:', error.message);
+      // Return default Git status if Git fails
+      return {
+        branch: 'main',
+        remotes: [],
+        repository: {
+          isClean: true,
+          staged: [],
+          modified: [],
+          untracked: [],
+        },
+        hasRemote: false,
+        isClean: true,
+      };
+    }
   }),
 };
 

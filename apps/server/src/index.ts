@@ -8,6 +8,7 @@ import { serveStatic } from 'hono/bun';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { createContext } from './lib/context';
+import { constructSecurePath, SecurityError, validateFilename, validateFileSize } from './lib/security';
 import { appRouter } from './routers/index';
 import { FileSystemService } from './services/filesystem';
 import { GitService } from './services/git';
@@ -19,9 +20,7 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 
-// Initialize services
-// In development, use ./data relative to the server directory
-// In production, use /data or the specified DATA_DIR
+// Data directory configuration
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const defaultDataDir = isDevelopment ? './data' : '/data';
 const dataDir = process.env.DATA_DIR || defaultDataDir;
@@ -30,22 +29,34 @@ console.log(
   `Using data directory: ${dataDir} (${isDevelopment ? 'development' : 'production'} mode)`
 );
 
-const fsService = new FileSystemService(dataDir);
-const gitService = new GitService(dataDir);
-
 app.use(logger());
 app.use(
   '/*',
   cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    // Improved CORS configuration - no more wildcard in production
+    origin: (origin) => {
+      const allowedOrigins = process.env.CORS_ORIGIN 
+        ? process.env.CORS_ORIGIN.split(',') 
+        : ['http://localhost:3001', 'http://127.0.0.1:3001'];
+      
+      // Allow no origin for non-browser requests (like Postman)
+      if (!origin) return true;
+      
+      return allowedOrigins.includes(origin) ? origin : false;
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 86400, // 24 hours
   })
 );
 
-// File upload endpoint
+// File upload endpoint - with security and new service architecture
 app.post('/upload', async (c) => {
   try {
+    // Create context with shared services
+    const context = await createContext({ context: c });
+
     const body = await c.req.parseBody();
     const name = body.name as string;
     const description = body.description as string;
@@ -73,55 +84,53 @@ app.post('/upload', async (c) => {
       return c.json({ error: 'No files uploaded' }, HTTP_BAD_REQUEST);
     }
 
-    // Initialize services first
-    await fsService.initialize();
-    await gitService.initialize({
-      userEmail: process.env.GIT_USER_EMAIL,
-      userName: process.env.GIT_USER_NAME,
-      remoteUrl: process.env.GIT_REMOTE_URL,
-    });
+    // Validate all files before processing
+    for (const file of files) {
+      validateFilename(file.name);
+      validateFileSize(file.size);
+    }
 
     // Determine if this is a new model or new version
     let finalModelId: string;
     if (modelId) {
-      // Check if model exists
-      const existingModel = fsService.getModel(modelId);
-      if (!existingModel) {
+      // Check if model exists using shared filesystem service
+      if (!context.services.filesystem.modelExists(modelId)) {
         return c.json({ error: 'Model not found' }, HTTP_NOT_FOUND);
       }
       finalModelId = modelId;
     } else {
-      // Create new model directory
-      finalModelId = await fsService.createModelDirectory(name);
+      // Create new model directory with validation
+      finalModelId = await context.services.filesystem.createModelDirectory(name);
     }
 
-    const version = await fsService.getNextVersionNumber(finalModelId);
-    const versionPath = join(dataDir, finalModelId, version);
+    const version = await context.services.filesystem.getNextVersionNumber(finalModelId);
+    const versionPath = context.services.filesystem.getModelPath(finalModelId, version);
 
     await fs.mkdir(versionPath, { recursive: true });
 
-    // Save uploaded files
+    // Save uploaded files with security validation
     const savedFiles: Array<{
       filename: string;
       originalName: string;
       size: number;
       mimeType: string;
     }> = [];
+
     for (const file of files) {
       const buffer = await file.arrayBuffer();
-      const filename = file.name;
-      const filePath = join(versionPath, filename);
+      const safeFilename = validateFilename(file.name);
+      const filePath = constructSecurePath(context.dataDir, finalModelId, version, safeFilename);
 
       await fs.writeFile(filePath, new Uint8Array(buffer));
       savedFiles.push({
-        filename,
-        originalName: filename,
+        filename: safeFilename,
+        originalName: file.name,
         size: buffer.byteLength,
         mimeType: file.type,
       });
     }
 
-    // Create metadata
+    // Create metadata with validation
     const metadata = {
       name,
       description: description || undefined,
@@ -131,20 +140,25 @@ app.post('/upload', async (c) => {
       printSettings: printSettings || undefined,
     };
 
-    // Save version-level metadata
-    await fsService.saveMetadata(finalModelId, version, metadata);
+    // Save version-level metadata (this will sanitize inputs)
+    await context.services.filesystem.saveMetadata(finalModelId, version, metadata);
     
     // Save or update model-level metadata (for the loadModelFromDirectory to work)
-    await fsService.saveMetadata(finalModelId, null, metadata);
+    await context.services.filesystem.saveMetadata(finalModelId, null, metadata);
 
-    // Commit to git
-    const commitMessage = modelId
-      ? `Add new version ${version} for ${name}`
-      : `Add ${name} ${version}`;
-    await gitService.commitModelUpload(finalModelId, version, commitMessage);
+    // Try to commit to git - but don't fail if Git has issues
+    try {
+      const commitMessage = modelId
+        ? `Add new version ${version} for ${name}`
+        : `Add ${name} ${version}`;
+      await context.services.git.commitModelUpload(finalModelId, version, commitMessage);
+    } catch (error) {
+      console.error('Git commit failed for upload:', error.message);
+      // Continue without Git - files are still saved
+    }
 
-    // Rebuild index
-    await fsService.buildIndex();
+    // Rebuild index and update cache - this is the key fix!
+    await context.services.filesystem.buildIndex();
 
     return c.json({
       success: true,
@@ -155,6 +169,18 @@ app.post('/upload', async (c) => {
     });
   } catch (error) {
     console.error('Upload error:', error);
+    
+    // Handle security errors appropriately
+    if (error instanceof SecurityError) {
+      return c.json(
+        {
+          error: 'Invalid upload data',
+          code: error.code,
+        },
+        HTTP_BAD_REQUEST
+      );
+    }
+    
     return c.json(
       {
         error: 'Upload failed',
@@ -165,17 +191,22 @@ app.post('/upload', async (c) => {
   }
 });
 
-// File serving endpoint
+// File serving endpoint - with path traversal protection
 app.get('/files/:modelId/:version/:filename', async (c) => {
   try {
     const { modelId, version, filename } = c.req.param();
-    const filePath = join(dataDir, modelId, version, filename);
+    
+    // Validate inputs and construct secure path - prevents path traversal
+    const filePath = constructSecurePath(dataDir, modelId, version, filename);
 
     await fs.access(filePath);
     const file = await fs.readFile(filePath);
 
+    // Validate filename again to ensure safe response headers
+    const safeFilename = validateFilename(filename);
+
     // Set appropriate headers
-    const ext = filename.split('.').pop()?.toLowerCase();
+    const ext = safeFilename.split('.').pop()?.toLowerCase();
     const mimeTypes: Record<string, string> = {
       stl: 'application/sla',
       obj: 'application/x-obj',
@@ -191,19 +222,28 @@ app.get('/files/:modelId/:version/:filename', async (c) => {
     return new Response(new Uint8Array(file), {
       headers: {
         'Content-Type': mimeType,
-        'Content-Disposition': `inline; filename="${filename}"`,
+        'Content-Disposition': `inline; filename="${safeFilename}"`,
       },
     });
-  } catch (_error) {
+  } catch (error) {
+    // Handle security errors with appropriate status codes
+    if (error instanceof SecurityError) {
+      return c.json({ 
+        error: 'Invalid request', 
+        code: error.code 
+      }, HTTP_BAD_REQUEST);
+    }
     return c.json({ error: 'File not found' }, HTTP_NOT_FOUND);
   }
 });
 
-// Thumbnail serving endpoint
+// Thumbnail serving endpoint - with path traversal protection
 app.get('/thumbnails/:modelId/:version', async (c) => {
   try {
     const { modelId, version } = c.req.param();
-    const thumbnailPath = join(dataDir, modelId, version, 'thumbnail.png');
+    
+    // Validate inputs and construct secure path - prevents path traversal
+    const thumbnailPath = constructSecurePath(dataDir, modelId, version, 'thumbnail.png');
 
     await fs.access(thumbnailPath);
     const file = await fs.readFile(thumbnailPath);
@@ -214,14 +254,22 @@ app.get('/thumbnails/:modelId/:version', async (c) => {
         'Cache-Control': 'public, max-age=3600',
       },
     });
-  } catch (_error) {
+  } catch (error) {
+    // Handle security errors with appropriate status codes
+    if (error instanceof SecurityError) {
+      return c.json({ 
+        error: 'Invalid request', 
+        code: error.code 
+      }, HTTP_BAD_REQUEST);
+    }
     return c.json({ error: 'Thumbnail not found' }, HTTP_NOT_FOUND);
   }
 });
 
 const handler = new RPCHandler(appRouter);
 app.use('/rpc/*', async (c, next) => {
-  const context = createContext({ context: c });
+  // Await context creation since it's now async
+  const context = await createContext({ context: c });
   const { matched, response } = await handler.handle(c.req.raw, {
     prefix: '/rpc',
     context,
