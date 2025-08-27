@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { EditModelDialog } from '@/components/models/EditModelDialog';
-import { UploadVersionDialog } from '@/components/models/UploadVersionDialog';
+import { EditModelDialog } from '@/components/models/edit-model-dialog';
+import { UploadVersionDialog } from '@/components/models/upload-version-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {

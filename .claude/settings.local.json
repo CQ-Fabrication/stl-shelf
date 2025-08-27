@@ -10,7 +10,9 @@
       "Bash(bun check:*)",
       "Bash(bun x biome check:*)",
       "Bash(bun x:*)",
-      "Bash(bunx shadcn@latest add:*)"
+      "Bash(bunx shadcn@latest add:*)",
+      "WebFetch(domain:tanstack.com)",
+      "WebFetch(domain:orpc.unnoq.com)"
     ],
     "deny": [],
     "ask": []

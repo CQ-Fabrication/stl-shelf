@@ -16,7 +16,7 @@ const gitService = new GitService(dataDir);
 // Initialize services on startup
 let servicesInitialized = false;
 const initializeServices = async () => {
-  // biome-ignore lint/correctness/noConstantCondition: servicesInitialized is modified at runtime after initialization
+  // biome-ignore lint/nursery/noUnnecessaryConditions: servicesInitialized is modified at runtime after initialization
   if (servicesInitialized) {
     return;
   }
@@ -51,8 +51,7 @@ export const appRouter = {
       await initializeServices();
       const model = fsService.getModel(input.id);
       if (!model) {
-        throw new ORPCError({
-          code: 'NOT_FOUND',
+        throw new ORPCError('NOT_FOUND', {
           message: `Model with id '${input.id}' not found`,
         });
       }
@@ -85,8 +84,7 @@ export const appRouter = {
           exists: true,
         };
       } catch {
-        throw new ORPCError({
-          code: 'NOT_FOUND',
+        throw new ORPCError('NOT_FOUND', {
           message: 'File not found',
         });
       }

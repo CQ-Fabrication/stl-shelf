@@ -153,12 +153,10 @@ export function ModelUpload() {
       toast.success(`Successfully uploaded ${result.files} file(s)`);
 
       // Navigate to the new model
-      setTimeout(() => {
-        navigate({
-          to: '/models/$modelId',
-          params: { modelId: result.modelId },
-        });
-      }, 1000);
+      navigate({
+        to: '/models/$modelId',
+        params: { modelId: result.modelId },
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Upload failed';
       toast.error(message);
