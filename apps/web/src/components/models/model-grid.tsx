@@ -1,28 +1,42 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+} from 'nuqs';
+import { useId } from 'react';
 import { orpc } from '@/utils/orpc';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { ModelCard } from './model-card';
-import { ModelSearch } from './model-search';
 
-type ModelGridProps = {
-  searchQuery?: string;
-  selectedTags?: string[];
-};
+const SKELETON_COUNT = 8;
+const PAGINATION_DISPLAY_COUNT = 5;
+const PAGINATION_EDGE_THRESHOLD = 3;
+const PAGINATION_EDGE_OFFSET = 2;
 
-export function ModelGrid({
-  searchQuery = '',
-  selectedTags = [],
-}: ModelGridProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState<
-    'name' | 'createdAt' | 'updatedAt' | 'size'
-  >('updatedAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+export function ModelGrid() {
+  const [search] = useQueryState('q', parseAsString.withDefault(''));
+  const [tags] = useQueryState(
+    'tags',
+    parseAsArrayOf(parseAsString, ',').withDefault([])
+  );
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
+  const [sortBy, setSortBy] = useQueryState(
+    'sortBy',
+    parseAsStringLiteral(['name', 'createdAt', 'updatedAt', 'size']).withDefault(
+      'updatedAt'
+    )
+  );
+  const [sortOrder, setSortOrder] = useQueryState(
+    'sortOrder',
+    parseAsStringLiteral(['asc', 'desc']).withDefault('desc')
+  );
 
+  // Direct useQuery call
   const {
     data: modelsData,
     isLoading,
@@ -30,20 +44,15 @@ export function ModelGrid({
   } = useQuery(
     orpc.listModels.queryOptions({
       input: {
-        page: currentPage,
+        page,
         limit: 12,
-        search: searchQuery || undefined,
-        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        search: search || undefined,
+        tags: tags.length > 0 ? tags : undefined,
         sortBy,
         sortOrder,
       },
     })
   );
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const handleSortChange = (
     newSortBy: typeof sortBy,
@@ -51,7 +60,19 @@ export function ModelGrid({
   ) => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
-    setCurrentPage(1);
+    if (page !== 1) {
+      setPage(1);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const clearFilters = () => {
+    // Clear pagination when filters change - filters are managed by parent
+    setPage(1);
   };
 
   if (error) {
@@ -65,28 +86,6 @@ export function ModelGrid({
 
   return (
     <div className="space-y-6">
-      {/* Header with search and actions */}
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div className="w-full flex-1 sm:w-auto">
-          <ModelSearch
-            defaultSearch={searchQuery}
-            defaultTags={selectedTags}
-            onSearchChange={(_search, _tags) => {
-              // This would trigger a parent state update in a real implementation
-              // For now, we'll handle this via URL params
-              setCurrentPage(1);
-            }}
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button asChild>
-            <Link to="/upload">
-              <Plus className="mr-2 h-4 w-4" />
-              Upload Model
-            </Link>
-          </Button>
-        </div>
-      </div>
 
       {/* Sort controls */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -136,8 +135,8 @@ export function ModelGrid({
       {/* Models grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div className="space-y-4" key={i}>
+          {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+            <div className="space-y-4" key={`skeleton-${i}`}>
               <Skeleton className="aspect-video rounded-lg" />
               <div className="space-y-2">
                 <Skeleton className="h-5 w-3/4" />
@@ -153,28 +152,21 @@ export function ModelGrid({
       ) : modelsData?.models.length === 0 ? (
         <div className="py-12 text-center">
           <div className="mb-4 text-muted-foreground">No models found</div>
-          {searchQuery || selectedTags.length > 0 ? (
+          {search || tags.length > 0 ? (
             <div className="space-y-2">
               <div className="text-muted-foreground text-sm">
                 Try adjusting your search or filters
               </div>
-              <Button
-                onClick={() => {
-                  // Reset search - in real implementation this would update URL params
-                  setCurrentPage(1);
-                }}
-                variant="outline"
-              >
+              <Button onClick={clearFilters} variant="outline">
                 Clear Filters
               </Button>
             </div>
           ) : (
-            <Button asChild>
-              <Link to="/upload">
-                <Plus className="mr-2 h-4 w-4" />
-                Upload Your First Model
-              </Link>
-            </Button>
+            <div className="text-center">
+              <div className="text-muted-foreground">
+                No models found. Upload your first model using the button above.
+              </div>
+            </div>
           )}
         </div>
       ) : (
@@ -189,8 +181,8 @@ export function ModelGrid({
       {modelsData && modelsData.pagination.totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-6">
           <Button
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={page === 1}
+            onClick={() => handlePageChange(page - 1)}
             size="sm"
             variant="outline"
           >
@@ -200,21 +192,31 @@ export function ModelGrid({
 
           <div className="flex gap-1">
             {Array.from(
-              { length: Math.min(5, modelsData.pagination.totalPages) },
+              {
+                length: Math.min(
+                  PAGINATION_DISPLAY_COUNT,
+                  modelsData.pagination.totalPages
+                ),
+              },
               (_, i) => {
-                const page = i + 1;
-                // Smart pagination: show first, current-1, current, current+1, last
-                let displayPage = page;
-                if (modelsData.pagination.totalPages > 5) {
-                  if (currentPage <= 3) {
-                    displayPage = page;
+                const pageIndex = i + 1;
+                let displayPage = pageIndex;
+
+                if (
+                  modelsData.pagination.totalPages > PAGINATION_DISPLAY_COUNT
+                ) {
+                  if (page <= PAGINATION_EDGE_THRESHOLD) {
+                    displayPage = pageIndex;
                   } else if (
-                    currentPage >=
-                    modelsData.pagination.totalPages - 2
+                    page >=
+                    modelsData.pagination.totalPages - PAGINATION_EDGE_OFFSET
                   ) {
-                    displayPage = modelsData.pagination.totalPages - 4 + page;
+                    displayPage =
+                      modelsData.pagination.totalPages -
+                      (PAGINATION_DISPLAY_COUNT - 1) +
+                      pageIndex;
                   } else {
-                    displayPage = currentPage - 2 + page;
+                    displayPage = page - PAGINATION_EDGE_OFFSET + pageIndex;
                   }
                 }
 
@@ -224,9 +226,7 @@ export function ModelGrid({
                     key={displayPage}
                     onClick={() => handlePageChange(displayPage)}
                     size="sm"
-                    variant={
-                      currentPage === displayPage ? 'default' : 'outline'
-                    }
+                    variant={page === displayPage ? 'default' : 'outline'}
                   >
                     {displayPage}
                   </Button>
@@ -236,8 +236,8 @@ export function ModelGrid({
           </div>
 
           <Button
-            disabled={currentPage === modelsData.pagination.totalPages}
-            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={page === modelsData.pagination.totalPages}
+            onClick={() => handlePageChange(page + 1)}
             size="sm"
             variant="outline"
           >

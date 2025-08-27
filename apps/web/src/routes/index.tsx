@@ -1,17 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { ModelGrid } from '@/components/models/model-grid';
+import { ModelSearch } from '@/components/models/model-search';
 
 export const Route = createFileRoute('/')({
   component: HomeComponent,
-  validateSearch: (search: Record<string, unknown>) => ({
-    search: typeof search.search === 'string' ? search.search : '',
-    tags: Array.isArray(search.tags) ? (search.tags as string[]) : [],
-  }),
 });
 
 function HomeComponent() {
-  const { search, tags } = Route.useSearch();
-
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
       <div className="mb-6">
@@ -21,7 +16,10 @@ function HomeComponent() {
         </p>
       </div>
 
-      <ModelGrid searchQuery={search} selectedTags={tags} />
+      <div className="space-y-6">
+        <ModelSearch />
+        <ModelGrid />
+      </div>
     </div>
   );
 }

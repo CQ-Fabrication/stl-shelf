@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Calendar, Download, Eye, HardDrive, MoreVertical } from 'lucide-react';
+import { memo } from 'react';
 // Import types from server
 import type { Model } from '../../../../server/src/types/model';
 import { Badge } from '../ui/badge';
@@ -22,7 +23,7 @@ type ModelCardProps = {
   model: Model;
 };
 
-export function ModelCard({ model }: ModelCardProps) {
+const ModelCard = memo(({ model }: ModelCardProps) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -159,4 +160,9 @@ export function ModelCard({ model }: ModelCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
+
+ModelCard.displayName = 'ModelCard';
+
+export { ModelCard };
+export default ModelCard;

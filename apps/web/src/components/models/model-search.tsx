@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Search, Tag, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { orpc } from '@/utils/orpc';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -12,62 +12,36 @@ import {
 } from '../ui/dropdown-menu';
 import { Input } from '../ui/input';
 
-type ModelSearchProps = {
-  defaultSearch?: string;
-  defaultTags?: string[];
-  onSearchChange?: (search: string, tags: string[]) => void;
-};
+function ModelSearch() {
+  const [search, setSearch] = useQueryState(
+    'q', 
+    parseAsString.withDefault('').withOptions({ throttleMs: 300 })
+  );
+  const [tags, setTags] = useQueryState(
+    'tags',
+    parseAsArrayOf(parseAsString, ',').withDefault([])
+  );
 
-export function ModelSearch({
-  defaultSearch = '',
-  defaultTags = [],
-  onSearchChange,
-}: ModelSearchProps) {
-  const [searchInput, setSearchInput] = useState(defaultSearch);
-  const [selectedTags, setSelectedTags] = useState<string[]>(defaultTags);
-
-  // Debounced search
-  const [debouncedSearch, setDebouncedSearch] = useState(defaultSearch);
-
-  useEffect(() => {
-    const DEBOUNCE_DELAY = 300;
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput);
-    }, DEBOUNCE_DELAY);
-
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Notify parent of changes
-  useEffect(() => {
-    onSearchChange?.(debouncedSearch, selectedTags);
-  }, [debouncedSearch, selectedTags, onSearchChange]);
-
-  // Fetch available tags
   const { data: allTags = [] } = useQuery(orpc.getAllTags.queryOptions({}));
 
   const handleTagToggle = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    const newTags = tags.includes(tag)
+      ? tags.filter((t) => t !== tag)
+      : [...tags, tag];
+    setTags(newTags);
   };
 
-  const handleClearSearch = () => {
-    setSearchInput('');
-    setDebouncedSearch('');
+  const handleTagRemove = (tag: string) => {
+    const newTags = tags.filter((t) => t !== tag);
+    setTags(newTags);
   };
 
-  const handleClearTag = (tag: string) => {
-    setSelectedTags((prev) => prev.filter((t) => t !== tag));
+  const clearFilters = () => {
+    setSearch('');
+    setTags([]);
   };
 
-  const handleClearAll = () => {
-    setSearchInput('');
-    setDebouncedSearch('');
-    setSelectedTags([]);
-  };
-
-  const hasFilters = debouncedSearch || selectedTags.length > 0;
+  const hasFilters = search || tags.length > 0;
 
   return (
     <div className="space-y-3">
@@ -76,14 +50,14 @@ export function ModelSearch({
         <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
         <Input
           className="pr-10 pl-10"
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search models..."
-          value={searchInput}
+          value={search}
         />
-        {searchInput && (
+        {search && (
           <Button
             className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8 transform p-0"
-            onClick={handleClearSearch}
+            onClick={() => setSearch('')}
             size="sm"
             variant="ghost"
           >
@@ -100,9 +74,9 @@ export function ModelSearch({
             <Button size="sm" variant="outline">
               <Tag className="mr-2 h-4 w-4" />
               Tags
-              {selectedTags.length > 0 && (
+              {tags.length > 0 && (
                 <Badge className="ml-2 h-5 px-1 text-xs" variant="secondary">
-                  {selectedTags.length}
+                  {tags.length}
                 </Badge>
               )}
             </Button>
@@ -115,7 +89,7 @@ export function ModelSearch({
             ) : (
               allTags.map((tag) => (
                 <DropdownMenuCheckboxItem
-                  checked={selectedTags.includes(tag)}
+                  checked={tags.includes(tag)}
                   key={tag}
                   onCheckedChange={() => handleTagToggle(tag)}
                 >
@@ -127,12 +101,12 @@ export function ModelSearch({
         </DropdownMenu>
 
         {/* Selected tags */}
-        {selectedTags.map((tag) => (
+        {tags.map((tag) => (
           <Badge className="gap-1" key={tag} variant="secondary">
             {tag}
             <Button
               className="h-auto w-auto p-0 hover:bg-transparent"
-              onClick={() => handleClearTag(tag)}
+              onClick={() => handleTagRemove(tag)}
               size="sm"
               variant="ghost"
             >
@@ -145,7 +119,7 @@ export function ModelSearch({
         {hasFilters && (
           <Button
             className="text-muted-foreground hover:text-foreground"
-            onClick={handleClearAll}
+            onClick={clearFilters}
             size="sm"
             variant="ghost"
           >
@@ -156,3 +130,8 @@ export function ModelSearch({
     </div>
   );
 }
+
+ModelSearch.displayName = 'ModelSearch';
+
+export { ModelSearch };
+export default ModelSearch;

@@ -6,12 +6,13 @@ import {
   createRootRouteWithContext,
   HeadContent,
   Outlet,
+  Scripts,
   useRouterState,
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
 import { useState } from 'react';
 import Header from '@/components/header';
-import Loader from '@/components/loader';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { link, type orpc } from '@/utils/orpc';
@@ -41,6 +42,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         href: '/favicon.ico',
       },
     ],
+    scripts: [
+      {
+        src: 'https://unpkg.com/react-scan/dist/auto.global.js',
+      },
+    ],
   }),
 });
 
@@ -55,18 +61,21 @@ function RootComponent() {
   return (
     <>
       <HeadContent />
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        disableTransitionOnChange
-        storageKey="vite-ui-theme"
-      >
-        <div className="grid h-svh grid-rows-[auto_1fr]">
-          <Header />
-          {isFetching ? <Loader /> : <Outlet />}
-        </div>
-        <Toaster richColors />
-      </ThemeProvider>
+      <NuqsAdapter>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          disableTransitionOnChange
+          storageKey="vite-ui-theme"
+        >
+          <div className="grid h-svh grid-rows-[auto_1fr]">
+            <Header />
+            <Outlet />
+            <Scripts />
+          </div>
+          <Toaster richColors />
+        </ThemeProvider>
+      </NuqsAdapter>
       <TanStackRouterDevtools position="bottom-left" />
       <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
     </>
