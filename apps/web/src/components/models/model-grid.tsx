@@ -7,7 +7,6 @@ import {
   parseAsStringLiteral,
   useQueryState,
 } from 'nuqs';
-import { useId } from 'react';
 import { orpc } from '@/utils/orpc';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
@@ -27,9 +26,12 @@ export function ModelGrid() {
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
   const [sortBy, setSortBy] = useQueryState(
     'sortBy',
-    parseAsStringLiteral(['name', 'createdAt', 'updatedAt', 'size']).withDefault(
-      'updatedAt'
-    )
+    parseAsStringLiteral([
+      'name',
+      'createdAt',
+      'updatedAt',
+      'size',
+    ]).withDefault('updatedAt')
   );
   const [sortOrder, setSortOrder] = useQueryState(
     'sortOrder',
@@ -86,7 +88,6 @@ export function ModelGrid() {
 
   return (
     <div className="space-y-6">
-
       {/* Sort controls */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-muted-foreground">Sort by:</span>
