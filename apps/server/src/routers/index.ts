@@ -19,18 +19,23 @@ export const appRouter = {
   // List all models with pagination and filtering - using database with cache
   listModels: publicProcedure
     .input(ModelListQuerySchema)
-    .handler(async ({ input }) => {
-      // Try cache first
-      const cached = await cacheService.getCachedModelList(input);
+    .handler(async ({ input, context }) => {
+      const userId = (context as any)?.session?.user?.id as string | undefined;
+      if (!userId) {
+        throw new ORPCError('UNAUTHORIZED');
+      }
+      // Try cache first (keyed per owner)
+      const cacheKeyParams = { ownerId: userId, ...input };
+      const cached = await cacheService.getCachedModelList(cacheKeyParams);
       if (cached) {
         return cached;
       }
 
       // Get from database
-      const result = await modelQueryService.listModels(input);
+      const result = await modelQueryService.listModels(input, userId);
 
       // Cache result
-      await cacheService.cacheModelList(input, result);
+      await cacheService.cacheModelList(cacheKeyParams, result);
 
       return result;
     }),
@@ -38,15 +43,17 @@ export const appRouter = {
   // Get a single model with all versions - using database with cache
   getModel: publicProcedure
     .input(z.object({ id: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      const userId = (context as any)?.session?.user?.id as string | undefined;
+      if (!userId) throw new ORPCError('UNAUTHORIZED');
       // Try cache first
-      const cached = await cacheService.getCachedModel(input.id);
+      const cached = await cacheService.getCachedModel(input.id, userId);
       if (cached) {
         return cached;
       }
 
       // Get from database
-      const model = await modelQueryService.getModelWithAllData(input.id);
+      const model = await modelQueryService.getModelWithAllData(input.id, userId);
       if (!model) {
         throw new ORPCError('NOT_FOUND', {
           message: `Model with id '${input.id}' not found`,
@@ -54,7 +61,7 @@ export const appRouter = {
       }
 
       // Cache result
-      await cacheService.cacheModel(input.id, model);
+      await cacheService.cacheModel(input.id, model, userId);
 
       return model;
     }),
@@ -68,7 +75,11 @@ export const appRouter = {
         filename: z.string(),
       })
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      const userId = (context as any)?.session?.user?.id as string | undefined;
+      if (!userId) throw new ORPCError('UNAUTHORIZED');
+      const model = await modelService.getModel(input.modelId);
+      if (!model || model.ownerId !== userId) throw new ORPCError('FORBIDDEN');
       // Generate storage key
       const storageKey = storageService.generateStorageKey({
         modelId: input.modelId,
@@ -102,7 +113,11 @@ export const appRouter = {
         metadata: ModelMetadataSchema,
       })
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      const userId = (context as any)?.session?.user?.id as string | undefined;
+      if (!userId) throw new ORPCError('UNAUTHORIZED');
+      const model = await modelService.getModel(input.modelId);
+      if (!model || model.ownerId !== userId) throw new ORPCError('FORBIDDEN');
       if (input.version) {
         // Update specific version
         await modelVersionService.updateModelVersion(
@@ -121,7 +136,7 @@ export const appRouter = {
       }
 
       // Invalidate cache
-      await cacheService.invalidateModel(input.modelId);
+      await cacheService.invalidateModel(input.modelId, userId);
 
       // Try to commit the changes - but don't fail if Git has issues
       try {
@@ -141,9 +156,13 @@ export const appRouter = {
   // Delete a model completely - using database service
   deleteModel: publicProcedure
     .input(z.object({ id: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      const userId = (context as any)?.session?.user?.id as string | undefined;
+      if (!userId) throw new ORPCError('UNAUTHORIZED');
+      const owned = await modelService.getModel(input.id);
+      if (!owned || owned.ownerId !== userId) throw new ORPCError('FORBIDDEN');
       // Get model to find associated files before deletion
-      const model = await modelQueryService.getModelWithAllData(input.id);
+      const model = await modelQueryService.getModelWithAllData(input.id, userId);
       if (model) {
         // Delete all associated files from storage
         const storageKeys: string[] = [];
@@ -167,7 +186,7 @@ export const appRouter = {
       await modelService.deleteModel(input.id);
 
       // Invalidate cache
-      await cacheService.invalidateModel(input.id);
+      await cacheService.invalidateModel(input.id, userId);
 
       // Try to commit the deletion - but don't fail if Git has issues
       try {
@@ -191,9 +210,17 @@ export const appRouter = {
         version: z.string(),
       })
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      const userId = (context as any)?.session?.user?.id as string | undefined;
+      if (!userId) throw new ORPCError('UNAUTHORIZED');
+      const modelOwned = await modelService.getModel(input.modelId);
+      if (!modelOwned || modelOwned.ownerId !== userId)
+        throw new ORPCError('FORBIDDEN');
       // Get version to find associated files before deletion
-      const model = await modelQueryService.getModelWithAllData(input.modelId);
+      const model = await modelQueryService.getModelWithAllData(
+        input.modelId,
+        userId
+      );
       const version = model?.versions.find((v) => v.version === input.version);
 
       if (version) {
@@ -218,7 +245,7 @@ export const appRouter = {
       );
 
       // Invalidate cache
-      await cacheService.invalidateModel(input.modelId);
+      await cacheService.invalidateModel(input.modelId, userId);
 
       // Try to commit the version deletion - but don't fail if Git has issues
       try {
@@ -243,7 +270,12 @@ export const appRouter = {
         limit: z.number().optional().default(10),
       })
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      const userId = (context as any)?.session?.user?.id as string | undefined;
+      if (!userId) throw new ORPCError('UNAUTHORIZED');
+      const modelOwned = await modelService.getModel(input.modelId);
+      if (!modelOwned || modelOwned.ownerId !== userId)
+        throw new ORPCError('FORBIDDEN');
       try {
         return await gitService.getModelHistory(input.modelId, input.limit);
       } catch (error) {
@@ -276,20 +308,10 @@ export const appRouter = {
   }),
 
   // Get available tags across all models - using database service with cache
-  getAllTags: publicProcedure.handler(async () => {
-    // Try cache first
-    const cached = await cacheService.getCachedTagList();
-    if (cached) {
-      return cached;
-    }
-
-    // Get from database
-    const tags = await tagService.getAllTags();
-    const tagNames = tags.map((tag) => tag.name);
-
-    // Cache result
-    await cacheService.cacheTagList(tagNames);
-
+  getAllTags: publicProcedure.handler(async ({ context }) => {
+    const userId = (context as any)?.session?.user?.id as string | undefined;
+    if (!userId) throw new ORPCError('UNAUTHORIZED');
+    const tagNames = await tagService.getAllTagsForOwner(userId);
     return tagNames;
   }),
 

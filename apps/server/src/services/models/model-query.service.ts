@@ -10,7 +10,10 @@ import {
 import type { Model, ModelListQuery, ModelVersion } from '../../types/model';
 
 export class ModelQueryService {
-  async listModels(query: ModelListQuery): Promise<{
+  async listModels(
+    query: ModelListQuery,
+    ownerId: string
+  ): Promise<{
     models: Model[];
     pagination: {
       page: number;
@@ -24,6 +27,9 @@ export class ModelQueryService {
 
     // Build where conditions
     const conditions = [] as Parameters<typeof and>;
+
+    // Restrict to owner
+    conditions.push(eq(models.ownerId, ownerId));
 
     if (search) {
       conditions.push(
@@ -191,11 +197,11 @@ export class ModelQueryService {
     };
   }
 
-  async getModelWithAllData(id: string): Promise<Model | null> {
+  async getModelWithAllData(id: string, ownerId: string): Promise<Model | null> {
     const modelData = await db
       .select()
       .from(models)
-      .where(eq(models.id, id))
+      .where(and(eq(models.id, id), eq(models.ownerId, ownerId)))
       .limit(1);
 
     const model = modelData[0];

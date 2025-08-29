@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Logo } from '@/components/logo';
 import type { RouterAppContext } from './__root';
 
 export const Route = createFileRoute('/login')({
@@ -87,65 +89,70 @@ function LoginPage() {
   }
 
   return (
-    <div className="mx-auto mt-16 max-w-md px-4">
-      <h1 className="mb-6 font-bold text-2xl">Sign in to STL Shelf</h1>
+    <div className="flex min-h-svh items-center justify-center px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="grid place-items-center border-b">
+          <Logo className="h-8" aria-label="STL Shelf" />
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => oauth('github')} variant="outline">
+              Continue with GitHub
+            </Button>
+            <Button onClick={() => oauth('google')} variant="outline">
+              Continue with Google
+            </Button>
+            <Button onClick={signInWithPasskey}>Continue with Passkey</Button>
+          </div>
 
-      <div className="flex flex-col gap-3">
-        <Button onClick={() => oauth('github')} variant="outline">
-          Continue with GitHub
-        </Button>
-        <Button onClick={() => oauth('google')} variant="outline">
-          Continue with Google
-        </Button>
-        <Button onClick={signInWithPasskey}>Continue with Passkey</Button>
-      </div>
+          <div className="my-6 text-center text-muted-foreground text-sm">or</div>
 
-      <div className="my-6 text-center text-muted-foreground text-sm">or</div>
+          <form className="flex flex-col gap-3" onSubmit={signInWithPassword}>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                autoComplete="email"
+                id="email"
+                name="email"
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                type="email"
+                value={email}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                autoComplete="current-password"
+                id="password"
+                name="password"
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                value={password}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button disabled={pending} type="submit">
+                {pending ? 'Signing in…' : 'Sign in'}
+              </Button>
+              <Button onClick={sendMagicLink} type="button" variant="ghost">
+                Send magic link
+              </Button>
+            </div>
+          </form>
 
-      <form className="flex flex-col gap-3" onSubmit={signInWithPassword}>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            autoComplete="email"
-            id="email"
-            name="email"
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            type="email"
-            value={email}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            autoComplete="current-password"
-            id="password"
-            name="password"
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            value={password}
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button disabled={pending} type="submit">
-            {pending ? 'Signing in…' : 'Sign in'}
-          </Button>
-          <Button onClick={sendMagicLink} type="button" variant="ghost">
-            Send magic link
-          </Button>
-        </div>
-      </form>
+          {message ? (
+            <div className="mt-4 text-muted-foreground text-sm">{message}</div>
+          ) : null}
 
-      {message ? (
-        <div className="mt-4 text-muted-foreground text-sm">{message}</div>
-      ) : null}
-
-      <div className="mt-6 text-muted-foreground text-sm">
-        Don't have an account?{' '}
-        <Link to="/signup" className="underline underline-offset-4">
-          Create one
-        </Link>
-      </div>
+          <div className="mt-6 text-center text-muted-foreground text-sm">
+            Don't have an account?{' '}
+            <Link to="/signup" className="underline underline-offset-4">
+              Create one
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

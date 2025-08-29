@@ -44,17 +44,13 @@ app.use(logger());
 app.use(
   '/*',
   cors({
-    // Improved CORS configuration - no more wildcard in production
+    // CORS: echo back allowed origin; never wildcard when credentials are enabled
     origin: (origin) => {
       const allowedOrigins = env.CORS_ORIGIN
         ? env.CORS_ORIGIN.split(',')
         : ['http://localhost:3001', 'http://127.0.0.1:3001'];
-
-      // Allow no origin for non-browser requests (like Postman)
-      if (!origin) {
-        return '*';
-      }
-
+      // If no origin (e.g., non-browser), omit ACAO by returning null
+      if (!origin) return null;
       return allowedOrigins.includes(origin) ? origin : null;
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -86,7 +82,13 @@ app.use('*', async (c, next) => {
 // Enforce login wall for non-auth endpoints (allow health)
 app.use('*', async (c, next) => {
   const pathname = new URL(c.req.url).pathname;
-  if (pathname.startsWith('/auth') || pathname === '/health') return next();
+  if (
+    pathname.startsWith('/auth') ||
+    pathname === '/health' ||
+    pathname.startsWith('/files') ||
+    pathname.startsWith('/thumbnails')
+  )
+    return next();
   const session = c.get('session');
   if (!session) {
     return c.json({ error: 'Unauthorized' }, 401);
@@ -135,6 +137,12 @@ app.post('/upload', async (c) => {
       validateFileSize(file.size);
     }
 
+    const session = c.get('session');
+    const ownerId = session?.user?.id as string | undefined;
+    if (!ownerId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
     let finalModelId: string;
     let version: string;
     let isNewVersion = false;
@@ -144,6 +152,9 @@ app.post('/upload', async (c) => {
       const existingModel = await modelService.getModel(modelId);
       if (!existingModel) {
         return c.json({ error: 'Model not found' }, HTTP_NOT_FOUND);
+      }
+      if (existingModel.ownerId && existingModel.ownerId !== ownerId) {
+        return c.json({ error: 'Forbidden' }, 403);
       }
 
       finalModelId = modelId;
@@ -161,6 +172,7 @@ app.post('/upload', async (c) => {
         name,
         slug,
         description,
+        ownerId,
       });
 
       // Add tags if provided
@@ -244,8 +256,8 @@ app.post('/upload', async (c) => {
       });
     }
 
-    // Invalidate cache
-    await cacheService.invalidateModel(finalModelId);
+    // Invalidate cache for this owner and model so detail view refreshes
+    await cacheService.invalidateModel(finalModelId, ownerId);
 
     // Try to commit to git - but don't fail if Git has issues
     try {

@@ -38,18 +38,27 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
   };
 
   const getTotalSize = () => {
-    return model.versions
-      .at(-1)
-      .files.reduce((sum, file) => sum + file.size, 0);
+    const latest = model.versions[0];
+    return latest.files.reduce((sum, file) => sum + file.size, 0);
   };
 
-  const latestVersion = model.versions.at(-1);
+  const latestVersion = model.versions[0];
   const thumbnailUrl = latestVersion.thumbnailPath
     ? `${import.meta.env.VITE_SERVER_URL}/thumbnails/${model.id}/${latestVersion.version}`
     : null;
 
   return (
-    <Card className="group transition-shadow hover:shadow-md">
+    <Card className="group relative cursor-pointer transition-shadow hover:shadow-md">
+      {/* Stretched link to make the whole card clickable */}
+      <Link
+        aria-label={`View ${model.latestMetadata.name}`}
+        className="absolute inset-0 z-10"
+        params={{ modelId: model.id }}
+        to="/models/$modelId"
+      >
+        <span className="sr-only">View details</span>
+      </Link>
+
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-1">
@@ -66,7 +75,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                className="opacity-0 transition-opacity group-hover:opacity-100"
+                className="relative z-20 opacity-0 transition-opacity group-hover:opacity-100"
                 size="sm"
                 variant="ghost"
               >
@@ -91,25 +100,24 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
       <CardContent>
         {/* Thumbnail preview */}
         <div className="mb-3">
-          <Link params={{ modelId: model.id }} to="/models/$modelId">
-            <div className="aspect-video cursor-pointer overflow-hidden rounded-md bg-muted transition-colors hover:bg-muted/80">
+          <div className="aspect-video overflow-hidden rounded-md bg-muted transition-colors group-hover:bg-muted/80">
               {thumbnailUrl ? (
                 <img
                   alt={`${model.latestMetadata.name} preview`}
                   className="h-full w-full object-cover"
                   loading="lazy"
+                  crossOrigin="anonymous"
                   src={thumbnailUrl}
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <HardDrive className="mx-auto mb-2 h-8 w-8" />
-                    <div className="text-sm">No Preview</div>
-                  </div>
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <HardDrive className="mx-auto mb-2 h-8 w-8" />
+                  <div className="text-sm">No Preview</div>
                 </div>
-              )}
-            </div>
-          </Link>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Description */}

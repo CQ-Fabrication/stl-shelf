@@ -1,40 +1,35 @@
 import { Link } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
-import { ModeToggle } from './mode-toggle';
+import { Laptop, LogOut, Moon, Plus, Sun, User } from 'lucide-react';
 import { useRouter } from '@tanstack/react-router';
 import type { RouterAppContext } from '@/routes/__root';
 import { Button } from './ui/button';
+import { Logo } from './logo';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from './ui/dropdown-menu';
+import { useTheme } from './theme-provider';
 
 export default function Header() {
   const router = useRouter();
   const { auth } = router.options.context as RouterAppContext;
-  // We avoid custom wrappers; call client directly
-  const links = [
-    { to: '/', label: 'Library' },
-    { to: '/upload', label: 'Upload' },
-  ] as const;
+  const { setTheme } = useTheme();
+  // No left-side nav links; just the brand logo
 
   return (
     <div>
       <div className="flex flex-row items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-6">
-          <Link className="font-bold text-xl" to="/">
-            STL Shelf
+        <div className="flex items-center gap-3">
+          <Link to="/" aria-label="STL Shelf home" className="flex items-center">
+            <Logo className="h-8" />
           </Link>
-          <nav className="flex gap-4">
-            {links.map(({ to, label }) => {
-              return (
-                <Link
-                  activeProps={{ className: 'text-foreground' }}
-                  className="font-medium text-muted-foreground text-sm transition-colors hover:text-foreground"
-                  key={to}
-                  to={to}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-          </nav>
         </div>
         <div className="flex items-center gap-2">
           <Button asChild size="sm">
@@ -43,21 +38,46 @@ export default function Header() {
               Upload
             </Link>
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={async () => {
-              try {
-                await auth.signOut();
-                await router.invalidate();
-              } catch {
-                // ignore
-              }
-            }}
-          >
-            Sign out
-          </Button>
-          <ModeToggle />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="outline" aria-label="User menu">
+                <User className="h-[1.2rem] w-[1.2rem]" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Account</DropdownMenuLabel>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Sun /> Theme
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => setTheme('light')}>
+                    <Sun /> Light
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('dark')}>
+                    <Moon /> Dark
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('system')}>
+                    <Laptop /> System
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={async () => {
+                  try {
+                    await auth.signOut();
+                    await router.invalidate();
+                  } catch {
+                    // ignore
+                  }
+                }}
+              >
+                <LogOut /> Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       <hr />

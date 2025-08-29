@@ -1,19 +1,12 @@
 import { relations } from 'drizzle-orm';
-import {
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { user as authUser } from './better-auth-schema';
 
 export const models = pgTable(
   'models',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    ownerId: text('owner_id').notNull().references(() => authUser.id),
     slug: text('slug').notNull().unique(),
     name: text('name').notNull(),
     description: text('description'),
@@ -30,6 +23,7 @@ export const models = pgTable(
     uniqueIndex('models_slug_idx').on(table.slug),
     index('models_name_idx').on(table.name),
     index('models_updated_at_idx').on(table.updatedAt),
+    index('models_owner_idx').on(table.ownerId),
   ]
 );
 

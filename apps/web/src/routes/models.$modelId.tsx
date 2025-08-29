@@ -75,7 +75,7 @@ function ModelDetailComponent() {
     if (!model) return;
 
     try {
-      const latestVersion = model.versions.at(-1);
+      const latestVersion = model.versions[0];
       if (!latestVersion) return;
 
       await downloadAllFiles(
@@ -93,7 +93,7 @@ function ModelDetailComponent() {
     if (!model) return;
 
     try {
-      const latestVersion = model.versions.at(-1);
+      const latestVersion = model.versions[0];
       if (!latestVersion) return;
 
       await downloadFile(model.id, latestVersion.version, filename);
@@ -140,7 +140,7 @@ function ModelDetailComponent() {
     );
   }
 
-  const latestVersion = model.versions.at(-1);
+  const latestVersion = model.versions[0];
   const totalSize = latestVersion.files.reduce(
     (sum, file) => sum + file.size,
     0

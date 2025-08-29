@@ -228,7 +228,8 @@ export function UploadVersionDialog({
         return {
           ...oldData,
           currentVersion: result.version,
-          versions: [...oldData.versions, newVersion],
+          // Keep most-recent-first ordering
+          versions: [newVersion, ...oldData.versions],
           totalVersions: oldData.totalVersions + 1,
           latestMetadata: newVersion.metadata,
           updatedAt: new Date().toISOString(),
@@ -263,13 +264,11 @@ export function UploadVersionDialog({
         files.map((f) => ({ ...f, status: 'uploading' as const }))
       );
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/upload`,
-        {
-          method: 'POST',
-          body: uploadFormData,
-        }
-      );
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/upload`, {
+        method: 'POST',
+        body: uploadFormData,
+        credentials: 'include',
+      });
 
       if (!response.ok) {
         const error = await response.json();

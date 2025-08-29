@@ -69,6 +69,7 @@ function RootComponent() {
   const isFetching = useRouterState({
     select: (s) => s.isLoading,
   });
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const [client] = useState<AppRouterClient>(() => createORPCClient(link));
   const [_orpcUtils] = useState(() => createTanstackQueryUtils(client));
@@ -84,7 +85,7 @@ function RootComponent() {
           storageKey="vite-ui-theme"
         >
           <div className="grid h-svh grid-rows-[auto_1fr]">
-            <Header />
+            {pathname === '/login' || pathname === '/signup' ? null : <Header />}
             <Outlet />
             <Scripts />
           </div>
