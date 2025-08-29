@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -139,6 +139,13 @@ function LoginPage() {
       {message ? (
         <div className="mt-4 text-muted-foreground text-sm">{message}</div>
       ) : null}
+
+      <div className="mt-6 text-muted-foreground text-sm">
+        Don't have an account?{' '}
+        <Link to="/signup" className="underline underline-offset-4">
+          Create one
+        </Link>
+      </div>
     </div>
   );
 }
