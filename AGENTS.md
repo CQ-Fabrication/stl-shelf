@@ -1,6 +1,12 @@
 # Repository Guidelines
 
-For the complete code, accessibility, and TypeScript rules, see RULES.md.
+For the complete code, accessibility, and TypeScript rules, see `RULES.md`.
+
+Quick links:
+- Accessibility: `RULES.md#accessibility-a11y`
+- TypeScript: `RULES.md#typescript-best-practices`
+- Testing: `RULES.md#testing-best-practices`
+- Common Tasks: `RULES.md#common-tasks`
 
 ## Project Structure & Module Organization
 - `apps/web`: React 19 + Vite client (Tailwind, TanStack Router/Query).

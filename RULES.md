@@ -1,6 +1,18 @@
 # Project Context
 Ultracite enforces strict type safety, accessibility standards, and consistent code quality for JavaScript/TypeScript projects using Biome's lightning-fast formatter and linter.
 
+## Table of Contents
+- [Accessibility (a11y)](#accessibility-a11y)
+- [Code Complexity and Quality](#code-complexity-and-quality)
+- [React and JSX Best Practices](#react-and-jsx-best-practices)
+- [Correctness and Safety](#correctness-and-safety)
+- [TypeScript Best Practices](#typescript-best-practices)
+- [Style and Consistency](#style-and-consistency)
+- [Next.js Specific Rules](#nextjs-specific-rules)
+- [Testing Best Practices](#testing-best-practices)
+- [Common Tasks](#common-tasks)
+- [Example: Error Handling](#example-error-handling)
+
 ## Key Principles
 - Zero configuration required
 - Subsecond performance
@@ -325,4 +337,3 @@ try {
   console.log(e);
 }
 ```
-
