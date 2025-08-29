@@ -36,7 +36,8 @@ function SignUpPage() {
       await auth.signUp.email({ name, email, password, captcha });
       await afterSignUp();
     } catch (err) {
-      setMessage((err as Error).message || 'Sign up failed');
+      if (import.meta.env.DEV) console.debug('signUp error', err);
+      setMessage('Sign up failed. Please review your details or try again.');
     } finally {
       setPending(false);
     }

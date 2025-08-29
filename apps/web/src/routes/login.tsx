@@ -41,7 +41,9 @@ function LoginPage() {
       await auth.signIn.email({ email, password, captcha });
       await afterLogin();
     } catch (err) {
-      setMessage((err as Error).message || 'Password sign-in failed');
+      // Avoid leaking detailed errors to the user
+      if (import.meta.env.DEV) console.debug('signIn error', err);
+      setMessage('Sign in failed. Please check your credentials or try again.');
     } finally {
       setPending(false);
     }
@@ -58,7 +60,8 @@ function LoginPage() {
       await auth.sendVerificationEmail({ email, captcha });
       setMessage('Verification email sent. Check your inbox.');
     } catch (err) {
-      setMessage((err as Error).message || 'Email send failed');
+      if (import.meta.env.DEV) console.debug('sendMagicLink error', err);
+      setMessage('Could not send email. Please try again later.');
     } finally {
       setPending(false);
     }
@@ -74,7 +77,8 @@ function LoginPage() {
       await auth.passkey?.signIn?.();
       await afterLogin();
     } catch (err) {
-      setMessage((err as Error).message || 'Passkey sign-in failed');
+      if (import.meta.env.DEV) console.debug('passkey signIn error', err);
+      setMessage('Passkey sign-in failed. Please try again.');
     } finally {
       setPending(false);
     }

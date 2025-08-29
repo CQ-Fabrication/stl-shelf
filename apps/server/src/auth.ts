@@ -11,6 +11,35 @@ import { env } from './env';
 // Better Auth + Drizzle (Postgres) — per docs
 const isProd = env.NODE_ENV === 'production';
 
+// Runtime security validations for production
+function assertConfig(condition: boolean, message: string) {
+  if (!condition) {
+    throw new Error(`[auth config] ${message}`);
+  }
+}
+
+if (isProd) {
+  // AUTH_URL must be https in production
+  assertConfig(
+    !!env.AUTH_URL && /^https:\/\//i.test(env.AUTH_URL),
+    'AUTH_URL must be set and use HTTPS in production'
+  );
+  // WEB_URL must be present
+  assertConfig(!!env.WEB_URL, 'WEB_URL must be set in production');
+  // Turnstile secret must be set for captcha-protected endpoints
+  assertConfig(
+    !!env.TURNSTILE_SECRET_KEY,
+    'TURNSTILE_SECRET_KEY must be set in production'
+  );
+  // Cookie domain, if set, must be a bare domain
+  if (env.AUTH_COOKIE_DOMAIN) {
+    assertConfig(
+      !/\:\/\//.test(env.AUTH_COOKIE_DOMAIN) && !/\//.test(env.AUTH_COOKIE_DOMAIN),
+      'AUTH_COOKIE_DOMAIN must be a bare domain (no scheme or path)'
+    );
+  }
+}
+
 // Optional SMTP transport for verification emails (Mailpit in dev via docker-compose)
 const smtpTransport =
   env.SMTP_HOST && env.SMTP_PORT
@@ -109,12 +138,12 @@ export const auth = betterAuth({
     github: {
       clientId: env.GITHUB_CLIENT_ID ?? '',
       clientSecret: env.GITHUB_CLIENT_SECRET ?? '',
-      enabled: true,
+      enabled: Boolean(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET),
     },
     google: {
       clientId: env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: env.GOOGLE_CLIENT_SECRET ?? '',
-      enabled: true,
+      enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
     },
   },
 
