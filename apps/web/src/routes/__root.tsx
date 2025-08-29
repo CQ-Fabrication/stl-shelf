@@ -28,10 +28,10 @@ export type RouterAppContext = {
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
-  // Global auth wall: everything except /login requires a session
+  // Global auth wall: everything except /login and /signup requires a session
   beforeLoad: async ({ context, location }) => {
-    // Do not guard the login route itself
-    if (location.pathname === '/login') return;
+    // Do not guard public auth routes
+    if (location.pathname === '/login' || location.pathname === '/signup') return;
     try {
       const { data } = await context.auth.getSession();
       if (!data) {
