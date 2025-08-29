@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { captcha } from 'better-auth/plugins';
+import { captcha } from 'better-auth/plugins/captcha';
+import { turnstile } from 'better-auth/plugins/captcha/providers/turnstile';
 // import { github, google } from 'better-auth/social-providers';
 import nodemailer from 'nodemailer';
 import { db } from './db/client';
@@ -67,14 +68,14 @@ export const auth = betterAuth({
   rateLimit: {
     // Default limiter applied to routes without explicit settings
     window: '1m',
-    max: 20,
+    max: 15,
     routes: {
       // Email/password sign-in attempts
-      signInEmail: { window: '1m', max: 10 },
+      signInEmail: { window: '1m', max: 5 },
       // Sign-up attempts
-      signUpEmail: { window: '1m', max: 5 },
+      signUpEmail: { window: '10m', max: 3 },
       // Magic/verification emails
-      sendVerificationEmail: { window: '1m', max: 5 },
+      sendVerificationEmail: { window: '5m', max: 3 },
       // Social auth initiations (conservative)
       oauth: { window: '1m', max: 20 },
     },
@@ -85,7 +86,7 @@ export const auth = betterAuth({
   // - ExpiresIn controls total lifetime
   session: {
     // Total session lifetime
-    expiresIn: '30d',
+    expiresIn: '14d',
     // Enable rolling/idle extension (sliding expiration)
     rolling: true,
     // How often to extend the session on activity
@@ -97,11 +98,18 @@ export const auth = betterAuth({
   // Enable captcha on sign-in/up flows via Turnstile
   // Docs: https://www.better-auth.com/docs/plugins/captcha
   plugins: [
-    captcha({
-      provider: 'cloudflare-turnstile',
-      secretKey: env.TURNSTILE_SECRET_KEY ?? '',
-      endpoints: ['/login', '/signup', '/auth/send-verification-email'],
-    }),
+    ...(env.TURNSTILE_SECRET_KEY
+      ? [
+          captcha({
+            provider: turnstile({ secretKey: env.TURNSTILE_SECRET_KEY }),
+            routes: {
+              signInEmail: true,
+              signUpEmail: true,
+              sendVerificationEmail: true,
+            },
+          }),
+        ]
+      : []),
   ],
 
   database: drizzleAdapter(db, {
@@ -112,7 +120,7 @@ export const auth = betterAuth({
   // Email/password auth
   emailAndPassword: {
     enabled: true,
-    minPasswordLength: 8,
+    minPasswordLength: 12,
   },
 
   // Email verification flow (used for magic/verification emails)

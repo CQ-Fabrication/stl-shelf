@@ -94,6 +94,32 @@ app.use('*', async (c, next) => {
   await next();
 });
 
+// Require verified email sessions for app routes (block unverified)
+app.use('*', async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  if (pathname.startsWith('/auth') || pathname === '/health') return next();
+  const session = c.get('session');
+  if (!session) return next(); // handled by auth wall later
+  if (session.user && session.user.emailVerified === false) {
+    return c.json({ error: 'Email not verified' }, 403);
+  }
+  await next();
+});
+
+// CSRF protection via Origin validation for state-changing requests
+app.use('*', async (c, next) => {
+  const method = c.req.method.toUpperCase();
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return next();
+  const origin = c.req.header('Origin');
+  const allowedOrigins = env.CORS_ORIGIN
+    ? env.CORS_ORIGIN.split(',').map((s) => s.trim())
+    : ['http://localhost:3001', 'http://127.0.0.1:3001'];
+  if (!origin || !allowedOrigins.includes(origin)) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+  await next();
+});
+
 // Mount Better Auth under /auth (framework-agnostic handler)
 const authApp = new Hono();
 authApp.all('/*', async (c) => {

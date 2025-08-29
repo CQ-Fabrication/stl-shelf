@@ -86,7 +86,7 @@ function SignUpPage() {
               <Input
                 autoComplete="new-password"
                 id="password"
-                minLength={8}
+                minLength={12}
                 name="password"
                 onChange={(e) => setPassword(e.target.value)}
                 required
