@@ -28,6 +28,24 @@ export const env = createEnv({
     // CORS
     CORS_ORIGIN: z.string().optional(),
 
+    // BetterAuth / Auth
+    AUTH_URL: z.string().url().optional(),
+    WEB_URL: z.string().url().optional(),
+    AUTH_COOKIE_DOMAIN: z.string().optional(),
+
+    // OAuth Providers
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+    // SMTP for magic links / transactional emails
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().optional(),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_FROM: z.string().optional(),
+
     // Git Configuration
     GIT_USER_NAME: z.string().min(1).optional(),
     GIT_USER_EMAIL: z.string().email().optional(),

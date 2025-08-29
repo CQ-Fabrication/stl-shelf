@@ -1,12 +1,13 @@
 // import { env } from "cloudflare:workers";
 import 'dotenv/config';
-import { env } from './env';
 import { extname, join } from 'node:path';
 import { RPCHandler } from '@orpc/server/fetch';
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/bun';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { authReady } from './auth';
+import { env } from './env';
 import { createContext } from './lib/context';
 import {
   SecurityError,
@@ -61,6 +62,21 @@ app.use(
     maxAge: 86_400, // 24 hours
   })
 );
+
+// Mount BetterAuth at /auth and attach session middleware
+const { authApp, attachSession, requireAuth } = await authReady;
+app.route('/auth', authApp);
+
+// Attach session for all requests (after auth routes), then enforce login wall
+app.use('*', attachSession);
+app.use('*', (c, next) => {
+  // Allow unauthenticated access to auth endpoints and health checks
+  const path = new URL(c.req.url).pathname;
+  if (path.startsWith('/auth') || path === '/health') {
+    return next();
+  }
+  return requireAuth(c, next);
+});
 
 // File upload endpoint - using new database architecture
 app.post('/upload', async (c) => {
