@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
+import { redirect } from '@tanstack/react-router';
 import { useState } from 'react';
 import Header from '@/components/header';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -22,10 +23,24 @@ import '../index.css';
 export type RouterAppContext = {
   orpc: typeof orpc;
   queryClient: QueryClient;
+  auth: typeof import('../lib/auth').auth;
 };
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
+  // Global auth wall: everything except /login requires a session
+  beforeLoad: async ({ context, location }) => {
+    // Do not guard the login route itself
+    if (location.pathname === '/login') return;
+    try {
+      const { data } = await context.auth.getSession();
+      if (!data) {
+        throw redirect({ to: '/login', replace: true });
+      }
+    } catch {
+      throw redirect({ to: '/login', replace: true });
+    }
+  },
   head: () => ({
     meta: [
       {

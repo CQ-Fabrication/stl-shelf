@@ -1,9 +1,14 @@
 import { Link } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { ModeToggle } from './mode-toggle';
+import { useRouter } from '@tanstack/react-router';
+import type { RouterAppContext } from '@/routes/__root';
 import { Button } from './ui/button';
 
 export default function Header() {
+  const router = useRouter();
+  const { auth } = router.options.context as RouterAppContext;
+  // We avoid custom wrappers; call client directly
   const links = [
     { to: '/', label: 'Library' },
     { to: '/upload', label: 'Upload' },
@@ -37,6 +42,20 @@ export default function Header() {
               <Plus className="mr-2 h-4 w-4" />
               Upload
             </Link>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={async () => {
+              try {
+                await auth.signOut();
+                await router.invalidate();
+              } catch {
+                // ignore
+              }
+            }}
+          >
+            Sign out
           </Button>
           <ModeToggle />
         </div>
