@@ -6,7 +6,7 @@ import { Hono } from 'hono';
 import { serveStatic } from 'hono/bun';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { authReady } from './auth';
+import { auth } from './auth';
 import { env } from './env';
 import { createContext } from './lib/context';
 import {
@@ -25,7 +25,8 @@ import { modelVersionService } from './services/models/model-version.service';
 import { storageService } from './services/storage';
 import { tagService } from './services/tags/tag.service';
 
-const app = new Hono();
+type AppVars = { Variables: { session: any } };
+const app = new Hono<AppVars>();
 
 // HTTP Status constants
 const HTTP_BAD_REQUEST = 400;
@@ -63,19 +64,34 @@ app.use(
   })
 );
 
-// Mount BetterAuth at /auth and attach session middleware
-const { authApp, attachSession, requireAuth } = await authReady;
+// Mount Better Auth under /auth (framework-agnostic handler)
+const authApp = new Hono();
+authApp.all('/*', async (c) => {
+  const res = await auth.handler(c.req.raw);
+  return c.newResponse(res.body, res);
+});
 app.route('/auth', authApp);
 
-// Attach session for all requests (after auth routes), then enforce login wall
-app.use('*', attachSession);
-app.use('*', (c, next) => {
-  // Allow unauthenticated access to auth endpoints and health checks
-  const path = new URL(c.req.url).pathname;
-  if (path.startsWith('/auth') || path === '/health') {
-    return next();
+// Attach session for all requests (after auth routes)
+app.use('*', async (c, next) => {
+  try {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    c.set('session', session);
+  } catch {
+    c.set('session', null);
   }
-  return requireAuth(c, next);
+  await next();
+});
+
+// Enforce login wall for non-auth endpoints (allow health)
+app.use('*', async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  if (pathname.startsWith('/auth') || pathname === '/health') return next();
+  const session = c.get('session');
+  if (!session) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+  await next();
 });
 
 // File upload endpoint - using new database architecture

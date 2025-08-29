@@ -33,7 +33,6 @@ function LoginPage() {
     try {
       // BetterAuth: email/password sign-in
       // Path: /sign-in/email -> auth.signIn.email
-      // @ts-expect-error - path grouping types may lag until route tree/types refresh
       await auth.signIn.email({ email, password });
       await afterLogin();
     } catch (err) {
@@ -50,7 +49,6 @@ function LoginPage() {
     try {
       // Send verification email if enabled (acts as magic link when configured)
       // Path: /send-verification-email -> auth.sendVerificationEmail
-      // @ts-expect-error - depends on server options
       await auth.sendVerificationEmail({ email });
       setMessage('Verification email sent. Check your inbox.');
     } catch (err) {
@@ -66,8 +64,8 @@ function LoginPage() {
     try {
       // If passkey plugin is enabled server-side, this will initiate WebAuthn
       // Otherwise this will throw and we show a friendly message
-      // @ts-ignore - plugin may not be present in types
-      await auth.passkey.signIn();
+      // @ts-ignore - plugin may not be present in client types until enabled
+      await auth.passkey?.signIn?.();
       await afterLogin();
     } catch (err) {
       setMessage((err as Error).message || 'Passkey sign-in failed');
@@ -79,9 +77,9 @@ function LoginPage() {
   function oauth(provider: 'github' | 'google') {
     // Prefer built-in client method when available
     // Path: /sign-in/social -> auth.signIn.social
-    // @ts-expect-error - grouping available in client
+    // @ts-ignore - types may not be generated until runtime
     if (typeof auth.signIn?.social === 'function') {
-      void auth.signIn.social({ providerId: provider });
+      void auth.signIn.social({ provider: provider });
       return;
     }
     // Fallback: direct navigate to provider endpoint
