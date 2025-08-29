@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Logo } from '@/components/logo';
+import { Turnstile } from '@/components/turnstile';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Logo } from '@/components/logo';
 import type { RouterAppContext } from './__root';
 
 export const Route = createFileRoute('/login')({
@@ -20,6 +21,7 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [captcha, setCaptcha] = useState<string | null>(null);
 
   const serverUrl = import.meta.env.VITE_SERVER_URL as string;
 
@@ -35,7 +37,8 @@ function LoginPage() {
     try {
       // BetterAuth: email/password sign-in
       // Path: /sign-in/email -> auth.signIn.email
-      await auth.signIn.email({ email, password });
+      // @ts-expect-error - captcha param comes from BetterAuth captcha plugin
+      await auth.signIn.email({ email, password, captcha });
       await afterLogin();
     } catch (err) {
       setMessage((err as Error).message || 'Password sign-in failed');
@@ -51,7 +54,8 @@ function LoginPage() {
     try {
       // Send verification email if enabled (acts as magic link when configured)
       // Path: /send-verification-email -> auth.sendVerificationEmail
-      await auth.sendVerificationEmail({ email });
+      // @ts-expect-error - captcha param comes from BetterAuth captcha plugin
+      await auth.sendVerificationEmail({ email, captcha });
       setMessage('Verification email sent. Check your inbox.');
     } catch (err) {
       setMessage((err as Error).message || 'Email send failed');
@@ -66,7 +70,7 @@ function LoginPage() {
     try {
       // If passkey plugin is enabled server-side, this will initiate WebAuthn
       // Otherwise this will throw and we show a friendly message
-      // @ts-ignore - plugin may not be present in client types until enabled
+      // @ts-expect-error - plugin may not be present in client types until enabled
       await auth.passkey?.signIn?.();
       await afterLogin();
     } catch (err) {
@@ -79,9 +83,8 @@ function LoginPage() {
   function oauth(provider: 'github' | 'google') {
     // Prefer built-in client method when available
     // Path: /sign-in/social -> auth.signIn.social
-    // @ts-ignore - types may not be generated until runtime
     if (typeof auth.signIn?.social === 'function') {
-      void auth.signIn.social({ provider: provider });
+      auth.signIn.social({ provider });
       return;
     }
     // Fallback: direct navigate to provider endpoint
@@ -92,7 +95,7 @@ function LoginPage() {
     <div className="flex min-h-svh items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="grid place-items-center border-b">
-          <Logo className="h-8" aria-label="STL Shelf" />
+          <Logo aria-label="STL Shelf" className="h-8" />
         </CardHeader>
         <CardContent className="pt-6">
           <div className="flex flex-col gap-3">
@@ -105,9 +108,18 @@ function LoginPage() {
             <Button onClick={signInWithPasskey}>Continue with Passkey</Button>
           </div>
 
-          <div className="my-6 text-center text-muted-foreground text-sm">or</div>
+          <div className="my-6 text-center text-muted-foreground text-sm">
+            or
+          </div>
 
           <form className="flex flex-col gap-3" onSubmit={signInWithPassword}>
+            <Turnstile
+              className="mb-2"
+              onError={() => setCaptcha(null)}
+              onExpire={() => setCaptcha(null)}
+              onVerify={(token) => setCaptcha(token)}
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
+            />
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -132,10 +144,15 @@ function LoginPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button disabled={pending} type="submit">
+              <Button disabled={pending || !captcha} type="submit">
                 {pending ? 'Signing in…' : 'Sign in'}
               </Button>
-              <Button onClick={sendMagicLink} type="button" variant="ghost">
+              <Button
+                disabled={!captcha || pending}
+                onClick={sendMagicLink}
+                type="button"
+                variant="ghost"
+              >
                 Send magic link
               </Button>
             </div>
@@ -147,7 +164,7 @@ function LoginPage() {
 
           <div className="mt-6 text-center text-muted-foreground text-sm">
             Don't have an account?{' '}
-            <Link to="/signup" className="underline underline-offset-4">
+            <Link className="underline underline-offset-4" to="/signup">
               Create one
             </Link>
           </div>

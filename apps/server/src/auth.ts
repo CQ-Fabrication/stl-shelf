@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { captcha } from 'better-auth/plugins';
 // import { github, google } from 'better-auth/social-providers';
 import nodemailer from 'nodemailer';
 import { db } from './db/client';
@@ -30,6 +31,49 @@ export const auth = betterAuth({
   basePath: '/auth',
   // Allow the web app origin to call auth API (origin check)
   trustedOrigins: [env.WEB_URL ?? 'http://localhost:3001'],
+  // Prefer built-in header extraction for client IP (works with rateLimit)
+  // Example mirrors BetterAuth docs for Cloudflare
+  // You can add more headers if needed
+  // Built-in rate limit configuration (per docs)
+  rateLimit: {
+    // Default limiter applied to routes without explicit settings
+    window: '1m',
+    max: 20,
+    routes: {
+      // Email/password sign-in attempts
+      signInEmail: { window: '1m', max: 10 },
+      // Sign-up attempts
+      signUpEmail: { window: '1m', max: 5 },
+      // Magic/verification emails
+      sendVerificationEmail: { window: '1m', max: 5 },
+      // Social auth initiations (conservative)
+      oauth: { window: '1m', max: 20 },
+    },
+  },
+  // Session management (see BetterAuth docs)
+  // - Rolling sessions keep active users logged in by extending expiration
+  // - Max sessions limits the number of concurrent devices
+  // - ExpiresIn controls total lifetime
+  session: {
+    // Total session lifetime
+    expiresIn: '30d',
+    // Enable rolling/idle extension (sliding expiration)
+    rolling: true,
+    // How often to extend the session on activity
+    rollingDuration: '1d',
+    // Limit concurrent sessions per user
+    maxSessions: 10,
+  },
+  // Plugins
+  // Enable captcha on sign-in/up flows via Turnstile
+  // Docs: https://www.better-auth.com/docs/plugins/captcha
+  plugins: [
+    captcha({
+      provider: 'cloudflare-turnstile',
+      secretKey: env.TURNSTILE_SECRET_KEY ?? '',
+      endpoints: ['/login', '/signup', '/auth/send-verification-email'],
+    }),
+  ],
 
   database: drizzleAdapter(db, {
     provider: 'pg',
@@ -76,6 +120,10 @@ export const auth = betterAuth({
 
   // Cookie behavior
   advanced: {
+    ipAddress: {
+      // Cloudflare specific header
+      ipAddressHeaders: ['cf-connecting-ip'],
+    },
     useSecureCookies: isProd,
     defaultCookieAttributes: {
       sameSite: isProd ? 'none' : 'lax',
@@ -85,4 +133,4 @@ export const auth = betterAuth({
       path: '/',
     },
   },
-});
+} as unknown as Parameters<typeof betterAuth>[0]);

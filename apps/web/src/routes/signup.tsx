@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Logo } from '@/components/logo';
+import { Turnstile } from '@/components/turnstile';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Logo } from '@/components/logo';
 import type { RouterAppContext } from './__root';
 
 export const Route = createFileRoute('/signup')({
@@ -20,6 +21,7 @@ function SignUpPage() {
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [captcha, setCaptcha] = useState<string | null>(null);
 
   async function afterSignUp() {
     // With autoSignIn enabled server-side, user should be logged in.
@@ -31,7 +33,7 @@ function SignUpPage() {
     setPending(true);
     setMessage(null);
     try {
-      await auth.signUp.email({ name, email, password });
+      await auth.signUp.email({ name, email, password, captcha });
       await afterSignUp();
     } catch (err) {
       setMessage((err as Error).message || 'Sign up failed');
@@ -44,53 +46,60 @@ function SignUpPage() {
     <div className="flex min-h-svh items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="grid place-items-center border-b">
-          <Logo className="h-8" aria-label="STL Shelf" />
+          <Logo aria-label="STL Shelf" className="h-8" />
         </CardHeader>
         <CardContent className="pt-6">
           <form className="flex flex-col gap-3" onSubmit={signUpWithEmail}>
+            <Turnstile
+              className="mb-2"
+              onError={() => setCaptcha(null)}
+              onExpire={() => setCaptcha(null)}
+              onVerify={(token) => setCaptcha(token)}
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
+            />
             <div className="flex flex-col gap-2">
               <Label htmlFor="name">Name</Label>
               <Input
+                autoComplete="name"
                 id="name"
                 name="name"
-                autoComplete="name"
-                value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                value={name}
               />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
+                autoComplete="email"
                 id="email"
                 name="email"
-                type="email"
-                autoComplete="email"
-                value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                type="email"
+                value={email}
               />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">Password</Label>
               <Input
-                id="password"
-                name="password"
-                type="password"
                 autoComplete="new-password"
-                value={password}
+                id="password"
+                minLength={8}
+                name="password"
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={8}
+                type="password"
+                value={password}
               />
             </div>
             <div className="flex items-center gap-2">
-              <Button type="submit" disabled={pending}>
+              <Button disabled={pending || !captcha} type="submit">
                 {pending ? 'Creating…' : 'Create account'}
               </Button>
               <Link
-                to="/login"
                 className="text-muted-foreground text-sm underline underline-offset-4"
+                to="/login"
               >
                 Already have an account? Sign in
               </Link>

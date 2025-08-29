@@ -39,6 +39,10 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
 
+    // Captcha (Cloudflare Turnstile)
+    TURNSTILE_SITE_KEY: z.string().optional(),
+    TURNSTILE_SECRET_KEY: z.string().optional(),
+
     // SMTP for magic links / transactional emails
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: z.coerce.number().optional(),
