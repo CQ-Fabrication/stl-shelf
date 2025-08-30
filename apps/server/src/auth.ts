@@ -41,9 +41,9 @@ export const auth = betterAuth({
     max: 15,
     routes: {
       // Email/password sign-in attempts
-      signInEmail: { window: '1m', max: 5 },
+      signInEmail: { window: '1m', max: 3 },
       // Sign-up attempts
-      signUpEmail: { window: '10m', max: 3 },
+      signUpEmail: { window: '1m', max: 3 },
       // Magic/verification emails
       sendVerificationEmail: { window: '5m', max: 3 },
       // Social auth initiations (conservative)
@@ -56,13 +56,15 @@ export const auth = betterAuth({
   // - ExpiresIn controls total lifetime
   session: {
     // Total session lifetime (seconds)
-    expiresIn: 60 * 60 * 24 * 14, // 14 days
+    expiresIn: 60 * 60 * 24, // 1 day
     // Enable rolling/idle extension (sliding expiration)
     rolling: true,
     // How often to extend the session on activity (seconds)
     rollingDuration: 60 * 60 * 24, // 1 day
     // Limit concurrent sessions per user
-    maxSessions: 10,
+    maxSessions: 3,
+    // Regenerate session on login
+    regenerateOnLogin: true,
   },
   // Plugins
   // Organization + captcha

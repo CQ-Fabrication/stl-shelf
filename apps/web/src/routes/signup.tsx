@@ -23,7 +23,11 @@ const signUpSchema = z.object({
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
-    .max(16, 'Password is too long'),
+    .max(128, 'Password is too long')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
+      'Password must contain uppercase, lowercase, and number'
+    ),
   captcha: z.string().min(1, 'Captcha is required'),
 });
 
