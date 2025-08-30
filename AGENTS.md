@@ -30,7 +30,7 @@ Quick links:
 ## Testing Guidelines
 - No test runner is configured yet. If adding tests:
   - Place files as `apps/*/src/**/*.{test,spec}.ts(x)`.
-  - Prefer Vitest + Testing Library (web) and lightweight unit tests (server).
+  - Prefer Bun embedded testing library + Testing Library (web) and lightweight unit tests (server).
   - Keep tests fast, deterministic; mock network/DB. Document any fixtures in `docs/`.
 
 ## Commit & Pull Request Guidelines

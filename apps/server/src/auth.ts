@@ -1,7 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { captcha } from 'better-auth/plugins/captcha';
-import { turnstile } from 'better-auth/plugins/captcha/providers/turnstile';
+import { captcha } from 'better-auth/plugins';
 // import { github, google } from 'better-auth/social-providers';
 import nodemailer from 'nodemailer';
 import { db } from './db/client';
@@ -35,7 +34,10 @@ if (isProd) {
   // Cookie domain, if set, must be a bare domain
   if (env.AUTH_COOKIE_DOMAIN) {
     assertConfig(
-      !/\:\/\//.test(env.AUTH_COOKIE_DOMAIN) && !/\//.test(env.AUTH_COOKIE_DOMAIN),
+      !(
+        /:\/\//.test(env.AUTH_COOKIE_DOMAIN) ||
+        /\//.test(env.AUTH_COOKIE_DOMAIN)
+      ),
       'AUTH_COOKIE_DOMAIN must be a bare domain (no scheme or path)'
     );
   }
@@ -98,18 +100,11 @@ export const auth = betterAuth({
   // Enable captcha on sign-in/up flows via Turnstile
   // Docs: https://www.better-auth.com/docs/plugins/captcha
   plugins: [
-    ...(env.TURNSTILE_SECRET_KEY
-      ? [
-          captcha({
-            provider: turnstile({ secretKey: env.TURNSTILE_SECRET_KEY }),
-            routes: {
-              signInEmail: true,
-              signUpEmail: true,
-              sendVerificationEmail: true,
-            },
-          }),
-        ]
-      : []),
+    captcha({
+      provider: 'cloudflare-turnstile',
+      endpoints: ['/login', '/signup', '/verify'],
+      secretKey: env.TURNSTILE_SECRET_KEY,
+    }),
   ],
 
   database: drizzleAdapter(db, {
@@ -126,17 +121,17 @@ export const auth = betterAuth({
   // Email verification flow (used for magic/verification emails)
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
-      if (smtpTransport) {
-        await smtpTransport.sendMail({
-          from: env.SMTP_FROM ?? 'STL Shelf <no-reply@local.test>',
-          to: user.email ?? '',
-          subject: 'Verify your email',
-          text: `Click to verify: ${url}`,
-          html: `<p>Click to verify: <a href="${url}">${url}</a></p>`,
-        });
-      } else {
+      if (!smtpTransport) {
         console.log(`[auth] Verification link for ${user.email}: ${url}`);
       }
+
+      await smtpTransport.sendMail({
+        from: env.SMTP_FROM ?? 'STL Shelf <no-reply@local.test>',
+        to: user.email ?? '',
+        subject: 'Verify your email',
+        text: `Click to verify: ${url}`,
+        html: `<p>Click to verify: <a href="${url}">${url}</a></p>`,
+      });
     },
     sendOnSignUp: true,
   },

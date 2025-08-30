@@ -40,8 +40,8 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string().optional(),
 
     // Captcha (Cloudflare Turnstile)
-    TURNSTILE_SITE_KEY: z.string().optional(),
-    TURNSTILE_SECRET_KEY: z.string().optional(),
+    TURNSTILE_SITE_KEY: z.string(),
+    TURNSTILE_SECRET_KEY: z.string(),
 
     // SMTP for magic links / transactional emails
     SMTP_HOST: z.string().optional(),
@@ -58,7 +58,6 @@ export const env = createEnv({
     // Server Configuration
     NODE_ENV: z.enum(['development', 'production', 'test']),
     PORT: z.coerce.number().min(1),
-
   },
   runtimeEnv: process.env,
 });
