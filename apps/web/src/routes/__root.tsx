@@ -66,9 +66,6 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootComponent() {
-  const isFetching = useRouterState({
-    select: (s) => s.isLoading,
-  });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const [client] = useState<AppRouterClient>(() => createORPCClient(link));

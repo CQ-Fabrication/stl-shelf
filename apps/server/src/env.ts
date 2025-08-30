@@ -20,17 +20,17 @@ export const env = createEnv({
     STORAGE_USE_SSL: z.enum(['true', 'false']),
 
     // Redis
-    REDIS_URL: z.string().url().min(1),
+    REDIS_URL: z.url().min(1),
     REDIS_TTL_DEFAULT: z.coerce.number().min(1),
     REDIS_TTL_MODEL_LIST: z.coerce.number().min(1),
     REDIS_TTL_MODEL_METADATA: z.coerce.number().min(1),
 
     // CORS
-    CORS_ORIGIN: z.string().optional(),
+    CORS_ORIGIN: z.url(),
 
     // BetterAuth / Auth
-    AUTH_URL: z.string().url().optional(),
-    WEB_URL: z.string().url().optional(),
+    AUTH_URL: z.url(),
+    WEB_URL: z.url(),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
 
     // OAuth Providers

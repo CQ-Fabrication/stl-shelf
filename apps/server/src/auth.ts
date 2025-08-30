@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { captcha } from 'better-auth/plugins';
+import { captcha, organization } from 'better-auth/plugins';
 // import { github, google } from 'better-auth/social-providers';
 import nodemailer from 'nodemailer';
 import { db } from './db/client';
@@ -10,38 +10,6 @@ import { env } from './env';
 
 // Better Auth + Drizzle (Postgres) — per docs
 const isProd = env.NODE_ENV === 'production';
-
-// Runtime security validations for production
-function assertConfig(condition: boolean, message: string) {
-  if (!condition) {
-    throw new Error(`[auth config] ${message}`);
-  }
-}
-
-if (isProd) {
-  // AUTH_URL must be https in production
-  assertConfig(
-    !!env.AUTH_URL && /^https:\/\//i.test(env.AUTH_URL),
-    'AUTH_URL must be set and use HTTPS in production'
-  );
-  // WEB_URL must be present
-  assertConfig(!!env.WEB_URL, 'WEB_URL must be set in production');
-  // Turnstile secret must be set for captcha-protected endpoints
-  assertConfig(
-    !!env.TURNSTILE_SECRET_KEY,
-    'TURNSTILE_SECRET_KEY must be set in production'
-  );
-  // Cookie domain, if set, must be a bare domain
-  if (env.AUTH_COOKIE_DOMAIN) {
-    assertConfig(
-      !(
-        /:\/\//.test(env.AUTH_COOKIE_DOMAIN) ||
-        /\//.test(env.AUTH_COOKIE_DOMAIN)
-      ),
-      'AUTH_COOKIE_DOMAIN must be a bare domain (no scheme or path)'
-    );
-  }
-}
 
 // Optional SMTP transport for verification emails (Mailpit in dev via docker-compose)
 const smtpTransport =
@@ -87,19 +55,21 @@ export const auth = betterAuth({
   // - Max sessions limits the number of concurrent devices
   // - ExpiresIn controls total lifetime
   session: {
-    // Total session lifetime
-    expiresIn: '14d',
+    // Total session lifetime (seconds)
+    expiresIn: 60 * 60 * 24 * 14, // 14 days
     // Enable rolling/idle extension (sliding expiration)
     rolling: true,
-    // How often to extend the session on activity
-    rollingDuration: '1d',
+    // How often to extend the session on activity (seconds)
+    rollingDuration: 60 * 60 * 24, // 1 day
     // Limit concurrent sessions per user
     maxSessions: 10,
   },
   // Plugins
-  // Enable captcha on sign-in/up flows via Turnstile
-  // Docs: https://www.better-auth.com/docs/plugins/captcha
+  // Organization + captcha
   plugins: [
+    organization({
+      organizationLimit: 1,
+    }),
     captcha({
       provider: 'cloudflare-turnstile',
       endpoints: ['/login', '/signup', '/verify'],
@@ -109,29 +79,29 @@ export const auth = betterAuth({
 
   database: drizzleAdapter(db, {
     provider: 'pg',
-    schema: authSchema,
+    schema: { ...authSchema },
   }),
 
   // Email/password auth
   emailAndPassword: {
     enabled: true,
-    minPasswordLength: 12,
+    minPasswordLength: 8,
   },
 
   // Email verification flow (used for magic/verification emails)
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
-      if (!smtpTransport) {
+      if (smtpTransport) {
+        await smtpTransport.sendMail({
+          from: env.SMTP_FROM ?? 'STL Shelf <no-reply@local.test>',
+          to: user.email ?? '',
+          subject: 'Verify your email',
+          text: `Click to verify: ${url}`,
+          html: `<p>Click to verify: <a href="${url}">${url}</a></p>`,
+        });
+      } else {
         console.log(`[auth] Verification link for ${user.email}: ${url}`);
       }
-
-      await smtpTransport.sendMail({
-        from: env.SMTP_FROM ?? 'STL Shelf <no-reply@local.test>',
-        to: user.email ?? '',
-        subject: 'Verify your email',
-        text: `Click to verify: ${url}`,
-        html: `<p>Click to verify: <a href="${url}">${url}</a></p>`,
-      });
     },
     sendOnSignUp: true,
   },

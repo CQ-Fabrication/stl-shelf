@@ -1,5 +1,6 @@
+import { useForm } from '@tanstack/react-form';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { z } from 'zod/v4';
 import { Logo } from '@/components/logo';
 import { Turnstile } from '@/components/turnstile';
 import { Button } from '@/components/ui/button';
@@ -12,36 +13,57 @@ export const Route = createFileRoute('/signup')({
   component: SignUpPage,
 });
 
+const signUpSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Name is required')
+    .max(100, 'Name is too long'),
+  email: z.email('Enter a valid email address').max(200, 'Email is too long'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(16, 'Password is too long'),
+  captcha: z.string().min(1, 'Captcha is required'),
+});
+
+type SignUpForm = z.infer<typeof signUpSchema>;
+
+const defaultValues: SignUpForm = {
+  name: '',
+  email: '',
+  password: '',
+  captcha: '',
+};
+
 function SignUpPage() {
   const navigate = useNavigate();
   const { auth } = Route.useRouteContext() as RouterAppContext;
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [captcha, setCaptcha] = useState<string | null>(null);
+  const handleSignUp = async (value: SignUpForm) => {
+    await auth.signUp.email({
+      name: value.name,
+      email: value.email,
+      password: value.password,
+    });
 
-  async function afterSignUp() {
-    // With autoSignIn enabled server-side, user should be logged in.
     await navigate({ to: '/' });
-  }
+  };
 
-  async function signUpWithEmail(e: React.FormEvent) {
-    e.preventDefault();
-    setPending(true);
-    setMessage(null);
-    try {
-      await auth.signUp.email({ name, email, password, captcha });
-      await afterSignUp();
-    } catch (err) {
-      if (import.meta.env.DEV) console.debug('signUp error', err);
-      setMessage('Sign up failed. Please review your details or try again.');
-    } finally {
-      setPending(false);
-    }
-  }
+  const form = useForm({
+    defaultValues,
+    validators: {
+      onSubmit: signUpSchema,
+      onBlur: signUpSchema,
+    },
+    onSubmit: async ({ value }) => {
+      try {
+        await handleSignUp(value);
+      } catch (err) {
+        if (import.meta.env.DEV) console.debug('signUp error', err);
+      }
+    },
+  });
 
   return (
     <div className="flex min-h-svh items-center justify-center px-4">
@@ -50,66 +72,128 @@ function SignUpPage() {
           <Logo aria-label="STL Shelf" className="h-8" />
         </CardHeader>
         <CardContent className="pt-6">
-          <form className="flex flex-col gap-3" onSubmit={signUpWithEmail}>
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
+            <form.Field
+              children={(field) => (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor={field.name}>
+                    Name <sup className="-ml-1 text-red-600">*</sup>
+                  </Label>
+                  <Input
+                    autoComplete="name"
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Enter your name"
+                    value={field.state.value}
+                  />
+                  {!field.state.meta.isValid && (
+                    <div className="text-red-600 text-sm">
+                      {field.state.meta.errors
+                        .flatMap((error) => error?.message)
+                        .join(', ')}
+                    </div>
+                  )}
+                </div>
+              )}
+              name="name"
+            />
+
+            <form.Field
+              children={(field) => (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor={field.name}>
+                    Email <sup className="-ml-1 text-red-600">*</sup>
+                  </Label>
+                  <Input
+                    autoComplete="email"
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Enter your email"
+                    type="email"
+                    value={field.state.value}
+                  />
+                  {!field.state.meta.isValid && (
+                    <div className="text-red-600 text-sm">
+                      {field.state.meta.errors
+                        .flatMap((error) => error?.message)
+                        .join(', ')}
+                    </div>
+                  )}
+                </div>
+              )}
+              name="email"
+            />
+
+            <form.Field
+              children={(field) => (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor={field.name}>
+                    Password <sup className="-ml-1 text-red-600">*</sup>
+                  </Label>
+                  <Input
+                    autoComplete="new-password"
+                    id={field.name}
+                    name={field.name}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Enter your password"
+                    type="password"
+                    value={field.state.value}
+                  />
+                  {!field.state.meta.isValid && (
+                    <div className="text-red-600 text-sm">
+                      {field.state.meta.errors
+                        .flatMap((error) => error?.message)
+                        .join(', ')}
+                    </div>
+                  )}
+                </div>
+              )}
+              name="password"
+            />
+
             <Turnstile
-              className="mb-2"
-              onError={() => setCaptcha(null)}
-              onExpire={() => setCaptcha(null)}
-              onVerify={(token) => setCaptcha(token)}
+              className="m-2 flex justify-center"
+              onError={() => form.setFieldValue('captcha', '')}
+              onExpire={() => form.setFieldValue('captcha', '')}
+              onVerify={(token) => form.setFieldValue('captcha', token)}
               siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
             />
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                autoComplete="name"
-                id="name"
-                name="name"
-                onChange={(e) => setName(e.target.value)}
-                required
-                value={name}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                autoComplete="email"
-                id="email"
-                name="email"
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                type="email"
-                value={email}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                autoComplete="new-password"
-                id="password"
-                minLength={12}
-                name="password"
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                type="password"
-                value={password}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button disabled={pending || !captcha} type="submit">
-                {pending ? 'Creating…' : 'Create account'}
-              </Button>
-              <Link
-                className="text-muted-foreground text-sm underline underline-offset-4"
-                to="/login"
-              >
-                Already have an account? Sign in
-              </Link>
-            </div>
-          </form>
 
-          {message ? (
-            <div className="mt-4 text-muted-foreground text-sm">{message}</div>
-          ) : null}
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
+              {([canSubmit, isSubmitting]) => (
+                <div className="flex w-full flex-col items-center gap-2">
+                  <Button
+                    className="w-full"
+                    disabled={!canSubmit || isSubmitting}
+                    type="submit"
+                  >
+                    {isSubmitting ? 'Creating…' : 'Create account'}
+                  </Button>
+                  <Link
+                    className="mt-2 text-muted-foreground text-sm underline-offset-4"
+                    to="/login"
+                  >
+                    Already have an account?{' '}
+                    <span className="underline">Sign in</span>
+                  </Link>
+                </div>
+              )}
+            </form.Subscribe>
+          </form>
         </CardContent>
       </Card>
     </div>

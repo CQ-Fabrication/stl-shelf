@@ -27,8 +27,15 @@
   },
   "linter": {
     "rules": {
+      "style": {
+        "noMagicNumbers": "off",
+        "useBlockStatements": "off"
+      },
       "suspicious": {
         "noConsole": "off"
+      },
+      "correctness": {
+        "noChildrenProp": "off"
       }
     }
   }

@@ -3,6 +3,9 @@ import postgres from 'postgres';
 import { env } from '../env';
 import {
   account as authAccount,
+  invitation as authInvitation,
+  member as authMember,
+  organization as authOrganization,
   session as authSession,
   user as authUser,
   verification as authVerification,
@@ -36,6 +39,9 @@ const schema = {
   session: authSession,
   account: authAccount,
   verification: authVerification,
+  invitation: authInvitation,
+  member: authMember,
+  organization: authOrganization,
 };
 
 // Create postgres client with connection pooling
