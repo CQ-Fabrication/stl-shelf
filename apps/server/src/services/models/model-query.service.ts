@@ -12,7 +12,7 @@ import type { Model, ModelListQuery, ModelVersion } from '../../types/model';
 export class ModelQueryService {
   async listModels(
     query: ModelListQuery,
-    ownerId: string
+    organizationId: string
   ): Promise<{
     models: Model[];
     pagination: {
@@ -28,8 +28,8 @@ export class ModelQueryService {
     // Build where conditions
     const conditions = [] as Parameters<typeof and>;
 
-    // Restrict to owner
-    conditions.push(eq(models.ownerId, ownerId));
+    // Restrict to organization
+    conditions.push(eq(models.organizationId, organizationId));
 
     if (search) {
       conditions.push(
@@ -197,11 +197,11 @@ export class ModelQueryService {
     };
   }
 
-  async getModelWithAllData(id: string, ownerId: string): Promise<Model | null> {
+  async getModelWithAllData(id: string, organizationId: string): Promise<Model | null> {
     const modelData = await db
       .select()
       .from(models)
-      .where(and(eq(models.id, id), eq(models.ownerId, ownerId)))
+      .where(and(eq(models.id, id), eq(models.organizationId, organizationId)))
       .limit(1);
 
     const model = modelData[0];

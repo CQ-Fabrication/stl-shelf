@@ -198,9 +198,11 @@ app.post('/upload', async (c) => {
     }
 
     const session = c.get('session');
-    const ownerId = session?.user?.id as string | undefined;
-    if (!ownerId) {
-      return c.json({ error: 'Unauthorized' }, 401);
+    const userId = session?.user?.id as string | undefined;
+    const organizationId = session?.session?.activeOrganizationId as string | undefined;
+    
+    if (!userId || !organizationId) {
+      return c.json({ error: 'Unauthorized - No active organization' }, 401);
     }
 
     let finalModelId: string;
@@ -213,7 +215,7 @@ app.post('/upload', async (c) => {
       if (!existingModel) {
         return c.json({ error: 'Model not found' }, HTTP_NOT_FOUND);
       }
-      if (existingModel.ownerId && existingModel.ownerId !== ownerId) {
+      if (existingModel.organizationId && existingModel.organizationId !== organizationId) {
         return c.json({ error: 'Forbidden' }, 403);
       }
 
@@ -232,7 +234,8 @@ app.post('/upload', async (c) => {
         name,
         slug,
         description,
-        ownerId,
+        organizationId,
+        ownerId: userId, // Keep for audit trail
       });
 
       // Add tags if provided
@@ -316,8 +319,8 @@ app.post('/upload', async (c) => {
       });
     }
 
-    // Invalidate cache for this owner and model so detail view refreshes
-    await cacheService.invalidateModel(finalModelId, ownerId);
+    // Invalidate cache for this organization and model so detail view refreshes
+    await cacheService.invalidateModel(finalModelId, organizationId);
 
     // Try to commit to git - but don't fail if Git has issues
     try {

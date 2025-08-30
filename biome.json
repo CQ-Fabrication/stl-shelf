@@ -36,6 +36,9 @@
       },
       "correctness": {
         "noChildrenProp": "off"
+      },
+      "performance": {
+        "noImgElement": "off"
       }
     }
   }

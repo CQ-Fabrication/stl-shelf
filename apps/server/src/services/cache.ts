@@ -129,21 +129,21 @@ export class CacheService {
     return await this.get(key);
   }
 
-  async cacheModel(modelId: string, data: unknown, ownerId?: string): Promise<void> {
-    const key = ownerId ? `model:${modelId}:owner:${ownerId}` : `model:${modelId}`;
+  async cacheModel(modelId: string, data: unknown, organizationId?: string): Promise<void> {
+    const key = organizationId ? `model:${modelId}:org:${organizationId}` : `model:${modelId}`;
     const ttl = env.REDIS_TTL_MODEL_METADATA;
     await this.set(key, data, ttl);
   }
 
-  async getCachedModel(modelId: string, ownerId?: string): Promise<unknown> {
-    const key = ownerId ? `model:${modelId}:owner:${ownerId}` : `model:${modelId}`;
+  async getCachedModel(modelId: string, organizationId?: string): Promise<unknown> {
+    const key = organizationId ? `model:${modelId}:org:${organizationId}` : `model:${modelId}`;
     return await this.get(key);
   }
 
-  async invalidateModel(modelId: string, ownerId?: string): Promise<void> {
+  async invalidateModel(modelId: string, organizationId?: string): Promise<void> {
     // Delete specific model cache
-    if (ownerId) {
-      await this.del(`model:${modelId}:owner:${ownerId}`);
+    if (organizationId) {
+      await this.del(`model:${modelId}:org:${organizationId}`);
     }
     await this.del(`model:${modelId}`);
 
