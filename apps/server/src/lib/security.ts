@@ -20,7 +20,8 @@ const MAX_COMMIT_MESSAGE_LENGTH = 200;
 // Regex patterns for input validation
 const SAFE_MODEL_ID_REGEX = /^[a-z0-9][a-z0-9\-_]*[a-z0-9]$/i;
 const SAFE_VERSION_REGEX = /^v\d+$/;
-const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$/;
+// Allow spaces in filenames (common in user uploads) while still constraining characters
+const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9._ \-]*[a-zA-Z0-9]$/;
 const TAG_REGEX = /^[a-zA-Z0-9\-_\s]+$/;
 const ALLOWED_FILE_EXTENSIONS = new Set([
   '.stl',

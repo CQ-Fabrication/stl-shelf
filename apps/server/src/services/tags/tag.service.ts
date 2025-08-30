@@ -1,7 +1,7 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../../db/client';
-import { modelTags, tags } from '../../db/schema/models';
+import { modelTags, models, tags } from '../../db/schema/models';
 
 // Type aliases from Drizzle schema
 type InsertTag = InferInsertModel<typeof tags>;
@@ -41,6 +41,20 @@ export class TagService {
       })
       .from(tags)
       .orderBy(desc(tags.usageCount), asc(tags.name));
+  }
+
+  async getAllTagsForOrganization(organizationId: string): Promise<string[]> {
+    // Return distinct tag names for models in the organization
+    const rows = await db
+      .select({ name: tags.name })
+      .from(modelTags)
+      .innerJoin(tags, eq(tags.id, modelTags.tagId))
+      .innerJoin(models, eq(models.id, modelTags.modelId))
+      .where(and(eq(models.organizationId, organizationId)))
+      .groupBy(tags.name)
+      .orderBy(asc(tags.name));
+    // dedupe by groupBy, but map as array of strings
+    return rows.map((r) => r.name);
   }
 
   async addTagsToModel(

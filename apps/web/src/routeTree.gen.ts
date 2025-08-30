@@ -10,7 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrganizationCreateRouteImport } from './routes/organization/create'
 import { Route as ModelsModelIdRouteImport } from './routes/models.$modelId'
 
 const UploadRoute = UploadRouteImport.update({
@@ -18,9 +21,24 @@ const UploadRoute = UploadRouteImport.update({
   path: '/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationCreateRoute = OrganizationCreateRouteImport.update({
+  id: '/organization/create',
+  path: '/organization/create',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ModelsModelIdRoute = ModelsModelIdRouteImport.update({
@@ -31,32 +49,63 @@ const ModelsModelIdRoute = ModelsModelIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
   '/models/$modelId': typeof ModelsModelIdRoute
+  '/organization/create': typeof OrganizationCreateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
   '/models/$modelId': typeof ModelsModelIdRoute
+  '/organization/create': typeof OrganizationCreateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/upload': typeof UploadRoute
   '/models/$modelId': typeof ModelsModelIdRoute
+  '/organization/create': typeof OrganizationCreateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/upload' | '/models/$modelId'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/upload'
+    | '/models/$modelId'
+    | '/organization/create'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/upload' | '/models/$modelId'
-  id: '__root__' | '/' | '/upload' | '/models/$modelId'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/upload'
+    | '/models/$modelId'
+    | '/organization/create'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/upload'
+    | '/models/$modelId'
+    | '/organization/create'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
   UploadRoute: typeof UploadRoute
   ModelsModelIdRoute: typeof ModelsModelIdRoute
+  OrganizationCreateRoute: typeof OrganizationCreateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,11 +117,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/create': {
+      id: '/organization/create'
+      path: '/organization/create'
+      fullPath: '/organization/create'
+      preLoaderRoute: typeof OrganizationCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/models/$modelId': {
@@ -87,8 +157,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
   UploadRoute: UploadRoute,
   ModelsModelIdRoute: ModelsModelIdRoute,
+  OrganizationCreateRoute: OrganizationCreateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

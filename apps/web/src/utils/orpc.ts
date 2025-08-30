@@ -22,6 +22,12 @@ export const queryClient = new QueryClient({
 
 export const link = new RPCLink({
   url: `${import.meta.env.VITE_SERVER_URL}/rpc`,
+  // Ensure session cookies are sent with RPC requests
+  fetch: (input, init) =>
+    fetch(input, {
+      ...init,
+      credentials: 'include',
+    }),
 });
 
 export const client: AppRouterClient = createORPCClient(link);

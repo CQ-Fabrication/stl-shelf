@@ -1,20 +1,14 @@
 import { relations } from 'drizzle-orm';
-import {
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { organization, user as authUser } from './better-auth-schema';
 
 export const models = pgTable(
   'models',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    slug: text('slug').notNull().unique(),
+    organizationId: text('organization_id').notNull().references(() => organization.id),
+    ownerId: text('owner_id').notNull().references(() => authUser.id), // Keep for audit trail
+    slug: text('slug').notNull(),
     name: text('name').notNull(),
     description: text('description'),
     currentVersion: text('current_version').notNull().default('v1'),
@@ -27,9 +21,11 @@ export const models = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex('models_slug_idx').on(table.slug),
+    uniqueIndex('models_org_slug_idx').on(table.organizationId, table.slug), // Unique slug per organization
     index('models_name_idx').on(table.name),
     index('models_updated_at_idx').on(table.updatedAt),
+    index('models_owner_idx').on(table.ownerId),
+    index('models_org_idx').on(table.organizationId),
   ]
 );
 

@@ -121,22 +121,21 @@ export function ModelUpload() {
       }
 
       // Add all files
-      files.forEach(({ file }) => {
+      for (const { file } of files) {
         formData.append('files', file);
-      });
+      }
 
       // Update file states to uploading
       setFiles((prev) =>
         prev.map((f) => ({ ...f, status: 'uploading' as const }))
       );
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/upload`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
+      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+        // Include BetterAuth session cookie on cross-origin request
+        credentials: 'include',
+      });
 
       if (!response.ok) {
         const error = await response.json();

@@ -5,10 +5,9 @@ export type CreateContextOptions = {
 };
 
 export function createContext(_options: CreateContextOptions) {
+  const session = _options.context.get('session');
   return {
-    session: null,
-    // Services are now imported directly in handlers via singleton pattern
-    // No need to pass them through context
+    session,
   };
 }
 

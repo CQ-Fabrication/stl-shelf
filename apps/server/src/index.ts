@@ -1,12 +1,13 @@
 // import { env } from "cloudflare:workers";
 import 'dotenv/config';
-import { env } from './env';
 import { extname, join } from 'node:path';
 import { RPCHandler } from '@orpc/server/fetch';
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/bun';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { auth } from './auth';
+import { env } from './env';
 import { createContext } from './lib/context';
 import {
   SecurityError,
@@ -24,7 +25,8 @@ import { modelVersionService } from './services/models/model-version.service';
 import { storageService } from './services/storage';
 import { tagService } from './services/tags/tag.service';
 
-const app = new Hono();
+type AppVars = { Variables: { session: any } };
+const app = new Hono<AppVars>();
 
 // HTTP Status constants
 const HTTP_BAD_REQUEST = 400;
@@ -38,21 +40,23 @@ console.log(
   `STL Shelf API starting in ${isDevelopment ? 'development' : 'production'} mode`
 );
 
+// Fail fast in production if CORS_ORIGIN is not configured
+if (!(isDevelopment || env.CORS_ORIGIN)) {
+  console.error('[startup] CORS_ORIGIN must be set in production');
+  process.exit(1);
+}
+
 app.use(logger());
 app.use(
   '/*',
   cors({
-    // Improved CORS configuration - no more wildcard in production
+    // CORS: echo back allowed origin; never wildcard when credentials are enabled
     origin: (origin) => {
       const allowedOrigins = env.CORS_ORIGIN
         ? env.CORS_ORIGIN.split(',')
         : ['http://localhost:3001', 'http://127.0.0.1:3001'];
-
-      // Allow no origin for non-browser requests (like Postman)
-      if (!origin) {
-        return '*';
-      }
-
+      // If no origin (e.g., non-browser), omit ACAO by returning null
+      if (!origin) return null;
       return allowedOrigins.includes(origin) ? origin : null;
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -61,6 +65,99 @@ app.use(
     maxAge: 86_400, // 24 hours
   })
 );
+
+// Security headers
+app.use('*', async (c, next) => {
+  // Basic hardening headers (for all environments)
+  c.header('X-Content-Type-Options', 'nosniff');
+  c.header('X-Frame-Options', 'DENY');
+  c.header('Referrer-Policy', 'no-referrer');
+  c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+
+  if (!isDevelopment) {
+    // HSTS in production
+    c.header(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload'
+    );
+    // Minimal CSP for API responses
+    const allowedOrigins = env.CORS_ORIGIN
+      ? env.CORS_ORIGIN.split(',').map((s) => s.trim())
+      : [];
+    const connectSrc = ["'self'", ...allowedOrigins];
+    const csp = [
+      "default-src 'none'",
+      "base-uri 'none'",
+      "frame-ancestors 'none'",
+      `connect-src ${connectSrc.join(' ')}`,
+    ].join('; ');
+    c.header('Content-Security-Policy', csp);
+  }
+
+  await next();
+});
+
+// Require verified email sessions for app routes (block unverified)
+app.use('*', async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  if (pathname.startsWith('/auth') || pathname === '/health') return next();
+  const session = c.get('session');
+  if (!session) return next(); // handled by auth wall later
+  if (session.user && session.user.emailVerified === false) {
+    return c.json({ error: 'Email not verified' }, 403);
+  }
+  await next();
+});
+
+// CSRF protection via Origin validation for state-changing requests
+app.use('*', async (c, next) => {
+  const method = c.req.method.toUpperCase();
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return next();
+  const origin = c.req.header('Origin');
+  const allowedOrigins = env.CORS_ORIGIN
+    ? env.CORS_ORIGIN.split(',').map((s) => s.trim())
+    : ['http://localhost:3001', 'http://127.0.0.1:3001'];
+  if (!(origin && allowedOrigins.includes(origin))) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+  await next();
+});
+
+// Mount Better Auth under /auth (framework-agnostic handler)
+const authApp = new Hono();
+authApp.all('/*', async (c) => {
+  const res = await auth.handler(c.req.raw);
+  return c.newResponse(res.body, res);
+});
+app.route('/auth', authApp);
+
+// Attach session for all requests (after auth routes)
+app.use('*', async (c, next) => {
+  try {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    c.set('session', session);
+  } catch {
+    c.set('session', null);
+  }
+  await next();
+});
+
+// Enforce login wall for non-auth endpoints (allow health)
+app.use('*', async (c, next) => {
+  const pathname = new URL(c.req.url).pathname;
+  if (
+    pathname.startsWith('/auth') ||
+    pathname === '/health' ||
+    pathname.startsWith('/files') ||
+    pathname.startsWith('/thumbnails')
+  )
+    return next();
+  const session = c.get('session');
+  if (!session) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+  await next();
+});
 
 // File upload endpoint - using new database architecture
 app.post('/upload', async (c) => {
@@ -103,6 +200,16 @@ app.post('/upload', async (c) => {
       validateFileSize(file.size);
     }
 
+    const session = c.get('session');
+    const userId = session?.user?.id as string | undefined;
+    const organizationId = session?.session?.activeOrganizationId as
+      | string
+      | undefined;
+
+    if (!(userId && organizationId)) {
+      return c.json({ error: 'Unauthorized - No active organization' }, 401);
+    }
+
     let finalModelId: string;
     let version: string;
     let isNewVersion = false;
@@ -112,6 +219,12 @@ app.post('/upload', async (c) => {
       const existingModel = await modelService.getModel(modelId);
       if (!existingModel) {
         return c.json({ error: 'Model not found' }, HTTP_NOT_FOUND);
+      }
+      if (
+        existingModel.organizationId &&
+        existingModel.organizationId !== organizationId
+      ) {
+        return c.json({ error: 'Forbidden' }, 403);
       }
 
       finalModelId = modelId;
@@ -129,6 +242,8 @@ app.post('/upload', async (c) => {
         name,
         slug,
         description,
+        organizationId,
+        ownerId: userId, // Keep for audit trail
       });
 
       // Add tags if provided
@@ -212,8 +327,8 @@ app.post('/upload', async (c) => {
       });
     }
 
-    // Invalidate cache
-    await cacheService.invalidateModel(finalModelId);
+    // Invalidate cache for this organization and model so detail view refreshes
+    await cacheService.invalidateModel(finalModelId, organizationId);
 
     // Try to commit to git - but don't fail if Git has issues
     try {
@@ -385,33 +500,6 @@ app.use('/rpc/*', async (c, next) => {
   }
   await next();
 });
-
-// Serve static files from web build (only in production)
-if (process.env.NODE_ENV === 'production') {
-  const webDistPath = join(__dirname, '../../../web/dist');
-  app.use(
-    '/*',
-    serveStatic({
-      root: webDistPath,
-      onNotFound: async (path, c) => {
-        // For SPA routing, return index.html for non-API routes
-        if (
-          !(
-            path.startsWith('/rpc') ||
-            path.startsWith('/upload') ||
-            path.startsWith('/files') ||
-            path.startsWith('/thumbnails')
-          )
-        ) {
-          const indexContent = await Bun.file(
-            join(webDistPath, 'index.html')
-          ).text();
-          c.html(indexContent);
-        }
-      },
-    })
-  );
-}
 
 app.get('/health', async (c) => {
   // Health check for all services
