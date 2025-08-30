@@ -41,7 +41,7 @@ console.log(
 );
 
 // Fail fast in production if CORS_ORIGIN is not configured
-if (!isDevelopment && !env.CORS_ORIGIN) {
+if (!(isDevelopment || env.CORS_ORIGIN)) {
   console.error('[startup] CORS_ORIGIN must be set in production');
   process.exit(1);
 }
@@ -76,7 +76,10 @@ app.use('*', async (c, next) => {
 
   if (!isDevelopment) {
     // HSTS in production
-    c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    c.header(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload'
+    );
     // Minimal CSP for API responses
     const allowedOrigins = env.CORS_ORIGIN
       ? env.CORS_ORIGIN.split(',').map((s) => s.trim())
@@ -84,8 +87,8 @@ app.use('*', async (c, next) => {
     const connectSrc = ["'self'", ...allowedOrigins];
     const csp = [
       "default-src 'none'",
-      'base-uri \'none\'',
-      'frame-ancestors \'none\'',
+      "base-uri 'none'",
+      "frame-ancestors 'none'",
       `connect-src ${connectSrc.join(' ')}`,
     ].join('; ');
     c.header('Content-Security-Policy', csp);
@@ -114,7 +117,7 @@ app.use('*', async (c, next) => {
   const allowedOrigins = env.CORS_ORIGIN
     ? env.CORS_ORIGIN.split(',').map((s) => s.trim())
     : ['http://localhost:3001', 'http://127.0.0.1:3001'];
-  if (!origin || !allowedOrigins.includes(origin)) {
+  if (!(origin && allowedOrigins.includes(origin))) {
     return c.json({ error: 'Forbidden' }, 403);
   }
   await next();
@@ -199,9 +202,11 @@ app.post('/upload', async (c) => {
 
     const session = c.get('session');
     const userId = session?.user?.id as string | undefined;
-    const organizationId = session?.session?.activeOrganizationId as string | undefined;
-    
-    if (!userId || !organizationId) {
+    const organizationId = session?.session?.activeOrganizationId as
+      | string
+      | undefined;
+
+    if (!(userId && organizationId)) {
       return c.json({ error: 'Unauthorized - No active organization' }, 401);
     }
 
@@ -215,7 +220,10 @@ app.post('/upload', async (c) => {
       if (!existingModel) {
         return c.json({ error: 'Model not found' }, HTTP_NOT_FOUND);
       }
-      if (existingModel.organizationId && existingModel.organizationId !== organizationId) {
+      if (
+        existingModel.organizationId &&
+        existingModel.organizationId !== organizationId
+      ) {
         return c.json({ error: 'Forbidden' }, 403);
       }
 
@@ -492,33 +500,6 @@ app.use('/rpc/*', async (c, next) => {
   }
   await next();
 });
-
-// Serve static files from web build (only in production)
-if (process.env.NODE_ENV === 'production') {
-  const webDistPath = join(__dirname, '../../../web/dist');
-  app.use(
-    '/*',
-    serveStatic({
-      root: webDistPath,
-      onNotFound: async (path, c) => {
-        // For SPA routing, return index.html for non-API routes
-        if (
-          !(
-            path.startsWith('/rpc') ||
-            path.startsWith('/upload') ||
-            path.startsWith('/files') ||
-            path.startsWith('/thumbnails')
-          )
-        ) {
-          const indexContent = await Bun.file(
-            join(webDistPath, 'index.html')
-          ).text();
-          c.html(indexContent);
-        }
-      },
-    })
-  );
-}
 
 app.get('/health', async (c) => {
   // Health check for all services
