@@ -1,7 +1,7 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, eq, sql } from 'drizzle-orm';
-import { db } from '../../db/client';
-import { models, modelVersions } from '../../db/schema/models';
+import { db } from '@/db/client';
+import { models, modelVersions } from '@/db/schema/models';
 
 // Type aliases from Drizzle schema
 type InsertModelVersion = InferInsertModel<typeof modelVersions>;

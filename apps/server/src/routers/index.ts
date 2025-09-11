@@ -1,16 +1,16 @@
 import type { RouterClient } from '@orpc/server';
 import { ORPCError } from '@orpc/server';
 import { z } from 'zod';
-import { publicProcedure } from '../lib/orpc';
-import { measureAsync, PerformanceMonitor } from '../lib/performance';
-import { cacheService } from '../services/cache';
-import { gitService } from '../services/git';
-import { modelService } from '../services/models/model.service';
-import { modelQueryService } from '../services/models/model-query.service';
-import { modelVersionService } from '../services/models/model-version.service';
-import { storageService } from '../services/storage';
-import { tagService } from '../services/tags/tag.service';
-import { ModelListQuerySchema, ModelMetadataSchema } from '../types/model';
+import { publicProcedure } from '@/lib/orpc';
+import { measureAsync, PerformanceMonitor } from '@/lib/performance';
+import { cacheService } from '@/services/cache';
+import { gitService } from '@/services/git';
+import { modelService } from '@/services/models/model.service';
+import { modelQueryService } from '@/services/models/model-query.service';
+import { modelVersionService } from '@/services/models/model-version.service';
+import { storageService } from '@/services/storage';
+import { tagService } from '@/services/tags/tag.service';
+import { ModelListQuerySchema, ModelMetadataSchema } from '@/types/model';
 
 export const appRouter = {
   healthCheck: publicProcedure.handler(() => {
@@ -22,7 +22,7 @@ export const appRouter = {
     .input(ModelListQuerySchema)
     .handler(async ({ input, context }) => {
       const monitor = new PerformanceMonitor('listModels');
-      
+
       try {
         const session = (context as any)?.session;
         const organizationId = session?.session?.activeOrganizationId as
@@ -37,25 +37,23 @@ export const appRouter = {
 
         // Try cache first (keyed per organization)
         const cacheKeyParams = { organizationId, ...input };
-        
+
         monitor.markStart('cache_check');
         const cached = await cacheService.getCachedModelList(cacheKeyParams);
         const cacheTime = monitor.markEnd('cache_check');
-        
+
         if (cached) {
           monitor.markCache(true, cacheTime);
           monitor.log();
           return cached;
         }
-        
+
         monitor.markCache(false, cacheTime);
 
         // Get from database
-        const result = await modelQueryService.listModels(
-          input, 
-          organizationId,
-          monitor
-        );
+        const result = await modelQueryService
+          .setMonitor(monitor)
+          .listModels(input, organizationId);
 
         // Cache result
         await measureAsync(
@@ -75,7 +73,7 @@ export const appRouter = {
     .input(z.object({ id: z.string() }))
     .handler(async ({ input, context }) => {
       const monitor = new PerformanceMonitor('getModel');
-      
+
       try {
         const session = (context as any)?.session;
         const organizationId = session?.session?.activeOrganizationId as
@@ -95,22 +93,20 @@ export const appRouter = {
           organizationId
         );
         const cacheTime = monitor.markEnd('cache_check');
-        
+
         if (cached) {
           monitor.markCache(true, cacheTime);
           monitor.log();
           return cached;
         }
-        
+
         monitor.markCache(false, cacheTime);
 
         // Get from database
-        const model = await modelQueryService.getModelWithAllData(
-          input.id, 
-          organizationId,
-          monitor
-        );
-        
+        const model = await modelQueryService
+          .setMonitor(monitor)
+          .getModelWithAllData(input.id, organizationId);
+
         if (!model) {
           throw new ORPCError('NOT_FOUND', {
             message: `Model with id '${input.id}' not found`,
@@ -141,7 +137,7 @@ export const appRouter = {
     )
     .handler(async ({ input, context }) => {
       const monitor = new PerformanceMonitor('getModelFile');
-      
+
       try {
         const session = (context as any)?.session;
         const organizationId = session?.session?.activeOrganizationId as
@@ -160,10 +156,10 @@ export const appRouter = {
           () => modelService.getModel(input.modelId),
           monitor
         );
-        
+
         if (!model || model.organizationId !== organizationId)
           throw new ORPCError('FORBIDDEN');
-          
+
         // Generate storage key
         monitor.markStart('generate_key');
         const storageKey = storageService.generateStorageKey({
@@ -179,7 +175,7 @@ export const appRouter = {
           () => storageService.fileExists(storageKey),
           monitor
         );
-        
+
         if (!exists) {
           throw new ORPCError('NOT_FOUND', {
             message: 'File not found',
@@ -404,7 +400,7 @@ export const appRouter = {
     )
     .handler(async ({ input, context }) => {
       const monitor = new PerformanceMonitor('getModelVersions');
-      
+
       try {
         const session = (context as any)?.session;
         const organizationId = session?.session?.activeOrganizationId as
@@ -426,13 +422,13 @@ export const appRouter = {
           organizationId
         );
         const cacheTime = monitor.markEnd('cache_check');
-        
+
         if (cached) {
           monitor.markCache(true, cacheTime);
           monitor.log();
           return cached;
         }
-        
+
         monitor.markCache(false, cacheTime);
 
         // Check model ownership
@@ -441,7 +437,7 @@ export const appRouter = {
           () => modelService.getModel(input.modelId),
           monitor
         );
-        
+
         if (!model || model.organizationId !== organizationId) {
           throw new ORPCError('NOT_FOUND', {
             message: `Model with id '${input.modelId}' not found`,
@@ -449,24 +445,26 @@ export const appRouter = {
         }
 
         // Get paginated versions
-        const result = await modelQueryService.getModelVersionsPaginated(
-          input.modelId,
-          organizationId,
-          input.offset,
-          input.limit,
-          monitor
-        );
+        const result = await modelQueryService
+          .setMonitor(monitor)
+          .getModelVersionsPaginated(
+            input.modelId,
+            organizationId,
+            input.offset,
+            input.limit
+          );
 
         // Cache result
         await measureAsync(
           'cache_write',
-          () => cacheService.cacheModelVersions(
-            input.modelId,
-            input.offset,
-            input.limit,
-            result,
-            organizationId
-          ),
+          () =>
+            cacheService.cacheModelVersions(
+              input.modelId,
+              input.offset,
+              input.limit,
+              result,
+              organizationId
+            ),
           monitor
         );
 
