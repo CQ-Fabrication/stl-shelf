@@ -107,11 +107,9 @@ export function EditModelDialog({
 
   const updateMutation = useMutation(
     orpc.updateModelMetadata.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: ['getModel', { id: model.id }],
-        });
-        queryClient.invalidateQueries({ queryKey: ['listModels'] });
+      onSuccess: async () => {
+        // Simply invalidate all queries to force refresh
+        await queryClient.invalidateQueries();
         toast.success('Model updated successfully');
         handleOpenChange(false);
       },

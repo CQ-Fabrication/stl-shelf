@@ -2,6 +2,7 @@ import type { RouterClient } from '@orpc/server';
 import { ORPCError } from '@orpc/server';
 import { z } from 'zod';
 import { publicProcedure } from '../lib/orpc';
+import { measureAsync, PerformanceMonitor } from '../lib/performance';
 import { cacheService } from '../services/cache';
 import { gitService } from '../services/git';
 import { modelService } from '../services/models/model.service';
@@ -20,62 +21,113 @@ export const appRouter = {
   listModels: publicProcedure
     .input(ModelListQuerySchema)
     .handler(async ({ input, context }) => {
-      const session = (context as any)?.session;
-      const organizationId = session?.session?.activeOrganizationId as string | undefined;
+      const monitor = new PerformanceMonitor('listModels');
       
-      if (!session?.user?.id || !organizationId) {
-        throw new ORPCError('UNAUTHORIZED', {
-          message: 'No active organization',
-        });
+      try {
+        const session = (context as any)?.session;
+        const organizationId = session?.session?.activeOrganizationId as
+          | string
+          | undefined;
+
+        if (!(session?.user?.id && organizationId)) {
+          throw new ORPCError('UNAUTHORIZED', {
+            message: 'No active organization',
+          });
+        }
+
+        // Try cache first (keyed per organization)
+        const cacheKeyParams = { organizationId, ...input };
+        
+        monitor.markStart('cache_check');
+        const cached = await cacheService.getCachedModelList(cacheKeyParams);
+        const cacheTime = monitor.markEnd('cache_check');
+        
+        if (cached) {
+          monitor.markCache(true, cacheTime);
+          monitor.log();
+          return cached;
+        }
+        
+        monitor.markCache(false, cacheTime);
+
+        // Get from database
+        const result = await modelQueryService.listModels(
+          input, 
+          organizationId,
+          monitor
+        );
+
+        // Cache result
+        await measureAsync(
+          'cache_write',
+          () => cacheService.cacheModelList(cacheKeyParams, result),
+          monitor
+        );
+
+        return result;
+      } finally {
+        monitor.log();
       }
-      
-      // Try cache first (keyed per organization)
-      const cacheKeyParams = { organizationId, ...input };
-      const cached = await cacheService.getCachedModelList(cacheKeyParams);
-      if (cached) {
-        return cached;
-      }
-
-      // Get from database
-      const result = await modelQueryService.listModels(input, organizationId);
-
-      // Cache result
-      await cacheService.cacheModelList(cacheKeyParams, result);
-
-      return result;
     }),
 
   // Get a single model with all versions - using database with cache
   getModel: publicProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ input, context }) => {
-      const session = (context as any)?.session;
-      const organizationId = session?.session?.activeOrganizationId as string | undefined;
+      const monitor = new PerformanceMonitor('getModel');
       
-      if (!session?.user?.id || !organizationId) {
-        throw new ORPCError('UNAUTHORIZED', {
-          message: 'No active organization',
-        });
-      }
-      
-      // Try cache first
-      const cached = await cacheService.getCachedModel(input.id, organizationId);
-      if (cached) {
-        return cached;
-      }
+      try {
+        const session = (context as any)?.session;
+        const organizationId = session?.session?.activeOrganizationId as
+          | string
+          | undefined;
 
-      // Get from database
-      const model = await modelQueryService.getModelWithAllData(input.id, organizationId);
-      if (!model) {
-        throw new ORPCError('NOT_FOUND', {
-          message: `Model with id '${input.id}' not found`,
-        });
+        if (!(session?.user?.id && organizationId)) {
+          throw new ORPCError('UNAUTHORIZED', {
+            message: 'No active organization',
+          });
+        }
+
+        // Try cache first
+        monitor.markStart('cache_check');
+        const cached = await cacheService.getCachedModel(
+          input.id,
+          organizationId
+        );
+        const cacheTime = monitor.markEnd('cache_check');
+        
+        if (cached) {
+          monitor.markCache(true, cacheTime);
+          monitor.log();
+          return cached;
+        }
+        
+        monitor.markCache(false, cacheTime);
+
+        // Get from database
+        const model = await modelQueryService.getModelWithAllData(
+          input.id, 
+          organizationId,
+          monitor
+        );
+        
+        if (!model) {
+          throw new ORPCError('NOT_FOUND', {
+            message: `Model with id '${input.id}' not found`,
+          });
+        }
+
+        // Cache result
+        await measureAsync(
+          'cache_write',
+          () => cacheService.cacheModel(input.id, model, organizationId),
+          monitor
+        );
+
+        return model;
+      } finally {
+        monitor.log();
       }
-
-      // Cache result
-      await cacheService.cacheModel(input.id, model, organizationId);
-
-      return model;
     }),
 
   // Get model file download URL - using storage service
@@ -88,39 +140,66 @@ export const appRouter = {
       })
     )
     .handler(async ({ input, context }) => {
-      const session = (context as any)?.session;
-      const organizationId = session?.session?.activeOrganizationId as string | undefined;
+      const monitor = new PerformanceMonitor('getModelFile');
       
-      if (!session?.user?.id || !organizationId) {
-        throw new ORPCError('UNAUTHORIZED', {
-          message: 'No active organization',
+      try {
+        const session = (context as any)?.session;
+        const organizationId = session?.session?.activeOrganizationId as
+          | string
+          | undefined;
+
+        if (!(session?.user?.id && organizationId)) {
+          throw new ORPCError('UNAUTHORIZED', {
+            message: 'No active organization',
+          });
+        }
+
+        // Check model ownership
+        const model = await measureAsync(
+          'check_ownership',
+          () => modelService.getModel(input.modelId),
+          monitor
+        );
+        
+        if (!model || model.organizationId !== organizationId)
+          throw new ORPCError('FORBIDDEN');
+          
+        // Generate storage key
+        monitor.markStart('generate_key');
+        const storageKey = storageService.generateStorageKey({
+          modelId: input.modelId,
+          version: input.version,
+          filename: input.filename,
         });
+        monitor.markEnd('generate_key');
+
+        // Check if file exists
+        const exists = await measureAsync(
+          'check_exists',
+          () => storageService.fileExists(storageKey),
+          monitor
+        );
+        
+        if (!exists) {
+          throw new ORPCError('NOT_FOUND', {
+            message: 'File not found',
+          });
+        }
+
+        // Generate presigned download URL
+        const downloadUrl = await measureAsync(
+          'generate_url',
+          () => storageService.generateDownloadUrl(storageKey),
+          monitor
+        );
+
+        return {
+          downloadUrl,
+          exists: true,
+        };
+      } finally {
+        monitor.log();
       }
-      
-      const model = await modelService.getModel(input.modelId);
-      if (!model || model.organizationId !== organizationId) throw new ORPCError('FORBIDDEN');
-      // Generate storage key
-      const storageKey = storageService.generateStorageKey({
-        modelId: input.modelId,
-        version: input.version,
-        filename: input.filename,
-      });
-
-      // Check if file exists
-      const exists = await storageService.fileExists(storageKey);
-      if (!exists) {
-        throw new ORPCError('NOT_FOUND', {
-          message: 'File not found',
-        });
-      }
-
-      // Generate presigned download URL
-      const downloadUrl = await storageService.generateDownloadUrl(storageKey);
-
-      return {
-        downloadUrl,
-        exists: true,
-      };
     }),
 
   // Update model metadata - using database service
@@ -134,17 +213,20 @@ export const appRouter = {
     )
     .handler(async ({ input, context }) => {
       const session = (context as any)?.session;
-      const organizationId = session?.session?.activeOrganizationId as string | undefined;
+      const organizationId = session?.session?.activeOrganizationId as
+        | string
+        | undefined;
       const userId = session?.user?.id as string | undefined;
-      
-      if (!userId || !organizationId) {
+
+      if (!(userId && organizationId)) {
         throw new ORPCError('UNAUTHORIZED', {
           message: 'No active organization',
         });
       }
-      
+
       const model = await modelService.getModel(input.modelId);
-      if (!model || model.organizationId !== organizationId) throw new ORPCError('FORBIDDEN');
+      if (!model || model.organizationId !== organizationId)
+        throw new ORPCError('FORBIDDEN');
       if (input.version) {
         // Update specific version
         await modelVersionService.updateModelVersion(
@@ -185,18 +267,24 @@ export const appRouter = {
     .input(z.object({ id: z.string() }))
     .handler(async ({ input, context }) => {
       const session = (context as any)?.session;
-      const organizationId = session?.session?.activeOrganizationId as string | undefined;
-      
-      if (!session?.user?.id || !organizationId) {
+      const organizationId = session?.session?.activeOrganizationId as
+        | string
+        | undefined;
+
+      if (!(session?.user?.id && organizationId)) {
         throw new ORPCError('UNAUTHORIZED', {
           message: 'No active organization',
         });
       }
-      
+
       const owned = await modelService.getModel(input.id);
-      if (!owned || owned.organizationId !== organizationId) throw new ORPCError('FORBIDDEN');
+      if (!owned || owned.organizationId !== organizationId)
+        throw new ORPCError('FORBIDDEN');
       // Get model to find associated files before deletion
-      const model = await modelQueryService.getModelWithAllData(input.id, organizationId);
+      const model = await modelQueryService.getModelWithAllData(
+        input.id,
+        organizationId
+      );
       if (model) {
         // Delete all associated files from storage
         const storageKeys: string[] = [];
@@ -246,14 +334,16 @@ export const appRouter = {
     )
     .handler(async ({ input, context }) => {
       const session = (context as any)?.session;
-      const organizationId = session?.session?.activeOrganizationId as string | undefined;
-      
-      if (!session?.user?.id || !organizationId) {
+      const organizationId = session?.session?.activeOrganizationId as
+        | string
+        | undefined;
+
+      if (!(session?.user?.id && organizationId)) {
         throw new ORPCError('UNAUTHORIZED', {
           message: 'No active organization',
         });
       }
-      
+
       const modelOwned = await modelService.getModel(input.modelId);
       if (!modelOwned || modelOwned.organizationId !== organizationId)
         throw new ORPCError('FORBIDDEN');
@@ -303,7 +393,90 @@ export const appRouter = {
       return { success: true };
     }),
 
-  // Get model history from git - using git service
+  // Get paginated model versions
+  getModelVersions: publicProcedure
+    .input(
+      z.object({
+        modelId: z.string(),
+        offset: z.number().optional().default(0),
+        limit: z.number().optional().default(5),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      const monitor = new PerformanceMonitor('getModelVersions');
+      
+      try {
+        const session = (context as any)?.session;
+        const organizationId = session?.session?.activeOrganizationId as
+          | string
+          | undefined;
+
+        if (!(session?.user?.id && organizationId)) {
+          throw new ORPCError('UNAUTHORIZED', {
+            message: 'No active organization',
+          });
+        }
+
+        // Try cache first
+        monitor.markStart('cache_check');
+        const cached = await cacheService.getCachedModelVersions(
+          input.modelId,
+          input.offset,
+          input.limit,
+          organizationId
+        );
+        const cacheTime = monitor.markEnd('cache_check');
+        
+        if (cached) {
+          monitor.markCache(true, cacheTime);
+          monitor.log();
+          return cached;
+        }
+        
+        monitor.markCache(false, cacheTime);
+
+        // Check model ownership
+        const model = await measureAsync(
+          'check_ownership',
+          () => modelService.getModel(input.modelId),
+          monitor
+        );
+        
+        if (!model || model.organizationId !== organizationId) {
+          throw new ORPCError('NOT_FOUND', {
+            message: `Model with id '${input.modelId}' not found`,
+          });
+        }
+
+        // Get paginated versions
+        const result = await modelQueryService.getModelVersionsPaginated(
+          input.modelId,
+          organizationId,
+          input.offset,
+          input.limit,
+          monitor
+        );
+
+        // Cache result
+        await measureAsync(
+          'cache_write',
+          () => cacheService.cacheModelVersions(
+            input.modelId,
+            input.offset,
+            input.limit,
+            result,
+            organizationId
+          ),
+          monitor
+        );
+
+        return result;
+      } finally {
+        monitor.log();
+      }
+    }),
+
+  // Get model history from git - NOT IMPLEMENTED YET
   getModelHistory: publicProcedure
     .input(
       z.object({
@@ -311,29 +484,10 @@ export const appRouter = {
         limit: z.number().optional().default(10),
       })
     )
-    .handler(async ({ input, context }) => {
-      const session = (context as any)?.session;
-      const organizationId = session?.session?.activeOrganizationId as string | undefined;
-      
-      if (!session?.user?.id || !organizationId) {
-        throw new ORPCError('UNAUTHORIZED', {
-          message: 'No active organization',
-        });
-      }
-      
-      const modelOwned = await modelService.getModel(input.modelId);
-      if (!modelOwned || modelOwned.organizationId !== organizationId)
-        throw new ORPCError('FORBIDDEN');
-      try {
-        return await gitService.getModelHistory(input.modelId, input.limit);
-      } catch (error) {
-        console.error(
-          'Git history failed:',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-        // Return empty history if Git fails
-        return [];
-      }
+    .handler(async () => {
+      // Git service not implemented yet - return empty array
+      // This endpoint will be implemented when Git integration is added
+      return [];
     }),
 
   // Get repository status - using git service
@@ -358,14 +512,16 @@ export const appRouter = {
   // Get available tags across all models - using database service with cache
   getAllTags: publicProcedure.handler(async ({ context }) => {
     const session = (context as any)?.session;
-    const organizationId = session?.session?.activeOrganizationId as string | undefined;
-    
-    if (!session?.user?.id || !organizationId) {
+    const organizationId = session?.session?.activeOrganizationId as
+      | string
+      | undefined;
+
+    if (!(session?.user?.id && organizationId)) {
       throw new ORPCError('UNAUTHORIZED', {
         message: 'No active organization',
       });
     }
-    
+
     const tagNames = await tagService.getAllTagsForOrganization(organizationId);
     return tagNames;
   }),

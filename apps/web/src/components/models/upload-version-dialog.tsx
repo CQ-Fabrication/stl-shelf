@@ -158,96 +158,6 @@ export function UploadVersionDialog({
     );
   };
 
-  const createUploadFormData = (formData: UploadVersionFormData) => {
-    const { files, description, tags } = formData;
-    const uploadFormData = new FormData();
-
-    uploadFormData.append('modelId', model.id);
-    uploadFormData.append('name', model.latestMetadata.name);
-
-    if (description.trim()) {
-      uploadFormData.append('description', description.trim());
-    } else if (model.latestMetadata.description) {
-      uploadFormData.append('description', model.latestMetadata.description);
-    }
-
-    if (tags.length > 0) {
-      uploadFormData.append('tags', JSON.stringify(tags));
-    }
-
-    if (model.latestMetadata.printSettings) {
-      uploadFormData.append(
-        'printSettings',
-        JSON.stringify(model.latestMetadata.printSettings)
-      );
-    }
-
-    for (const { file } of files) {
-      uploadFormData.append('files', file);
-    }
-
-    return uploadFormData;
-  };
-
-  const createNewVersion = (
-    files: UploadFile[],
-    description: string,
-    tags: string[],
-    version: string
-  ) => ({
-    version,
-    files: files.map((f) => ({
-      filename: f.file.name,
-      originalName: f.file.name,
-      size: f.file.size,
-      mimeType: f.file.type,
-      extension: `.${f.file.name.split('.').pop() || ''}`,
-    })),
-    metadata: {
-      name: model.latestMetadata.name,
-      description: description.trim() || model.latestMetadata.description,
-      tags,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      printSettings: model.latestMetadata.printSettings,
-    },
-    createdAt: new Date().toISOString(),
-  });
-
-  const updateCachedModelData = (
-    result: { version: string },
-    newVersion: ReturnType<typeof createNewVersion>
-  ) => {
-    queryClient.setQueryData(
-      ['getModel', { id: model.id }],
-      (oldData: Model | undefined) => {
-        if (!oldData) {
-          return oldData;
-        }
-
-        return {
-          ...oldData,
-          currentVersion: result.version,
-          // Keep most-recent-first ordering
-          versions: [newVersion, ...oldData.versions],
-          totalVersions: oldData.totalVersions + 1,
-          latestMetadata: newVersion.metadata,
-          updatedAt: new Date().toISOString(),
-        };
-      }
-    );
-  };
-
-  const refreshQueries = () => {
-    queryClient.invalidateQueries({
-      queryKey: ['getModel', { id: model.id }],
-    });
-    queryClient.invalidateQueries({ queryKey: ['listModels'] });
-    queryClient.invalidateQueries({
-      queryKey: ['getModelHistory', { modelId: model.id }],
-    });
-  };
-
   const handleUpload = async (formData: UploadVersionFormData) => {
     const { files, description, tags } = formData;
 
@@ -257,13 +167,39 @@ export function UploadVersionDialog({
     }
 
     try {
-      const uploadFormData = createUploadFormData(formData);
+      // Create FormData for upload
+      const uploadFormData = new FormData();
+      uploadFormData.append('modelId', model.id);
+      uploadFormData.append('name', model.latestMetadata.name);
 
+      if (description.trim()) {
+        uploadFormData.append('description', description.trim());
+      } else if (model.latestMetadata.description) {
+        uploadFormData.append('description', model.latestMetadata.description);
+      }
+
+      if (tags.length > 0) {
+        uploadFormData.append('tags', JSON.stringify(tags));
+      }
+
+      if (model.latestMetadata.printSettings) {
+        uploadFormData.append(
+          'printSettings',
+          JSON.stringify(model.latestMetadata.printSettings)
+        );
+      }
+
+      for (const { file } of files) {
+        uploadFormData.append('files', file);
+      }
+
+      // Update UI to show uploading state
       form.setFieldValue(
         'files',
         files.map((f) => ({ ...f, status: 'uploading' as const }))
       );
 
+      // Send upload request
       const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/upload`, {
         method: 'POST',
         body: uploadFormData,
@@ -277,6 +213,7 @@ export function UploadVersionDialog({
 
       const result = await response.json();
 
+      // Update UI to show success
       form.setFieldValue(
         'files',
         files.map((f) => ({ ...f, status: 'success' as const, progress: 100 }))
@@ -284,15 +221,11 @@ export function UploadVersionDialog({
 
       toast.success(`New version ${result.version} uploaded successfully!`);
 
-      const newVersion = createNewVersion(
-        files,
-        description,
-        tags,
-        result.version
-      );
-      updateCachedModelData(result, newVersion);
-      refreshQueries();
+      // Simply invalidate all queries to force refresh
+      // This is simpler and more reliable than trying to update cache manually
+      await queryClient.invalidateQueries();
 
+      // Close dialog after delay
       setTimeout(() => {
         handleOpenChange(false);
       }, CLOSE_DELAY_MS);

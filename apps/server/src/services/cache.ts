@@ -187,6 +187,100 @@ export class CacheService {
     await this.del('tags:all');
   }
 
+  // Model versions cache operations
+  async cacheModelVersions(
+    modelId: string, 
+    offset: number, 
+    limit: number, 
+    data: unknown,
+    organizationId?: string
+  ): Promise<void> {
+    const key = organizationId 
+      ? `model-versions:${modelId}:${offset}:${limit}:org:${organizationId}`
+      : `model-versions:${modelId}:${offset}:${limit}`;
+    const ttl = 10; // 10 seconds - short TTL for pagination
+    await this.set(key, data, ttl);
+  }
+
+  async getCachedModelVersions(
+    modelId: string, 
+    offset: number, 
+    limit: number,
+    organizationId?: string
+  ): Promise<unknown> {
+    const key = organizationId 
+      ? `model-versions:${modelId}:${offset}:${limit}:org:${organizationId}`
+      : `model-versions:${modelId}:${offset}:${limit}`;
+    return await this.get(key);
+  }
+
+  async invalidateModelVersions(modelId: string): Promise<void> {
+    if (!this.redis) {
+      return;
+    }
+
+    try {
+      // Get all keys matching model-versions pattern for this model
+      const keys = await this.redis.keys(`${this.keyPrefix}model-versions:${modelId}:*`);
+
+      if (keys.length > 0) {
+        // Remove the prefix for deletion
+        const keysToDelete = keys.map((key: string) =>
+          key.replace(this.keyPrefix, '')
+        );
+        await Promise.all(keysToDelete.map((key: string) => this.del(key)));
+      }
+    } catch (error) {
+      console.error('Error invalidating model versions caches:', error);
+    }
+  }
+
+  // Model history cache operations
+  async cacheModelHistory(
+    modelId: string,
+    limit: number,
+    data: unknown,
+    organizationId?: string
+  ): Promise<void> {
+    const key = organizationId 
+      ? `model-history:${modelId}:${limit}:org:${organizationId}`
+      : `model-history:${modelId}:${limit}`;
+    const ttl = 60; // 60 seconds - Git history doesn't change often
+    await this.set(key, data, ttl);
+  }
+
+  async getCachedModelHistory(
+    modelId: string,
+    limit: number,
+    organizationId?: string
+  ): Promise<unknown> {
+    const key = organizationId 
+      ? `model-history:${modelId}:${limit}:org:${organizationId}`
+      : `model-history:${modelId}:${limit}`;
+    return await this.get(key);
+  }
+
+  async invalidateModelHistory(modelId: string): Promise<void> {
+    if (!this.redis) {
+      return;
+    }
+
+    try {
+      // Get all keys matching model-history pattern for this model
+      const keys = await this.redis.keys(`${this.keyPrefix}model-history:${modelId}:*`);
+
+      if (keys.length > 0) {
+        // Remove the prefix for deletion
+        const keysToDelete = keys.map((key: string) =>
+          key.replace(this.keyPrefix, '')
+        );
+        await Promise.all(keysToDelete.map((key: string) => this.del(key)));
+      }
+    } catch (error) {
+      console.error('Error invalidating model history caches:', error);
+    }
+  }
+
   // Upload session management
   async createUploadSession(sessionId: string, data: unknown): Promise<void> {
     const key = `upload-session:${sessionId}`;

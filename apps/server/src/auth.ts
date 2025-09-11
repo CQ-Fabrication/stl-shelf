@@ -92,7 +92,13 @@ export const auth = betterAuth({
 
   // Email verification flow (used for magic/verification emails)
   emailVerification: {
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({
+      user,
+      url,
+    }: {
+      user: any;
+      url: string;
+    }) => {
       if (smtpTransport) {
         await smtpTransport.sendMail({
           from: env.SMTP_FROM ?? 'STL Shelf <no-reply@local.test>',
