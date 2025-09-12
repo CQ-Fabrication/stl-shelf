@@ -520,8 +520,8 @@ export const appRouter = {
       });
     }
 
-    const tagNames = await tagService.getAllTagsForOrganization(organizationId);
-    return tagNames;
+    const tags = await tagService.getAllTagsForOrganization(organizationId);
+    return tags;
   }),
 
   // Get Git configuration status - using git service

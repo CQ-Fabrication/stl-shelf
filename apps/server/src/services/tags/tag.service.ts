@@ -43,18 +43,22 @@ export class TagService {
       .orderBy(desc(tags.usageCount), asc(tags.name));
   }
 
-  async getAllTagsForOrganization(organizationId: string): Promise<string[]> {
-    // Return distinct tag names for models in the organization
+  async getAllTagsForOrganization(organizationId: string): Promise<TagInfo[]> {
+    // Return distinct tags with colors for models in the organization
     const rows = await db
-      .select({ name: tags.name })
+      .select({ 
+        name: tags.name,
+        color: tags.color,
+        usageCount: tags.usageCount
+      })
       .from(modelTags)
       .innerJoin(tags, eq(tags.id, modelTags.tagId))
       .innerJoin(models, eq(models.id, modelTags.modelId))
       .where(and(eq(models.organizationId, organizationId)))
-      .groupBy(tags.name)
+      .groupBy(tags.name, tags.color, tags.usageCount)
       .orderBy(asc(tags.name));
-    // dedupe by groupBy, but map as array of strings
-    return rows.map((r) => r.name);
+    
+    return rows;
   }
 
   async addTagsToModel(

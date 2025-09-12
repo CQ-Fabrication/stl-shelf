@@ -1,9 +1,7 @@
 import { useForm } from '@tanstack/react-form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TagCombobox } from '@/components/ui/tag-combobox';
 import {
   createMetadataFromFormData,
   type EditModelFormData,
@@ -42,12 +41,16 @@ export function EditModelDialog({
 }: EditModelDialogProps) {
   const queryClient = useQueryClient();
 
+  // Fetch available tags for the organization
+  const { data: availableTags = [] } = useQuery(
+    orpc.getAllTags.queryOptions({})
+  );
+
   const form = useForm({
     defaultValues: {
       name: model.latestMetadata.name,
       description: model.latestMetadata.description || '',
       tags: model.latestMetadata.tags || [],
-      tagInput: '',
       material: model.latestMetadata.printSettings?.material || '',
       layerHeight:
         model.latestMetadata.printSettings?.layerHeight?.toString() || '',
@@ -126,7 +129,6 @@ export function EditModelDialog({
         name: model.latestMetadata.name,
         description: model.latestMetadata.description || '',
         tags: model.latestMetadata.tags || [],
-        tagInput: '',
         material: model.latestMetadata.printSettings?.material || '',
         layerHeight:
           model.latestMetadata.printSettings?.layerHeight?.toString() || '',
@@ -147,7 +149,6 @@ export function EditModelDialog({
           name: model.latestMetadata.name,
           description: model.latestMetadata.description || '',
           tags: model.latestMetadata.tags || [],
-          tagInput: '',
           material: model.latestMetadata.printSettings?.material || '',
           layerHeight:
             model.latestMetadata.printSettings?.layerHeight?.toString() || '',
@@ -170,25 +171,8 @@ export function EditModelDialog({
     });
   };
 
-  const handleAddTag = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const tagInput = form.getFieldValue('tagInput');
-      if (tagInput?.trim()) {
-        const trimmedTag = tagInput.trim().toLowerCase();
-        const currentTags = form.getFieldValue('tags');
-        if (!currentTags.includes(trimmedTag)) {
-          form.setFieldValue('tags', [...currentTags, trimmedTag]);
-        }
-        form.setFieldValue('tagInput', '');
-      }
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    form.setFieldValue('tags', (prev: string[]) =>
-      prev.filter((tag) => tag !== tagToRemove)
-    );
+  const handleTagsChange = (newTags: string[]) => {
+    form.setFieldValue('tags', newTags);
   };
 
   return (
@@ -262,47 +246,17 @@ export function EditModelDialog({
 
             {/* Tags */}
             <div className="space-y-2">
-              <form.Field name="tagInput">
-                {(field) => (
-                  <>
-                    <Label htmlFor={field.name}>Tags</Label>
-                    <Input
-                      disabled={updateMutation.isPending}
-                      id={field.name}
-                      name={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onKeyDown={handleAddTag}
-                      placeholder="Add a tag and press Enter..."
-                      value={field.state.value}
-                    />
-                  </>
-                )}
-              </form.Field>
-
+              <Label>Tags</Label>
               <form.Field name="tags">
                 {(field) => (
-                  <>
-                    {field.state.value.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {field.state.value.map((tag) => (
-                          <Badge
-                            className="cursor-pointer"
-                            key={tag}
-                            onClick={() =>
-                              !updateMutation.isPending && removeTag(tag)
-                            }
-                            variant="secondary"
-                          >
-                            {tag}
-                            {!updateMutation.isPending && (
-                              <X className="ml-1 h-3 w-3" />
-                            )}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </>
+                  <TagCombobox
+                    allowCreate={true}
+                    availableTags={availableTags}
+                    disabled={updateMutation.isPending}
+                    onTagsChange={handleTagsChange}
+                    placeholder="Select or create tags..."
+                    selectedTags={field.state.value}
+                  />
                 )}
               </form.Field>
             </div>

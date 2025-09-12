@@ -1,10 +1,14 @@
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { AlertCircle, CheckCircle, FileText, Upload, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { TagCombobox } from '@/components/ui/tag-combobox';
+import { orpc } from '@/utils/orpc';
 import {
   Card,
   CardContent,
@@ -12,8 +16,6 @@ import {
   CardHeader,
   CardTitle,
 } from '../ui/card';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 
 type UploadFile = {
   file: File;
@@ -41,8 +43,12 @@ export function ModelUpload() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+
+  // Fetch available tags for the organization
+  const { data: availableTags = [] } = useQuery(
+    orpc.getAllTags.queryOptions({})
+  );
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -74,21 +80,6 @@ export function ModelUpload() {
 
   const removeFile = (fileId: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== fileId));
-  };
-
-  const handleAddTag = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
-      e.preventDefault();
-      const trimmedTag = tagInput.trim().toLowerCase();
-      if (!tags.includes(trimmedTag)) {
-        setTags((prev) => [...prev, trimmedTag]);
-      }
-      setTagInput('');
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
   const validateForm = () => {
@@ -237,33 +228,15 @@ export function ModelUpload() {
 
           {/* Tags field */}
           <div className="space-y-2">
-            <Label htmlFor="tags">Tags</Label>
-            <Input
+            <Label>Tags</Label>
+            <TagCombobox
+              allowCreate={true}
+              availableTags={availableTags}
               disabled={isUploading}
-              id="tags"
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleAddTag}
-              placeholder="Type a tag and press Enter"
-              value={tagInput}
+              onTagsChange={setTags}
+              placeholder="Select or create tags..."
+              selectedTags={tags}
             />
-            {tags.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <Badge className="gap-1" key={tag} variant="secondary">
-                    {tag}
-                    <Button
-                      className="h-auto w-auto p-0 hover:bg-transparent"
-                      disabled={isUploading}
-                      onClick={() => removeTag(tag)}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
