@@ -117,13 +117,6 @@ function LoginPage() {
           </div>
 
           <form className="flex flex-col gap-3" onSubmit={signInWithPassword}>
-            <Turnstile
-              className="mb-2"
-              onError={() => setCaptcha(null)}
-              onExpire={() => setCaptcha(null)}
-              onVerify={(token) => setCaptcha(token)}
-              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
-            />
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -137,7 +130,15 @@ function LoginPage() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  className="text-muted-foreground text-sm underline underline-offset-4"
+                  to="/forgot-password"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 autoComplete="current-password"
                 id="password"
@@ -146,6 +147,16 @@ function LoginPage() {
                 type="password"
                 value={password}
               />
+              <div>
+                <p className="font-normal">Let us know you are human</p>
+                <Turnstile
+                  className="mb-2"
+                  onError={() => setCaptcha(null)}
+                  onExpire={() => setCaptcha(null)}
+                  onVerify={(token) => setCaptcha(token)}
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
+                />
+              </div>
             </div>
             <div className="flex gap-2">
               <Button disabled={pending || !captcha} type="submit">

@@ -90,6 +90,12 @@ The architecture follows a filesystem-first approach where all 3D models and met
 - Use `export type` for types, `import type` for type imports
 - Arrow functions preferred over function declarations
 - Accessibility-first approach with strict a11y rules
+- **NEVER use `any` type** - No exceptions. Always use proper types
+- **NO unnecessary comments** - Code must be self-explanatory. Only add comments when they provide additional value
+- **NO custom state when libraries provide it** - ALWAYS check if the library (especially TanStack Form) already handles the functionality before adding custom state
+- **ALWAYS use library features properly** - Check documentation via Context7 FIRST before implementing custom solutions
+- **NO shortcuts or workarounds** - Use libraries the proper way as intended by their documentation
+- **Use derived state over useEffect** - Prefer deriving state directly from props/params rather than using useEffect for synchronization. This reduces errors and makes code more predictable
 
 ## Environment Setup
 

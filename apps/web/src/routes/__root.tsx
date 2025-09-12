@@ -26,13 +26,22 @@ export type RouterAppContext = {
   auth: typeof import('../lib/auth').auth;
 };
 
+// Routes that don't require authentication
+const PUBLIC_ROUTES = [
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password'
+];
+
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
-  // Global auth wall: everything except /login and /signup requires a session
+  // Global auth wall: everything except public routes requires a session
   beforeLoad: async ({ context, location }) => {
     // Do not guard public auth routes
-    if (location.pathname === '/login' || location.pathname === '/signup')
+    if (PUBLIC_ROUTES.includes(location.pathname)) {
       return;
+    }
 
     // Check session first
     let session: ReturnType<typeof context.auth.getSession>['data'];
@@ -127,9 +136,7 @@ function RootComponent() {
           storageKey="vite-ui-theme"
         >
           <div className="grid h-svh grid-rows-[auto_1fr]">
-            {pathname === '/login' || pathname === '/signup' ? null : (
-              <Header />
-            )}
+            {PUBLIC_ROUTES.includes(pathname) ? null : <Header />}
             <Outlet />
             <Scripts />
           </div>

@@ -88,6 +88,37 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    // Password reset configuration
+    resetPasswordTokenExpiresIn: 60 * 60, // 1 hour in seconds
+    sendResetPassword: async ({ user, url }: { user: { email?: string }, url: string }) => {
+      if (smtpTransport) {
+        await smtpTransport.sendMail({
+          from: env.SMTP_FROM ?? 'STL Shelf <no-reply@local.test>',
+          to: user.email ?? '',
+          subject: 'Reset your password',
+          text: `You requested a password reset for your STL Shelf account.\n\nClick the link below to reset your password:\n${url}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, you can safely ignore this email.`,
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #333;">Reset your password</h2>
+              <p>You requested a password reset for your STL Shelf account.</p>
+              <p>Click the button below to reset your password:</p>
+              <div style="margin: 30px 0;">
+                <a href="${url}" style="background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a>
+              </div>
+              <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
+              <p style="color: #666; font-size: 14px; word-break: break-all;">${url}</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+              <p style="color: #999; font-size: 12px;">This link will expire in 1 hour. If you didn't request this password reset, you can safely ignore this email.</p>
+            </div>
+          `,
+        });
+      } else {
+        console.log(`[auth] Password reset link for ${user.email}: ${url}`);
+      }
+    },
+    onPasswordReset: ({ user }: { user: { email?: string } }) => {
+      console.log(`[auth] Password reset completed for user: ${user.email}`);
+    },
   },
 
   // Email verification flow (used for magic/verification emails)
@@ -96,7 +127,7 @@ export const auth = betterAuth({
       user,
       url,
     }: {
-      user: any;
+      user: { email?: string };
       url: string;
     }) => {
       if (smtpTransport) {
