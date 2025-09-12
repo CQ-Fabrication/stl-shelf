@@ -96,7 +96,7 @@ function ModelDetailComponent() {
         {/* Right column */}
         <div className="space-y-6">
           {/* Model Info */}
-          <ModelInfoCard model={model} totalSize={totalSize} />
+          <ModelInfoCard model={model} totalSize={totalSize} activeVersion={activeVersion} />
           {/* Version History - starts immediately after Model Info */}
           <ModelVersionHistory 
             model={model} 
