@@ -96,6 +96,7 @@ The architecture follows a filesystem-first approach where all 3D models and met
 - **ALWAYS use library features properly** - Check documentation via Context7 FIRST before implementing custom solutions
 - **NO shortcuts or workarounds** - Use libraries the proper way as intended by their documentation
 - **Use derived state over useEffect** - Prefer deriving state directly from props/params rather than using useEffect for synchronization. This reduces errors and makes code more predictable
+- **NEVER commit without user approval** - ALWAYS wait for the user's explicit approval before committing any changes. The user must review and approve the work first
 
 ## Environment Setup
 

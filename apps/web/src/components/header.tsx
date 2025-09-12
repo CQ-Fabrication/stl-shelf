@@ -1,4 +1,4 @@
-import { Link, useRouter, useRouterState } from '@tanstack/react-router';
+import { Link, useRouter } from '@tanstack/react-router';
 import {
   Building2,
   Check,
@@ -9,7 +9,7 @@ import {
   Sun,
   User,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import type { RouterAppContext } from '@/routes/__root';
 import { Logo } from './logo';
@@ -40,54 +40,17 @@ export default function Header() {
   const { auth } = router.options.context as RouterAppContext;
   const { setTheme } = useTheme();
 
-  const [organizations, setOrganizations] = useState<
-    Array<{ id: string; name: string; slug: string; logo?: string | null }>
-  >([]);
-  const [activeOrg, setActiveOrg] = useState<{
-    id: string;
-    name: string;
-    logo?: string | null;
-  } | null>(null);
-  const [isLoadingOrgs, setIsLoadingOrgs] = useState(true);
   const [showLimitAlert, setShowLimitAlert] = useState(false);
 
-  // Track pathname to reload organizations when navigating from org creation
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-
-  useEffect(() => {
-    loadOrganizations();
-  }, [pathname]); // Reload when pathname changes
-
-  async function loadOrganizations() {
-    try {
-      const { data: orgs } = await auth.organization.list();
-      setOrganizations(orgs || []);
-
-      // Get active organization from session
-      const { data: session } = await auth.getSession();
-      if (session?.session?.activeOrganizationId && orgs) {
-        const active = orgs.find(
-          (org) => org.id === session.session.activeOrganizationId
-        );
-        if (active) {
-          setActiveOrg({ id: active.id, name: active.name, logo: active.logo });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load organizations:', error);
-    } finally {
-      setIsLoadingOrgs(false);
-    }
-  }
+  const { data: organizations, isPending: isLoadingOrgs } = auth.useListOrganizations();
+  const { data: activeOrg } = auth.useActiveOrganization();
 
   async function switchOrganization(orgId: string) {
     try {
       await auth.organization.setActive({ organizationId: orgId });
-      const org = organizations.find((o) => o.id === orgId);
+      const org = organizations?.find((o) => o.id === orgId);
       if (org) {
-        setActiveOrg({ id: org.id, name: org.name, logo: org.logo });
         toast.success(`Switched to ${org.name}`);
-        // Refresh the page to reload data for new organization
         await router.invalidate();
       }
     } catch (error) {
@@ -101,7 +64,7 @@ export default function Header() {
     setShowLimitAlert(true);
   }
 
-  const hasOrganizations = organizations.length > 0;
+  const hasOrganizations = (organizations?.length ?? 0) > 0;
 
   return (
     <div>
@@ -136,7 +99,9 @@ export default function Header() {
                         <img
                           alt=""
                           className="h-4 w-4 rounded-full object-cover"
+                          height={16}
                           src={activeOrg.logo}
+                          width={16}
                         />
                       ) : (
                         <Building2 className="h-4 w-4" />
@@ -148,7 +113,7 @@ export default function Header() {
                         Switch Organization
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      {organizations.map((org) => {
+                      {organizations?.map((org) => {
                         const isActive = org.id === activeOrg.id;
                         return (
                           <DropdownMenuItem
@@ -164,7 +129,9 @@ export default function Header() {
                                 <img
                                   alt=""
                                   className="h-4 w-4 flex-shrink-0 rounded-full object-cover"
+                                  height={16}
                                   src={org.logo}
+                                  width={16}
                                 />
                               ) : (
                                 <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-muted">
