@@ -90,7 +90,13 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     // Password reset configuration
     resetPasswordTokenExpiresIn: 60 * 60, // 1 hour in seconds
-    sendResetPassword: async ({ user, url }: { user: { email?: string }, url: string }) => {
+    sendResetPassword: async ({
+      user,
+      url,
+    }: {
+      user: { email?: string };
+      url: string;
+    }) => {
       if (smtpTransport) {
         await smtpTransport.sendMail({
           from: env.SMTP_FROM ?? 'STL Shelf <no-reply@local.test>',

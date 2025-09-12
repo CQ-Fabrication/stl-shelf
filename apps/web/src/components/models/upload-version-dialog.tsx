@@ -200,11 +200,14 @@ export function UploadVersionDialog({
       );
 
       // Send upload request
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/upload`, {
-        method: 'POST',
-        body: uploadFormData,
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/upload`,
+        {
+          method: 'POST',
+          body: uploadFormData,
+          credentials: 'include',
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();

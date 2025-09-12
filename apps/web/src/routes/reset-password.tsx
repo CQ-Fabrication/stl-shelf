@@ -41,11 +41,11 @@ const defaultValues: ResetPasswordForm = {
 function ResetPasswordPage() {
   const navigate = useNavigate();
   const { auth } = Route.useRouteContext() as RouterAppContext;
-  
+
   const urlParams = new URLSearchParams(window.location.search);
   const tokenParam = urlParams.get('token');
   const errorParam = urlParams.get('error');
-  
+
   const hasInvalidToken = errorParam === 'INVALID_TOKEN' || !tokenParam;
   const token = tokenParam || '';
 

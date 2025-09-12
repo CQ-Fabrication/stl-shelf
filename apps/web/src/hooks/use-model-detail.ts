@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import type { Model, ModelFile } from '../../../server/src/types/model';
 import { orpc } from '@/utils/orpc';
+import type { Model, ModelFile } from '../../../server/src/types/model';
 
 export const useModelDetail = (modelId: string) => {
   const modelQuery = useQuery(
@@ -19,10 +19,8 @@ export const useModelDetail = (modelId: string) => {
   const model = modelQuery.data;
   const latestVersion = model?.versions[0];
 
-  const totalSize = latestVersion?.files.reduce(
-    (sum, file) => sum + file.size,
-    0
-  ) ?? 0;
+  const totalSize =
+    latestVersion?.files.reduce((sum, file) => sum + file.size, 0) ?? 0;
 
   return {
     model,
@@ -34,7 +32,9 @@ export const useModelDetail = (modelId: string) => {
   };
 };
 
-export const findMainModelFile = (files: ModelFile[]): ModelFile | undefined => {
+export const findMainModelFile = (
+  files: ModelFile[]
+): ModelFile | undefined => {
   return files.find((f) =>
     ['.stl', '.obj', '.3mf', '.ply'].includes(f.extension.toLowerCase())
   );

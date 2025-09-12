@@ -1,7 +1,7 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../../db/client';
-import { modelTags, models, tags } from '../../db/schema/models';
+import { models, modelTags, tags } from '../../db/schema/models';
 
 // Type aliases from Drizzle schema
 type InsertTag = InferInsertModel<typeof tags>;

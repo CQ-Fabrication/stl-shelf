@@ -129,18 +129,32 @@ export class CacheService {
     return await this.get(key);
   }
 
-  async cacheModel(modelId: string, data: unknown, organizationId?: string): Promise<void> {
-    const key = organizationId ? `model:${modelId}:org:${organizationId}` : `model:${modelId}`;
+  async cacheModel(
+    modelId: string,
+    data: unknown,
+    organizationId?: string
+  ): Promise<void> {
+    const key = organizationId
+      ? `model:${modelId}:org:${organizationId}`
+      : `model:${modelId}`;
     const ttl = env.REDIS_TTL_MODEL_METADATA;
     await this.set(key, data, ttl);
   }
 
-  async getCachedModel(modelId: string, organizationId?: string): Promise<unknown> {
-    const key = organizationId ? `model:${modelId}:org:${organizationId}` : `model:${modelId}`;
+  async getCachedModel(
+    modelId: string,
+    organizationId?: string
+  ): Promise<unknown> {
+    const key = organizationId
+      ? `model:${modelId}:org:${organizationId}`
+      : `model:${modelId}`;
     return await this.get(key);
   }
 
-  async invalidateModel(modelId: string, organizationId?: string): Promise<void> {
+  async invalidateModel(
+    modelId: string,
+    organizationId?: string
+  ): Promise<void> {
     // Delete specific model cache
     if (organizationId) {
       await this.del(`model:${modelId}:org:${organizationId}`);
@@ -189,13 +203,13 @@ export class CacheService {
 
   // Model versions cache operations
   async cacheModelVersions(
-    modelId: string, 
-    offset: number, 
-    limit: number, 
+    modelId: string,
+    offset: number,
+    limit: number,
     data: unknown,
     organizationId?: string
   ): Promise<void> {
-    const key = organizationId 
+    const key = organizationId
       ? `model-versions:${modelId}:${offset}:${limit}:org:${organizationId}`
       : `model-versions:${modelId}:${offset}:${limit}`;
     const ttl = 10; // 10 seconds - short TTL for pagination
@@ -203,12 +217,12 @@ export class CacheService {
   }
 
   async getCachedModelVersions(
-    modelId: string, 
-    offset: number, 
+    modelId: string,
+    offset: number,
     limit: number,
     organizationId?: string
   ): Promise<unknown> {
-    const key = organizationId 
+    const key = organizationId
       ? `model-versions:${modelId}:${offset}:${limit}:org:${organizationId}`
       : `model-versions:${modelId}:${offset}:${limit}`;
     return await this.get(key);
@@ -221,7 +235,9 @@ export class CacheService {
 
     try {
       // Get all keys matching model-versions pattern for this model
-      const keys = await this.redis.keys(`${this.keyPrefix}model-versions:${modelId}:*`);
+      const keys = await this.redis.keys(
+        `${this.keyPrefix}model-versions:${modelId}:*`
+      );
 
       if (keys.length > 0) {
         // Remove the prefix for deletion
@@ -242,7 +258,7 @@ export class CacheService {
     data: unknown,
     organizationId?: string
   ): Promise<void> {
-    const key = organizationId 
+    const key = organizationId
       ? `model-history:${modelId}:${limit}:org:${organizationId}`
       : `model-history:${modelId}:${limit}`;
     const ttl = 60; // 60 seconds - Git history doesn't change often
@@ -254,7 +270,7 @@ export class CacheService {
     limit: number,
     organizationId?: string
   ): Promise<unknown> {
-    const key = organizationId 
+    const key = organizationId
       ? `model-history:${modelId}:${limit}:org:${organizationId}`
       : `model-history:${modelId}:${limit}`;
     return await this.get(key);
@@ -267,7 +283,9 @@ export class CacheService {
 
     try {
       // Get all keys matching model-history pattern for this model
-      const keys = await this.redis.keys(`${this.keyPrefix}model-history:${modelId}:*`);
+      const keys = await this.redis.keys(
+        `${this.keyPrefix}model-history:${modelId}:*`
+      );
 
       if (keys.length > 0) {
         // Remove the prefix for deletion

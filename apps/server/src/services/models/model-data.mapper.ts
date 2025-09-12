@@ -1,48 +1,56 @@
-import type {
-  modelFiles,
-  models,
-  modelVersions,
-  tags,
-} from '@/db/schema/models';
+import type { modelFiles, models, modelVersions } from '@/db/schema/models';
 import type { Model, ModelVersion } from '@/types/model';
+import type { TagInfo } from '../models/model.repository';
 
 type RawModelRow = {
   model: typeof models.$inferSelect;
   version: typeof modelVersions.$inferSelect | null;
   file: typeof modelFiles.$inferSelect | null;
-  tagName: string | null;
-  tagId: string | null;
-  tagColor: string | null;
 };
 
-type TagInfo = {
-  name: string;
-  id: string;
-  color: string | null;
+type TagsMaps = {
+  modelTagsMap: Map<string, TagInfo[]>;
+  versionTagsMap: Map<string, TagInfo[]>;
 };
 
 export class ModelDataMapper {
-  transformToModels(rows: RawModelRow[]): Model[] {
+  transformToModels(
+    rows: RawModelRow[],
+    modelTagsMap?: Map<string, TagInfo[]>,
+    versionTagsMap?: Map<string, TagInfo[]>
+  ): Model[] {
     if (!rows.length) return [];
 
-    const { modelsMap, versionsMap, filesMap, tagsMap } =
-      this.denormalizeData(rows);
+    const { modelsMap, versionsMap, filesMap } = this.denormalizeData(rows);
+
+    const tagsMaps: TagsMaps = {
+      modelTagsMap: modelTagsMap || new Map(),
+      versionTagsMap: versionTagsMap || new Map(),
+    };
 
     return Array.from(modelsMap.values()).map((model) =>
-      this.buildModel(model, versionsMap, filesMap, tagsMap)
+      this.buildModel(model, versionsMap, filesMap, tagsMaps)
     );
   }
 
-  transformToModel(rows: RawModelRow[]): Model | null {
-    if (!rows.length || !rows[0]?.model) return null;
+  transformToModel(
+    rows: RawModelRow[],
+    modelTagsMap?: Map<string, TagInfo[]>,
+    versionTagsMap?: Map<string, TagInfo[]>
+  ): Model | null {
+    if (!(rows.length && rows[0]?.model)) return null;
 
-    const { modelsMap, versionsMap, filesMap, tagsMap } =
-      this.denormalizeData(rows);
+    const { modelsMap, versionsMap, filesMap } = this.denormalizeData(rows);
     const model = Array.from(modelsMap.values())[0];
 
     if (!model) return null;
 
-    return this.buildModel(model, versionsMap, filesMap, tagsMap);
+    const tagsMaps: TagsMaps = {
+      modelTagsMap: modelTagsMap || new Map(),
+      versionTagsMap: versionTagsMap || new Map(),
+    };
+
+    return this.buildModel(model, versionsMap, filesMap, tagsMaps);
   }
 
   private denormalizeData(rows: RawModelRow[]) {
@@ -52,15 +60,13 @@ export class ModelDataMapper {
       Map<string, typeof modelVersions.$inferSelect>
     >();
     const filesMap = new Map<string, (typeof modelFiles.$inferSelect)[]>();
-    const tagsMap = new Map<string, Set<TagInfo>>();
 
     for (const row of rows) {
       this.processModelRow(row, modelsMap);
       this.processVersionRow(row, versionsMap, filesMap);
-      this.processTagRow(row, tagsMap);
     }
 
-    return { modelsMap, versionsMap, filesMap, tagsMap };
+    return { modelsMap, versionsMap, filesMap };
   }
 
   private processModelRow(
@@ -87,8 +93,8 @@ export class ModelDataMapper {
       versionsMap.set(modelId, new Map());
     }
 
-    const modelVersionsMap = versionsMap.get(modelId)!;
-    if (!modelVersionsMap.has(versionId)) {
+    const modelVersionsMap = versionsMap.get(modelId);
+    if (modelVersionsMap && !modelVersionsMap.has(versionId)) {
       modelVersionsMap.set(versionId, row.version);
     }
 
@@ -97,45 +103,26 @@ export class ModelDataMapper {
         filesMap.set(versionId, []);
       }
 
-      const versionFiles = filesMap.get(versionId)!;
-      if (!versionFiles.find((f) => f.id === row.file?.id)) {
+      const versionFiles = filesMap.get(versionId);
+      if (versionFiles && !versionFiles.find((f) => f.id === row.file?.id)) {
         versionFiles.push(row.file);
       }
     }
-  }
-
-  private processTagRow(
-    row: RawModelRow,
-    tagsMap: Map<string, Set<TagInfo>>
-  ): void {
-    if (!(row.tagName && row.tagId)) return;
-
-    const modelId = row.model.id;
-
-    if (!tagsMap.has(modelId)) {
-      tagsMap.set(modelId, new Set());
-    }
-
-    tagsMap.get(modelId)!.add({
-      name: row.tagName,
-      id: row.tagId,
-      color: row.tagColor,
-    });
   }
 
   private buildModel(
     model: typeof models.$inferSelect,
     versionsMap: Map<string, Map<string, typeof modelVersions.$inferSelect>>,
     filesMap: Map<string, (typeof modelFiles.$inferSelect)[]>,
-    tagsMap: Map<string, Set<TagInfo>>
+    tagsMaps: TagsMaps
   ): Model {
     const modelVersionsMap = versionsMap.get(model.id);
-    const modelTags = Array.from(tagsMap.get(model.id) || []);
+    const modelTags = tagsMaps.modelTagsMap.get(model.id) || [];
 
     const versions = this.buildVersions(
       modelVersionsMap ? Array.from(modelVersionsMap.values()) : [],
       filesMap,
-      modelTags.map((t) => t.name)
+      tagsMaps.versionTagsMap
     );
 
     const latestVersion = this.findLatestVersion(
@@ -149,12 +136,16 @@ export class ModelDataMapper {
       currentVersion: model.currentVersion,
       versions,
       totalVersions: model.totalVersions,
-      latestMetadata: latestVersion?.metadata || {
-        name: model.name,
-        description: model.description || undefined,
+      latestMetadata: {
+        name: latestVersion?.metadata.name || model.name,
+        description:
+          latestVersion?.metadata.description || model.description || undefined,
         tags: modelTags.map((t) => t.name),
-        createdAt: model.createdAt.toISOString(),
-        updatedAt: model.updatedAt.toISOString(),
+        createdAt:
+          latestVersion?.metadata.createdAt || model.createdAt.toISOString(),
+        updatedAt:
+          latestVersion?.metadata.updatedAt || model.updatedAt.toISOString(),
+        printSettings: latestVersion?.metadata.printSettings,
       },
       createdAt: model.createdAt.toISOString(),
       updatedAt: model.updatedAt.toISOString(),
@@ -164,20 +155,24 @@ export class ModelDataMapper {
   private buildVersions(
     versionRecords: (typeof modelVersions.$inferSelect)[],
     filesMap: Map<string, (typeof modelFiles.$inferSelect)[]>,
-    tagNames: string[]
+    versionTagsMap: Map<string, TagInfo[]>
   ): ModelVersion[] {
     return versionRecords
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 5)
       .map((version) =>
-        this.buildVersion(version, filesMap.get(version.id) || [], tagNames)
+        this.buildVersion(
+          version,
+          filesMap.get(version.id) || [],
+          versionTagsMap.get(version.id) || []
+        )
       );
   }
 
   private buildVersion(
     version: typeof modelVersions.$inferSelect,
     files: (typeof modelFiles.$inferSelect)[],
-    tagNames: string[]
+    versionTags: TagInfo[]
   ): ModelVersion {
     return {
       version: version.version,
@@ -193,7 +188,7 @@ export class ModelDataMapper {
       metadata: {
         name: version.name,
         description: version.description || undefined,
-        tags: tagNames,
+        tags: versionTags.map((t) => t.name),
         createdAt: version.createdAt.toISOString(),
         updatedAt: version.updatedAt.toISOString(),
         printSettings: version.printSettings || undefined,

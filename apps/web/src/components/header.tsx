@@ -42,7 +42,8 @@ export default function Header() {
 
   const [showLimitAlert, setShowLimitAlert] = useState(false);
 
-  const { data: organizations, isPending: isLoadingOrgs } = auth.useListOrganizations();
+  const { data: organizations, isPending: isLoadingOrgs } =
+    auth.useListOrganizations();
   const { data: activeOrg } = auth.useActiveOrganization();
 
   async function switchOrganization(orgId: string) {

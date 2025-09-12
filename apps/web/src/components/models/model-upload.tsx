@@ -130,12 +130,15 @@ export function ModelUpload() {
         prev.map((f) => ({ ...f, status: 'uploading' as const }))
       );
 
-      const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/upload`, {
-        method: 'POST',
-        body: formData,
-        // Include BetterAuth session cookie on cross-origin request
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_URL}/upload`,
+        {
+          method: 'POST',
+          body: formData,
+          // Include BetterAuth session cookie on cross-origin request
+          credentials: 'include',
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();

@@ -36,7 +36,7 @@ export class PerformanceMonitor {
   markEnd(operation: string): number {
     const startKey = `${operation}_start`;
     const startTime = this.marks.get(startKey);
-    
+
     if (!startTime) {
       console.warn(`No start mark found for operation: ${operation}`);
       return 0;
@@ -45,7 +45,7 @@ export class PerformanceMonitor {
     const duration = performance.now() - startTime;
     this.marks.set(operation, duration);
     this.marks.delete(startKey); // Clean up start mark
-    
+
     return duration;
   }
 
@@ -70,7 +70,7 @@ export class PerformanceMonitor {
   getMetrics(): PerformanceMetrics {
     const total = performance.now() - this.startTime;
     const details: Record<string, number> = {};
-    
+
     // Collect all operation durations
     for (const [key, value] of this.marks.entries()) {
       if (!key.endsWith('_start') && key !== 'cache_hit') {
@@ -102,7 +102,7 @@ export class PerformanceMonitor {
    */
   log(): void {
     const metrics = this.getMetrics();
-    const cacheStatus = metrics.cache 
+    const cacheStatus = metrics.cache
       ? `${metrics.cache.hit ? 'HIT' : 'MISS'} ${metrics.cache.time}ms`
       : 'N/A';
 
@@ -117,7 +117,7 @@ export class PerformanceMonitor {
         .filter(([key]) => key !== 'cache')
         .map(([key, value]) => `  - ${key}: ${value}ms`)
         .join('\n');
-      
+
       if (details) {
         console.log(details);
       }
@@ -125,7 +125,9 @@ export class PerformanceMonitor {
 
     // Log slow requests as warnings
     if (metrics.total > 500) {
-      console.warn(`[PERF] SLOW REQUEST: ${metrics.endpoint} took ${metrics.total}ms`);
+      console.warn(
+        `[PERF] SLOW REQUEST: ${metrics.endpoint} took ${metrics.total}ms`
+      );
     }
   }
 }
@@ -166,7 +168,7 @@ export function measureSync<T>(
   monitor.markStart(name);
   try {
     const result = operation();
-    return result;  
+    return result;
   } finally {
     monitor.markEnd(name);
   }

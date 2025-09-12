@@ -23,22 +23,19 @@ function ModelDetailComponent() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
 
-  const {
-    model,
-    latestVersion,
-    totalSize,
-    history,
-    isLoading,
-    error,
-  } = useModelDetail(modelId);
+  const { model, latestVersion, totalSize, history, isLoading, error } =
+    useModelDetail(modelId);
 
   // Get the active version (selected or latest)
-  const activeVersion = selectedVersion 
-    ? model?.versions.find(v => v.version === selectedVersion) ?? latestVersion
+  const activeVersion = selectedVersion
+    ? (model?.versions.find((v) => v.version === selectedVersion) ??
+      latestVersion)
     : latestVersion;
 
   // Find the main model file for the active version
-  const mainModelFile = activeVersion ? findMainModelFile(activeVersion.files) : undefined;
+  const mainModelFile = activeVersion
+    ? findMainModelFile(activeVersion.files)
+    : undefined;
 
   const handleDownloadAll = async () => {
     if (!(model && activeVersion)) return;
@@ -58,7 +55,6 @@ function ModelDetailComponent() {
   const handleVersionSelect = (version: string) => {
     setSelectedVersion(version);
   };
-
 
   if (isLoading) {
     return <ModelDetailSkeleton />;
@@ -96,11 +92,15 @@ function ModelDetailComponent() {
         {/* Right column */}
         <div className="space-y-6">
           {/* Model Info */}
-          <ModelInfoCard model={model} totalSize={totalSize} activeVersion={activeVersion} />
+          <ModelInfoCard
+            activeVersion={activeVersion}
+            model={model}
+            totalSize={totalSize}
+          />
           {/* Version History - starts immediately after Model Info */}
-          <ModelVersionHistory 
-            model={model} 
+          <ModelVersionHistory
             activeVersion={activeVersion.version}
+            model={model}
             onVersionSelect={handleVersionSelect}
           />
         </div>

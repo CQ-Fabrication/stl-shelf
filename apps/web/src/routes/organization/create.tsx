@@ -147,7 +147,9 @@ function CreateOrganizationPage() {
         {!isCheckingOrgs && hasExistingOrg && (
           <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
             <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-            <AlertTitle className="text-amber-800 dark:text-amber-400">Organization Limit Reached</AlertTitle>
+            <AlertTitle className="text-amber-800 dark:text-amber-400">
+              Organization Limit Reached
+            </AlertTitle>
             <AlertDescription className="text-amber-700 dark:text-amber-300">
               You have already created an organization. We're working hard to
               add support for multiple organizations, enhanced collaboration
@@ -155,17 +157,17 @@ function CreateOrganizationPage() {
               <br />
               <br />
               <Button
+                className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/40"
                 onClick={() => navigate({ to: '/' })}
                 size="sm"
                 variant="outline"
-                className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/40"
               >
                 Return to Dashboard
               </Button>
             </AlertDescription>
           </Alert>
         )}
-        
+
         <Card className="w-full">
           <CardHeader>
             <CardTitle>Create Your Organization</CardTitle>
@@ -177,111 +179,111 @@ function CreateOrganizationPage() {
           </CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={handleCreateOrganization}>
-            <div className="space-y-2">
-              <Label htmlFor="name">
-                Organization Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                autoFocus
-                disabled={isCreating || hasExistingOrg}
-                id="name"
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My Organization"
-                required
-                type="text"
-                value={name}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="name">
+                  Organization Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  autoFocus
+                  disabled={isCreating || hasExistingOrg}
+                  id="name"
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="My Organization"
+                  required
+                  type="text"
+                  value={name}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="website">
-                Website{' '}
-                <span className="text-muted-foreground text-sm">
-                  (optional)
-                </span>
-              </Label>
-              <Input
-                disabled={isCreating || hasExistingOrg}
-                id="website"
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://example.com"
-                type="url"
-                value={website}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="website">
+                  Website{' '}
+                  <span className="text-muted-foreground text-sm">
+                    (optional)
+                  </span>
+                </Label>
+                <Input
+                  disabled={isCreating || hasExistingOrg}
+                  id="website"
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder="https://example.com"
+                  type="url"
+                  value={website}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="logo">
-                Logo{' '}
-                <span className="text-muted-foreground text-sm">
-                  (optional)
-                </span>
-              </Label>
+              <div className="space-y-2">
+                <Label htmlFor="logo">
+                  Logo{' '}
+                  <span className="text-muted-foreground text-sm">
+                    (optional)
+                  </span>
+                </Label>
 
-              {logoPreview ? (
-                <div className="relative">
-                  <div className="flex items-center justify-center rounded-lg border bg-muted/50 p-4">
-                    <img
-                      alt="Organization logo preview"
-                      className="max-h-32 max-w-full object-contain"
-                      height={128}
-                      src={logoPreview}
-                      width={128}
-                    />
-                  </div>
-                  <Button
-                    className="absolute top-2 right-2"
-                    onClick={removeLogo}
-                    size="icon"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex w-full items-center justify-center">
-                  <label
-                    className={`flex h-32 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 transition-colors ${hasExistingOrg ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-muted/70'}`}
-                    htmlFor="logo"
-                  >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-                      <p className="text-muted-foreground text-sm">
-                        Click to upload logo
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        PNG, JPG up to 5MB
-                      </p>
+                {logoPreview ? (
+                  <div className="relative">
+                    <div className="flex items-center justify-center rounded-lg border bg-muted/50 p-4">
+                      <img
+                        alt="Organization logo preview"
+                        className="max-h-32 max-w-full object-contain"
+                        height={128}
+                        src={logoPreview}
+                        width={128}
+                      />
                     </div>
-                    <input
-                      accept="image/*"
-                      className="hidden"
-                      disabled={isCreating || hasExistingOrg}
-                      id="logo"
-                      onChange={handleLogoSelect}
-                      ref={fileInputRef}
-                      type="file"
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
+                    <Button
+                      className="absolute top-2 right-2"
+                      onClick={removeLogo}
+                      size="icon"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex w-full items-center justify-center">
+                    <label
+                      className={`flex h-32 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 transition-colors ${hasExistingOrg ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-muted/70'}`}
+                      htmlFor="logo"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
+                        <p className="text-muted-foreground text-sm">
+                          Click to upload logo
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          PNG, JPG up to 5MB
+                        </p>
+                      </div>
+                      <input
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isCreating || hasExistingOrg}
+                        id="logo"
+                        onChange={handleLogoSelect}
+                        ref={fileInputRef}
+                        type="file"
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
 
-            <Button
-              className="w-full"
-              disabled={isCreating || !name.trim() || hasExistingOrg}
-              type="submit"
-            >
-              {(() => {
-                if (hasExistingOrg) return 'Limit Reached';
-                if (isCreating) return 'Creating...';
-                return 'Create Organization';
-              })()}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button
+                className="w-full"
+                disabled={isCreating || !name.trim() || hasExistingOrg}
+                type="submit"
+              >
+                {(() => {
+                  if (hasExistingOrg) return 'Limit Reached';
+                  if (isCreating) return 'Creating...';
+                  return 'Create Organization';
+                })()}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -45,7 +45,8 @@ function ForgotPasswordPage() {
         await handleRequestReset(value);
         setIsSubmitted(true);
       } catch (err) {
-        if (import.meta.env.DEV) console.debug('requestPasswordReset error', err);
+        if (import.meta.env.DEV)
+          console.debug('requestPasswordReset error', err);
         // Don't reveal whether the email exists - still show success
         setIsSubmitted(true);
       }

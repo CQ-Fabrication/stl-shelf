@@ -21,7 +21,7 @@ const MAX_COMMIT_MESSAGE_LENGTH = 200;
 const SAFE_MODEL_ID_REGEX = /^[a-z0-9][a-z0-9\-_]*[a-z0-9]$/i;
 const SAFE_VERSION_REGEX = /^v\d+$/;
 // Allow spaces in filenames (common in user uploads) while still constraining characters
-const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9._ \-]*[a-zA-Z0-9]$/;
+const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9._ -]*[a-zA-Z0-9]$/;
 const TAG_REGEX = /^[a-zA-Z0-9\-_\s]+$/;
 const ALLOWED_FILE_EXTENSIONS = new Set([
   '.stl',
@@ -73,7 +73,10 @@ export function validateModelId(modelId: string): string {
   const trimmed = modelId.trim();
 
   if (!trimmed || trimmed.length > MAX_MODEL_ID_LENGTH) {
-    throw new InvalidInputError('modelId', `must be 1-${MAX_MODEL_ID_LENGTH} characters`);
+    throw new InvalidInputError(
+      'modelId',
+      `must be 1-${MAX_MODEL_ID_LENGTH} characters`
+    );
   }
 
   if (!SAFE_MODEL_ID_REGEX.test(trimmed)) {
@@ -117,7 +120,10 @@ export function validateFilename(filename: string): string {
   const trimmed = filename.trim();
 
   if (!trimmed || trimmed.length > MAX_FILENAME_LENGTH) {
-    throw new InvalidInputError('filename', `must be 1-${MAX_FILENAME_LENGTH} characters`);
+    throw new InvalidInputError(
+      'filename',
+      `must be 1-${MAX_FILENAME_LENGTH} characters`
+    );
   }
 
   if (!SAFE_FILENAME_REGEX.test(trimmed)) {
@@ -216,7 +222,10 @@ export function validateFileSize(
  * @param maxLength - Maximum allowed length (default: 1000)
  * @returns The sanitized string
  */
-export function sanitizeText(input: string, maxLength = MAX_TEXT_LENGTH): string {
+export function sanitizeText(
+  input: string,
+  maxLength = MAX_TEXT_LENGTH
+): string {
   if (!input || typeof input !== 'string') {
     return '';
   }
@@ -242,7 +251,10 @@ export function validateTags(tags: unknown): string[] {
   }
 
   if (tags.length > MAX_TAGS_COUNT) {
-    throw new InvalidInputError('tags', `maximum ${MAX_TAGS_COUNT} tags allowed`);
+    throw new InvalidInputError(
+      'tags',
+      `maximum ${MAX_TAGS_COUNT} tags allowed`
+    );
   }
 
   const sanitizedTags: string[] = [];

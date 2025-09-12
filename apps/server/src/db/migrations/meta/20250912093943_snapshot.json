@@ -1,6 +1,6 @@
 {
-  "id": "efcbdcd9-97ca-4815-b6df-6305ad76f53b",
-  "prevId": "bf09b982-f7ac-499f-815c-4d172095907d",
+  "id": "10473685-e5c5-4f03-a2f6-2fb1a3ad20db",
+  "prevId": "b71b7361-713e-4271-b08b-5d300ff07f10",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -915,6 +915,12 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "owner_id": {
           "name": "owner_id",
           "type": "text",
@@ -969,9 +975,15 @@
         }
       },
       "indexes": {
-        "models_slug_idx": {
-          "name": "models_slug_idx",
+        "models_org_slug_idx": {
+          "name": "models_org_slug_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "slug",
               "isExpression": false,
@@ -1028,9 +1040,33 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "models_org_idx": {
+          "name": "models_org_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
+        "models_organization_id_organization_id_fk": {
+          "name": "models_organization_id_organization_id_fk",
+          "tableFrom": "models",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "models_owner_id_user_id_fk": {
           "name": "models_owner_id_user_id_fk",
           "tableFrom": "models",
@@ -1042,11 +1078,59 @@
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tag_types": {
+      "name": "tag_types",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "tag_types_name_idx": {
+          "name": "tag_types_name_idx",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "models_slug_unique": {
-          "name": "models_slug_unique",
+        "tag_types_name_unique": {
+          "name": "tag_types_name_unique",
           "nullsNotDistinct": false,
-          "columns": ["slug"]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -1069,6 +1153,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "type_id": {
+          "name": "type_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "color": {
           "name": "color",
@@ -1120,6 +1210,21 @@
           "method": "btree",
           "with": {}
         },
+        "tags_type_idx": {
+          "name": "tags_type_idx",
+          "columns": [
+            {
+              "expression": "type_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "tags_usage_count_idx": {
           "name": "tags_usage_count_idx",
           "columns": [
@@ -1134,9 +1239,40 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "tags_type_name_idx": {
+          "name": "tags_type_name_idx",
+          "columns": [
+            {
+              "expression": "type_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "tags_type_id_tag_types_id_fk": {
+          "name": "tags_type_id_tag_types_id_fk",
+          "tableFrom": "tags",
+          "tableTo": "tag_types",
+          "columnsFrom": ["type_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "tags_name_unique": {
@@ -1145,6 +1281,116 @@
           "columns": ["name"]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.version_tags": {
+      "name": "version_tags",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "version_id": {
+          "name": "version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "version_tags_version_tag_idx": {
+          "name": "version_tags_version_tag_idx",
+          "columns": [
+            {
+              "expression": "version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "tag_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "version_tags_version_id_idx": {
+          "name": "version_tags_version_id_idx",
+          "columns": [
+            {
+              "expression": "version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "version_tags_tag_id_idx": {
+          "name": "version_tags_tag_id_idx",
+          "columns": [
+            {
+              "expression": "tag_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "version_tags_version_id_model_versions_id_fk": {
+          "name": "version_tags_version_id_model_versions_id_fk",
+          "tableFrom": "version_tags",
+          "tableTo": "model_versions",
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "version_tags_tag_id_tags_id_fk": {
+          "name": "version_tags_tag_id_tags_id_fk",
+          "tableFrom": "version_tags",
+          "tableTo": "tags",
+          "columnsFrom": ["tag_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -158,11 +158,22 @@ export const modelFiles = pgTable(
   ]
 );
 
+export const tagTypes = pgTable(
+  'tag_types',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull().unique(), // 'category' | 'attribute'
+    description: text('description'),
+  },
+  (table) => [uniqueIndex('tag_types_name_idx').on(table.name)]
+);
+
 export const tags = pgTable(
   'tags',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull().unique(),
+    typeId: uuid('type_id').references(() => tagTypes.id),
     color: text('color'), // hex color for UI
     description: text('description'),
     usageCount: integer('usage_count').notNull().default(0),
@@ -175,7 +186,9 @@ export const tags = pgTable(
   },
   (table) => [
     uniqueIndex('tags_name_idx').on(table.name),
+    index('tags_type_idx').on(table.typeId),
     index('tags_usage_count_idx').on(table.usageCount),
+    index('tags_type_name_idx').on(table.typeId, table.name),
   ]
 );
 
@@ -200,6 +213,30 @@ export const modelTags = pgTable(
   ]
 );
 
+export const versionTags = pgTable(
+  'version_tags',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    versionId: uuid('version_id')
+      .notNull()
+      .references(() => modelVersions.id, { onDelete: 'cascade' }),
+    tagId: uuid('tag_id')
+      .notNull()
+      .references(() => tags.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('version_tags_version_tag_idx').on(
+      table.versionId,
+      table.tagId
+    ),
+    index('version_tags_version_id_idx').on(table.versionId),
+    index('version_tags_tag_id_idx').on(table.tagId),
+  ]
+);
+
 // Relations
 export const modelsRelations = relations(models, ({ many, one }) => ({
   versions: many(modelVersions),
@@ -218,6 +255,7 @@ export const modelVersionsRelations = relations(
       references: [models.id],
     }),
     files: many(modelFiles),
+    tags: many(versionTags),
   })
 );
 
@@ -228,8 +266,17 @@ export const modelFilesRelations = relations(modelFiles, ({ one }) => ({
   }),
 }));
 
-export const tagsRelations = relations(tags, ({ many }) => ({
+export const tagTypesRelations = relations(tagTypes, ({ many }) => ({
+  tags: many(tags),
+}));
+
+export const tagsRelations = relations(tags, ({ many, one }) => ({
+  type: one(tagTypes, {
+    fields: [tags.typeId],
+    references: [tagTypes.id],
+  }),
   models: many(modelTags),
+  versions: many(versionTags),
 }));
 
 export const modelTagsRelations = relations(modelTags, ({ one }) => ({
@@ -239,6 +286,17 @@ export const modelTagsRelations = relations(modelTags, ({ one }) => ({
   }),
   tag: one(tags, {
     fields: [modelTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
+export const versionTagsRelations = relations(versionTags, ({ one }) => ({
+  version: one(modelVersions, {
+    fields: [versionTags.versionId],
+    references: [modelVersions.id],
+  }),
+  tag: one(tags, {
+    fields: [versionTags.tagId],
     references: [tags.id],
   }),
 }));

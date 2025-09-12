@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Download, Edit, Upload } from 'lucide-react';
-import type { Model } from '../../../../server/src/types/model';
 import { Button } from '@/components/ui/button';
+import type { Model } from '../../../../server/src/types/model';
 
 type ModelDetailHeaderProps = {
   model: Model;

@@ -62,10 +62,29 @@ export class ModelQueryService {
       };
     }
 
-    // Transform data using mapper
+    // Extract unique IDs from results
+    const modelIds = [...new Set(rows.map((row) => row.model.id))];
+    const versionIds = [
+      ...new Set(
+        rows.map((row) => row.version?.id).filter(Boolean) as string[]
+      ),
+    ];
+
+    // Fetch both tag types in parallel for optimal performance
+    const [modelTagsMap, versionTagsMap] = await Promise.all([
+      this.repository.findModelTags(modelIds),
+      this.repository.findVersionTags(versionIds),
+    ]);
+
+    // Transform data using mapper with both tag types
     const models = await measureAsync(
       'data_transformation',
-      async () => this.mapper.transformToModels(rows.slice(0, limit * 10)),
+      async () =>
+        this.mapper.transformToModels(
+          rows.slice(0, limit * 10),
+          modelTagsMap,
+          versionTagsMap
+        ),
       this.monitor
     );
     const pagination = this.mapper.extractPaginationData(rows, page, limit);
@@ -81,9 +100,28 @@ export class ModelQueryService {
     organizationId: string
   ): Promise<Model | null> {
     const rows = await this.repository.findModelById(id, organizationId);
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    // Extract version IDs
+    const versionIds = [
+      ...new Set(
+        rows.map((row) => row.version?.id).filter(Boolean) as string[]
+      ),
+    ];
+
+    // Fetch both tag types in parallel
+    const [modelTagsMap, versionTagsMap] = await Promise.all([
+      this.repository.findModelTags([id]),
+      this.repository.findVersionTags(versionIds),
+    ]);
+
     return measureAsync(
       'model_transformation',
-      async () => this.mapper.transformToModel(rows),
+      async () =>
+        this.mapper.transformToModel(rows, modelTagsMap, versionTagsMap),
       this.monitor
     );
   }
@@ -129,9 +167,23 @@ export class ModelQueryService {
       },
     }));
 
+    // Extract version IDs from the rows
+    const versionIds = [
+      ...new Set(
+        rows.map((row) => row.version?.id).filter(Boolean) as string[]
+      ),
+    ];
+
+    // Fetch both tag types in parallel
+    const [modelTagsMap, versionTagsMap] = await Promise.all([
+      this.repository.findModelTags([modelId]),
+      this.repository.findVersionTags(versionIds),
+    ]);
+
     const models = await measureAsync(
       'versions_transformation',
-      async () => this.mapper.transformToModels(modelRows),
+      async () =>
+        this.mapper.transformToModels(modelRows, modelTagsMap, versionTagsMap),
       this.monitor
     );
     const model = models[0];

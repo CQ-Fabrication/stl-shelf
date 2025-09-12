@@ -101,15 +101,15 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
         {/* Thumbnail preview */}
         <div className="mb-3">
           <div className="aspect-video overflow-hidden rounded-md bg-muted transition-colors group-hover:bg-muted/80">
-              {thumbnailUrl ? (
-                <img
-                  alt={`${model.latestMetadata.name} preview`}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                  crossOrigin="anonymous"
-                  src={thumbnailUrl}
-                />
-              ) : (
+            {thumbnailUrl ? (
+              <img
+                alt={`${model.latestMetadata.name} preview`}
+                className="h-full w-full object-cover"
+                crossOrigin="anonymous"
+                loading="lazy"
+                src={thumbnailUrl}
+              />
+            ) : (
               <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                 <div className="text-center">
                   <HardDrive className="mx-auto mb-2 h-8 w-8" />

@@ -1,5 +1,4 @@
 import { FileText } from 'lucide-react';
-import type { ModelFile, ModelVersion } from '../../../../server/src/types/model';
 import {
   Card,
   CardContent,
@@ -8,6 +7,10 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { STLViewerWithSuspense } from '@/components/viewer/stl-viewer';
+import type {
+  ModelFile,
+  ModelVersion,
+} from '../../../../server/src/types/model';
 
 type ModelPreviewCardProps = {
   modelId: string;

@@ -31,7 +31,7 @@ const PUBLIC_ROUTES = [
   '/login',
   '/signup',
   '/forgot-password',
-  '/reset-password'
+  '/reset-password',
 ];
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({

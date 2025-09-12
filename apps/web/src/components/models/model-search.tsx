@@ -14,7 +14,7 @@ import { Input } from '../ui/input';
 
 function ModelSearch() {
   const [search, setSearch] = useQueryState(
-    'q', 
+    'q',
     parseAsString.withDefault('').withOptions({ throttleMs: 300 })
   );
   const [tags, setTags] = useQueryState(
