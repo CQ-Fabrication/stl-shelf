@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { Calendar, Download, Eye, HardDrive, MoreVertical } from 'lucide-react';
-import { memo } from 'react';
+import { Calendar, Download, Eye, HardDrive, MoreVertical, Trash2 } from 'lucide-react';
+import { memo, useState } from 'react';
 // Import types from server
 import type { Model } from '../../../../server/src/types/model';
 import { Badge } from '../ui/badge';
@@ -13,17 +13,32 @@ import {
   CardTitle,
 } from '../ui/card';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import { useDeleteModel } from '@/hooks/use-delete-model';
 
 type ModelCardProps = {
   model: Model;
 };
 
 const ModelCard = memo(({ model }: ModelCardProps) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deleteModel = useDeleteModel();
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -39,11 +54,12 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
 
   const getTotalSize = () => {
     const latest = model.versions[0];
+    if (!latest?.files) return 0;
     return latest.files.reduce((sum, file) => sum + file.size, 0);
   };
 
   const latestVersion = model.versions[0];
-  const thumbnailUrl = latestVersion.thumbnailPath
+  const thumbnailUrl = latestVersion?.thumbnailPath
     ? `${import.meta.env.VITE_SERVER_URL}/thumbnails/${model.id}/${latestVersion.version}`
     : null;
 
@@ -92,6 +108,17 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
               <DropdownMenuItem>
                 <Download className="mr-2 h-4 w-4" />
                 Download
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowDeleteDialog(true);
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -144,28 +171,55 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
         )}
 
         {/* File info */}
-        <div className="flex items-center justify-between text-muted-foreground text-sm">
-          <div className="flex items-center gap-2">
-            <span>
-              {latestVersion.files.length} file
-              {latestVersion.files.length !== 1 ? 's' : ''}
-            </span>
-            {model.totalVersions > 1 && <span>• v{model.totalVersions}</span>}
+        {latestVersion && (
+          <div className="flex items-center justify-between text-muted-foreground text-sm">
+            <div className="flex items-center gap-2">
+              <span>
+                {latestVersion.files?.length || 0} file
+                {latestVersion.files?.length !== 1 ? 's' : ''}
+              </span>
+              {model.totalVersions > 1 && <span>• v{model.totalVersions}</span>}
+            </div>
+            <div className="flex gap-1">
+              {latestVersion.files?.slice(0, 2).map((file) => (
+                <Badge className="text-xs" key={file.filename} variant="outline">
+                  {file.extension.slice(1).toUpperCase()}
+                </Badge>
+              ))}
+              {latestVersion.files?.length > 2 && (
+                <Badge className="text-xs" variant="outline">
+                  +{latestVersion.files.length - 2}
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="flex gap-1">
-            {latestVersion.files.slice(0, 2).map((file) => (
-              <Badge className="text-xs" key={file.filename} variant="outline">
-                {file.extension.slice(1).toUpperCase()}
-              </Badge>
-            ))}
-            {latestVersion.files.length > 2 && (
-              <Badge className="text-xs" variant="outline">
-                +{latestVersion.files.length - 2}
-              </Badge>
-            )}
-          </div>
-        </div>
+        )}
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Model</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{model.latestMetadata.name}"?
+              This action can be undone by contacting support.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deleteModel.mutate({ id: model.id });
+                setShowDeleteDialog(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 });

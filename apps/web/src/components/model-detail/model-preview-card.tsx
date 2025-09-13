@@ -32,13 +32,14 @@ export const ModelPreviewCard = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
-        {mainModelFile ? (
+        {mainModelFile && mainModelFile.downloadUrl ? (
           <div className="aspect-video">
             <STLViewerWithSuspense
               className="h-full w-full overflow-hidden rounded-b-lg"
               filename={mainModelFile.filename}
               modelId={modelId}
               version={version.version}
+              url={mainModelFile.downloadUrl}
             />
           </div>
         ) : (

@@ -32,6 +32,7 @@ export const models = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (table) => [
     uniqueIndex('models_org_slug_idx').on(table.organizationId, table.slug), // Unique slug per organization
@@ -39,6 +40,7 @@ export const models = pgTable(
     index('models_updated_at_idx').on(table.updatedAt),
     index('models_owner_idx').on(table.ownerId),
     index('models_org_idx').on(table.organizationId),
+    index('models_deleted_at_idx').on(table.deletedAt),
   ]
 );
 
@@ -172,7 +174,10 @@ export const tags = pgTable(
   'tags',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    name: text('name').notNull().unique(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
     typeId: uuid('type_id').references(() => tagTypes.id),
     color: text('color'), // hex color for UI
     description: text('description'),
@@ -185,10 +190,15 @@ export const tags = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex('tags_name_idx').on(table.name),
+    uniqueIndex('tags_org_name_idx').on(table.organizationId, table.name),
+    index('tags_org_idx').on(table.organizationId),
     index('tags_type_idx').on(table.typeId),
     index('tags_usage_count_idx').on(table.usageCount),
-    index('tags_type_name_idx').on(table.typeId, table.name),
+    index('tags_org_type_name_idx').on(
+      table.organizationId,
+      table.typeId,
+      table.name
+    ),
   ]
 );
 

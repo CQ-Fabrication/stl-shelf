@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1756309166955,
-      "tag": "20250827153926_eager_fenris",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1756467055166,
-      "tag": "20250829113055_remarkable_randall_flagg",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1756538902141,
-      "tag": "20250830072822_neat_morlun",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1756563438540,
-      "tag": "20250830141718_bent_vengeance",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1757669983177,
-      "tag": "20250912093943_early_vance_astro",
+      "when": 1757709487501,
+      "tag": "20250912203807_mighty_chronomancer",
       "breakpoints": true
     }
   ]

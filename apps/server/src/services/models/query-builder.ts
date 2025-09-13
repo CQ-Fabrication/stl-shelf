@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import {
   modelFiles,
@@ -27,6 +27,8 @@ export class ModelQueryBuilder {
 
   withOrganization(organizationId: string): this {
     this.conditions.push(eq(models.organizationId, organizationId));
+    // Always filter out soft-deleted models
+    this.conditions.push(isNull(models.deletedAt));
     return this;
   }
 

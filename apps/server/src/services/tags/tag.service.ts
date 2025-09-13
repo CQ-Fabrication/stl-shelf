@@ -64,6 +64,7 @@ export class TagService {
   async addTagsToModel(
     modelId: string,
     tagNames: string[],
+    organizationId: string,
     tx?: DatabaseInstance
   ): Promise<void> {
     const dbInstance = tx || db;
@@ -72,18 +73,27 @@ export class TagService {
     for (const tagName of tagNames) {
       await dbInstance
         .insert(tags)
-        .values({ name: tagName })
+        .values({ 
+          name: tagName,
+          organizationId 
+        })
         .onConflictDoUpdate({
-          target: tags.name,
-          set: { usageCount: sql`${tags.usageCount} + 1` },
+          target: [tags.organizationId, tags.name],
+          set: { 
+            usageCount: sql`${tags.usageCount} + 1`,
+            updatedAt: new Date()
+          },
         });
     }
 
-    // Get tag IDs
+    // Get tag IDs for this organization
     const tagData = await dbInstance
       .select({ id: tags.id, name: tags.name })
       .from(tags)
-      .where(inArray(tags.name, tagNames));
+      .where(and(
+        eq(tags.organizationId, organizationId),
+        inArray(tags.name, tagNames)
+      ));
 
     // Link tags to model
     const modelTagValues: Omit<InsertModelTag, 'id' | 'createdAt'>[] =
@@ -100,14 +110,14 @@ export class TagService {
     }
   }
 
-  async updateModelTags(modelId: string, newTagNames: string[]): Promise<void> {
+  async updateModelTags(modelId: string, newTagNames: string[], organizationId: string): Promise<void> {
     await db.transaction(async (tx) => {
       // Remove existing tags
       await tx.delete(modelTags).where(eq(modelTags.modelId, modelId));
 
       // Add new tags
       if (newTagNames.length > 0) {
-        await this.addTagsToModel(modelId, newTagNames, tx);
+        await this.addTagsToModel(modelId, newTagNames, organizationId, tx);
       }
     });
   }

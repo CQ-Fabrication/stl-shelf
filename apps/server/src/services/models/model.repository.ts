@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import {
   modelFiles,
@@ -76,7 +76,8 @@ export class ModelRepository {
           .where(
             and(
               eq(models.id, modelId),
-              eq(models.organizationId, organizationId)
+              eq(models.organizationId, organizationId),
+              isNull(models.deletedAt)
             )
           )
           .leftJoin(modelVersions, eq(modelVersions.modelId, models.id))

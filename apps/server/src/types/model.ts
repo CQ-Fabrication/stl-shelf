@@ -35,6 +35,8 @@ export const ModelFileSchema = z.object({
     })
     .optional(),
   triangleCount: z.number().optional(),
+  // Presigned download URL (added by server when returning model details)
+  downloadUrl: z.string().optional(),
 });
 
 // Version schema

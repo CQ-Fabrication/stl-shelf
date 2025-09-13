@@ -1,5 +1,5 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../../db/client';
 import { models } from '../../db/schema/models';
 
@@ -10,7 +10,7 @@ type SelectModel = InferSelectModel<typeof models>;
 // Clean input type that omits auto-generated fields
 type CreateModelInput = Omit<
   InsertModel,
-  'id' | 'currentVersion' | 'totalVersions' | 'createdAt' | 'updatedAt'
+  'id' | 'currentVersion' | 'totalVersions' | 'createdAt' | 'updatedAt' | 'deletedAt'
 >;
 
 // Update input type for partial updates
@@ -27,11 +27,16 @@ export class ModelService {
     return newModel;
   }
 
-  async getModel(id: string): Promise<SelectModel | null> {
+  async getModel(id: string, includeDeleted = false): Promise<SelectModel | null> {
+    const conditions = [eq(models.id, id)];
+    if (!includeDeleted) {
+      conditions.push(isNull(models.deletedAt));
+    }
+
     const modelData = await db
       .select()
       .from(models)
-      .where(eq(models.id, id))
+      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
       .limit(1);
 
     if (modelData.length === 0) {
@@ -51,8 +56,30 @@ export class ModelService {
   }
 
   async deleteModel(id: string): Promise<void> {
-    // Delete model and all cascading data (versions, files, tags)
+    // Soft delete - set deletedAt timestamp
+    await db
+      .update(models)
+      .set({
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(models.id, id));
+  }
+
+  async hardDeleteModel(id: string): Promise<void> {
+    // Hard delete - permanently remove model and all cascading data
     await db.delete(models).where(eq(models.id, id));
+  }
+
+  async restoreModel(id: string): Promise<void> {
+    // Restore soft-deleted model
+    await db
+      .update(models)
+      .set({
+        deletedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(models.id, id));
   }
 }
 

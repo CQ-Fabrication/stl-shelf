@@ -1,37 +1,28 @@
-// import { env } from "cloudflare:workers";
 import 'dotenv/config';
-import { extname, join } from 'node:path';
 import { RPCHandler } from '@orpc/server/fetch';
 import { Hono } from 'hono';
-import { serveStatic } from 'hono/bun';
-import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { auth } from './auth';
 import { env } from './env';
+import { fileServingHandler } from './handlers/file-serving.handler';
+import { healthHandler } from './handlers/health.handler';
+import { thumbnailHandler } from './handlers/thumbnail.handler';
+// Handler imports
+import { uploadHandler } from './handlers/upload.handler';
 import { createContext } from './lib/context';
 import {
-  SecurityError,
-  validateFilename,
-  validateFileSize,
-} from './lib/security';
+  emailVerificationMiddleware,
+  loginWallMiddleware,
+  requireAuthMiddleware,
+  sessionMiddleware,
+} from './middleware/auth.middleware';
+// Middleware imports
+import { corsMiddleware } from './middleware/cors.middleware';
+import { csrfMiddleware } from './middleware/csrf.middleware';
+import { securityHeadersMiddleware } from './middleware/security.middleware';
 import { appRouter } from './routers/index';
-import { cacheService } from './services/cache';
-import { modelFileService } from './services/files/model-file.service';
-import { gitService } from './services/git';
-// Direct imports - NO BARREL EXPORTS
-import { modelService } from './services/models/model.service';
-import { modelVersionService } from './services/models/model-version.service';
-// getServicesHealth function moved here since it's only used in this file
-import { storageService } from './services/storage';
-import { tagService } from './services/tags/tag.service';
 
-type AppVars = { Variables: { session: any } };
-const app = new Hono<AppVars>();
-
-// HTTP Status constants
-const HTTP_BAD_REQUEST = 400;
-const HTTP_NOT_FOUND = 404;
-const HTTP_INTERNAL_SERVER_ERROR = 500;
+const app = new Hono();
 
 // Development mode check
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -46,84 +37,14 @@ if (!(isDevelopment || env.CORS_ORIGIN)) {
   process.exit(1);
 }
 
+// Apply middleware in correct order
 app.use(logger());
-app.use(
-  '/*',
-  cors({
-    // CORS: echo back allowed origin; never wildcard when credentials are enabled
-    origin: (origin) => {
-      const allowedOrigins = env.CORS_ORIGIN
-        ? env.CORS_ORIGIN.split(',')
-        : ['http://localhost:3001', 'http://127.0.0.1:3001'];
-      // If no origin (e.g., non-browser), omit ACAO by returning null
-      if (!origin) return null;
-      return allowedOrigins.includes(origin) ? origin : null;
-    },
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 86_400, // 24 hours
-  })
-);
+app.use('/*', corsMiddleware);
+app.use('*', securityHeadersMiddleware);
+app.use('*', emailVerificationMiddleware);
+app.use('*', csrfMiddleware);
 
-// Security headers
-app.use('*', async (c, next) => {
-  // Basic hardening headers (for all environments)
-  c.header('X-Content-Type-Options', 'nosniff');
-  c.header('X-Frame-Options', 'DENY');
-  c.header('Referrer-Policy', 'no-referrer');
-  c.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-
-  if (!isDevelopment) {
-    // HSTS in production
-    c.header(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains; preload'
-    );
-    // Minimal CSP for API responses
-    const allowedOrigins = env.CORS_ORIGIN
-      ? env.CORS_ORIGIN.split(',').map((s) => s.trim())
-      : [];
-    const connectSrc = ["'self'", ...allowedOrigins];
-    const csp = [
-      "default-src 'none'",
-      "base-uri 'none'",
-      "frame-ancestors 'none'",
-      `connect-src ${connectSrc.join(' ')}`,
-    ].join('; ');
-    c.header('Content-Security-Policy', csp);
-  }
-
-  await next();
-});
-
-// Require verified email sessions for app routes (block unverified)
-app.use('*', async (c, next) => {
-  const pathname = new URL(c.req.url).pathname;
-  if (pathname.startsWith('/auth') || pathname === '/health') return next();
-  const session = c.get('session');
-  if (!session) return next(); // handled by auth wall later
-  if (session.user && session.user.emailVerified === false) {
-    return c.json({ error: 'Email not verified' }, 403);
-  }
-  await next();
-});
-
-// CSRF protection via Origin validation for state-changing requests
-app.use('*', async (c, next) => {
-  const method = c.req.method.toUpperCase();
-  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return next();
-  const origin = c.req.header('Origin');
-  const allowedOrigins = env.CORS_ORIGIN
-    ? env.CORS_ORIGIN.split(',').map((s) => s.trim())
-    : ['http://localhost:3001', 'http://127.0.0.1:3001'];
-  if (!(origin && allowedOrigins.includes(origin))) {
-    return c.json({ error: 'Forbidden' }, 403);
-  }
-  await next();
-});
-
-// Mount Better Auth under /auth (framework-agnostic handler)
+// Mount Better Auth under /auth
 const authApp = new Hono();
 authApp.all('/*', async (c) => {
   const res = await auth.handler(c.req.raw);
@@ -131,364 +52,36 @@ authApp.all('/*', async (c) => {
 });
 app.route('/auth', authApp);
 
-// Attach session for all requests (after auth routes)
-app.use('*', async (c, next) => {
-  try {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
-    c.set('session', session);
-  } catch {
-    c.set('session', null);
-  }
-  await next();
-});
+// Session and auth middleware - only for non-RPC routes
+app.use('/files/*', sessionMiddleware);
+app.use('/thumbnails/*', sessionMiddleware);
+app.use('/upload', sessionMiddleware);
 
-// Enforce login wall for non-auth endpoints (allow health)
-app.use('*', async (c, next) => {
-  const pathname = new URL(c.req.url).pathname;
-  if (
-    pathname.startsWith('/auth') ||
-    pathname === '/health' ||
-    pathname.startsWith('/files') ||
-    pathname.startsWith('/thumbnails')
-  )
-    return next();
-  const session = c.get('session');
-  if (!session) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-  await next();
-});
+app.use('/files/*', loginWallMiddleware);
+app.use('/thumbnails/*', loginWallMiddleware);
+app.use('/upload', loginWallMiddleware);
 
-// File upload endpoint - using new database architecture
-app.post('/upload', async (c) => {
-  try {
-    const body = await c.req.parseBody();
-    const name = body.name as string;
-    const description = body.description as string;
-    const tags = body.tags ? JSON.parse(body.tags as string) : [];
-    const modelId = body.modelId as string | undefined; // For version uploads
-    const printSettings = body.printSettings
-      ? JSON.parse(body.printSettings as string)
-      : undefined;
+// Public routes (no auth required)
+app.get('/health', healthHandler);
 
-    if (!name) {
-      return c.json({ error: 'Name is required' }, HTTP_BAD_REQUEST);
-    }
+// File serving routes (protected - need explicit auth)
+app.get(
+  '/files/:modelId/:version/:filename',
+  requireAuthMiddleware,
+  fileServingHandler
+);
+app.get(
+  '/thumbnails/:modelId/:version',
+  requireAuthMiddleware,
+  thumbnailHandler
+);
 
-    // Get uploaded files
-    const files: File[] = [];
-    const formData = await c.req.formData();
+// Protected routes (require auth context)
+app.post('/upload', requireAuthMiddleware, uploadHandler);
 
-    for (const [key, value] of formData.entries()) {
-      if (
-        key === 'files' &&
-        typeof value === 'object' &&
-        value !== null &&
-        'name' in value
-      ) {
-        files.push(value as File);
-      }
-    }
-
-    if (files.length === 0) {
-      return c.json({ error: 'No files uploaded' }, HTTP_BAD_REQUEST);
-    }
-
-    // Validate all files before processing
-    for (const file of files) {
-      validateFilename(file.name);
-      validateFileSize(file.size);
-    }
-
-    const session = c.get('session');
-    const userId = session?.user?.id as string | undefined;
-    const organizationId = session?.session?.activeOrganizationId as
-      | string
-      | undefined;
-
-    if (!(userId && organizationId)) {
-      return c.json({ error: 'Unauthorized - No active organization' }, 401);
-    }
-
-    let finalModelId: string;
-    let version: string;
-    let isNewVersion = false;
-
-    if (modelId) {
-      // Adding version to existing model
-      const existingModel = await modelService.getModel(modelId);
-      if (!existingModel) {
-        return c.json({ error: 'Model not found' }, HTTP_NOT_FOUND);
-      }
-      if (
-        existingModel.organizationId &&
-        existingModel.organizationId !== organizationId
-      ) {
-        return c.json({ error: 'Forbidden' }, 403);
-      }
-
-      finalModelId = modelId;
-      // For now, just increment the total versions count to get next version
-      const nextVersionNumber = existingModel.totalVersions + 1;
-      version = `v${nextVersionNumber}`;
-      isNewVersion = true;
-    } else {
-      // Create new model
-      const slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, '-')
-        .replace(/-+/g, '-');
-      const model = await modelService.createModel({
-        name,
-        slug,
-        description,
-        organizationId,
-        ownerId: userId, // Keep for audit trail
-      });
-
-      // Add tags if provided
-      if (tags && tags.length > 0) {
-        await tagService.addTagsToModel(model.id, tags);
-      }
-
-      if (!model) {
-        throw new Error('Failed to create model');
-      }
-
-      finalModelId = model.id;
-      version = 'v1';
-    }
-
-    // Create version in database
-    const dbVersion = await modelVersionService.createModelVersion({
-      modelId: finalModelId,
-      version,
-      name: isNewVersion ? `${name} ${version}` : name,
-      description,
-      printSettings,
-    });
-
-    if (!dbVersion) {
-      throw new Error('Failed to create model version');
-    }
-
-    // Process and upload files
-    const uploadedFiles: Array<{
-      filename: string;
-      originalName: string;
-      size: number;
-      mimeType: string;
-    }> = [];
-
-    for (const file of files) {
-      const safeFilename = validateFilename(file.name);
-      const ext = extname(safeFilename).toLowerCase();
-
-      // Generate storage key
-      const storageKey = storageService.generateStorageKey({
-        modelId: finalModelId,
-        version,
-        filename: safeFilename,
-      });
-
-      // Upload to storage
-      const uploadResult = await storageService.uploadFile({
-        key: storageKey,
-        file,
-        contentType: file.type,
-        metadata: {
-          originalName: file.name,
-          modelId: finalModelId,
-          version,
-        },
-      });
-
-      // Add file record to database
-      await modelFileService.addFileToVersion({
-        versionId: dbVersion.id,
-        filename: safeFilename,
-        originalName: file.name,
-        size: file.size,
-        mimeType: file.type,
-        extension: ext,
-        storageKey: uploadResult.key,
-        storageUrl: uploadResult.url,
-        storageBucket: storageService.defaultModelsBucket,
-        fileMetadata: {
-          processed: false, // Will be processed later for 3D analysis
-        },
-      });
-
-      uploadedFiles.push({
-        filename: safeFilename,
-        originalName: file.name,
-        size: file.size,
-        mimeType: file.type,
-      });
-    }
-
-    // Invalidate cache for this organization and model so detail view refreshes
-    await cacheService.invalidateModel(finalModelId, organizationId);
-
-    // Try to commit to git - but don't fail if Git has issues
-    try {
-      const commitMessage = isNewVersion
-        ? `Add new version ${version} for ${name}`
-        : `Add ${name} ${version}`;
-      await gitService.commitModelUpload(finalModelId, version, commitMessage);
-    } catch (error) {
-      console.error(
-        'Git commit failed for upload:',
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      // Continue without Git - files are still saved
-    }
-
-    return c.json({
-      success: true,
-      modelId: finalModelId,
-      version,
-      files: uploadedFiles.length,
-      isNewVersion,
-    });
-  } catch (error) {
-    console.error('Upload error:', error);
-
-    // Handle security errors appropriately
-    if (error instanceof SecurityError) {
-      return c.json(
-        {
-          error: 'Invalid upload data',
-          code: error.code,
-        },
-        HTTP_BAD_REQUEST
-      );
-    }
-
-    return c.json(
-      {
-        error: 'Upload failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      HTTP_INTERNAL_SERVER_ERROR
-    );
-  }
-});
-
-// File serving endpoint - redirect to presigned URL
-app.get('/files/:modelId/:version/:filename', async (c) => {
-  try {
-    const { modelId, version, filename } = c.req.param();
-
-    // Validate filename for security
-    const safeFilename = validateFilename(filename);
-
-    // Generate storage key
-    const storageKey = storageService.generateStorageKey({
-      modelId,
-      version,
-      filename: safeFilename,
-    });
-
-    // Check if file exists in storage
-    const exists = await storageService.fileExists(storageKey);
-    if (!exists) {
-      return c.json({ error: 'File not found' }, HTTP_NOT_FOUND);
-    }
-
-    // Check cache for presigned URL first
-    const cachedUrl = await cacheService.getCachedPresignedUrl(storageKey);
-    if (cachedUrl) {
-      return c.redirect(cachedUrl.url);
-    }
-
-    // Generate new presigned URL
-    const downloadUrl = await storageService.generateDownloadUrl(storageKey);
-
-    // Cache the presigned URL
-    await cacheService.cachePresignedUrl(storageKey, downloadUrl, 60); // 1 hour
-
-    // Redirect to presigned URL
-    return c.redirect(downloadUrl);
-  } catch (error) {
-    // Handle security errors with appropriate status codes
-    if (error instanceof SecurityError) {
-      return c.json(
-        {
-          error: 'Invalid request',
-          code: error.code,
-        },
-        HTTP_BAD_REQUEST
-      );
-    }
-    return c.json({ error: 'File not found' }, HTTP_NOT_FOUND);
-  }
-});
-
-// Thumbnail serving endpoint - redirect to presigned URL
-app.get('/thumbnails/:modelId/:version', async (c) => {
-  try {
-    const { modelId, version } = c.req.param();
-
-    // Generate storage key for thumbnail
-    const storageKey = storageService.generateStorageKey({
-      modelId,
-      version,
-      filename: 'thumbnail.png',
-      type: 'thumbnail',
-    });
-
-    // Check if thumbnail exists in storage
-    const exists = await storageService.fileExists(
-      storageKey,
-      storageService.defaultThumbnailsBucket
-    );
-    if (!exists) {
-      return c.json({ error: 'Thumbnail not found' }, HTTP_NOT_FOUND);
-    }
-
-    // Check cache for presigned URL first
-    const cachedUrl = await cacheService.getCachedPresignedUrl(
-      `thumbnail:${storageKey}`
-    );
-    if (cachedUrl) {
-      return c.redirect(cachedUrl.url);
-    }
-
-    // Generate new presigned URL
-    const downloadUrl = await storageService.generateDownloadUrl(
-      storageKey,
-      storageService.defaultThumbnailsBucket,
-      60 // 1 hour
-    );
-
-    // Cache the presigned URL
-    await cacheService.cachePresignedUrl(
-      `thumbnail:${storageKey}`,
-      downloadUrl,
-      60
-    );
-
-    // Redirect to presigned URL
-    return c.redirect(downloadUrl);
-  } catch (error) {
-    // Handle security errors with appropriate status codes
-    if (error instanceof SecurityError) {
-      return c.json(
-        {
-          error: 'Invalid request',
-          code: error.code,
-        },
-        HTTP_BAD_REQUEST
-      );
-    }
-    return c.json({ error: 'Thumbnail not found' }, HTTP_NOT_FOUND);
-  }
-});
-
+// oRPC handler for all API routes
 const handler = new RPCHandler(appRouter);
 app.use('/rpc/*', async (c, next) => {
-  // Create minimal context (services now imported directly)
   const context = await createContext({ context: c });
   const { matched, response } = await handler.handle(c.req.raw, {
     prefix: '/rpc',
@@ -499,29 +92,6 @@ app.use('/rpc/*', async (c, next) => {
     return c.newResponse(response.body, response);
   }
   await next();
-});
-
-app.get('/health', async (c) => {
-  // Health check for all services
-  const health = {
-    cache: await cacheService.health(),
-    storage: await storageService.health(),
-    timestamp: new Date().toISOString(),
-  };
-
-  const isHealthy =
-    health.cache.status === 'healthy' && health.storage.status === 'healthy';
-
-  const servicesHealth = {
-    ...health,
-    overall: isHealthy ? 'healthy' : 'unhealthy',
-  };
-
-  return c.json({
-    status: servicesHealth.overall,
-    service: 'STL Shelf API',
-    services: servicesHealth,
-  });
 });
 
 export default app;

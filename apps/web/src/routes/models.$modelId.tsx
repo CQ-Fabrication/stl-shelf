@@ -10,6 +10,17 @@ import { ModelPreviewCard } from '@/components/model-detail/model-preview-card';
 import { ModelVersionHistory } from '@/components/model-detail/model-version-history';
 import { EditModelDialog } from '@/components/models/edit-model-dialog';
 import { UploadVersionDialog } from '@/components/models/upload-version-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useDeleteModel } from '@/hooks/use-delete-model';
 import { findMainModelFile, useModelDetail } from '@/hooks/use-model-detail';
 import { downloadAllFiles } from '@/utils/download';
 
@@ -21,7 +32,10 @@ function ModelDetailComponent() {
   const { modelId } = Route.useParams();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  
+  const deleteModel = useDeleteModel();
 
   const { model, latestVersion, totalSize, history, isLoading, error } =
     useModelDetail(modelId);
@@ -56,6 +70,10 @@ function ModelDetailComponent() {
     setSelectedVersion(version);
   };
 
+  const handleDelete = () => {
+    deleteModel.mutate({ id: model.id });
+  };
+
   if (isLoading) {
     return <ModelDetailSkeleton />;
   }
@@ -71,6 +89,7 @@ function ModelDetailComponent() {
         onDownloadClick={handleDownloadAll}
         onEditClick={() => setEditDialogOpen(true)}
         onUploadClick={() => setUploadDialogOpen(true)}
+        onDeleteClick={() => setDeleteDialogOpen(true)}
       />
 
       {/* Main content grid */}
@@ -117,6 +136,28 @@ function ModelDetailComponent() {
         onOpenChange={setUploadDialogOpen}
         open={uploadDialogOpen}
       />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Model</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{model.latestMetadata.name}"?
+              This action can be undone by contacting support.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

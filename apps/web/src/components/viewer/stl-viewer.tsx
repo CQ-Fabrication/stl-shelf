@@ -1,10 +1,11 @@
-import { Grid, OrbitControls } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-import { Eye, EyeOff, Grid3X3, Pause, Play, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
+import { type BufferGeometry, DoubleSide, type Mesh, Vector3 } from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 
@@ -13,6 +14,7 @@ type STLViewerProps = {
   version: string;
   filename: string;
   className?: string;
+  url: string; // Presigned URL from server
 };
 
 type ModelMeshProps = {
@@ -22,19 +24,23 @@ type ModelMeshProps = {
 };
 
 function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<Mesh>(null);
   const extension = filename.split('.').pop()?.toLowerCase();
 
-  // Load geometry based on file type - useLoader handles errors internally
-  let geometry;
+  // Always call both loaders to satisfy React hooks rules
+  const stlGeometry = useLoader(STLLoader, url);
+  const objObject = useLoader(OBJLoader, url);
+
+  // Select the appropriate geometry based on file extension
+  let geometry: BufferGeometry | undefined;
   if (extension === 'stl') {
-    geometry = useLoader(STLLoader, url);
+    geometry = stlGeometry;
   } else if (extension === 'obj') {
-    const object = useLoader(OBJLoader, url);
     // Extract geometry from the first mesh in the OBJ
-    geometry = object.children[0]?.geometry;
-  } else {
-    return null;
+    const firstChild = objObject.children[0];
+    if (firstChild && 'geometry' in firstChild) {
+      geometry = (firstChild as Mesh).geometry;
+    }
   }
 
   // Auto-rotate the model (only if enabled)
@@ -44,11 +50,7 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
     }
   });
 
-  if (!geometry) {
-    return null;
-  }
-
-  // Prepare geometry
+  // Prepare geometry - always call useEffect
   useEffect(() => {
     if (geometry) {
       geometry.center();
@@ -57,13 +59,17 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
     }
   }, [geometry]);
 
+  if (!geometry) {
+    return null;
+  }
+
   // Center and scale the geometry
   const boundingBox = geometry.boundingBox;
   if (!boundingBox) {
     geometry.computeBoundingBox();
   }
 
-  const size = new THREE.Vector3();
+  const size = new Vector3();
   geometry.boundingBox?.getSize(size);
   const maxDimension = Math.max(size.x, size.y, size.z);
   const scale = maxDimension > 0 ? 2 / maxDimension : 1; // Scale to fit in a 2-unit cube
@@ -74,7 +80,7 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
         color="#e5e7eb"
         opacity={0.9}
         shininess={100}
-        side={THREE.DoubleSide}
+        side={DoubleSide}
         transparent
       />
     </mesh>
@@ -143,31 +149,18 @@ export function STLViewer({
   version,
   filename,
   className = '',
+  url,
 }: STLViewerProps) {
-  const controlsRef = useRef<any>(null);
-  const [showGrid, setShowGrid] = useState(false);
-  const [showWireframe, setShowWireframe] = useState(false);
-  const [autoRotate, setAutoRotate] = useState(false); // Start with auto-rotation off
+  const controlsRef = useRef<OrbitControlsImpl>(null);
   const [error, _setError] = useState<Error | null>(null);
 
-  const modelUrl = `${import.meta.env.VITE_SERVER_URL}/files/${modelId}/${version}/${filename}`;
+  // Use the presigned URL from server
+  const modelUrl = url;
 
   const handleResetCamera = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
     }
-  };
-
-  const handleToggleGrid = () => {
-    setShowGrid((prev) => !prev);
-  };
-
-  const handleToggleWireframe = () => {
-    setShowWireframe((prev) => !prev);
-  };
-
-  const handleToggleAutoRotate = () => {
-    setAutoRotate((prev) => !prev);
   };
 
   if (error) {
@@ -200,19 +193,6 @@ export function STLViewer({
         />
         <directionalLight intensity={0.3} position={[-10, -10, -5]} />
 
-        {/* Grid */}
-        {showGrid && (
-          <Grid
-            args={[10, 10]}
-            cellSize={0.5}
-            cellThickness={0.5}
-            fadeDistance={25}
-            fadeStrength={1}
-            sectionSize={2}
-            sectionThickness={1}
-          />
-        )}
-
         {/* Controls */}
         <OrbitControls
           autoRotate={false}
@@ -227,11 +207,7 @@ export function STLViewer({
 
         {/* Model */}
         <Suspense fallback={null}>
-          <ModelMesh
-            autoRotate={autoRotate}
-            filename={filename}
-            url={modelUrl}
-          />
+          <ModelMesh autoRotate={false} filename={filename} url={modelUrl} />
         </Suspense>
       </Canvas>
 

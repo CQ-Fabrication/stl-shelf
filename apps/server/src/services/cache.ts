@@ -444,6 +444,24 @@ export class CacheService {
     }
   }
 
+  // Session cache operations
+  async cacheSession(token: string, session: unknown | null): Promise<void> {
+    const key = `session:${token}`;
+    const ttl = session ? 300 : 60; // 5 minutes for valid sessions, 1 minute for null
+    await this.set(key, session || 'null', ttl);
+  }
+
+  async getCachedSession(token: string): Promise<unknown> {
+    const key = `session:${token}`;
+    const cached = await this.get(key);
+    return cached === 'null' ? null : cached;
+  }
+
+  async invalidateSession(token: string): Promise<void> {
+    const key = `session:${token}`;
+    await this.del(key);
+  }
+
   // Cache warming
   async warmCache(): Promise<void> {
     if (

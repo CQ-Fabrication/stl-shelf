@@ -1,6 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Download, Edit, Upload } from 'lucide-react';
+import { ArrowLeft, Download, Edit, MoreVertical, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { Model } from '../../../../server/src/types/model';
 
 type ModelDetailHeaderProps = {
@@ -8,6 +14,7 @@ type ModelDetailHeaderProps = {
   onUploadClick: () => void;
   onEditClick: () => void;
   onDownloadClick: () => void;
+  onDeleteClick: () => void;
 };
 
 export const ModelDetailHeader = ({
@@ -15,6 +22,7 @@ export const ModelDetailHeader = ({
   onUploadClick,
   onEditClick,
   onDownloadClick,
+  onDeleteClick,
 }: ModelDetailHeaderProps) => {
   return (
     <div className="mb-6">
@@ -51,6 +59,22 @@ export const ModelDetailHeader = ({
             <Download className="mr-2 h-4 w-4" />
             Download
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="outline">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={onDeleteClick}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Model
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
