@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@amandaghassaei/stl-parser": "1.7.0",
+    "@scalar/hono-api-reference": "0.9.18",
     "@orpc/client": "1.8.9",
     "@orpc/server": "1.8.9",
     "@t3-oss/env-core": "0.13.8",
