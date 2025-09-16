@@ -10,12 +10,7 @@ import { thumbnailHandler } from './handlers/thumbnail.handler';
 // Handler imports
 import { uploadHandler } from './handlers/upload.handler';
 import { createContext } from './lib/context';
-import {
-  emailVerificationMiddleware,
-  loginWallMiddleware,
-  requireAuthMiddleware,
-  sessionMiddleware,
-} from './middleware/auth.middleware';
+import { authMiddleware } from './middleware/auth.middleware';
 // Middleware imports
 import { corsMiddleware } from './middleware/cors.middleware';
 import { csrfMiddleware } from './middleware/csrf.middleware';
@@ -41,7 +36,6 @@ if (!(isDevelopment || env.CORS_ORIGIN)) {
 app.use(logger());
 app.use('/*', corsMiddleware);
 app.use('*', securityHeadersMiddleware);
-app.use('*', emailVerificationMiddleware);
 app.use('*', csrfMiddleware);
 
 // Mount Better Auth under /auth
@@ -52,32 +46,20 @@ authApp.all('/*', async (c) => {
 });
 app.route('/auth', authApp);
 
-// Session and auth middleware - only for non-RPC routes
-app.use('/files/*', sessionMiddleware);
-app.use('/thumbnails/*', sessionMiddleware);
-app.use('/upload', sessionMiddleware);
-
-app.use('/files/*', loginWallMiddleware);
-app.use('/thumbnails/*', loginWallMiddleware);
-app.use('/upload', loginWallMiddleware);
+// Auth middleware - only for protected non-RPC routes
+app.use('/files/*', authMiddleware);
+app.use('/thumbnails/*', authMiddleware);
+app.use('/upload', authMiddleware);
 
 // Public routes (no auth required)
 app.get('/health', healthHandler);
 
 // File serving routes (protected - need explicit auth)
-app.get(
-  '/files/:modelId/:version/:filename',
-  requireAuthMiddleware,
-  fileServingHandler
-);
-app.get(
-  '/thumbnails/:modelId/:version',
-  requireAuthMiddleware,
-  thumbnailHandler
-);
+app.get('/files/:modelId/:version/:filename', fileServingHandler);
+app.get('/thumbnails/:modelId/:version', thumbnailHandler);
 
 // Protected routes (require auth context)
-app.post('/upload', requireAuthMiddleware, uploadHandler);
+app.post('/upload', uploadHandler);
 
 // oRPC handler for all API routes
 const handler = new RPCHandler(appRouter);

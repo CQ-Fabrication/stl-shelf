@@ -27,13 +27,14 @@ const HTTP_NOT_FOUND = 404;
 
 export async function uploadHandler(c: Context) {
   try {
-    // Get auth context - NO MORE MANUAL SESSION EXTRACTION!
-    const authContext = c.get('auth');
-    if (!authContext) {
-      return c.json({ error: 'Unauthorized - No active organization' }, 401);
+    // Auth: derive from BetterAuth session set by authMiddleware
+    const session = c.get('session');
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
     }
-    
-    const { userId, organizationId } = authContext;
+
+    const userId = session.user.id;
+    const organizationId = session.session.activeOrganizationId!;
     
     const body = await c.req.parseBody();
 
