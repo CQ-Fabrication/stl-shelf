@@ -14,6 +14,8 @@ Run `bun run dev` for the full Turbo pipeline, or scope to `bun run dev:web` / `
 
 Write strict TypeScript—no `any`—and let Biome enforce 2-space indentation, single quotes, and configured trailing commas. Follow naming patterns: `kebab-case` filenames (`apps/web/src/routes/stl-viewer.tsx`), `camelCase` for functions/variables, and `PascalCase` for React components and types. Uphold accessibility guidelines: semantic elements first, always include `type` on `<button>`, and ensure interactive handlers are keyboard-accessible.
 
+Avoid comments that restate what the code already expresses; only add comments when they convey important context or rationale that the implementation cannot make obvious.
+
 ## Testing Guidelines
 
 No global runner exists yet. When you add coverage, place specs under `apps/*/src/**/*.{test,spec}.ts(x)` and favor Bun's built-in test APIs plus Testing Library for UI. Keep tests deterministic by mocking network and database calls; document new fixtures in `docs/`.
