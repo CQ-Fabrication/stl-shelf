@@ -19,7 +19,6 @@ import { modelFileService } from '@/services/files/model-file.service';
 import { tagService } from '@/services/tags/tag.service';
 import { storageService } from '@/services/storage';
 import { cacheService } from '@/services/cache';
-import { gitService } from '@/services/git';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_FORBIDDEN = 403;
@@ -213,16 +212,6 @@ export async function uploadHandler(c: Context) {
 
     // Audit log the upload
     // TODO: Implement audit logging
-
-    // Git commit (non-blocking)
-    try {
-      const commitMessage = isNewVersion
-        ? `Add new version ${version} for ${validatedInput.name}`
-        : `Add ${validatedInput.name} ${version}`;
-      await gitService.commitModelUpload(finalModelId, version, commitMessage);
-    } catch (error) {
-      console.error('Git commit failed:', error);
-    }
 
     return c.json({
       success: true,

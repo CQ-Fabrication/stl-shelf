@@ -50,11 +50,6 @@ export const env = createEnv({
     SMTP_PASS: z.string().optional(),
     SMTP_FROM: z.string().optional(),
 
-    // Git Configuration
-    GIT_USER_NAME: z.string().min(1).optional(),
-    GIT_USER_EMAIL: z.string().email().optional(),
-    GIT_REMOTE_URL: z.string().url().optional(),
-
     // Server Configuration
     NODE_ENV: z.enum(['development', 'production', 'test']),
     PORT: z.coerce.number().min(1),

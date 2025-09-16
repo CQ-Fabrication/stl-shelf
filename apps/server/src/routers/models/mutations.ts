@@ -7,7 +7,6 @@ import { modelVersionService } from '@/services/models/model-version.service';
 import { modelQueryService } from '@/services/models/model-query.service';
 import { tagService } from '@/services/tags/tag.service';
 import { cacheService } from '@/services/cache';
-import { gitService } from '@/services/git';
 import { storageService } from '@/services/storage';
 
 export const modelMutations = {
@@ -38,22 +37,14 @@ export const modelMutations = {
       }
 
       if (input.metadata.tags) {
-        await tagService.updateModelTags(input.modelId, input.metadata.tags);
-      }
-
-      await cacheService.invalidateModel(input.modelId, session.user.id);
-
-      try {
-        const commitMessage = `Update metadata for ${input.modelId}${
-          input.version ? ` ${input.version}` : ''
-        }`;
-        await gitService.commitModelUpdate(input.modelId, commitMessage);
-      } catch (error) {
-        console.error(
-          'Git commit failed for metadata update:',
-          error instanceof Error ? error.message : 'Unknown error'
+        await tagService.updateModelTags(
+          input.modelId,
+          input.metadata.tags,
+          organizationId
         );
       }
+
+      await cacheService.invalidateModel(input.modelId, organizationId);
 
       return { success: true };
     }),
@@ -81,15 +72,6 @@ export const modelMutations = {
       // They will be cleaned up after the retention period expires
 
       await cacheService.invalidateModel(input.id, organizationId);
-
-      try {
-        await gitService.commitModelDeletion(input.id);
-      } catch (error) {
-        console.error(
-          'Git commit failed for model deletion:',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-      }
 
       return { success: true };
     }),
@@ -137,16 +119,6 @@ export const modelMutations = {
       );
 
       await cacheService.invalidateModel(input.modelId, organizationId);
-
-      try {
-        const commitMessage = `Delete ${input.modelId} ${input.version}`;
-        await gitService.commitModelUpdate(input.modelId, commitMessage);
-      } catch (error) {
-        console.error(
-          'Git commit failed for version deletion:',
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-      }
 
       return { success: true };
     }),

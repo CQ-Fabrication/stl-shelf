@@ -1,6 +1,5 @@
 import type { RouterClient } from '@orpc/server';
 import { filesRouter } from './files.router';
-import { gitRouter } from './git.router';
 import { healthRouter } from './health.router';
 import { modelMutations } from './models/mutations';
 import { modelQueries } from './models/queries';
@@ -26,9 +25,6 @@ export const appRouter = {
   // Tags domain
   getAllTags: tagsRouter.getAllTags,
 
-  // Git domain
-  getRepositoryStatus: gitRouter.getRepositoryStatus,
-  getGitStatus: gitRouter.getGitStatus,
 };
 
 export type AppRouter = typeof appRouter;

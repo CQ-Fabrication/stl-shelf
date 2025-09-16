@@ -14,8 +14,6 @@ const BYTES_PER_MB = KILOBYTE * KILOBYTE;
 const MAX_TAGS_COUNT = 20;
 const MAX_TAG_LENGTH = 50;
 const MAX_TEXT_LENGTH = 1000;
-const MAX_GIT_INPUT_LENGTH = 255;
-const MAX_COMMIT_MESSAGE_LENGTH = 200;
 
 // Regex patterns for input validation
 const SAFE_MODEL_ID_REGEX = /^[a-z0-9][a-z0-9\-_]*[a-z0-9]$/i;
@@ -280,45 +278,4 @@ export function validateTags(tags: unknown): string[] {
   }
 
   return sanitizedTags;
-}
-
-/**
- * Sanitizes input for Git operations to prevent command injection
- * @param input - The input string to sanitize
- * @returns The sanitized string safe for Git operations
- */
-export function sanitizeGitInput(input: string): string {
-  if (!input || typeof input !== 'string') {
-    return '';
-  }
-
-  // Remove any characters that could be used for command injection
-  // Allow only alphanumeric, hyphens, underscores, dots, and forward slashes
-  return input
-    .trim()
-    .replace(/[^a-zA-Z0-9\-_./\s]/g, '') // Remove dangerous characters
-    .replace(/\s+/g, ' ') // Collapse multiple spaces
-    .substring(0, MAX_GIT_INPUT_LENGTH); // Limit length
-}
-
-/**
- * Validates a Git commit message for safety
- * @param message - The commit message to validate
- * @returns The sanitized commit message
- */
-export function validateGitCommitMessage(message: string): string {
-  if (!message || typeof message !== 'string') {
-    return 'Update files';
-  }
-
-  // Sanitize commit message
-  return (
-    message
-      .trim()
-      .replace(/[<>'"&$`|;]/g, '') // Remove potentially dangerous characters
-      .replace(/\r\n|\r|\n/g, ' ') // Replace newlines with spaces
-      .replace(/\s+/g, ' ') // Collapse multiple spaces
-      .substring(0, MAX_COMMIT_MESSAGE_LENGTH) || // Limit length
-    'Update files'
-  ); // Fallback if empty after sanitization
 }
