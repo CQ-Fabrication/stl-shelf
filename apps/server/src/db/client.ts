@@ -1,6 +1,6 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { env } from '../env';
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { env } from "../env";
 import {
   account as authAccount,
   invitation as authInvitation,
@@ -9,7 +9,7 @@ import {
   session as authSession,
   user as authUser,
   verification as authVerification,
-} from './schema/better-auth-schema';
+} from "./schema/better-auth-schema";
 import {
   modelFiles,
   modelFilesRelations,
@@ -21,7 +21,7 @@ import {
   modelVersionsRelations,
   tags,
   tagsRelations,
-} from './schema/models';
+} from "./schema/models";
 
 const schema = {
   models,
