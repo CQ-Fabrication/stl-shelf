@@ -25,7 +25,7 @@ export const protectedProcedure = o.use(({ context, next }) => {
     context: {
       session,
       organizationId,
+      ipAddress: context.ipAddress,
     } satisfies AuthenticatedContext,
   });
 });
-

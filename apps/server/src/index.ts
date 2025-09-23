@@ -1,15 +1,31 @@
 import "dotenv/config";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import { RPCHandler } from "@orpc/server/fetch";
 import { Scalar } from "@scalar/hono-api-reference";
-import { Hono } from "hono";
+import type { Context } from "hono";
 import { logger } from "hono/logger";
 import { auth } from "./auth";
-import { appRouter } from "./routers/index";
+import type { BaseContext, Session } from "./lib/context";
+import { appRouter, openApiRoutes } from "./routers/index";
 
-const app = new Hono();
+const app = new OpenAPIHono();
 
 // oRPC handler for all API routes
 const handler = new RPCHandler(appRouter);
+
+const openApiBuilder = new OpenAPIHono();
+for (const route of openApiRoutes) {
+  openApiBuilder.openapi(route, () => new Response(null, { status: 501 }));
+}
+
+const openApiDocument = openApiBuilder.getOpenAPI31Document({
+  openapi: "3.1.0",
+  info: {
+    title: "STL Shelf API",
+    version: "1.0.0",
+    description: "Backend RPC API for STL Shelf",
+  },
+});
 
 console.log("STL Shelf API starting...");
 
@@ -33,10 +49,13 @@ app.get(
   })
 );
 
+app.get("/api/open-api", (c) => c.json(openApiDocument));
+
 app.use("/rpc/*", async (c, next) => {
+  const context = await createRpcContext(c);
   const { matched, response } = await handler.handle(c.req.raw, {
     prefix: "/rpc",
-    context: c,
+    context,
   });
 
   if (matched) {
@@ -46,3 +65,40 @@ app.use("/rpc/*", async (c, next) => {
 });
 
 export default app;
+
+async function createRpcContext(c: Context): Promise<BaseContext> {
+  const ipAddress = extractClientIp(c);
+
+  try {
+    const sessionData = await auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
+
+    return {
+      session: (sessionData as Session | null) ?? null,
+      ipAddress,
+    };
+  } catch {
+    return {
+      session: null,
+      ipAddress,
+    };
+  }
+}
+
+function extractClientIp(c: Context): string | null {
+  const forwarded = c.req.header("x-forwarded-for");
+  const candidates = [
+    c.req.header("cf-connecting-ip"),
+    c.req.header("x-real-ip"),
+    forwarded ? forwarded.split(",")[0]?.trim() : undefined,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && candidate.length > 0) {
+      return candidate;
+    }
+  }
+
+  return null;
+}

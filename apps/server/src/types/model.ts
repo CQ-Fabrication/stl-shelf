@@ -1,4 +1,4 @@
-import { z } from "zod/v4";
+import { z } from "@/lib/zod";
 
 // Base model metadata schema
 export const modelMetadataSchema = z.object({

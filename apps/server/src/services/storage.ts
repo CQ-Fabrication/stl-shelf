@@ -377,23 +377,40 @@ export class StorageService {
   }
 
   generateStorageKey(options: {
+    organizationId: string;
     modelId: string;
-    version?: string;
+    version: string;
     filename: string;
-    type?: 'model' | 'thumbnail' | 'temp';
+    kind?: 'source' | 'artifact' | 'temp';
   }): string {
-    const { modelId, version, filename, type = 'model' } = options;
+    const { organizationId, modelId, version, filename, kind = 'source' } =
+      options;
     const timestamp = Date.now();
 
-    if (type === 'temp') {
+    if (kind === 'temp') {
       return `temp/${timestamp}-${filename}`;
     }
 
-    if (version) {
-      return `models/${modelId}/${version}/${filename}`;
+    const root = this.getModelVersionRoot({
+      organizationId,
+      modelId,
+      version,
+    });
+
+    if (kind === 'artifact') {
+      return `${root}/artifacts/${filename}`;
     }
 
-    return `models/${modelId}/${filename}`;
+    return `${root}/sources/${filename}`;
+  }
+
+  getModelVersionRoot(options: {
+    organizationId: string;
+    modelId: string;
+    version: string;
+  }): string {
+    const { organizationId, modelId, version } = options;
+    return `${organizationId}/${modelId}/${version}`;
   }
 
   // Health check

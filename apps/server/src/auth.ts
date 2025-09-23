@@ -27,7 +27,7 @@ const smtpTransport =
 export const auth = betterAuth({
   appName: "STL Shelf",
   baseURL: env.AUTH_URL ?? `http://localhost:${env.PORT}`,
-  basePath: "/auth",
+  basePath: "/api/auth",
   // Allow the web app origin to call auth API (origin check)
   trustedOrigins: [env.WEB_URL ?? "http://localhost:3001"],
   // Prefer built-in header extraction for client IP (works with rateLimit)

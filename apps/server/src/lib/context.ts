@@ -11,9 +11,11 @@ export type Session = BetterAuthSession & {
 
 export type BaseContext = {
   session: Session | null;
+  ipAddress?: string | null;
 };
 
 export type AuthenticatedContext = {
   session: Session;
   organizationId: string;
+  ipAddress?: string | null;
 };
