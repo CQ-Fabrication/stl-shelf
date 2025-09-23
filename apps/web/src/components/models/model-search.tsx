@@ -22,7 +22,7 @@ function ModelSearch() {
     parseAsArrayOf(parseAsString, ',').withDefault([])
   );
 
-  const { data: allTags = [] } = useQuery(orpc.getAllTags.queryOptions({}));
+  const { data: allTags = [] } = useQuery(orpc.models.getAllTags.queryOptions());
 
   const handleTagToggle = (tag: string) => {
     const newTags = tags.includes(tag)

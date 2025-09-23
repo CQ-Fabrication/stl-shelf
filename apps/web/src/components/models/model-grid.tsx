@@ -4,7 +4,6 @@ import {
   parseAsArrayOf,
   parseAsInteger,
   parseAsString,
-  parseAsStringLiteral,
   useQueryState,
 } from 'nuqs';
 import { orpc } from '@/utils/orpc';
@@ -24,19 +23,6 @@ export function ModelGrid() {
     parseAsArrayOf(parseAsString, ',').withDefault([])
   );
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
-  const [sortBy, setSortBy] = useQueryState(
-    'sortBy',
-    parseAsStringLiteral([
-      'name',
-      'createdAt',
-      'updatedAt',
-      'size',
-    ]).withDefault('updatedAt')
-  );
-  const [sortOrder, setSortOrder] = useQueryState(
-    'sortOrder',
-    parseAsStringLiteral(['asc', 'desc']).withDefault('desc')
-  );
 
   // Direct useQuery call
   const {
@@ -44,28 +30,15 @@ export function ModelGrid() {
     isLoading,
     error,
   } = useQuery(
-    orpc.listModels.queryOptions({
+    orpc.models.listModels.queryOptions({
       input: {
-        page,
+        page: page || 1,  // Ensure page is never null/undefined
         limit: 12,
         search: search || undefined,
         tags: tags.length > 0 ? tags : undefined,
-        sortBy,
-        sortOrder,
-      },
+      }
     })
   );
-
-  const handleSortChange = (
-    newSortBy: typeof sortBy,
-    newSortOrder: typeof sortOrder
-  ) => {
-    setSortBy(newSortBy);
-    setSortOrder(newSortOrder);
-    if (page !== 1) {
-      setPage(1);
-    }
-  };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -88,38 +61,6 @@ export function ModelGrid() {
 
   return (
     <div className="space-y-6">
-      {/* Sort controls */}
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">Sort by:</span>
-        <div className="flex gap-1">
-          {(
-            [
-              { key: 'updatedAt', label: 'Recently Updated' },
-              { key: 'createdAt', label: 'Recently Created' },
-              { key: 'name', label: 'Name' },
-              { key: 'size', label: 'Size' },
-            ] as const
-          ).map(({ key, label }) => (
-            <Button
-              key={key}
-              onClick={() =>
-                handleSortChange(
-                  key,
-                  sortBy === key && sortOrder === 'desc' ? 'asc' : 'desc'
-                )
-              }
-              size="sm"
-              variant={sortBy === key ? 'default' : 'ghost'}
-            >
-              {label}
-              {sortBy === key && (
-                <span className="ml-1">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-              )}
-            </Button>
-          ))}
-        </div>
-      </div>
-
       {/* Results summary */}
       {modelsData && (
         <div className="text-muted-foreground text-sm">
@@ -127,9 +68,9 @@ export function ModelGrid() {
           {(modelsData.pagination.page - 1) * modelsData.pagination.limit + 1}-
           {Math.min(
             modelsData.pagination.page * modelsData.pagination.limit,
-            modelsData.pagination.total
+            modelsData.pagination.totalItems
           )}{' '}
-          of {modelsData.pagination.total} models
+          of {modelsData.pagination.totalItems} models
         </div>
       )}
 
