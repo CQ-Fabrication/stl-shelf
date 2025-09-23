@@ -15,9 +15,7 @@ export const Route = createFileRoute("/login")({
 });
 
 const loginSchema = z.object({
-  email: z
-    .email("Enter a valid email address")
-    .max(200, "Email is too long"),
+  email: z.email("Enter a valid email address").max(200, "Email is too long"),
   password: z.string().min(1, "Password is required"),
   captcha: z.string().min(1, "Please complete the captcha"),
 });
@@ -40,7 +38,6 @@ function LoginPage() {
     defaultValues,
     validators: {
       onSubmit: loginSchema,
-      onBlur: loginSchema,
     },
     onSubmit: async ({ value }) => {
       setMessage(null);
@@ -82,7 +79,7 @@ function LoginPage() {
     try {
       await auth.sendVerificationEmail({
         email,
-        captcha
+        captcha,
       } as Parameters<typeof auth.sendVerificationEmail>[0]);
       setMessage("Magic link sent! Check your email.");
     } catch (err) {
@@ -108,9 +105,7 @@ function LoginPage() {
               form.handleSubmit();
             }}
           >
-            <form.Field
-              name="email"
-            >
+            <form.Field name="email">
               {(field) => (
                 <div className="flex flex-col gap-2">
                   <Label htmlFor={field.name}>Email</Label>
@@ -135,9 +130,7 @@ function LoginPage() {
               )}
             </form.Field>
 
-            <form.Field
-              name="password"
-            >
+            <form.Field name="password">
               {(field) => (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
@@ -186,9 +179,7 @@ function LoginPage() {
             {message && (
               <div
                 className={`text-sm ${
-                  message.includes("sent")
-                    ? "text-green-600"
-                    : "text-red-600"
+                  message.includes("sent") ? "text-green-600" : "text-red-600"
                 }`}
               >
                 {message}
@@ -201,7 +192,9 @@ function LoginPage() {
               {([canSubmit, isSubmitting]) => (
                 <div className="flex justify-between">
                   <Button
-                    disabled={!canSubmit || isSubmitting || isSubmittingMagicLink}
+                    disabled={
+                      !canSubmit || isSubmitting || isSubmittingMagicLink
+                    }
                     type="submit"
                   >
                     {isSubmitting ? "Signing in…" : "Sign in"}

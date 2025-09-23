@@ -1,6 +1,7 @@
-import { protectedProcedure } from "@/lib/orpc";
 import { z } from "zod/v4";
+import { protectedProcedure } from "@/lib/orpc";
 import { modelCreationService } from "@/services/models/model-create.service";
+import { tagService } from "@/services/tags/tag.service";
 
 const fileSchema = z.instanceof(File);
 
@@ -34,6 +35,21 @@ const createModelResponseSchema = z.object({
   files: z.array(modelFileResponseSchema),
 });
 
+const tagInfoSchema = z.object({
+  name: z.string(),
+  color: z.string().nullable(),
+  usageCount: z.number(),
+});
+
+export const getAllTagsProcedure = protectedProcedure
+  .route({
+    method: "GET",
+    path: "/tags",
+  })
+  .output(z.array(tagInfoSchema))
+  .handler(async ({ context }) => {
+    return await tagService.getAllTagsForOrganization(context.organizationId);
+  });
 
 export const createModelProcedure = protectedProcedure
   .route({
@@ -69,4 +85,5 @@ export const createModelProcedure = protectedProcedure
 
 export const modelsRouter = {
   create: createModelProcedure,
+  getAllTags: getAllTagsProcedure,
 };
