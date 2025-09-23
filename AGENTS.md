@@ -4,7 +4,7 @@ This guide summarizes how to contribute safely and efficiently to the `stl-shelf
 
 ## Project Structure & Module Organization
 
-The codebase splits into `apps/web` (React 19 + Vite client) and `apps/server` (Bun + Hono API backed by Drizzle/PostgreSQL). Shared assets live in `assets/`, operational docs in `docs/`, and helper scripts in `scripts/`. Tooling and configuration sit at the root (`turbo.json`, `biome.json`, `bunfig.toml`). Keep new modules within their app boundary; cross-app sharing should go through published interfaces or shared packages.
+The codebase splits into `apps/web` (React 19 + Vite client) and `apps/server` (Bun + Hono API backed by Drizzle/PostgreSQL). Shared assets live in `assets/`, operational docs in `docs/`. Tooling and configuration sit at the root (`turbo.json`, `biome.json`, `bunfig.toml`). Keep new modules within their app boundary; cross-app sharing should go through published interfaces or shared packages.
 
 ## Build, Test, and Development Commands
 

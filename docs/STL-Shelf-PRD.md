@@ -41,7 +41,7 @@ STL Shelf is an open-source, multi-tenant platform for organizing 3D-printable a
 
 - Deliver a scalable library for organizations with role-aware access control.
 - Provide reliable storage for both raw models and sliced files using R2/MinIO.
-- Offer quick catalog navigation through Redis caching and indexed search.
+- Offer quick catalog navigation through indexed search.
 - Support API-first workflows for CI ingestion and external automations.
 - Ensure the project remains open source and self-hostable with a single Compose stack.
 
@@ -74,38 +74,36 @@ STL Shelf is an open-source, multi-tenant platform for organizing 3D-printable a
 
 ## 4) Technical Stack
 
-- **Backend:** Bun runtime with Hono + oRPC for type-safe HTTP APIs, deployed to Cloudflare Workers (managed) or Bun server (self-host).  
+- **Backend:** Bun runtime with Hono + oRPC for type-safe HTTP APIs, deployed to Cloudflare Workers (managed) or Bun server (self-host).
 - **Database:** PostgreSQL managed through Drizzle ORM migrations.
-- **Object Storage:** MinIO (self-host) or Cloudflare R2 (managed) for models, slices, and thumbnails.  
-- **Cache:** Redis for catalog, tag, and rate-limit caching plus job deduplication.
-- **Frontend:** React 19 + TanStack Router/Query, TailwindCSS v4, shadcn/ui delivered via the same Cloudflare Worker bundle or standalone web host.  
-- **Auth:** BetterAuth with passwordless login, OAuth providers, and organization membership.
+- **Object Storage:** MinIO (self-host) or Cloudflare R2 (managed) for models, slices, and thumbnails.
+- **Frontend:** React 19 + TanStack Router/Query, TailwindCSS v4, shadcn/ui delivered via the same Cloudflare Worker bundle or standalone web host.
+- **Auth:** BetterAuth with passwordless login, and organization membership.
 - **Background Work:** Bun workers for file processing, metadata extraction, and cache invalidation.
 
 ### 4.1 Platform Components
 
-- **API Server (`apps/server`):** Handles auth, organization context, uploads, metadata persistence, notifications, and presigned URLs for storage. Ships as a Bun server (Docker) or Cloudflare Worker entrypoint.  
-- **Web Client (`apps/web`):** Responsive dashboard for browsing, filtering, and managing models and organizations. Bundled with the API Cloudflare Worker or served separately when self-hosting.  
+- **API Server (`apps/server`):** Handles auth, organization context, uploads, notifications, and presigned URLs for storage. Ships as a Bun server (Docker) or Cloudflare Worker entrypoint.
+- **Web Client (`apps/web`):** Responsive dashboard for browsing, filtering, and managing models and organizations. Bundled with the API Cloudflare Worker or served separately when self-hosting.
 - **Storage Buckets:** Dedicated buckets for originals, thumbnails/renders, and temporary uploads.
-- **Caching Layer:** Redis namespaces for catalog pages, search hints, tag clouds, rate limits, and background job locks.
 - **Observability:** Structured logging, monitor instrumentation hooks, and health endpoints for readiness probes.
 
 ### 4.2 Deployment & Operations
 
-- Distributed as an open-source project with first-class Docker Compose support (API + Postgres + MinIO + Redis).  
-- Supports managed deployments on Cloudflare Workers (single worker hosting API + web) and other platforms (Kubernetes, Fly, Render) using the same container images and env contract.  
+- Distributed as an open-source project with first-class Docker Compose support (API + Postgres + MinIO).
+- Supports managed deployments on Cloudflare Workers (single worker hosting API + web) and other platforms (Kubernetes, Fly, Render) using the same container images and env contract.
 - Environment variables defined via `apps/server/.env.example` and `apps/web/.env.example`; secrets injected through standard tooling (Docker secrets, Vault).
 - Migrations run via `bun run -F server db:migrate`; assets buckets must exist prior to boot.
-- Backups handled with Postgres logical dumps and MinIO/R2 lifecycle policies; document recommended retention in ops guides.  
+- Backups handled with Postgres logical dumps and MinIO/R2 lifecycle policies; document recommended retention in ops guides.
 
 ---
 
 ## 5) Functional Requirements
 
 - **Authentication & Organizations**
-  - Users sign in via email link or OAuth (GitHub, Google).
+  - Users sign in via email.
   - Organization owners manage members, roles (owner/admin/member), and invitations.
-  - All API requests operate in the context of an active organization; tenant isolation is enforced at the DB and cache layers.
+  - All API requests operate in the context of an active organization; tenant isolation is enforced at the DB layers.
 - **Model Catalog**
   - Create models with slug, name, description, visibility (private/internal).
   - Maintain version history; each version references uploaded files and notes.
@@ -125,7 +123,7 @@ STL Shelf is an open-source, multi-tenant platform for organizing 3D-printable a
   - Detail page with 3D preview (React Three Fiber) when asset supports it.
   - Recently updated and starred sections for quick access.
 - **API & Integrations**
-  - Public API endpoints (oRPC) for CRUD on models, versions, files, and tags.
+  - API endpoints (oRPC) for CRUD on models, versions, files, and tags.
   - Webhooks/event streams for ingestion pipelines (model published, version archived).
   - CLI scaffolding (future) uses the same API tokens for automation.
 
@@ -149,14 +147,14 @@ We still need to finalize the advanced metadata taxonomy (printer capabilities, 
 ## 7) Non-Functional Requirements
 
 - **Performance:**
-  - < 400 ms p95 API latency for catalog list endpoints under cache hit.
+  - < 400 ms p95 API latency for catalog list endpoints.
   - Background processing completes thumbnail + metadata extraction within 2 minutes for typical uploads (<200 MB).
 - **Scalability:**
   - Support at least 100 organizations, each with >10k assets and 1 TB of storage.
   - Redis cache hit rate above 80% for list endpoints.
 - **Reliability:**
   - 99.5% uptime target for API/web when deployed with HA Postgres/Redis.
-  - Durable storage guaranteed through R2/MinIO replication policies.  
+  - Durable storage guaranteed through R2/MinIO replication policies.
 - **Security & Compliance:**
   - Organization isolation enforced in DB queries and presigned URL scopes.
   - Audit logs for critical actions (uploads, deletes, role changes).
@@ -171,31 +169,8 @@ We still need to finalize the advanced metadata taxonomy (printer capabilities, 
 
 - Active organizations per week and member growth.
 - Model publish-to-download conversion rate.
-- Cache hit rate (Redis) and object-storage egress volumes.
 - Median time from upload to processed/preview-ready.
 - Support queue response time (self-host issue triage once OSS community grows).
-
----
-
-## 9) Roadmap & Milestones
-
-**Q4 2025 — Platform Hardening**
-
-- Finalize metadata schema (see TODO) and expose UI for extended properties.
-- Ship audit log exports + webhook signing.
-- Improve background job observability and retry tooling.
-
-**Q1 2026 — Collaboration Enhancements**
-
-- Implement review workflow (approvals before publish).
-- Add organization-level analytics dashboard and scheduled reports.
-- Release CLI for CI/CD ingestion with token management.
-
-**Q2 2026 — Ecosystem**
-
-- Marketplace integrations (MakerWorld, Printables) via import pipelines.
-- Optional CDN/edge layer configuration guides.
-- Offline sync agent beta for on-prem mirrors.
 
 ---
 
@@ -217,14 +192,11 @@ flowchart LR
     API[(Bun + Hono API · Cloudflare Workers)]
     Workers[Background Workers]
     DB[(PostgreSQL)]
-    Cache[(Redis)]
     Storage[(MinIO / R2)]
     API --> DB
-    API --> Cache
     API --> Storage
     Workers --> DB
     Workers --> Storage
-    Workers --> Cache
   end
 
   subgraph Web[Browser Clients]
@@ -239,35 +211,4 @@ flowchart LR
   UI <-->|HTTPS :443| API
   CI -->|Ingestion API| API
   API -->|Events| Webhooks
-```
-
-### ASCII (portable)
-
-```
-+--------------------------- Deployment ---------------------------+
-|                                                                   |
-|  +---------------------------+    +---------------------------+   |
-|  |  Bun + Hono API           |    |  Background Workers       |   |
-|  |  (Cloudflare Workers)     |    |  (Cloudflare Workers)     |   |
-|  |  - Auth & org context     |    |  - Thumbnails & parsing   |   |
-|  |  - Model/catalog CRUD     |    |  - Cache invalidation     |   |
-|  +-----------+---------------+    +---------------+-----------+   |
-|              |                                    |               |
-|      +-------v--------+                  +--------v------+        |
-|      |  PostgreSQL    |<---------------->|     Redis     |        |
-|      |  (Drizzle ORM) |                  |  Cache/Queues |        |
-|      +-------+--------+                  +--------+------+        |
-|              |                                    |               |
-|      +-------v------------------------------------v------+        |
-|      |          MinIO / R2 Object Storage               |        |
-|      +---------------------------------------------------+        |
-+-------------------------------------------------------------------+
-               ^                                ^
-               |                                |
-        HTTPS  |                                |  Events / Webhooks
-               |                                |
-        +------v------+                   +------v------+
-        |  Web Client |                   | Integrations|
-        |  React/TanStack                |  CI, Webhooks|
-        +-------------+                   +-------------+
 ```
