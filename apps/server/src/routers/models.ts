@@ -81,22 +81,27 @@ export const listModelsProcedure = protectedProcedure
   .input(listModelsInputSchema)
   .output(listModelsOutputSchema)
   .handler(async ({ input, context }) => {
-    const result = await modelListService.listModels({
-      organizationId: context.organizationId,
-      page: input.page,
-      limit: input.limit,
-      search: input.search,
-      tags: input.tags,
-    });
+    try {
+      const result = await modelListService.listModels({
+        organizationId: context.organizationId,
+        page: input.page,
+        limit: input.limit,
+        search: input.search,
+        tags: input.tags,
+      });
 
-    return {
-      models: result.models.map(model => ({
-        ...model,
-        createdAt: model.createdAt.toISOString(),
-        updatedAt: model.updatedAt.toISOString(),
-      })),
-      pagination: result.pagination,
-    };
+      return {
+        models: result.models.map((model) => ({
+          ...model,
+          createdAt: model.createdAt.toISOString(),
+          updatedAt: model.updatedAt.toISOString(),
+        })),
+        pagination: result.pagination,
+      };
+    } catch (error) {
+      console.error("listModels error:", error);
+      throw error;
+    }
   });
 
 export const getAllTagsProcedure = protectedProcedure
