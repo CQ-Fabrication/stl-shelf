@@ -1,55 +1,50 @@
 import "dotenv/config";
-import { OpenAPIHono } from "@hono/zod-openapi";
 import { RPCHandler } from "@orpc/server/fetch";
-import { Scalar } from "@scalar/hono-api-reference";
+import { Hono } from "hono";
 import type { Context } from "hono";
+import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { auth } from "./auth";
+import { env } from "./env";
 import type { BaseContext, Session } from "./lib/context";
-import { appRouter, openApiRoutes } from "./routers/index";
+import { appRouter } from "./routers/index";
 
-const app = new OpenAPIHono();
+const app = new Hono();
 
 // oRPC handler for all API routes
 const handler = new RPCHandler(appRouter);
-
-const openApiBuilder = new OpenAPIHono();
-for (const route of openApiRoutes) {
-  openApiBuilder.openapi(route, () => new Response(null, { status: 501 }));
-}
-
-const openApiDocument = openApiBuilder.getOpenAPI31Document({
-  openapi: "3.1.0",
-  info: {
-    title: "STL Shelf API",
-    version: "1.0.0",
-    description: "Backend RPC API for STL Shelf",
-  },
-});
 
 console.log("STL Shelf API starting...");
 
 // Apply middleware in correct order
 app.use(logger());
 
+// Configure CORS
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      // Allow requests from configured origins
+      const allowedOrigins = [
+        env.CORS_ORIGIN,
+        env.WEB_URL,
+        "http://localhost:3001",
+        "http://127.0.0.1:3001"
+      ].filter(Boolean);
+
+      if (!origin) return null; // Allow requests with no origin (e.g., Postman)
+      return allowedOrigins.includes(origin) ? origin : null;
+    },
+    credentials: true,
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 // Better Auth routes
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw);
 });
-
-app.get(
-  "/docs",
-  Scalar({
-    pageTitle: "STL Shelf - API Documentation",
-    sources: [
-      { url: "/api/open-api", title: "API" },
-      // Better Auth schema generation endpoint
-      { url: "/api/auth/open-api/generate-schema", title: "Auth" },
-    ],
-  })
-);
-
-app.get("/api/open-api", (c) => c.json(openApiDocument));
 
 app.use("/rpc/*", async (c, next) => {
   const context = await createRpcContext(c);
