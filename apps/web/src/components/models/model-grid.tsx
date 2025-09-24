@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   parseAsArrayOf,
@@ -6,6 +6,7 @@ import {
   parseAsString,
   useQueryState,
 } from 'nuqs';
+import { cn } from '@/lib/utils';
 import { orpc } from '@/utils/orpc';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
@@ -24,21 +25,25 @@ export function ModelGrid() {
   );
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
 
-  // Direct useQuery call
+  // Direct useQuery call with placeholderData for smooth transitions
   const {
     data: modelsData,
     isLoading,
+    isFetching,
+    isPlaceholderData,
     error,
-  } = useQuery(
-    orpc.models.listModels.queryOptions({
+  } = useQuery({
+    ...orpc.models.listModels.queryOptions({
       input: {
         page: page || 1,  // Ensure page is never null/undefined
         limit: 12,
         search: search || undefined,
         tags: tags.length > 0 ? tags : undefined,
       }
-    })
-  );
+    }),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000, // 30 seconds
+  });
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -59,11 +64,18 @@ export function ModelGrid() {
     );
   }
 
+  // Differentiate between initial load and filtering
+  const showSkeleton = isLoading && !isPlaceholderData;
+  const showFilterOverlay = isFetching && isPlaceholderData;
+
   return (
     <div className="space-y-6">
-      {/* Results summary */}
+      {/* Results summary with filtering indication */}
       {modelsData && (
-        <div className="text-muted-foreground text-sm">
+        <div className={cn(
+          "text-muted-foreground text-sm transition-opacity duration-200",
+          showFilterOverlay && "opacity-50"
+        )}>
           Showing{' '}
           {(modelsData.pagination.page - 1) * modelsData.pagination.limit + 1}-
           {Math.min(
@@ -71,11 +83,16 @@ export function ModelGrid() {
             modelsData.pagination.totalItems
           )}{' '}
           of {modelsData.pagination.totalItems} models
+          {showFilterOverlay && (
+            <span className="ml-2 text-muted-foreground">
+              • Updating...
+            </span>
+          )}
         </div>
       )}
 
-      {/* Models grid */}
-      {isLoading ? (
+      {/* Models grid with smooth transitions */}
+      {showSkeleton ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: SKELETON_COUNT }, (_, i) => (
             <div className="space-y-4" key={`skeleton-${i}`}>
@@ -112,10 +129,24 @@ export function ModelGrid() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {modelsData?.models.map((model) => (
-            <ModelCard key={model.id} model={model} />
-          ))}
+        <div className={cn(
+          "relative transition-opacity duration-300",
+          showFilterOverlay && "opacity-60"
+        )}>
+          {/* Subtle loading overlay during filtering */}
+          {showFilterOverlay && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <div className="rounded-lg bg-background/90 px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
+                Filtering...
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {modelsData?.models.map((model) => (
+              <ModelCard key={model.id} model={model} />
+            ))}
+          </div>
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { ModelGrid } from '@/components/models/model-grid';
-import { ModelSearch } from '@/components/models/model-search';
+import { SearchFilterBar } from '@/components/models/search-filter-bar';
 
 export const Route = createFileRoute('/')({
   component: HomeComponent,
@@ -17,7 +17,7 @@ function HomeComponent() {
       </div>
 
       <div className="space-y-6">
-        <ModelSearch />
+        <SearchFilterBar />
         <ModelGrid />
       </div>
     </div>
