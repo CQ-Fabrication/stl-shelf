@@ -79,7 +79,7 @@ export const ModelPreviewCard = ({
     );
   }
   return (
-    <Card className="pb-0">
+    <Card className="pb-0 shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       <CardHeader>
         <CardTitle>3D Preview</CardTitle>
         <CardDescription>

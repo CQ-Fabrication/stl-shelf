@@ -58,7 +58,7 @@ export const ModelDetailHeader = ({
   return (
     <div className="mb-6">
       <div className="mb-4 flex items-center gap-4">
-        <Button asChild size="sm" variant="ghost">
+        <Button asChild size="sm" variant="ghost" className="hover:text-brand transition-colors">
           <Link to="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Library
@@ -68,9 +68,9 @@ export const ModelDetailHeader = ({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="mb-2 font-bold text-3xl">{model.name}</h1>
+          <h1 className="font-bold text-4xl tracking-tight">{model.name}</h1>
           {model.description && (
-            <p className="text-muted-foreground">{model.description}</p>
+            <p className="mt-3 text-muted-foreground">{model.description}</p>
           )}
         </div>
         <div className="flex gap-2">

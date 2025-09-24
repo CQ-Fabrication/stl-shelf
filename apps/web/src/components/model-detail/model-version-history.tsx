@@ -37,7 +37,7 @@ export const ModelVersionHistory = ({
   const totalVersions = model?.totalVersions ?? 0;
 
   return (
-    <Card>
+    <Card className="shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <History className="h-5 w-5" />
@@ -83,7 +83,9 @@ export const ModelVersionHistory = ({
               <>
                 {versions.map((version, index) => (
                   <div
-                    className="flex items-start justify-between rounded border p-3"
+                    className={`flex items-start justify-between rounded border p-3 ${
+                      version.id === activeVersion ? 'border-l-4 border-l-brand' : ''
+                    }`}
                     key={version.id}
                   >
                     <div className="flex-1">
@@ -98,7 +100,7 @@ export const ModelVersionHistory = ({
                           {version.version}
                         </Badge>
                         {version.id === activeVersion && (
-                          <Badge className="text-xs" variant="secondary">
+                          <Badge className="bg-brand text-brand-foreground text-xs">
                             Active
                           </Badge>
                         )}
@@ -121,6 +123,7 @@ export const ModelVersionHistory = ({
                             ? 'secondary'
                             : 'outline'
                         }
+                        className={version.id !== activeVersion ? 'hover:text-brand' : ''}
                       >
                         {version.id === activeVersion ? 'Viewing' : 'View'}
                       </Button>

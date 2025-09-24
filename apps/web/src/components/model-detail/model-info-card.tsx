@@ -102,18 +102,18 @@ export const ModelInfoCard = ({
     );
   }
   return (
-    <Card>
+    <Card className="shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Model Information</span>
           {activeVersion && (
             <Badge variant="outline" className="font-normal">
-              Version {activeVersion.version}
+              Version <span className="text-brand">{activeVersion.version}</span>
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -155,19 +155,19 @@ export const ModelInfoCard = ({
                   const Icon = getFileIcon(file.extension);
                   return (
                     <div
-                      className="flex items-center gap-2 rounded-md border bg-muted/50 px-2 py-1"
+                      className="flex items-center gap-2 rounded-md border bg-muted/50 px-2 py-1 transition-colors hover:bg-muted/80"
                       key={file.filename}
                     >
                       <Icon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">{file.originalName}</span>
-                      <Badge className="text-xs" variant={getFileTypeBadgeVariant(file.extension)}>
+                      <Badge className="text-xs" variant={file.extension.toLowerCase() === 'stl' ? 'default' : getFileTypeBadgeVariant(file.extension)}>
                         {file.extension.toUpperCase()}
                       </Badge>
                       <span className="text-muted-foreground text-xs">
                         {formatFileSize(file.size)}
                       </span>
                       <Button
-                        className="h-6 w-6"
+                        className="h-6 w-6 hover:text-brand"
                         onClick={() => handleDownloadFile(file.filename)}
                         size="icon"
                         title={`Download ${file.filename}`}
