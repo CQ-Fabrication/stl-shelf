@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Calendar, Download, Eye, HardDrive, MoreVertical, Trash2 } from 'lucide-react';
 import { memo, useState } from 'react';
+import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import {
@@ -27,6 +28,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../ui/tooltip';
 import { useDeleteModel } from '@/hooks/use-delete-model';
 
 type ModelCardProps = {
@@ -46,6 +53,7 @@ type ModelCardProps = {
 
 const ModelCard = memo(({ model }: ModelCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const deleteModel = useDeleteModel();
 
   const formatDate = (dateString: string) => {
@@ -62,7 +70,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
   };
 
   return (
-    <Card className="group relative cursor-pointer transition-shadow hover:shadow-md">
+    <Card className="group relative h-full flex flex-col cursor-pointer transition-shadow hover:shadow-md">
       {/* Stretched link to make the whole card clickable */}
       <Link
         aria-label={`View ${model.name}`}
@@ -86,10 +94,13 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
               {formatFileSize(model.totalSize)}
             </div>
           </div>
-          <DropdownMenu>
+          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button
-                className="relative z-20 opacity-0 transition-opacity group-hover:opacity-100"
+                className={cn(
+                  "relative z-20 transition-opacity",
+                  dropdownOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
                 size="sm"
                 variant="ghost"
               >
@@ -122,7 +133,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col flex-grow">
         {/* Thumbnail preview placeholder */}
         <div className="mb-3">
           <div className="aspect-video overflow-hidden rounded-md bg-muted transition-colors group-hover:bg-muted/80">
@@ -135,36 +146,137 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
           </div>
         </div>
 
-        {/* Description */}
-        {model.description && (
-          <CardDescription className="mb-3 line-clamp-2">
-            {model.description}
-          </CardDescription>
+        {/* Description with tooltip for full text */}
+        {model.description ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="relative z-20">
+                  <CardDescription className="mb-3 line-clamp-2 cursor-help">
+                    {model.description}
+                  </CardDescription>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-sm">{model.description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          // Reserve space for missing description to maintain consistent layout
+          <div className="mb-3 h-10" />
         )}
 
-        {/* Tags */}
-        {model.tags && model.tags.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-1">
-            {model.tags.slice(0, 3).map((tag) => (
-              <Badge className="text-xs" key={tag} variant="secondary">
-                {tag}
-              </Badge>
-            ))}
-            {model.tags.length > 3 && (
-              <Badge className="text-xs" variant="secondary">
-                +{model.tags.length - 3}
-              </Badge>
+        {/* Spacer to push footer to bottom */}
+        <div className="flex-grow" />
+
+        {/* Combined footer with tags and file info - always at bottom */}
+        <div className="flex items-center justify-between gap-3 text-xs min-h-[24px] mt-auto">
+          {/* Tags on left - with reserved space to prevent layout shifts */}
+          <div className="flex items-center gap-1 min-w-0 flex-1 max-w-[60%]">
+            {model.tags && model.tags.length > 0 ? (
+              <TooltipProvider>
+                {/* Desktop: show 2 tags */}
+                <div className="hidden sm:flex items-center gap-1 min-w-0">
+                  {model.tags.slice(0, 2).map((tag) => (
+                    <Tooltip key={tag}>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="secondary"
+                          className="max-w-24 truncate cursor-help text-xs hover:bg-secondary/80 transition-colors"
+                          title={tag.length > 12 ? tag : undefined}
+                        >
+                          {tag}
+                        </Badge>
+                      </TooltipTrigger>
+                      {tag.length > 12 && (
+                        <TooltipContent side="top">
+                          <p className="text-xs font-medium">{tag}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  ))}
+                  {model.tags.length > 2 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className="cursor-help text-xs hover:bg-accent transition-colors min-w-[2rem] text-center"
+                        >
+                          +{model.tags.length - 2}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="font-medium mb-2 text-xs">Additional tags:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {model.tags.slice(2).map((tag) => (
+                            <Badge key={tag} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+
+                {/* Mobile: show 1 tag with improved touch targets */}
+                <div className="flex sm:hidden items-center gap-1.5 min-w-0">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant="secondary"
+                        className="max-w-20 truncate text-xs min-h-6 px-2 cursor-pointer"
+                        title={model.tags[0].length > 8 ? model.tags[0] : undefined}
+                      >
+                        {model.tags[0]}
+                      </Badge>
+                    </TooltipTrigger>
+                    {model.tags[0].length > 8 && (
+                      <TooltipContent side="top">
+                        <p className="text-xs font-medium">{model.tags[0]}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                  {model.tags.length > 1 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className="text-xs min-h-6 px-2 cursor-pointer min-w-[2.5rem] text-center"
+                        >
+                          +{model.tags.length - 1}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="font-medium mb-2 text-xs">All tags:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {model.tags.map((tag) => (
+                            <Badge key={tag} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </TooltipProvider>
+            ) : (
+              // Reserved space when no tags to prevent layout shifts
+              <div className="h-6" />
             )}
           </div>
-        )}
 
-        {/* File info */}
-        <div className="flex items-center justify-between text-muted-foreground text-sm">
-          <div className="flex items-center gap-2">
-            <span>
+          {/* File info on right - guaranteed minimum space */}
+          <div className="flex items-center text-muted-foreground shrink-0 min-w-[40%] justify-end">
+            <span className="whitespace-nowrap">
               {model.fileCount} file{model.fileCount !== 1 ? 's' : ''}
             </span>
-            <span>• {model.currentVersion}</span>
+            <span className="mx-1.5 text-muted-foreground/60">•</span>
+            <span className="whitespace-nowrap font-medium">
+              {model.currentVersion}
+            </span>
           </div>
         </div>
       </CardContent>
