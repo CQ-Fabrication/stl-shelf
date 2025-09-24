@@ -155,8 +155,7 @@ export async function listModels({
       },
     };
   } catch (error) {
-    console.error("ERROR in listModels:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    console.error("ERROR in listModels:", error instanceof Error ? error.message : "Unknown error");
     throw error;
   }
 }

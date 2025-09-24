@@ -89,11 +89,11 @@ function ModelSearch() {
             ) : (
               allTags.map((tag) => (
                 <DropdownMenuCheckboxItem
-                  checked={tags.includes(tag)}
-                  key={tag}
-                  onCheckedChange={() => handleTagToggle(tag)}
+                  checked={tags.includes(tag.name)}
+                  key={tag.name}
+                  onCheckedChange={() => handleTagToggle(tag.name)}
                 >
-                  {tag}
+                  {tag.name}
                 </DropdownMenuCheckboxItem>
               ))
             )}

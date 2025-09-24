@@ -143,7 +143,10 @@ export class TagService {
       await db
         .delete(modelTags)
         .where(
-          sql`${modelTags.modelId} = ${modelId} AND ${modelTags.tagId} IN (${tagIds.join(',')})`
+          and(
+            eq(modelTags.modelId, modelId),
+            inArray(modelTags.tagId, tagIds)
+          )
         );
 
       // Decrease usage count

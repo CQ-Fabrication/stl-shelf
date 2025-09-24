@@ -47,7 +47,7 @@ const tagInfoSchema = z.object({
 const listModelsInputSchema = z.object({
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(12),
-  search: z.string().optional(),
+  search: z.string().max(100).optional(),
   tags: z.array(z.string()).optional(),
 });
 
