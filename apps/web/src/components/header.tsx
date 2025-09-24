@@ -76,7 +76,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           {/* Upload button - Only show if user has organizations */}
           {hasOrganizations && (
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="bg-brand hover:bg-brand/90 text-brand-foreground">
               <Link to="/upload">
                 <Plus className="mr-2 h-4 w-4" />
                 Upload

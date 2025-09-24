@@ -70,7 +70,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
   };
 
   return (
-    <Card className="group relative h-full flex flex-col cursor-pointer transition-shadow hover:shadow-md">
+    <Card className="group relative h-full flex flex-col cursor-pointer transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       {/* Stretched link to make the whole card clickable */}
       <Link
         aria-label={`View ${model.name}`}
@@ -136,7 +136,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
       <CardContent className="flex flex-col flex-grow">
         {/* Thumbnail preview placeholder */}
         <div className="mb-3">
-          <div className="aspect-video overflow-hidden rounded-md bg-muted transition-colors group-hover:bg-muted/80">
+          <div className="aspect-video overflow-hidden rounded-md bg-muted transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <HardDrive className="mx-auto mb-2 h-8 w-8" />
@@ -274,7 +274,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
               {model.fileCount} file{model.fileCount !== 1 ? 's' : ''}
             </span>
             <span className="mx-1.5 text-muted-foreground/60">•</span>
-            <span className="whitespace-nowrap font-medium">
+            <span className="whitespace-nowrap font-medium text-brand">
               {model.currentVersion}
             </span>
           </div>

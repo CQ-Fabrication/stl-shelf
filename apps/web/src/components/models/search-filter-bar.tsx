@@ -149,7 +149,7 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
       <div className="flex min-h-[32px] flex-wrap gap-2">
         {selectedTags.length > 0 &&
           selectedTags.map((tag) => (
-            <Badge className="gap-1" key={tag} variant="secondary">
+            <Badge className="gap-1 border-brand/20 bg-brand/10 text-brand-foreground hover:bg-brand/15" key={tag}>
               {tag}
               <Button
                 className="h-auto w-auto p-0 hover:bg-transparent"
