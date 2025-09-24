@@ -6,6 +6,7 @@ import { type BufferGeometry, DoubleSide, type Mesh, Vector3 } from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { useTheme } from '../theme-provider';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 
@@ -21,9 +22,10 @@ type ModelMeshProps = {
   url: string;
   filename: string;
   autoRotate: boolean;
+  color: string;
 };
 
-function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
+function ModelMesh({ url, filename, autoRotate, color }: ModelMeshProps) {
   const meshRef = useRef<Mesh>(null);
   const extension = filename.split('.').pop()?.toLowerCase();
 
@@ -77,7 +79,7 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
   return (
     <mesh geometry={geometry} ref={meshRef} scale={[scale, scale, scale]}>
       <meshPhongMaterial
-        color="#e5e7eb"
+        color={color}
         opacity={0.9}
         shininess={100}
         side={DoubleSide}
@@ -103,24 +105,6 @@ function ViewerControls({ onResetCamera }: { onResetCamera: () => void }) {
   );
 }
 
-function ModelInfo({
-  filename,
-  modelId,
-  version,
-}: {
-  filename: string;
-  modelId: string;
-  version: string;
-}) {
-  return (
-    <div className="absolute bottom-4 left-4 rounded-md bg-background/80 px-3 py-2 text-sm backdrop-blur-sm">
-      <div className="font-medium">{filename}</div>
-      <div className="text-muted-foreground">
-        {modelId} • {version}
-      </div>
-    </div>
-  );
-}
 
 function LoadingFallback() {
   return (
@@ -153,9 +137,15 @@ export function STLViewer({
 }: STLViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const [error, _setError] = useState<Error | null>(null);
+  const { theme } = useTheme();
 
   // Use the presigned URL from server
   const modelUrl = url;
+
+  // Theme-aware colors
+  const isDark = theme === 'dark';
+  const modelColor = isDark ? '#9ca3af' : '#e5e7eb'; // gray-400 : gray-200
+  const canvasBackground = isDark ? '#0a0a0a' : '#fafafa';
 
   const handleResetCamera = () => {
     if (controlsRef.current) {
@@ -180,7 +170,7 @@ export function STLViewer({
           near: 0.1,
           far: 1000,
         }}
-        style={{ background: '#fafafa' }}
+        style={{ background: canvasBackground }}
       >
         {/* Lighting */}
         <ambientLight intensity={0.4} />
@@ -207,15 +197,12 @@ export function STLViewer({
 
         {/* Model */}
         <Suspense fallback={null}>
-          <ModelMesh autoRotate={false} filename={filename} url={modelUrl} />
+          <ModelMesh autoRotate={false} color={modelColor} filename={filename} url={modelUrl} />
         </Suspense>
       </Canvas>
 
       {/* Overlay controls */}
       <ViewerControls onResetCamera={handleResetCamera} />
-
-      {/* Model info */}
-      <ModelInfo filename={filename} modelId={modelId} version={version} />
     </div>
   );
 }
