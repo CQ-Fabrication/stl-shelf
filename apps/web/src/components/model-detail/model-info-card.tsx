@@ -56,10 +56,21 @@ export const ModelInfoCard = ({
 
   const getFileIcon = (extension: string) => {
     const ext = extension.toLowerCase();
-    if (['.stl', '.3mf', '.obj', '.ply'].includes(ext)) {
+    if (['stl', '3mf', 'obj', 'ply'].includes(ext)) {
       return Box;
     }
     return FileText;
+  };
+
+  const getFileTypeBadgeVariant = (extension: string): "default" | "secondary" | "outline" | "destructive" => {
+    const ext = extension.toLowerCase();
+    switch(ext) {
+      case 'stl': return 'default';
+      case 'obj': return 'secondary';
+      case '3mf': return 'outline';
+      case 'ply': return 'destructive';
+      default: return 'secondary';
+    }
   };
 
   const handleDownloadFile = async (filename: string) => {
@@ -93,25 +104,34 @@ export const ModelInfoCard = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Model Information</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <span>Model Information</span>
+          {activeVersion && (
+            <Badge variant="outline" className="font-normal">
+              Version {activeVersion.version}
+            </Badge>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <div>
-              <div className="font-medium">Created</div>
+              <div className="font-medium">Version Created</div>
               <div className="text-muted-foreground">
-                {model.createdAt ? formatDate(new Date(model.createdAt)) : 'N/A'}
+                {activeVersion?.createdAt ? formatDate(new Date(activeVersion.createdAt)) : 'N/A'}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <HardDrive className="h-4 w-4 text-muted-foreground" />
             <div>
-              <div className="font-medium">Size</div>
+              <div className="font-medium">Version Size</div>
               <div className="text-muted-foreground">
-                {stats ? formatFileSize(stats.totalSize) : 'N/A'}
+                {activeVersion?.files ? formatFileSize(
+                  activeVersion.files.reduce((sum, file) => sum + file.size, 0)
+                ) : 'N/A'}
               </div>
             </div>
           </div>
@@ -127,7 +147,7 @@ export const ModelInfoCard = ({
             <div className="flex flex-wrap gap-2">
               {files
                 .filter((file) =>
-                  ['.stl', '.3mf', '.obj', '.ply'].includes(
+                  ['stl', '3mf', 'obj', 'ply'].includes(
                     file.extension.toLowerCase()
                   )
                 )
@@ -139,8 +159,9 @@ export const ModelInfoCard = ({
                       key={file.filename}
                     >
                       <Icon className="h-4 w-4 text-muted-foreground" />
-                      <Badge className="text-xs" variant="secondary">
-                        {file.extension.slice(1).toUpperCase()}
+                      <span className="text-sm">{file.originalName}</span>
+                      <Badge className="text-xs" variant={getFileTypeBadgeVariant(file.extension)}>
+                        {file.extension.toUpperCase()}
                       </Badge>
                       <span className="text-muted-foreground text-xs">
                         {formatFileSize(file.size)}
