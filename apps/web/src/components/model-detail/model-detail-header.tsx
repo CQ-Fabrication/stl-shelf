@@ -1,25 +1,23 @@
-import { Link } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Download, MoreVertical, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft, MoreVertical, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
-import { orpc } from '@/utils/orpc';
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { orpc } from "@/utils/orpc";
 
 type ModelDetailHeaderProps = {
   modelId: string;
-  onDownloadClick: () => void;
   onDeleteClick: () => void;
 };
 
 export const ModelDetailHeader = ({
   modelId,
-  onDownloadClick,
   onDeleteClick,
 }: ModelDetailHeaderProps) => {
   const { data: model, isLoading } = useQuery(
@@ -70,20 +68,12 @@ export const ModelDetailHeader = ({
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="mb-2 font-bold text-3xl">
-            {model.name}
-          </h1>
+          <h1 className="mb-2 font-bold text-3xl">{model.name}</h1>
           {model.description && (
-            <p className="text-muted-foreground">
-              {model.description}
-            </p>
+            <p className="text-muted-foreground">{model.description}</p>
           )}
         </div>
         <div className="flex gap-2">
-          <Button onClick={onDownloadClick}>
-            <Download className="mr-2 h-4 w-4" />
-            Download
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="outline">
