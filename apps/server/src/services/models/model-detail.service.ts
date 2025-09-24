@@ -275,7 +275,7 @@ class ModelDetailService {
                SELECT mf2.extension, COUNT(*)::integer as count
                FROM ${modelFiles} mf2
                INNER JOIN ${modelVersions} mv2 ON mv2.id = mf2.version_id
-               WHERE mv2.model_id = ${models.id}
+               WHERE mv2.model_id = models.id
                GROUP BY mf2.extension
              ) AS ext_counts),
             '{}'::json
@@ -287,7 +287,7 @@ class ModelDetailService {
           )
           FROM ${modelFiles}
           INNER JOIN ${modelVersions} mv2 ON mv2.id = ${modelFiles.versionId}
-          WHERE mv2.model_id = ${models.id}
+          WHERE mv2.model_id = models.id
           ORDER BY ${modelFiles.size} DESC
           LIMIT 1)`,
       })
