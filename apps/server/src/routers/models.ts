@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import { protectedProcedure } from "@/lib/orpc";
 import { modelCreationService } from "@/services/models/model-create.service";
 import { modelDetailService } from "@/services/models/model-detail.service";
+import { modelDownloadService } from "@/services/models/model-download.service";
 import { modelListService } from "@/services/models/model-list.service";
 import { tagService } from "@/services/tags/tag.service";
 
@@ -237,6 +238,80 @@ export const getModelTagsProcedure = protectedProcedure
     );
   });
 
+// Download procedures
+const downloadFileInputSchema = z.object({
+  storageKey: z.string(),
+});
+
+const downloadModelZipInputSchema = z.object({
+  modelId: z.uuid(),
+});
+
+const downloadVersionZipInputSchema = z.object({
+  modelId: z.uuid(),
+  versionId: z.uuid(),
+});
+
+export const downloadFileProcedure = protectedProcedure
+  .route({
+    method: "POST",
+    path: "/models/download-file",
+  })
+  .input(downloadFileInputSchema)
+  .output(z.instanceof(Blob))
+  .handler(async ({ input, context }) => {
+    return await modelDownloadService.downloadSingleFile(
+      input.storageKey,
+      context.organizationId
+    );
+  });
+
+export const downloadModelZipProcedure = protectedProcedure
+  .route({
+    method: "POST",
+    path: "/models/download-model-zip",
+  })
+  .input(downloadModelZipInputSchema)
+  .output(z.instanceof(Blob))
+  .handler(async ({ input, context }) => {
+    return await modelDownloadService.downloadModelAsZip(
+      input.modelId,
+      context.organizationId
+    );
+  });
+
+export const downloadVersionZipProcedure = protectedProcedure
+  .route({
+    method: "POST",
+    path: "/models/download-version-zip",
+  })
+  .input(downloadVersionZipInputSchema)
+  .output(z.instanceof(Blob))
+  .handler(async ({ input, context }) => {
+    return await modelDownloadService.downloadVersionAsZip(
+      input.modelId,
+      input.versionId,
+      context.organizationId
+    );
+  });
+
+export const getFileDownloadInfoProcedure = protectedProcedure
+  .input(downloadFileInputSchema)
+  .output(
+    z.object({
+      filename: z.string(),
+      size: z.number(),
+      mimeType: z.string(),
+      downloadUrl: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    return await modelDownloadService.getFileDownloadInfo(
+      input.storageKey,
+      context.organizationId
+    );
+  });
+
 // Export types for use in other parts of the application
 export type ModelFileResponse = z.infer<typeof modelFileResponseSchema>;
 export type CreateModelInput = z.infer<typeof createModelInputSchema>;
@@ -259,4 +334,8 @@ export const modelsRouter = {
   getModelFiles: getModelFilesProcedure,
   getModelStatistics: getModelStatisticsProcedure,
   getModelTags: getModelTagsProcedure,
+  downloadFile: downloadFileProcedure,
+  downloadModelZip: downloadModelZipProcedure,
+  downloadVersionZip: downloadVersionZipProcedure,
+  getFileDownloadInfo: getFileDownloadInfoProcedure,
 };

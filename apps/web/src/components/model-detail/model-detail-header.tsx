@@ -10,14 +10,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/utils/orpc";
+import { SlicerActionsDropdown } from "./slicer-actions-dropdown";
 
 type ModelDetailHeaderProps = {
   modelId: string;
+  activeVersion?: string;
   onDeleteClick: () => void;
 };
 
 export const ModelDetailHeader = ({
   modelId,
+  activeVersion,
   onDeleteClick,
 }: ModelDetailHeaderProps) => {
   const { data: model, isLoading } = useQuery(
@@ -58,7 +61,12 @@ export const ModelDetailHeader = ({
   return (
     <div className="mb-6">
       <div className="mb-4 flex items-center gap-4">
-        <Button asChild size="sm" variant="ghost" className="hover:text-brand transition-colors">
+        <Button
+          asChild
+          className="transition-colors hover:text-brand"
+          size="sm"
+          variant="ghost"
+        >
           <Link to="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Library
@@ -74,6 +82,11 @@ export const ModelDetailHeader = ({
           )}
         </div>
         <div className="flex gap-2">
+          <SlicerActionsDropdown
+            modelId={modelId}
+            modelName={model.name}
+            versionId={activeVersion}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="outline">
