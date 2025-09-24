@@ -1,15 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { ModelDetailError } from '@/components/model-detail/model-detail-error';
 import { ModelDetailHeader } from '@/components/model-detail/model-detail-header';
-import { ModelDetailSkeleton } from '@/components/model-detail/model-detail-skeleton';
-// import { ModelGitHistory } from '@/components/model-detail/model-git-history'; // Git not implemented yet
 import { ModelInfoCard } from '@/components/model-detail/model-info-card';
 import { ModelPreviewCard } from '@/components/model-detail/model-preview-card';
 import { ModelVersionHistory } from '@/components/model-detail/model-version-history';
-import { EditModelDialog } from '@/components/models/edit-model-dialog';
-import { UploadVersionDialog } from '@/components/models/upload-version-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,8 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useDeleteModel } from '@/hooks/use-delete-model';
-import { findMainModelFile, useModelDetail } from '@/hooks/use-model-detail';
-import { downloadAllFiles } from '@/utils/download';
+import { orpc } from '@/utils/orpc';
 
 export const Route = createFileRoute('/models/$modelId')({
   component: ModelDetailComponent,
@@ -30,65 +25,62 @@ export const Route = createFileRoute('/models/$modelId')({
 
 function ModelDetailComponent() {
   const { modelId } = Route.useParams();
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
-  
+  const [selectedVersionId, setSelectedVersionId] = useState<string>();
+
   const deleteModel = useDeleteModel();
+  const { data: model } = useQuery(
+    orpc.models.getModel.queryOptions({ input: { id: modelId } })
+  );
+  const { data: versions } = useQuery(
+    orpc.models.getModelVersions.queryOptions({ input: { modelId } })
+  );
 
-  const { model, latestVersion, totalSize, history, isLoading, error } =
-    useModelDetail(modelId);
-
-  // Get the active version (selected or latest)
-  const activeVersion = selectedVersion
-    ? (model?.versions.find((v) => v.version === selectedVersion) ??
-      latestVersion)
-    : latestVersion;
-
-  // Find the main model file for the active version
-  const mainModelFile = activeVersion
-    ? findMainModelFile(activeVersion.files)
-    : undefined;
+  const activeVersion = selectedVersionId || versions?.[0]?.id;
 
   const handleDownloadAll = async () => {
-    if (!(model && activeVersion)) return;
+    if (!activeVersion || !versions) return;
+
+    const version = versions.find((v) => v.id === activeVersion);
+    if (!version) return;
 
     try {
-      await downloadAllFiles(
-        model.id,
-        activeVersion.version,
-        activeVersion.files
+      const files = version.files.map((f) => ({
+        filename: f.filename,
+        originalName: f.originalName,
+        size: f.size,
+        extension: f.extension,
+      }));
+      await toast.promise(
+        import('@/utils/download').then((mod) =>
+          mod.downloadAllFiles(modelId, version.version, files)
+        ),
+        {
+          loading: 'Preparing download...',
+          success: 'Download started',
+          error: 'Download failed',
+        }
       );
-      toast.success('Download started');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Download failed');
+      console.error('Download error:', error);
     }
   };
 
-  const handleVersionSelect = (version: string) => {
-    setSelectedVersion(version);
+  const handleVersionSelect = (versionId: string) => {
+    setSelectedVersionId(versionId);
   };
 
   const handleDelete = () => {
-    deleteModel.mutate({ id: model.id });
+    if (model) {
+      deleteModel.mutate({ id: model.id });
+    }
   };
-
-  if (isLoading) {
-    return <ModelDetailSkeleton />;
-  }
-
-  if (error || !model || !activeVersion) {
-    return <ModelDetailError error={error} />;
-  }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
       <ModelDetailHeader
-        model={model}
+        modelId={modelId}
         onDownloadClick={handleDownloadAll}
-        onEditClick={() => setEditDialogOpen(true)}
-        onUploadClick={() => setUploadDialogOpen(true)}
         onDeleteClick={() => setDeleteDialogOpen(true)}
       />
 
@@ -98,52 +90,34 @@ function ModelDetailComponent() {
         <div className="space-y-6">
           {/* 3D Viewer */}
           <ModelPreviewCard
-            mainModelFile={mainModelFile}
-            modelId={model.id}
-            version={activeVersion}
+            modelId={modelId}
+            versionId={activeVersion}
           />
-          {/* Git History - removed until Git service is implemented */}
-          {/* <div className="h-64">
-            <ModelGitHistory history={history} />
-          </div> */}
         </div>
 
         {/* Right column */}
         <div className="space-y-6">
           {/* Model Info */}
           <ModelInfoCard
-            activeVersion={activeVersion}
-            model={model}
-            totalSize={totalSize}
+            modelId={modelId}
+            versionId={activeVersion}
           />
-          {/* Version History - starts immediately after Model Info */}
+          {/* Version History */}
           <ModelVersionHistory
-            activeVersion={activeVersion.version}
-            model={model}
+            modelId={modelId}
+            activeVersion={activeVersion}
             onVersionSelect={handleVersionSelect}
           />
         </div>
       </div>
 
-      {/* Dialogs */}
-      <EditModelDialog
-        model={model}
-        onOpenChange={setEditDialogOpen}
-        open={editDialogOpen}
-      />
-      <UploadVersionDialog
-        model={model}
-        onOpenChange={setUploadDialogOpen}
-        open={uploadDialogOpen}
-      />
-      
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Model</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{model.latestMetadata.name}"?
+              Are you sure you want to delete "{model?.name}"?
               This action can be undone by contacting support.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { protectedProcedure } from "@/lib/orpc";
 import { modelCreationService } from "@/services/models/model-create.service";
+import { modelDetailService } from "@/services/models/model-detail.service";
 import { modelListService } from "@/services/models/model-list.service";
 import { tagService } from "@/services/tags/tag.service";
 
@@ -26,8 +27,8 @@ const modelFileResponseSchema = z.object({
 });
 
 const createModelResponseSchema = z.object({
-  modelId: z.string().uuid(),
-  versionId: z.string().uuid(),
+  modelId: z.uuid(),
+  versionId: z.uuid(),
   version: z.string(),
   slug: z.string(),
   storageRoot: z.string(),
@@ -51,7 +52,7 @@ const listModelsInputSchema = z.object({
 });
 
 const modelListItemSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   slug: z.string(),
   name: z.string(),
   description: z.string().nullable(),
@@ -81,27 +82,13 @@ export const listModelsProcedure = protectedProcedure
   .input(listModelsInputSchema)
   .output(listModelsOutputSchema)
   .handler(async ({ input, context }) => {
-    try {
-      const result = await modelListService.listModels({
-        organizationId: context.organizationId,
-        page: input.page,
-        limit: input.limit,
-        search: input.search,
-        tags: input.tags,
-      });
-
-      return {
-        models: result.models.map((model) => ({
-          ...model,
-          createdAt: model.createdAt.toISOString(),
-          updatedAt: model.updatedAt.toISOString(),
-        })),
-        pagination: result.pagination,
-      };
-    } catch (error) {
-      console.error("listModels error:", error);
-      throw error;
-    }
+    return await modelListService.listModels({
+      organizationId: context.organizationId,
+      page: input.page,
+      limit: input.limit,
+      search: input.search,
+      tags: input.tags,
+    });
   });
 
 export const getAllTagsProcedure = protectedProcedure
@@ -142,8 +129,134 @@ export const createModelProcedure = protectedProcedure
     };
   });
 
+const getModelInputSchema = z.object({
+  id: z.uuid(),
+});
+
+const modelMetadataSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  slug: z.string(),
+  currentVersion: z.string(),
+  totalVersions: z.number(),
+  tags: z.array(z.string()),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const getModelProcedure = protectedProcedure
+  .input(getModelInputSchema)
+  .output(modelMetadataSchema)
+  .handler(async ({ input, context }) => {
+    return await modelDetailService.getModel(input.id, context.organizationId);
+  });
+
+const getModelVersionsInputSchema = z.object({
+  modelId: z.uuid(),
+});
+
+const modelVersionSchema = z.object({
+  id: z.uuid(),
+  modelId: z.uuid(),
+  version: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  thumbnailPath: z.string().nullable(),
+  files: z.array(modelFileResponseSchema),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const getModelVersionsProcedure = protectedProcedure
+  .input(getModelVersionsInputSchema)
+  .output(z.array(modelVersionSchema))
+  .handler(async ({ input, context }) => {
+    return await modelDetailService.getModelVersions(
+      input.modelId,
+      context.organizationId
+    );
+  });
+
+const getModelFilesInputSchema = z.object({
+  modelId: z.uuid(),
+  versionId: z.uuid(),
+});
+
+export const getModelFilesProcedure = protectedProcedure
+  .input(getModelFilesInputSchema)
+  .output(z.array(modelFileResponseSchema))
+  .handler(async ({ input, context }) => {
+    return await modelDetailService.getModelFiles(
+      input.modelId,
+      input.versionId,
+      context.organizationId
+    );
+  });
+
+const modelStatisticsSchema = z.object({
+  totalSize: z.number(),
+  totalFiles: z.number(),
+  totalVersions: z.number(),
+  fileTypes: z.record(z.string(), z.number()),
+  largestFile: z
+    .object({
+      name: z.string(),
+      size: z.number(),
+    })
+    .nullable(),
+  averageFileSize: z.number(),
+  lastUpdated: z.iso.datetime(),
+});
+
+export const getModelStatisticsProcedure = protectedProcedure
+  .input(getModelInputSchema)
+  .output(modelStatisticsSchema)
+  .handler(async ({ input, context }) => {
+    return await modelDetailService.getModelStatistics(
+      input.id,
+      context.organizationId
+    );
+  });
+
+const modelTagSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  color: z.string().nullable(),
+  usageCount: z.number(),
+  description: z.string().nullable(),
+});
+
+export const getModelTagsProcedure = protectedProcedure
+  .input(getModelInputSchema)
+  .output(z.array(modelTagSchema))
+  .handler(async ({ input, context }) => {
+    return await modelDetailService.getModelTags(
+      input.id,
+      context.organizationId
+    );
+  });
+
+// Export types for use in other parts of the application
+export type ModelFileResponse = z.infer<typeof modelFileResponseSchema>;
+export type CreateModelInput = z.infer<typeof createModelInputSchema>;
+export type CreateModelResponse = z.infer<typeof createModelResponseSchema>;
+export type ModelListItem = z.infer<typeof modelListItemSchema>;
+export type ListModelsInput = z.infer<typeof listModelsInputSchema>;
+export type ListModelsOutput = z.infer<typeof listModelsOutputSchema>;
+export type Pagination = z.infer<typeof paginationSchema>;
+export type ModelMetadata = z.infer<typeof modelMetadataSchema>;
+export type ModelVersion = z.infer<typeof modelVersionSchema>;
+export type ModelStatistics = z.infer<typeof modelStatisticsSchema>;
+export type ModelTag = z.infer<typeof modelTagSchema>;
+
 export const modelsRouter = {
   create: createModelProcedure,
   listModels: listModelsProcedure,
   getAllTags: getAllTagsProcedure,
+  getModel: getModelProcedure,
+  getModelVersions: getModelVersionsProcedure,
+  getModelFiles: getModelFilesProcedure,
+  getModelStatistics: getModelStatisticsProcedure,
+  getModelTags: getModelTagsProcedure,
 };

@@ -17,100 +17,80 @@ import {
   modelVersions,
   tags,
 } from "@/db/schema/models";
+import type {
+  ListModelsInput,
+  ListModelsOutput,
+} from "@/routers/models";
 
-type ListModelsInput = {
+// Service-specific type that extends router input with organizationId
+type ServiceListModelsInput = ListModelsInput & {
   organizationId: string;
-  page?: number;
-  limit?: number;
-  search?: string;
-  tags?: string[];
 };
 
-type ModelListItem = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  currentVersion: string;
-  fileCount: number;
-  totalSize: number;
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-};
+/**
+ * Optimized listModels with single query using subqueries
+ * Reduces database round-trips and eliminates N+1 queries
+ */
+export async function listModels({
+  organizationId,
+  page = 1,
+  limit = 12,
+  search,
+  tags: filterTags,
+}: ServiceListModelsInput): Promise<ListModelsOutput> {
 
-type ListModelsResult = {
-  models: ModelListItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    totalItems: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
-};
+  const safePage = Math.max(1, page);
+  const safeLimit = Math.min(100, Math.max(1, limit));
+  const offset = (safePage - 1) * safeLimit;
 
-class ModelListService {
-  /**
-   * Supreme-level optimized listModels using Drizzle's native query builder
-   * Zero type casting, full type safety, single database round-trip
-   */
-  async listModels({
-    organizationId,
-    page = 1,
-    limit = 12,
-    search,
-    tags: filterTags,
-  }: ListModelsInput): Promise<ListModelsResult> {
-    const safePage = Math.max(1, page);
-    const safeLimit = Math.min(100, Math.max(1, limit));
-    const offset = (safePage - 1) * safeLimit;
+  // Build WHERE conditions array
+  const conditions = [
+    eq(models.organizationId, organizationId),
+    isNull(models.deletedAt),
+  ];
 
-    // Build WHERE conditions array
-    const conditions = [
-      eq(models.organizationId, organizationId),
-      isNull(models.deletedAt),
-    ];
+  // Add search condition if provided
+  if (search?.trim()) {
+    const searchPattern = `%${search.trim()}%`;
+    const searchCondition = or(
+      ilike(models.name, searchPattern),
+      ilike(models.description, searchPattern)
+    );
+    if (searchCondition) {
+      conditions.push(searchCondition);
+    }
+  }
 
-    // Add search condition if provided
-    if (search?.trim()) {
-      const searchPattern = `%${search.trim()}%`;
-      const searchCondition = or(
-        ilike(models.name, searchPattern),
-        ilike(models.description, searchPattern)
+  // Filter by tags efficiently using subquery
+  if (filterTags && filterTags.length > 0) {
+    const modelsWithTags = db
+      .select({ modelId: modelTags.modelId })
+      .from(modelTags)
+      .innerJoin(tags, eq(tags.id, modelTags.tagId))
+      .where(
+        and(
+          eq(tags.organizationId, organizationId),
+          inArray(tags.name, filterTags)
+        )
       );
-      if (searchCondition) {
-        conditions.push(searchCondition);
-      }
-    }
 
-    // Filter by tags efficiently using subquery
-    if (filterTags && filterTags.length > 0) {
-      const modelsWithTags = db
-        .select({ modelId: modelTags.modelId })
-        .from(modelTags)
-        .innerJoin(tags, eq(tags.id, modelTags.tagId))
-        .where(
-          and(
-            eq(tags.organizationId, organizationId),
-            inArray(tags.name, filterTags)
-          )
-        );
+    conditions.push(inArray(models.id, modelsWithTags));
+  }
 
-      conditions.push(inArray(models.id, modelsWithTags));
-    }
+  try {
 
-    // Get total count for pagination (separate optimized query)
+    // Get total count separately
     const [countResult] = await db
-      .select({ totalItems: count() })
+      .select({ totalCount: count() })
       .from(models)
       .where(and(...conditions));
 
-    const totalItems = countResult?.totalItems ?? 0;
+
+    const totalItems = countResult?.totalCount ?? 0;
     const totalPages = Math.ceil(totalItems / safeLimit);
 
-    // Main query with correlated subqueries for aggregated data
+
+    // Main query with subqueries for aggregated data
     const modelsWithData = await db
       .select({
         id: models.id,
@@ -120,27 +100,27 @@ class ModelListService {
         currentVersion: models.currentVersion,
         createdAt: models.createdAt,
         updatedAt: models.updatedAt,
-        // Correlated subquery for file stats
-        fileStats: sql<{ count: number; size: number }>`
-          (SELECT json_build_object(
-            'count', COALESCE(COUNT(mf.id), 0),
-            'size', COALESCE(SUM(mf.size), 0)
-          )
+        // File count subquery
+        fileCount: sql<number>`(
+          SELECT COUNT(DISTINCT mf.id)::int
           FROM ${modelVersions} mv
           LEFT JOIN ${modelFiles} mf ON mf.version_id = mv.id
-          WHERE mv.model_id = ${models}.id)`,
-        // Correlated subquery for tags
-        tags: sql<string[]>`
-          COALESCE(
-            ARRAY(
-              SELECT t.name
-              FROM ${modelTags} mt
-              INNER JOIN ${tags} t ON t.id = mt.tag_id
-              WHERE mt.model_id = ${models}.id
-              ORDER BY t.name
-            ),
-            '{}'::text[]
-          )`,
+          WHERE mv.model_id = models.id
+        )`,
+        // Total size subquery
+        totalSize: sql<number>`(
+          SELECT COALESCE(SUM(mf.size), 0)::bigint
+          FROM ${modelVersions} mv
+          LEFT JOIN ${modelFiles} mf ON mf.version_id = mv.id
+          WHERE mv.model_id = models.id
+        )`,
+        // Tags array subquery
+        tags: sql<string[]>`(
+          SELECT COALESCE(ARRAY_AGG(t.name ORDER BY t.name), '{}')
+          FROM ${modelTags} mt
+          INNER JOIN ${tags} t ON t.id = mt.tag_id
+          WHERE mt.model_id = models.id
+        )`,
       })
       .from(models)
       .where(and(...conditions))
@@ -148,19 +128,20 @@ class ModelListService {
       .limit(safeLimit)
       .offset(offset);
 
-    // Transform to expected format with proper types
-    const modelList: ModelListItem[] = modelsWithData.map((row) => ({
+    // Transform to expected format with proper types (dates as ISO strings)
+    const modelList = modelsWithData.map((row) => ({
       id: row.id,
       slug: row.slug,
       name: row.name,
       description: row.description,
       currentVersion: row.currentVersion,
-      fileCount: row.fileStats?.count ?? 0,
-      totalSize: row.fileStats?.size ?? 0,
+      fileCount: row.fileCount ?? 0,
+      totalSize: Number(row.totalSize ?? 0),
       tags: row.tags ?? [],
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
     }));
+
 
     return {
       models: modelList,
@@ -173,211 +154,13 @@ class ModelListService {
         hasPrevPage: safePage > 1,
       },
     };
-  }
-
-  /**
-   * Lightning-fast count query for pagination
-   */
-  async getModelCount(
-    organizationId: string,
-    search?: string,
-    filterTags?: string[]
-  ): Promise<number> {
-    const conditions = [
-      eq(models.organizationId, organizationId),
-      isNull(models.deletedAt),
-    ];
-
-    if (search?.trim()) {
-      const searchPattern = `%${search.trim()}%`;
-      const searchCondition = or(
-        ilike(models.name, searchPattern),
-        ilike(models.description, searchPattern)
-      );
-      if (searchCondition) {
-        conditions.push(searchCondition);
-      }
-    }
-
-    if (filterTags && filterTags.length > 0) {
-      const modelsWithTags = db
-        .select({ modelId: modelTags.modelId })
-        .from(modelTags)
-        .innerJoin(tags, eq(tags.id, modelTags.tagId))
-        .where(
-          and(
-            eq(tags.organizationId, organizationId),
-            inArray(tags.name, filterTags)
-          )
-        );
-
-      conditions.push(inArray(models.id, modelsWithTags));
-    }
-
-    const [result] = await db
-      .select({ count: count() })
-      .from(models)
-      .where(and(...conditions));
-
-    return result?.count ?? 0;
-  }
-
-  /**
-   * Optimized autocomplete search with prefix matching
-   */
-  searchModels(
-    organizationId: string,
-    searchTerm: string,
-    limit = 10
-  ): Promise<Array<{ id: string; name: string; slug: string }>> {
-    if (!searchTerm?.trim()) {
-      return Promise.resolve([]);
-    }
-
-    return db
-      .select({
-        id: models.id,
-        name: models.name,
-        slug: models.slug,
-      })
-      .from(models)
-      .where(
-        and(
-          eq(models.organizationId, organizationId),
-          isNull(models.deletedAt),
-          ilike(models.name, `${searchTerm.trim()}%`)
-        )
-      )
-      .orderBy(desc(models.updatedAt))
-      .limit(limit);
-  }
-
-  /**
-   * Get full model details with all versions and files
-   * Optimized for single model detail view
-   */
-  async getModelDetails(modelId: string, organizationId: string) {
-    const modelData = await db
-      .select({
-        model: models,
-        versions: sql<
-          Array<{
-            id: string;
-            version: string;
-            name: string;
-            description: string | null;
-            createdAt: Date;
-          }>
-        >`
-          COALESCE(
-            json_agg(
-              json_build_object(
-                'id', v.id,
-                'version', v.version,
-                'name', v.name,
-                'description', v.description,
-                'createdAt', v.created_at
-              ) ORDER BY v.created_at DESC
-            ) FILTER (WHERE v.id IS NOT NULL),
-            '[]'::json
-          )`,
-        tags: sql<string[]>`
-          COALESCE(
-            ARRAY(
-              SELECT t.name
-              FROM ${modelTags} mt
-              INNER JOIN ${tags} t ON t.id = mt.tag_id
-              WHERE mt.model_id = ${models}.id
-              ORDER BY t.name
-            ),
-            '{}'::text[]
-          )`,
-        fileStats: sql<{ totalFiles: number; totalSize: number }>`
-          (SELECT json_build_object(
-            'totalFiles', COUNT(mf.id),
-            'totalSize', COALESCE(SUM(mf.size), 0)
-          )
-          FROM ${modelVersions} mv
-          LEFT JOIN ${modelFiles} mf ON mf.version_id = mv.id
-          WHERE mv.model_id = ${models}.id)`,
-      })
-      .from(models)
-      .leftJoin(modelVersions, eq(modelVersions.modelId, models.id))
-      .where(
-        and(
-          eq(models.id, modelId),
-          eq(models.organizationId, organizationId),
-          isNull(models.deletedAt)
-        )
-      )
-      .groupBy(models.id)
-      .limit(1);
-
-    return modelData[0] ?? null;
-  }
-
-  /**
-   * Get models by IDs - optimized for batch operations
-   */
-  async getModelsByIds(
-    modelIds: string[],
-    organizationId: string
-  ): Promise<ModelListItem[]> {
-    if (modelIds.length === 0) {
-      return [];
-    }
-
-    const modelsData = await db
-      .select({
-        id: models.id,
-        slug: models.slug,
-        name: models.name,
-        description: models.description,
-        currentVersion: models.currentVersion,
-        createdAt: models.createdAt,
-        updatedAt: models.updatedAt,
-        fileStats: sql<{ count: number; size: number }>`
-          (SELECT json_build_object(
-            'count', COALESCE(COUNT(mf.id), 0),
-            'size', COALESCE(SUM(mf.size), 0)
-          )
-          FROM ${modelVersions} mv
-          LEFT JOIN ${modelFiles} mf ON mf.version_id = mv.id
-          WHERE mv.model_id = ${models}.id)`,
-        tags: sql<string[]>`
-          COALESCE(
-            ARRAY(
-              SELECT t.name
-              FROM ${modelTags} mt
-              INNER JOIN ${tags} t ON t.id = mt.tag_id
-              WHERE mt.model_id = ${models}.id
-              ORDER BY t.name
-            ),
-            '{}'::text[]
-          )`,
-      })
-      .from(models)
-      .where(
-        and(
-          inArray(models.id, modelIds),
-          eq(models.organizationId, organizationId),
-          isNull(models.deletedAt)
-        )
-      );
-
-    return modelsData.map((row) => ({
-      id: row.id,
-      slug: row.slug,
-      name: row.name,
-      description: row.description,
-      currentVersion: row.currentVersion,
-      fileCount: row.fileStats?.count ?? 0,
-      totalSize: row.fileStats?.size ?? 0,
-      tags: row.tags ?? [],
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    }));
+  } catch (error) {
+    console.error("ERROR in listModels:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    throw error;
   }
 }
 
-export const modelListService = new ModelListService();
+export const modelListService = {
+  listModels,
+};
