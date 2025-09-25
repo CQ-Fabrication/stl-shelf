@@ -47,6 +47,8 @@ This is a Turborepo monorepo with two main applications:
 
 - `bun x ultracite format` - Format code (used by lint-staged)
 - Code follows strict Ultracite rules (see AGENTS.md for detailed guidelines)
+- **CRITICAL: NEVER run formatters or linters on the entire repository** - Only format/lint files you've actually modified
+- **When using `bun check`, only focus on errors in files YOU changed** - Ignore existing issues in other files
 
 ## Technology Stack
 

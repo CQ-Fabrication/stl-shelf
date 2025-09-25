@@ -1,26 +1,26 @@
-import { useForm } from '@tanstack/react-form';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
-import { z } from 'zod/v4';
-import { Logo } from '@/components/logo';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import type { RouterAppContext } from './__root';
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { z } from "zod/v4";
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { RouterAppContext } from "./__root";
 
-export const Route = createFileRoute('/forgot-password')({
+export const Route = createFileRoute("/forgot-password")({
   component: ForgotPasswordPage,
 });
 
 const forgotPasswordSchema = z.object({
-  email: z.email('Enter a valid email address').max(200, 'Email is too long'),
+  email: z.email("Enter a valid email address").max(200, "Email is too long"),
 });
 
 type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
 
 const defaultValues: ForgotPasswordForm = {
-  email: '',
+  email: "",
 };
 
 function ForgotPasswordPage() {
@@ -46,7 +46,7 @@ function ForgotPasswordPage() {
         setIsSubmitted(true);
       } catch (err) {
         if (import.meta.env.DEV)
-          console.debug('requestPasswordReset error', err);
+          console.debug("requestPasswordReset error", err);
         // Don't reveal whether the email exists - still show success
         setIsSubmitted(true);
       }
@@ -128,7 +128,7 @@ function ForgotPasswordPage() {
                     <div className="text-red-600 text-sm">
                       {field.state.meta.errors
                         .flatMap((error) => error?.message)
-                        .join(', ')}
+                        .join(", ")}
                     </div>
                   )}
                 </div>
@@ -145,14 +145,14 @@ function ForgotPasswordPage() {
                   disabled={!canSubmit || isSubmitting}
                   type="submit"
                 >
-                  {isSubmitting ? 'Sending...' : 'Send reset link'}
+                  {isSubmitting ? "Sending..." : "Send reset link"}
                 </Button>
               )}
             </form.Subscribe>
           </form>
 
           <div className="mt-6 text-center text-muted-foreground text-sm">
-            Remember your password?{' '}
+            Remember your password?{" "}
             <Link className="underline underline-offset-4" to="/login">
               Back to login
             </Link>

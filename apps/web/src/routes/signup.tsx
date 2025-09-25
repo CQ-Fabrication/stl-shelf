@@ -1,15 +1,15 @@
-import { useForm } from '@tanstack/react-form';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { z } from 'zod/v4';
-import { Logo } from '@/components/logo';
-import { Turnstile } from '@/components/turnstile';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import type { RouterAppContext } from './__root';
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { z } from "zod/v4";
+import { Logo } from "@/components/logo";
+import { Turnstile } from "@/components/turnstile";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { RouterAppContext } from "./__root";
 
-export const Route = createFileRoute('/signup')({
+export const Route = createFileRoute("/signup")({
   component: SignUpPage,
 });
 
@@ -17,27 +17,27 @@ const signUpSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(1, 'Name is required')
-    .max(100, 'Name is too long'),
-  email: z.email('Enter a valid email address').max(200, 'Email is too long'),
+    .min(1, "Name is required")
+    .max(100, "Name is too long"),
+  email: z.email("Enter a valid email address").max(200, "Email is too long"),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password is too long')
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password is too long")
     .regex(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
-      'Password must contain uppercase, lowercase, and number'
+      "Password must contain uppercase, lowercase, and number"
     ),
-  captcha: z.string().min(1, 'Captcha is required'),
+  captcha: z.string().min(1, "Captcha is required"),
 });
 
 type SignUpForm = z.infer<typeof signUpSchema>;
 
 const defaultValues: SignUpForm = {
-  name: '',
-  email: '',
-  password: '',
-  captcha: '',
+  name: "",
+  email: "",
+  password: "",
+  captcha: "",
 };
 
 function SignUpPage() {
@@ -51,7 +51,7 @@ function SignUpPage() {
       password: value.password,
     });
 
-    await navigate({ to: '/' });
+    await navigate({ to: "/" });
   };
 
   const form = useForm({
@@ -64,7 +64,7 @@ function SignUpPage() {
       try {
         await handleSignUp(value);
       } catch (err) {
-        if (import.meta.env.DEV) console.debug('signUp error', err);
+        if (import.meta.env.DEV) console.debug("signUp error", err);
       }
     },
   });
@@ -103,7 +103,7 @@ function SignUpPage() {
                     <div className="text-red-600 text-sm">
                       {field.state.meta.errors
                         .flatMap((error) => error?.message)
-                        .join(', ')}
+                        .join(", ")}
                     </div>
                   )}
                 </div>
@@ -131,7 +131,7 @@ function SignUpPage() {
                     <div className="text-red-600 text-sm">
                       {field.state.meta.errors
                         .flatMap((error) => error?.message)
-                        .join(', ')}
+                        .join(", ")}
                     </div>
                   )}
                 </div>
@@ -159,7 +159,7 @@ function SignUpPage() {
                     <div className="text-red-600 text-sm">
                       {field.state.meta.errors
                         .flatMap((error) => error?.message)
-                        .join(', ')}
+                        .join(", ")}
                     </div>
                   )}
                 </div>
@@ -169,9 +169,9 @@ function SignUpPage() {
 
             <Turnstile
               className="m-2 flex justify-center"
-              onError={() => form.setFieldValue('captcha', '')}
-              onExpire={() => form.setFieldValue('captcha', '')}
-              onVerify={(token) => form.setFieldValue('captcha', token)}
+              onError={() => form.setFieldValue("captcha", "")}
+              onExpire={() => form.setFieldValue("captcha", "")}
+              onVerify={(token) => form.setFieldValue("captcha", token)}
               siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
             />
 
@@ -185,13 +185,13 @@ function SignUpPage() {
                     disabled={!canSubmit || isSubmitting}
                     type="submit"
                   >
-                    {isSubmitting ? 'Creating…' : 'Create account'}
+                    {isSubmitting ? "Creating…" : "Create account"}
                   </Button>
                   <Link
                     className="mt-2 text-muted-foreground text-sm underline-offset-4"
                     to="/login"
                   >
-                    Already have an account?{' '}
+                    Already have an account?{" "}
                     <span className="underline">Sign in</span>
                   </Link>
                 </div>

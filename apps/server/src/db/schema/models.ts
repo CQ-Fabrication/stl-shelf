@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations } from "drizzle-orm";
 import {
   index,
   integer,
@@ -8,62 +8,62 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-} from 'drizzle-orm/pg-core';
-import { user as authUser, organization } from './better-auth-schema';
+} from "drizzle-orm/pg-core";
+import { user as authUser, organization } from "./better-auth-schema";
 
 export const models = pgTable(
-  'models',
+  "models",
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: text('organization_id')
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id),
-    ownerId: text('owner_id')
+    ownerId: text("owner_id")
       .notNull()
       .references(() => authUser.id), // Keep for audit trail
-    slug: text('slug').notNull(),
-    name: text('name').notNull(),
-    description: text('description'),
-    currentVersion: text('current_version').notNull().default('v1'),
-    totalVersions: integer('total_versions').notNull().default(1),
-    createdAt: timestamp('created_at', { withTimezone: true })
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    currentVersion: text("current_version").notNull().default("v1"),
+    totalVersions: integer("total_versions").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
-    uniqueIndex('models_org_slug_idx').on(table.organizationId, table.slug), // Unique slug per organization
-    index('models_name_idx').on(table.name),
-    index('models_updated_at_idx').on(table.updatedAt),
-    index('models_owner_idx').on(table.ownerId),
-    index('models_org_idx').on(table.organizationId),
-    index('models_deleted_at_idx').on(table.deletedAt),
+    uniqueIndex("models_org_slug_idx").on(table.organizationId, table.slug), // Unique slug per organization
+    index("models_name_idx").on(table.name),
+    index("models_updated_at_idx").on(table.updatedAt),
+    index("models_owner_idx").on(table.ownerId),
+    index("models_org_idx").on(table.organizationId),
+    index("models_deleted_at_idx").on(table.deletedAt),
   ]
 );
 
 export const modelVersions = pgTable(
-  'model_versions',
+  "model_versions",
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    modelId: uuid('model_id')
+    id: uuid("id").primaryKey().defaultRandom(),
+    modelId: uuid("model_id")
       .notNull()
-      .references(() => models.id, { onDelete: 'cascade' }),
-    version: text('version').notNull(),
-    name: text('name').notNull(),
-    description: text('description'),
-    thumbnailPath: text('thumbnail_path'),
+      .references(() => models.id, { onDelete: "cascade" }),
+    version: text("version").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    thumbnailPath: text("thumbnail_path"),
     // Print settings extracted from 3MF files or manually entered
-    printSettings: jsonb('print_settings').$type<{
+    printSettings: jsonb("print_settings").$type<{
       material?: string;
       layerHeight?: number;
       infill?: number;
       printTime?: number; // in minutes
       weight?: number; // in grams
       supports?: boolean;
-      raftBrim?: 'none' | 'raft' | 'brim';
+      raftBrim?: "none" | "raft" | "brim";
       temperature?: {
         nozzle?: number;
         bed?: number;
@@ -74,41 +74,41 @@ export const modelVersions = pgTable(
         firstLayer?: number;
       };
     }>(),
-    createdAt: timestamp('created_at', { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex('model_versions_model_version_idx').on(
+    uniqueIndex("model_versions_model_version_idx").on(
       table.modelId,
       table.version
     ),
-    index('model_versions_model_id_idx').on(table.modelId),
-    index('model_versions_version_idx').on(table.version),
+    index("model_versions_model_id_idx").on(table.modelId),
+    index("model_versions_version_idx").on(table.version),
   ]
 );
 
 export const modelFiles = pgTable(
-  'model_files',
+  "model_files",
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    versionId: uuid('version_id')
+    id: uuid("id").primaryKey().defaultRandom(),
+    versionId: uuid("version_id")
       .notNull()
-      .references(() => modelVersions.id, { onDelete: 'cascade' }),
-    filename: text('filename').notNull(),
-    originalName: text('original_name').notNull(),
-    size: integer('size').notNull(), // in bytes
-    mimeType: text('mime_type').notNull(),
-    extension: text('extension').notNull(),
+      .references(() => modelVersions.id, { onDelete: "cascade" }),
+    filename: text("filename").notNull(),
+    originalName: text("original_name").notNull(),
+    size: integer("size").notNull(), // in bytes
+    mimeType: text("mime_type").notNull(),
+    extension: text("extension").notNull(),
     // S3/MinIO storage information
-    storageKey: text('storage_key').notNull().unique(),
-    storageUrl: text('storage_url'),
-    storageBucket: text('storage_bucket').notNull(),
+    storageKey: text("storage_key").notNull().unique(),
+    storageUrl: text("storage_url"),
+    storageBucket: text("storage_bucket").notNull(),
     // File-specific metadata extracted during processing
-    fileMetadata: jsonb('file_metadata').$type<{
+    fileMetadata: jsonb("file_metadata").$type<{
       // 3D model properties
       boundingBox?: {
         width: number;
@@ -124,7 +124,7 @@ export const modelFiles = pgTable(
       estimatedVolume?: number; // in cubic mm
       estimatedWeight?: number; // in grams
       // File format specific
-      units?: 'mm' | 'in' | 'cm';
+      units?: "mm" | "in" | "cm";
       // 3MF specific metadata
       threeMfMetadata?: {
         application?: string;
@@ -145,56 +145,56 @@ export const modelFiles = pgTable(
       processedAt?: string;
       processingErrors?: string[];
     }>(),
-    createdAt: timestamp('created_at', { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    index('model_files_version_id_idx').on(table.versionId),
-    uniqueIndex('model_files_storage_key_idx').on(table.storageKey),
-    index('model_files_filename_idx').on(table.filename),
-    index('model_files_extension_idx').on(table.extension),
+    index("model_files_version_id_idx").on(table.versionId),
+    uniqueIndex("model_files_storage_key_idx").on(table.storageKey),
+    index("model_files_filename_idx").on(table.filename),
+    index("model_files_extension_idx").on(table.extension),
   ]
 );
 
 export const tagTypes = pgTable(
-  'tag_types',
+  "tag_types",
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    name: text('name').notNull().unique(), // 'category' | 'attribute'
-    description: text('description'),
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull().unique(), // 'category' | 'attribute'
+    description: text("description"),
   },
-  (table) => [uniqueIndex('tag_types_name_idx').on(table.name)]
+  (table) => [uniqueIndex("tag_types_name_idx").on(table.name)]
 );
 
 export const tags = pgTable(
-  'tags',
+  "tags",
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    organizationId: text('organization_id')
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: text("organization_id")
       .notNull()
-      .references(() => organization.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
-    typeId: uuid('type_id').references(() => tagTypes.id),
-    color: text('color'), // hex color for UI
-    description: text('description'),
-    usageCount: integer('usage_count').notNull().default(0),
-    createdAt: timestamp('created_at', { withTimezone: true })
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    typeId: uuid("type_id").references(() => tagTypes.id),
+    color: text("color"), // hex color for UI
+    description: text("description"),
+    usageCount: integer("usage_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex('tags_org_name_idx').on(table.organizationId, table.name),
-    index('tags_org_idx').on(table.organizationId),
-    index('tags_type_idx').on(table.typeId),
-    index('tags_usage_count_idx').on(table.usageCount),
-    index('tags_org_type_name_idx').on(
+    uniqueIndex("tags_org_name_idx").on(table.organizationId, table.name),
+    index("tags_org_idx").on(table.organizationId),
+    index("tags_type_idx").on(table.typeId),
+    index("tags_usage_count_idx").on(table.usageCount),
+    index("tags_org_type_name_idx").on(
       table.organizationId,
       table.typeId,
       table.name
@@ -203,47 +203,47 @@ export const tags = pgTable(
 );
 
 export const modelTags = pgTable(
-  'model_tags',
+  "model_tags",
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    modelId: uuid('model_id')
+    id: uuid("id").primaryKey().defaultRandom(),
+    modelId: uuid("model_id")
       .notNull()
-      .references(() => models.id, { onDelete: 'cascade' }),
-    tagId: uuid('tag_id')
+      .references(() => models.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
       .notNull()
-      .references(() => tags.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true })
+      .references(() => tags.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex('model_tags_model_tag_idx').on(table.modelId, table.tagId),
-    index('model_tags_model_id_idx').on(table.modelId),
-    index('model_tags_tag_id_idx').on(table.tagId),
+    uniqueIndex("model_tags_model_tag_idx").on(table.modelId, table.tagId),
+    index("model_tags_model_id_idx").on(table.modelId),
+    index("model_tags_tag_id_idx").on(table.tagId),
   ]
 );
 
 export const versionTags = pgTable(
-  'version_tags',
+  "version_tags",
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    versionId: uuid('version_id')
+    id: uuid("id").primaryKey().defaultRandom(),
+    versionId: uuid("version_id")
       .notNull()
-      .references(() => modelVersions.id, { onDelete: 'cascade' }),
-    tagId: uuid('tag_id')
+      .references(() => modelVersions.id, { onDelete: "cascade" }),
+    tagId: uuid("tag_id")
       .notNull()
-      .references(() => tags.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true })
+      .references(() => tags.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex('version_tags_version_tag_idx').on(
+    uniqueIndex("version_tags_version_tag_idx").on(
       table.versionId,
       table.tagId
     ),
-    index('version_tags_version_id_idx').on(table.versionId),
-    index('version_tags_tag_id_idx').on(table.tagId),
+    index("version_tags_version_id_idx").on(table.versionId),
+    index("version_tags_tag_id_idx").on(table.tagId),
   ]
 );
 

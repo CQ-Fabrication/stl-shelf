@@ -113,7 +113,7 @@ class ModelDetailService {
         updatedAt: model.updatedAt.toISOString(),
       };
     } catch (error) {
-      console.error('Error in getModel:', error);
+      console.error("Error in getModel:", error);
       throw error;
     }
   }
@@ -180,9 +180,10 @@ class ModelDetailService {
         name: version.name,
         description: version.description,
         thumbnailPath: version.thumbnailPath,
-        files: version.files.length > 0
-          ? await this.generatePresignedUrlsForFiles(version.files)
-          : [],
+        files:
+          version.files.length > 0
+            ? await this.generatePresignedUrlsForFiles(version.files)
+            : [],
         createdAt: version.createdAt.toISOString(),
         updatedAt: version.updatedAt.toISOString(),
       }))

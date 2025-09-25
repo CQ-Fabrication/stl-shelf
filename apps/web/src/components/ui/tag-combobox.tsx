@@ -1,7 +1,7 @@
-import { Check, ChevronsUpDown, Plus, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -9,14 +9,14 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command';
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { TextHighlight } from '@/components/ui/text-highlight';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { TextHighlight } from "@/components/ui/text-highlight";
+import { cn } from "@/lib/utils";
 
 type TagInfo = {
   name: string;
@@ -38,13 +38,13 @@ export function TagCombobox({
   availableTags,
   selectedTags,
   onTagsChange,
-  placeholder = 'Select tags...',
+  placeholder = "Select tags...",
   allowCreate = true,
   disabled = false,
   className,
 }: TagComboboxProps) {
   const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
 
   // Normalize tags to handle both string[] and TagInfo[] formats
   const normalizedTags = useMemo(() => {
@@ -52,7 +52,7 @@ export function TagCombobox({
 
     // Check if it's TagInfo[] or string[]
     const firstTag = availableTags[0];
-    if (typeof firstTag === 'string') {
+    if (typeof firstTag === "string") {
       // Convert string[] to TagInfo[] format
       return (availableTags as string[]).map((tag) => ({
         name: tag,
@@ -81,7 +81,7 @@ export function TagCombobox({
     } else {
       onTagsChange([...selectedTags, normalizedTag]);
     }
-    setInputValue('');
+    setInputValue("");
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
@@ -92,7 +92,7 @@ export function TagCombobox({
     const newTag = inputValue.toLowerCase().trim();
     if (newTag && !selectedTags.includes(newTag)) {
       onTagsChange([...selectedTags, newTag]);
-      setInputValue('');
+      setInputValue("");
       setOpen(false);
     }
   };
@@ -111,7 +111,7 @@ export function TagCombobox({
     allowCreate && inputValue.trim() && !exactMatch && !isAlreadySelected;
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn("space-y-2", className)}>
       <Popover onOpenChange={setOpen} open={open}>
         <PopoverTrigger asChild>
           <Button
@@ -124,7 +124,7 @@ export function TagCombobox({
             <span className="text-muted-foreground">
               {selectedTags.length > 0
                 ? `${selectedTags.length} tag${
-                    selectedTags.length > 1 ? 's' : ''
+                    selectedTags.length > 1 ? "s" : ""
                   } selected`
                 : placeholder}
             </span>
@@ -160,7 +160,7 @@ export function TagCombobox({
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     <span>
-                      Create{' '}
+                      Create{" "}
                       <TextHighlight
                         highlight={inputValue}
                         text={`"${inputValue}"`}
@@ -180,10 +180,10 @@ export function TagCombobox({
                     >
                       <Check
                         className={cn(
-                          'mr-2 h-4 w-4',
+                          "mr-2 h-4 w-4",
                           selectedTags.includes(tag.name.toLowerCase())
-                            ? 'opacity-100'
-                            : 'opacity-0'
+                            ? "opacity-100"
+                            : "opacity-0"
                         )}
                       />
                       <span>
@@ -211,11 +211,11 @@ export function TagCombobox({
                     ? {
                         backgroundColor: tagColor,
                         borderColor: tagColor,
-                        color: 'white',
+                        color: "white",
                       }
                     : undefined
                 }
-                variant={tagColor ? 'outline' : 'secondary'}
+                variant={tagColor ? "outline" : "secondary"}
               >
                 {tag}
                 <Button
@@ -223,7 +223,7 @@ export function TagCombobox({
                   disabled={disabled}
                   onClick={() => handleRemoveTag(tag)}
                   size="sm"
-                  style={tagColor ? { color: 'white' } : undefined}
+                  style={tagColor ? { color: "white" } : undefined}
                   variant="ghost"
                 >
                   <X className="h-3 w-3" />

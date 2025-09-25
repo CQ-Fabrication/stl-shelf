@@ -17,10 +17,7 @@ import {
   modelVersions,
   tags,
 } from "@/db/schema/models";
-import type {
-  ListModelsInput,
-  ListModelsOutput,
-} from "@/routers/models";
+import type { ListModelsInput, ListModelsOutput } from "@/routers/models";
 
 // Service-specific type that extends router input with organizationId
 type ServiceListModelsInput = ListModelsInput & {
@@ -38,7 +35,6 @@ export async function listModels({
   search,
   tags: filterTags,
 }: ServiceListModelsInput): Promise<ListModelsOutput> {
-
   const safePage = Math.max(1, page);
   const safeLimit = Math.min(100, Math.max(1, limit));
   const offset = (safePage - 1) * safeLimit;
@@ -78,17 +74,14 @@ export async function listModels({
   }
 
   try {
-
     // Get total count separately
     const [countResult] = await db
       .select({ totalCount: count() })
       .from(models)
       .where(and(...conditions));
 
-
     const totalItems = countResult?.totalCount ?? 0;
     const totalPages = Math.ceil(totalItems / safeLimit);
-
 
     // Main query with subqueries for aggregated data
     const modelsWithData = await db
@@ -142,7 +135,6 @@ export async function listModels({
       updatedAt: row.updatedAt.toISOString(),
     }));
 
-
     return {
       models: modelList,
       pagination: {
@@ -155,7 +147,10 @@ export async function listModels({
       },
     };
   } catch (error) {
-    console.error("ERROR in listModels:", error instanceof Error ? error.message : "Unknown error");
+    console.error(
+      "ERROR in listModels:",
+      error instanceof Error ? error.message : "Unknown error"
+    );
     throw error;
   }
 }

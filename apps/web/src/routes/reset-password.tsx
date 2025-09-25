@@ -1,14 +1,14 @@
-import { useForm } from '@tanstack/react-form';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { z } from 'zod/v4';
-import { Logo } from '@/components/logo';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import type { RouterAppContext } from './__root';
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { z } from "zod/v4";
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { RouterAppContext } from "./__root";
 
-export const Route = createFileRoute('/reset-password')({
+export const Route = createFileRoute("/reset-password")({
   component: ResetPasswordPage,
 });
 
@@ -16,26 +16,26 @@ const resetPasswordSchema = z
   .object({
     newPassword: z
       .string()
-      .min(8, 'Password must be at least 8 characters')
-      .max(128, 'Password is too long')
+      .min(8, "Password must be at least 8 characters")
+      .max(128, "Password is too long")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
-        'Password must contain uppercase, lowercase, and number'
+        "Password must contain uppercase, lowercase, and number"
       ),
     confirmPassword: z.string(),
-    token: z.string().min(1, 'Reset token is required'),
+    token: z.string().min(1, "Reset token is required"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
 const defaultValues: ResetPasswordForm = {
-  newPassword: '',
-  confirmPassword: '',
-  token: '',
+  newPassword: "",
+  confirmPassword: "",
+  token: "",
 };
 
 function ResetPasswordPage() {
@@ -43,11 +43,11 @@ function ResetPasswordPage() {
   const { auth } = Route.useRouteContext() as RouterAppContext;
 
   const urlParams = new URLSearchParams(window.location.search);
-  const tokenParam = urlParams.get('token');
-  const errorParam = urlParams.get('error');
+  const tokenParam = urlParams.get("token");
+  const errorParam = urlParams.get("error");
 
-  const hasInvalidToken = errorParam === 'INVALID_TOKEN' || !tokenParam;
-  const token = tokenParam || '';
+  const hasInvalidToken = errorParam === "INVALID_TOKEN" || !tokenParam;
+  const token = tokenParam || "";
 
   const handleResetPassword = async (value: ResetPasswordForm) => {
     await auth.resetPassword({
@@ -55,7 +55,7 @@ function ResetPasswordPage() {
       token: value.token,
     });
 
-    navigate({ to: '/login' });
+    navigate({ to: "/login" });
   };
 
   const form = useForm({
@@ -124,9 +124,9 @@ function ResetPasswordPage() {
 
           {submissionError && (
             <div className="mb-4 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
-              {typeof submissionError === 'string'
+              {typeof submissionError === "string"
                 ? submissionError
-                : 'Failed to reset password. Please try again or request a new reset link.'}
+                : "Failed to reset password. Please try again or request a new reset link."}
             </div>
           )}
 
@@ -171,7 +171,7 @@ function ResetPasswordPage() {
                       <div className="text-red-600 text-sm">
                         {field.state.meta.errors
                           .flatMap((error) => error?.message)
-                          .join(', ')}
+                          .join(", ")}
                       </div>
                     )}
                   </div>
@@ -183,7 +183,7 @@ function ResetPasswordPage() {
                 children={(field) => (
                   <div className="flex flex-col gap-2">
                     <Label htmlFor={field.name}>
-                      Confirm Password{' '}
+                      Confirm Password{" "}
                       <sup className="-ml-1 text-red-600">*</sup>
                     </Label>
                     <Input
@@ -200,7 +200,7 @@ function ResetPasswordPage() {
                       <div className="text-red-600 text-sm">
                         {field.state.meta.errors
                           .flatMap((error) => error?.message)
-                          .join(', ')}
+                          .join(", ")}
                       </div>
                     )}
                   </div>
@@ -217,7 +217,7 @@ function ResetPasswordPage() {
                     disabled={!canSubmit || isSubmitting}
                     type="submit"
                   >
-                    {isSubmitting ? 'Resetting...' : 'Reset password'}
+                    {isSubmitting ? "Resetting..." : "Reset password"}
                   </Button>
                 )}
               </form.Subscribe>

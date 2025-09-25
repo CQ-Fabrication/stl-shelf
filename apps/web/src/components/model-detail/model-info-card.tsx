@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   Box,
   Calendar,
@@ -5,30 +6,25 @@ import {
   FileText,
   HardDrive,
   Tag,
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { downloadFile } from '@/utils/download';
+} from "lucide-react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   formatDate,
   formatFileSize,
   formatPrintTime,
-} from '@/utils/formatters';
-import { orpc } from '@/utils/orpc';
+} from "@/utils/formatters";
+import { orpc } from "@/utils/orpc";
 
 type ModelInfoCardProps = {
   modelId: string;
   versionId?: string;
 };
 
-export const ModelInfoCard = ({
-  modelId,
-  versionId,
-}: ModelInfoCardProps) => {
+export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
   const { data: model } = useQuery(
     orpc.models.getModel.queryOptions({ input: { id: modelId } })
   );
@@ -56,33 +52,30 @@ export const ModelInfoCard = ({
 
   const getFileIcon = (extension: string) => {
     const ext = extension.toLowerCase();
-    if (['stl', '3mf', 'obj', 'ply'].includes(ext)) {
+    if (["stl", "3mf", "obj", "ply"].includes(ext)) {
       return Box;
     }
     return FileText;
   };
 
-  const getFileTypeBadgeVariant = (extension: string): "default" | "secondary" | "outline" | "destructive" => {
+  const getFileTypeBadgeVariant = (
+    extension: string
+  ): "default" | "secondary" | "outline" | "destructive" => {
     const ext = extension.toLowerCase();
-    switch(ext) {
-      case 'stl': return 'default';
-      case 'obj': return 'secondary';
-      case '3mf': return 'outline';
-      case 'ply': return 'destructive';
-      default: return 'secondary';
+    switch (ext) {
+      case "stl":
+        return "default";
+      case "obj":
+        return "secondary";
+      case "3mf":
+        return "outline";
+      case "ply":
+        return "destructive";
+      default:
+        return "secondary";
     }
   };
 
-  const handleDownloadFile = async (filename: string) => {
-    if (!activeVersion) return;
-
-    try {
-      await downloadFile(modelId, activeVersion.version, filename);
-      toast.success(`Downloading ${filename}`);
-    } catch {
-      toast.error(`Failed to download ${filename}`);
-    }
-  };
 
   if (statsLoading || !model) {
     return (
@@ -107,8 +100,9 @@ export const ModelInfoCard = ({
         <CardTitle className="flex items-center justify-between">
           <span>Model Information</span>
           {activeVersion && (
-            <Badge variant="outline" className="font-normal">
-              Version <span className="text-brand">{activeVersion.version}</span>
+            <Badge className="font-normal" variant="outline">
+              Version{" "}
+              <span className="text-brand">{activeVersion.version}</span>
             </Badge>
           )}
         </CardTitle>
@@ -120,7 +114,9 @@ export const ModelInfoCard = ({
             <div>
               <div className="font-medium">Version Created</div>
               <div className="text-muted-foreground">
-                {activeVersion?.createdAt ? formatDate(new Date(activeVersion.createdAt)) : 'N/A'}
+                {activeVersion?.createdAt
+                  ? formatDate(new Date(activeVersion.createdAt))
+                  : "N/A"}
               </div>
             </div>
           </div>
@@ -129,9 +125,14 @@ export const ModelInfoCard = ({
             <div>
               <div className="font-medium">Version Size</div>
               <div className="text-muted-foreground">
-                {activeVersion?.files ? formatFileSize(
-                  activeVersion.files.reduce((sum, file) => sum + file.size, 0)
-                ) : 'N/A'}
+                {activeVersion?.files
+                  ? formatFileSize(
+                      activeVersion.files.reduce(
+                        (sum, file) => sum + file.size,
+                        0
+                      )
+                    )
+                  : "N/A"}
               </div>
             </div>
           </div>
@@ -147,7 +148,7 @@ export const ModelInfoCard = ({
             <div className="flex flex-wrap gap-2">
               {files
                 .filter((file) =>
-                  ['stl', '3mf', 'obj', 'ply'].includes(
+                  ["stl", "3mf", "obj", "ply"].includes(
                     file.extension.toLowerCase()
                   )
                 )
@@ -160,21 +161,19 @@ export const ModelInfoCard = ({
                     >
                       <Icon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">{file.originalName}</span>
-                      <Badge className="text-xs" variant={file.extension.toLowerCase() === 'stl' ? 'default' : getFileTypeBadgeVariant(file.extension)}>
+                      <Badge
+                        className="text-xs"
+                        variant={
+                          file.extension.toLowerCase() === "stl"
+                            ? "default"
+                            : getFileTypeBadgeVariant(file.extension)
+                        }
+                      >
                         {file.extension.toUpperCase()}
                       </Badge>
                       <span className="text-muted-foreground text-xs">
                         {formatFileSize(file.size)}
                       </span>
-                      <Button
-                        className="h-6 w-6 hover:text-brand"
-                        onClick={() => handleDownloadFile(file.filename)}
-                        size="icon"
-                        title={`Download ${file.filename}`}
-                        variant="ghost"
-                      >
-                        <Download className="h-3 w-3" />
-                      </Button>
                     </div>
                   );
                 })}

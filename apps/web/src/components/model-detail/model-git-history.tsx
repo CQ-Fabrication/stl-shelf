@@ -4,10 +4,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { formatDate } from '@/utils/formatters';
-import type { GitCommit } from '../../../../server/src/types/model';
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDate } from "@/utils/formatters";
+import type { GitCommit } from "../../../../server/src/types/model";
 
 type ModelGitHistoryProps = {
   history?: GitCommit[];

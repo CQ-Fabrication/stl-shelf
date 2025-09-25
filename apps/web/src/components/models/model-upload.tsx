@@ -132,10 +132,7 @@ export function ModelUpload() {
 
       // Update form state with files
       const currentFiles = form.state.values.files || [];
-      form.setFieldValue(
-        "files",
-        [...currentFiles, ...acceptedFiles]
-      );
+      form.setFieldValue("files", [...currentFiles, ...acceptedFiles]);
 
       // Auto-set name from first file if not already set
       if (!form.state.values.name && acceptedFiles.length > 0) {

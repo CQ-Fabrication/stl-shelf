@@ -1,16 +1,15 @@
-import { Link } from '@tanstack/react-router';
-import { Calendar, Download, Eye, HardDrive, MoreVertical, Trash2 } from 'lucide-react';
-import { memo, useState } from 'react';
-import { cn } from '@/lib/utils';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { Link } from "@tanstack/react-router";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../ui/card';
+  Calendar,
+  Download,
+  Eye,
+  HardDrive,
+  MoreVertical,
+  Trash2,
+} from "lucide-react";
+import { memo, useState } from "react";
+import { useDeleteModel } from "@/hooks/use-delete-model";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,21 +19,29 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../ui/alert-dialog';
+} from "../ui/alert-dialog";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+} from "../ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../ui/tooltip';
-import { useDeleteModel } from '@/hooks/use-delete-model';
+} from "../ui/tooltip";
 
 type ModelCardProps = {
   model: {
@@ -61,16 +68,16 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
   };
 
   const formatFileSize = (bytes: number) => {
-    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const sizes = ["B", "KB", "MB", "GB"];
     if (bytes === 0) {
-      return '0 B';
+      return "0 B";
     }
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return `${Math.round((bytes / 1024 ** i) * 100) / 100} ${sizes[i]}`;
   };
 
   return (
-    <Card className="group relative h-full flex flex-col cursor-pointer transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
+    <Card className="group relative flex h-full cursor-pointer flex-col transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       {/* Stretched link to make the whole card clickable */}
       <Link
         aria-label={`View ${model.name}`}
@@ -84,9 +91,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-1">
-            <CardTitle className="line-clamp-2 text-lg">
-              {model.name}
-            </CardTitle>
+            <CardTitle className="line-clamp-2 text-lg">{model.name}</CardTitle>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Calendar className="h-3 w-3" />
               {formatDate(model.updatedAt)}
@@ -94,12 +99,14 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
               {formatFileSize(model.totalSize)}
             </div>
           </div>
-          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+          <DropdownMenu onOpenChange={setDropdownOpen} open={dropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 className={cn(
                   "relative z-20 transition-opacity",
-                  dropdownOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  dropdownOpen
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-100"
                 )}
                 size="sm"
                 variant="ghost"
@@ -133,7 +140,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col flex-grow">
+      <CardContent className="flex flex-grow flex-col">
         {/* Thumbnail preview placeholder */}
         <div className="mb-3">
           <div className="aspect-video overflow-hidden rounded-md bg-muted transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
@@ -171,27 +178,27 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
         <div className="flex-grow" />
 
         {/* Combined footer with tags and file info - always at bottom */}
-        <div className="flex items-center justify-between gap-3 text-xs min-h-[24px] mt-auto">
+        <div className="mt-auto flex min-h-[24px] items-center justify-between gap-3 text-xs">
           {/* Tags on left - with reserved space to prevent layout shifts */}
-          <div className="flex items-center gap-1 min-w-0 flex-1 max-w-[60%]">
+          <div className="flex min-w-0 max-w-[60%] flex-1 items-center gap-1">
             {model.tags && model.tags.length > 0 ? (
               <TooltipProvider>
                 {/* Desktop: show 2 tags */}
-                <div className="hidden sm:flex items-center gap-1 min-w-0">
+                <div className="hidden min-w-0 items-center gap-1 sm:flex">
                   {model.tags.slice(0, 2).map((tag) => (
                     <Tooltip key={tag}>
                       <TooltipTrigger asChild>
                         <Badge
-                          variant="secondary"
-                          className="max-w-24 truncate cursor-help text-xs hover:bg-secondary/80 transition-colors"
+                          className="max-w-24 cursor-help truncate text-xs transition-colors hover:bg-secondary/80"
                           title={tag.length > 12 ? tag : undefined}
+                          variant="secondary"
                         >
                           {tag}
                         </Badge>
                       </TooltipTrigger>
                       {tag.length > 12 && (
                         <TooltipContent side="top">
-                          <p className="text-xs font-medium">{tag}</p>
+                          <p className="font-medium text-xs">{tag}</p>
                         </TooltipContent>
                       )}
                     </Tooltip>
@@ -200,17 +207,23 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Badge
+                          className="min-w-[2rem] cursor-help text-center text-xs transition-colors hover:bg-accent"
                           variant="outline"
-                          className="cursor-help text-xs hover:bg-accent transition-colors min-w-[2rem] text-center"
                         >
                           +{model.tags.length - 2}
                         </Badge>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p className="font-medium mb-2 text-xs">Additional tags:</p>
+                      <TooltipContent className="max-w-xs" side="top">
+                        <p className="mb-2 font-medium text-xs">
+                          Additional tags:
+                        </p>
                         <div className="flex flex-wrap gap-1">
                           {model.tags.slice(2).map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">
+                            <Badge
+                              className="text-xs"
+                              key={tag}
+                              variant="secondary"
+                            >
                               {tag}
                             </Badge>
                           ))}
@@ -221,20 +234,22 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
                 </div>
 
                 {/* Mobile: show 1 tag with improved touch targets */}
-                <div className="flex sm:hidden items-center gap-1.5 min-w-0">
+                <div className="flex min-w-0 items-center gap-1.5 sm:hidden">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge
+                        className="min-h-6 max-w-20 cursor-pointer truncate px-2 text-xs"
+                        title={
+                          model.tags[0].length > 8 ? model.tags[0] : undefined
+                        }
                         variant="secondary"
-                        className="max-w-20 truncate text-xs min-h-6 px-2 cursor-pointer"
-                        title={model.tags[0].length > 8 ? model.tags[0] : undefined}
                       >
                         {model.tags[0]}
                       </Badge>
                     </TooltipTrigger>
                     {model.tags[0].length > 8 && (
                       <TooltipContent side="top">
-                        <p className="text-xs font-medium">{model.tags[0]}</p>
+                        <p className="font-medium text-xs">{model.tags[0]}</p>
                       </TooltipContent>
                     )}
                   </Tooltip>
@@ -242,17 +257,21 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Badge
+                          className="min-h-6 min-w-[2.5rem] cursor-pointer px-2 text-center text-xs"
                           variant="outline"
-                          className="text-xs min-h-6 px-2 cursor-pointer min-w-[2.5rem] text-center"
                         >
                           +{model.tags.length - 1}
                         </Badge>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p className="font-medium mb-2 text-xs">All tags:</p>
+                      <TooltipContent className="max-w-xs" side="top">
+                        <p className="mb-2 font-medium text-xs">All tags:</p>
                         <div className="flex flex-wrap gap-1">
                           {model.tags.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">
+                            <Badge
+                              className="text-xs"
+                              key={tag}
+                              variant="secondary"
+                            >
                               {tag}
                             </Badge>
                           ))}
@@ -269,9 +288,9 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
           </div>
 
           {/* File info on right - guaranteed minimum space */}
-          <div className="flex items-center text-muted-foreground shrink-0 min-w-[40%] justify-end">
+          <div className="flex min-w-[40%] shrink-0 items-center justify-end text-muted-foreground">
             <span className="whitespace-nowrap">
-              {model.fileCount} file{model.fileCount !== 1 ? 's' : ''}
+              {model.fileCount} file{model.fileCount !== 1 ? "s" : ""}
             </span>
             <span className="mx-1.5 text-muted-foreground/60">•</span>
             <span className="whitespace-nowrap font-medium text-brand">
@@ -282,23 +301,23 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
       </CardContent>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialog onOpenChange={setShowDeleteDialog} open={showDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Model</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{model.name}"?
-              This action can be undone by contacting support.
+              Are you sure you want to delete "{model.name}"? This action can be
+              undone by contacting support.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 deleteModel.mutate({ id: model.id });
                 setShowDeleteDialog(false);
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>
@@ -309,7 +328,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
   );
 });
 
-ModelCard.displayName = 'ModelCard';
+ModelCard.displayName = "ModelCard";
 
 export { ModelCard };
 export default ModelCard;

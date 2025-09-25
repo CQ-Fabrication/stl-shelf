@@ -1,6 +1,6 @@
-import { Link } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type ModelDetailErrorProps = {
   error?: Error | null;
@@ -12,7 +12,7 @@ export const ModelDetailError = ({ error }: ModelDetailErrorProps) => {
       <div className="py-12 text-center">
         <div className="mb-2 text-destructive">Failed to load model</div>
         <div className="text-muted-foreground text-sm">
-          {error?.message || 'Model not found'}
+          {error?.message || "Model not found"}
         </div>
         <Button asChild className="mt-4">
           <Link to="/">

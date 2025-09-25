@@ -1,4 +1,4 @@
-import type { Model } from '../../../server/src/types/model';
+import type { Model } from "../../../server/src/types/model";
 
 // Common form data types
 export type EditModelFormData = {

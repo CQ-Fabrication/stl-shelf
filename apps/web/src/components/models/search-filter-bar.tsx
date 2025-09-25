@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { Check, ChevronDown, Search, Tag, Trash2, X } from 'lucide-react';
-import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
-import { cn } from '@/lib/utils';
-import { orpc } from '@/utils/orpc';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { useQuery } from "@tanstack/react-query";
+import { Check, ChevronDown, Search, Tag, Trash2, X } from "lucide-react";
+import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
+import { cn } from "@/lib/utils";
+import { orpc } from "@/utils/orpc";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import {
   Command,
   CommandEmpty,
@@ -12,10 +12,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '../ui/command';
-import { Input } from '../ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Separator } from '../ui/separator';
+} from "../ui/command";
+import { Input } from "../ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Separator } from "../ui/separator";
 
 type SearchFilterBarProps = {
   className?: string;
@@ -23,15 +23,17 @@ type SearchFilterBarProps = {
 
 export function SearchFilterBar({ className }: SearchFilterBarProps) {
   const [search, setSearch] = useQueryState(
-    'q',
-    parseAsString.withDefault('').withOptions({ throttleMs: 300 })
+    "q",
+    parseAsString.withDefault("").withOptions({ throttleMs: 300 })
   );
   const [selectedTags, setSelectedTags] = useQueryState(
-    'tags',
-    parseAsArrayOf(parseAsString, ',').withDefault([])
+    "tags",
+    parseAsArrayOf(parseAsString, ",").withDefault([])
   );
 
-  const { data: allTags = [] } = useQuery(orpc.models.getAllTags.queryOptions());
+  const { data: allTags = [] } = useQuery(
+    orpc.models.getAllTags.queryOptions()
+  );
 
   const handleTagToggle = (tagName: string) => {
     const newTags = selectedTags.includes(tagName)
@@ -49,9 +51,8 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
     setSelectedTags([]);
   };
 
-
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn("space-y-3", className)}>
       {/* Unified Search and Filter Bar */}
       <div className="flex">
         <div className="flex flex-1 items-center rounded-lg border bg-background shadow-sm focus-within:ring-2 focus-within:ring-brand/20">
@@ -67,7 +68,7 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
             {search && (
               <Button
                 className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8 transform p-0"
-                onClick={() => setSearch('')}
+                onClick={() => setSearch("")}
                 size="sm"
                 variant="ghost"
               >
@@ -83,8 +84,8 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
             <PopoverTrigger asChild>
               <Button
                 className={cn(
-                  'h-10 min-w-[100px] gap-2 rounded-none border-0 px-3 shadow-none hover:bg-accent/50',
-                  selectedTags.length > 0 && 'text-brand'
+                  "h-10 min-w-[100px] gap-2 rounded-none border-0 px-3 shadow-none hover:bg-accent/50",
+                  selectedTags.length > 0 && "text-brand"
                 )}
                 variant="ghost"
               >
@@ -120,10 +121,10 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
                       >
                         <div
                           className={cn(
-                            'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                            "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
                             selectedTags.includes(tag.name)
-                              ? 'bg-primary text-primary-foreground'
-                              : 'opacity-50 [&_svg]:invisible'
+                              ? "bg-primary text-primary-foreground"
+                              : "opacity-50 [&_svg]:invisible"
                           )}
                         >
                           <Check className="h-4 w-4" />
@@ -141,7 +142,6 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
               </Command>
             </PopoverContent>
           </Popover>
-
         </div>
       </div>
 
@@ -149,7 +149,10 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
       <div className="flex min-h-[32px] flex-wrap gap-2">
         {selectedTags.length > 0 &&
           selectedTags.map((tag) => (
-            <Badge className="gap-1 border-brand/20 bg-brand/10 text-brand-foreground hover:bg-brand/15" key={tag}>
+            <Badge
+              className="gap-1 border-brand/20 bg-brand/10 text-brand-foreground hover:bg-brand/15"
+              key={tag}
+            >
               {tag}
               <Button
                 className="h-auto w-auto p-0 hover:bg-transparent"

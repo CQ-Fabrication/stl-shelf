@@ -1,14 +1,14 @@
-import { OrbitControls } from '@react-three/drei';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-import { RotateCcw } from 'lucide-react';
-import { Suspense, useEffect, useRef, useState } from 'react';
-import { type BufferGeometry, DoubleSide, type Mesh, Vector3 } from 'three';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-import { STLLoader } from 'three/addons/loaders/STLLoader.js';
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { useTheme } from '../theme-provider';
-import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
+import { OrbitControls } from "@react-three/drei";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { RotateCcw } from "lucide-react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { type BufferGeometry, DoubleSide, type Mesh, Vector3 } from "three";
+import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
+import { STLLoader } from "three/addons/loaders/STLLoader.js";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { useTheme } from "../theme-provider";
+import { Button } from "../ui/button";
+import { Skeleton } from "../ui/skeleton";
 
 type STLViewerProps = {
   modelId: string;
@@ -27,7 +27,7 @@ type ModelMeshProps = {
 
 function ModelMesh({ url, filename, autoRotate, color }: ModelMeshProps) {
   const meshRef = useRef<Mesh>(null);
-  const extension = filename.split('.').pop()?.toLowerCase();
+  const extension = filename.split(".").pop()?.toLowerCase();
 
   // Always call both loaders to satisfy React hooks rules
   const stlGeometry = useLoader(STLLoader, url);
@@ -35,12 +35,12 @@ function ModelMesh({ url, filename, autoRotate, color }: ModelMeshProps) {
 
   // Select the appropriate geometry based on file extension
   let geometry: BufferGeometry | undefined;
-  if (extension === 'stl') {
+  if (extension === "stl") {
     geometry = stlGeometry;
-  } else if (extension === 'obj') {
+  } else if (extension === "obj") {
     // Extract geometry from the first mesh in the OBJ
     const firstChild = objObject.children[0];
-    if (firstChild && 'geometry' in firstChild) {
+    if (firstChild && "geometry" in firstChild) {
       geometry = (firstChild as Mesh).geometry;
     }
   }
@@ -105,7 +105,6 @@ function ViewerControls({ onResetCamera }: { onResetCamera: () => void }) {
   );
 }
 
-
 function LoadingFallback() {
   return (
     <div className="flex h-full w-full items-center justify-center bg-muted">
@@ -132,7 +131,7 @@ export function STLViewer({
   modelId,
   version,
   filename,
-  className = '',
+  className = "",
   url,
 }: STLViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -143,9 +142,9 @@ export function STLViewer({
   const modelUrl = url;
 
   // Theme-aware colors
-  const isDark = theme === 'dark';
-  const modelColor = isDark ? '#9ca3af' : '#e5e7eb'; // gray-400 : gray-200
-  const canvasBackground = isDark ? '#0a0a0a' : '#fafafa';
+  const isDark = theme === "dark";
+  const modelColor = isDark ? "#9ca3af" : "#e5e7eb"; // gray-400 : gray-200
+  const canvasBackground = isDark ? "#0a0a0a" : "#fafafa";
 
   const handleResetCamera = () => {
     if (controlsRef.current) {
@@ -197,7 +196,12 @@ export function STLViewer({
 
         {/* Model */}
         <Suspense fallback={null}>
-          <ModelMesh autoRotate={false} color={modelColor} filename={filename} url={modelUrl} />
+          <ModelMesh
+            autoRotate={false}
+            color={modelColor}
+            filename={filename}
+            url={modelUrl}
+          />
         </Suspense>
       </Canvas>
 

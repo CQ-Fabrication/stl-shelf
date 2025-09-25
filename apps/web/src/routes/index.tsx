@@ -1,8 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { ModelGrid } from '@/components/models/model-grid';
-import { SearchFilterBar } from '@/components/models/search-filter-bar';
+import { createFileRoute } from "@tanstack/react-router";
+import { ModelGrid } from "@/components/models/model-grid";
+import { SearchFilterBar } from "@/components/models/search-filter-bar";
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute("/")({
   component: HomeComponent,
 });
 

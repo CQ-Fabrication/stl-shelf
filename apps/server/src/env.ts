@@ -1,5 +1,5 @@
-import { createEnv } from '@t3-oss/env-core';
-import { z } from 'zod';
+import { createEnv } from "@t3-oss/env-core";
+import { z } from "zod";
 
 export const env = createEnv({
   server: {
@@ -17,7 +17,7 @@ export const env = createEnv({
     STORAGE_BUCKET_NAME: z.string().min(1),
     STORAGE_BUCKET_THUMBNAILS: z.string().min(1),
     STORAGE_BUCKET_TEMP: z.string().min(1),
-    STORAGE_USE_SSL: z.enum(['true', 'false']),
+    STORAGE_USE_SSL: z.enum(["true", "false"]),
 
     // Redis
     REDIS_URL: z.url().min(1),
@@ -51,7 +51,7 @@ export const env = createEnv({
     SMTP_FROM: z.string().optional(),
 
     // Server Configuration
-    NODE_ENV: z.enum(['development', 'production', 'test']),
+    NODE_ENV: z.enum(["development", "production", "test"]),
     PORT: z.coerce.number().min(1),
   },
   runtimeEnv: process.env,

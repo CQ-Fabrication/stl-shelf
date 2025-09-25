@@ -1,4 +1,4 @@
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link, useRouter } from "@tanstack/react-router";
 import {
   Building2,
   Check,
@@ -8,12 +8,12 @@ import {
   Plus,
   Sun,
   User,
-} from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import type { RouterAppContext } from '@/routes/__root';
-import { Logo } from './logo';
-import { useTheme } from './theme-provider';
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import type { RouterAppContext } from "@/routes/__root";
+import { Logo } from "./logo";
+import { useTheme } from "./theme-provider";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -21,8 +21,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from './ui/alert-dialog';
-import { Button } from './ui/button';
+} from "./ui/alert-dialog";
+import { Button } from "./ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +33,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+} from "./ui/dropdown-menu";
 
 export default function Header() {
   const router = useRouter();
@@ -55,8 +55,8 @@ export default function Header() {
         await router.invalidate();
       }
     } catch (error) {
-      console.error('Failed to switch organization:', error);
-      toast.error('Failed to switch organization');
+      console.error("Failed to switch organization:", error);
+      toast.error("Failed to switch organization");
     }
   }
 
@@ -76,7 +76,11 @@ export default function Header() {
         <div className="flex items-center gap-2">
           {/* Upload button - Only show if user has organizations */}
           {hasOrganizations && (
-            <Button asChild size="sm" className="bg-brand hover:bg-brand/90 text-brand-foreground">
+            <Button
+              asChild
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              size="sm"
+            >
               <Link to="/upload">
                 <Plus className="mr-2 h-4 w-4" />
                 Upload
@@ -118,7 +122,7 @@ export default function Header() {
                         const isActive = org.id === activeOrg.id;
                         return (
                           <DropdownMenuItem
-                            className={isActive ? 'bg-accent' : ''}
+                            className={isActive ? "bg-accent" : ""}
                             disabled={isActive}
                             key={org.id}
                             onClick={() =>
@@ -164,13 +168,13 @@ export default function Header() {
                   <Sun /> Theme
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => setTheme('light')}>
+                  <DropdownMenuItem onClick={() => setTheme("light")}>
                     <Sun /> Light
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('dark')}>
+                  <DropdownMenuItem onClick={() => setTheme("dark")}>
                     <Moon /> Dark
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('system')}>
+                  <DropdownMenuItem onClick={() => setTheme("system")}>
                     <Laptop /> System
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>

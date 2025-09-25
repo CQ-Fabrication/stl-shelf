@@ -1,7 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { ModelUpload } from '@/components/models/model-upload';
+import { createFileRoute } from "@tanstack/react-router";
+import { ModelUpload } from "@/components/models/model-upload";
 
-export const Route = createFileRoute('/upload')({
+export const Route = createFileRoute("/upload")({
   component: UploadComponent,
 });
 

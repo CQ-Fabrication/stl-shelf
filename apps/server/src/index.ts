@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { RPCHandler } from "@orpc/server/fetch";
-import { Hono } from "hono";
 import type { Context } from "hono";
+import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { auth } from "./auth";
@@ -29,7 +29,7 @@ app.use(
         env.CORS_ORIGIN,
         env.WEB_URL,
         "http://localhost:3001",
-        "http://127.0.0.1:3001"
+        "http://127.0.0.1:3001",
       ].filter(Boolean);
 
       if (!origin) return null; // Allow requests with no origin (e.g., Postman)

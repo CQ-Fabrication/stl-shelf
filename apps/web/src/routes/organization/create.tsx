@@ -1,21 +1,21 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { AlertCircle, Upload, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { AlertCircle, Upload, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import type { RouterAppContext } from '../__root';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { RouterAppContext } from "../__root";
 
-export const Route = createFileRoute('/organization/create')({
+export const Route = createFileRoute("/organization/create")({
   component: CreateOrganizationPage,
 });
 
@@ -23,8 +23,8 @@ function CreateOrganizationPage() {
   const navigate = useNavigate();
   const { auth } = Route.useRouteContext() as RouterAppContext;
 
-  const [name, setName] = useState('');
-  const [website, setWebsite] = useState('');
+  const [name, setName] = useState("");
+  const [website, setWebsite] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -43,7 +43,7 @@ function CreateOrganizationPage() {
         setHasExistingOrg(true);
       }
     } catch (error) {
-      console.error('Failed to check organizations:', error);
+      console.error("Failed to check organizations:", error);
     } finally {
       setIsCheckingOrgs(false);
     }
@@ -53,12 +53,12 @@ function CreateOrganizationPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Logo must be less than 5MB');
+        toast.error("Logo must be less than 5MB");
         return;
       }
 
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
         return;
       }
 
@@ -77,7 +77,7 @@ function CreateOrganizationPage() {
     setLogoFile(null);
     setLogoPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   }
 
@@ -85,7 +85,7 @@ function CreateOrganizationPage() {
     e.preventDefault();
 
     if (!name.trim()) {
-      toast.error('Organization name is required');
+      toast.error("Organization name is required");
       return;
     }
 
@@ -94,9 +94,9 @@ function CreateOrganizationPage() {
     // Create slug from name
     const slug = name
       .toLowerCase()
-      .replace(/[^a-z0-9-]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
 
     // Convert logo to base64 if present
     let logoDataUrl: string | undefined;
@@ -113,32 +113,32 @@ function CreateOrganizationPage() {
     });
 
     if (error) {
-      console.error('Failed to create organization:', error);
+      console.error("Failed to create organization:", error);
 
       // Check if it's the organization limit error
       if (
-        error.code === 'YOU_HAVE_REACHED_THE_MAXIMUM_NUMBER_OF_ORGANIZATIONS' ||
-        error.message?.includes('maximum number of organizations')
+        error.code === "YOU_HAVE_REACHED_THE_MAXIMUM_NUMBER_OF_ORGANIZATIONS" ||
+        error.message?.includes("maximum number of organizations")
       ) {
         toast.error(
-          'Organization limit reached. Currently, only one organization per user is supported.'
+          "Organization limit reached. Currently, only one organization per user is supported."
         );
         // Navigate back to home since they can't create more
-        await navigate({ to: '/' });
+        await navigate({ to: "/" });
       } else {
         toast.error(
-          error.message || 'Failed to create organization. Please try again.'
+          error.message || "Failed to create organization. Please try again."
         );
       }
       setIsCreating(false);
       return;
     }
 
-    toast.success('Organization created successfully');
+    toast.success("Organization created successfully");
     setIsCreating(false);
 
     // Navigate to home page after creation
-    await navigate({ to: '/' });
+    await navigate({ to: "/" });
   }
 
   return (
@@ -158,7 +158,7 @@ function CreateOrganizationPage() {
               <br />
               <Button
                 className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/40"
-                onClick={() => navigate({ to: '/' })}
+                onClick={() => navigate({ to: "/" })}
                 size="sm"
                 variant="outline"
               >
@@ -173,8 +173,8 @@ function CreateOrganizationPage() {
             <CardTitle>Create Your Organization</CardTitle>
             <CardDescription>
               {hasExistingOrg
-                ? 'You already have an organization. Currently, only one organization per user is supported.'
-                : 'You need to create an organization to start managing your 3D models.'}
+                ? "You already have an organization. Currently, only one organization per user is supported."
+                : "You need to create an organization to start managing your 3D models."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -197,7 +197,7 @@ function CreateOrganizationPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="website">
-                  Website{' '}
+                  Website{" "}
                   <span className="text-muted-foreground text-sm">
                     (optional)
                   </span>
@@ -214,7 +214,7 @@ function CreateOrganizationPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="logo">
-                  Logo{' '}
+                  Logo{" "}
                   <span className="text-muted-foreground text-sm">
                     (optional)
                   </span>
@@ -244,7 +244,7 @@ function CreateOrganizationPage() {
                 ) : (
                   <div className="flex w-full items-center justify-center">
                     <label
-                      className={`flex h-32 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 transition-colors ${hasExistingOrg ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-muted/70'}`}
+                      className={`flex h-32 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 transition-colors ${hasExistingOrg ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-muted/70"}`}
                       htmlFor="logo"
                     >
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -276,9 +276,9 @@ function CreateOrganizationPage() {
                 type="submit"
               >
                 {(() => {
-                  if (hasExistingOrg) return 'Limit Reached';
-                  if (isCreating) return 'Creating...';
-                  return 'Create Organization';
+                  if (hasExistingOrg) return "Limit Reached";
+                  if (isCreating) return "Creating...";
+                  return "Create Organization";
                 })()}
               </Button>
             </form>

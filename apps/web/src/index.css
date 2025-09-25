@@ -53,7 +53,9 @@ body {
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --shadow-brand: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px oklch(0.7043 0.1647 48.73 / 0.06);
+  --shadow-brand:
+    0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px
+    oklch(0.7043 0.1647 48.73 / 0.06);
 }
 
 .dark {
@@ -90,7 +92,9 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  --shadow-brand: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px oklch(0.72 0.1647 48.73 / 0.1);
+  --shadow-brand:
+    0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px
+    oklch(0.72 0.1647 48.73 / 0.1);
 }
 
 @theme inline {

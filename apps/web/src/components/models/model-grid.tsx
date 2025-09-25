@@ -1,16 +1,16 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   parseAsArrayOf,
   parseAsInteger,
   parseAsString,
   useQueryState,
-} from 'nuqs';
-import { cn } from '@/lib/utils';
-import { orpc } from '@/utils/orpc';
-import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
-import { ModelCard } from './model-card';
+} from "nuqs";
+import { cn } from "@/lib/utils";
+import { orpc } from "@/utils/orpc";
+import { Button } from "../ui/button";
+import { Skeleton } from "../ui/skeleton";
+import { ModelCard } from "./model-card";
 
 const SKELETON_COUNT = 8;
 const PAGINATION_DISPLAY_COUNT = 5;
@@ -18,12 +18,12 @@ const PAGINATION_EDGE_THRESHOLD = 3;
 const PAGINATION_EDGE_OFFSET = 2;
 
 export function ModelGrid() {
-  const [search] = useQueryState('q', parseAsString.withDefault(''));
+  const [search] = useQueryState("q", parseAsString.withDefault(""));
   const [tags] = useQueryState(
-    'tags',
-    parseAsArrayOf(parseAsString, ',').withDefault([])
+    "tags",
+    parseAsArrayOf(parseAsString, ",").withDefault([])
   );
-  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
 
   // Direct useQuery call with placeholderData for smooth transitions
   const {
@@ -35,11 +35,11 @@ export function ModelGrid() {
   } = useQuery({
     ...orpc.models.listModels.queryOptions({
       input: {
-        page: page || 1,  // Ensure page is never null/undefined
+        page: page || 1, // Ensure page is never null/undefined
         limit: 12,
         search: search || undefined,
         tags: tags.length > 0 ? tags : undefined,
-      }
+      },
     }),
     placeholderData: keepPreviousData,
     staleTime: 30_000, // 30 seconds
@@ -47,7 +47,7 @@ export function ModelGrid() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const clearFilters = () => {
@@ -72,21 +72,21 @@ export function ModelGrid() {
     <div className="space-y-6">
       {/* Results summary with filtering indication */}
       {modelsData && (
-        <div className={cn(
-          "text-muted-foreground text-sm transition-opacity duration-200",
-          showFilterOverlay && "opacity-50"
-        )}>
-          Showing{' '}
+        <div
+          className={cn(
+            "text-muted-foreground text-sm transition-opacity duration-200",
+            showFilterOverlay && "opacity-50"
+          )}
+        >
+          Showing{" "}
           {(modelsData.pagination.page - 1) * modelsData.pagination.limit + 1}-
           {Math.min(
             modelsData.pagination.page * modelsData.pagination.limit,
             modelsData.pagination.totalItems
-          )}{' '}
+          )}{" "}
           of {modelsData.pagination.totalItems} models
           {showFilterOverlay && (
-            <span className="ml-2 text-muted-foreground">
-              • Updating...
-            </span>
+            <span className="ml-2 text-muted-foreground">• Updating...</span>
           )}
         </div>
       )}
@@ -129,14 +129,16 @@ export function ModelGrid() {
           )}
         </div>
       ) : (
-        <div className={cn(
-          "relative transition-opacity duration-300",
-          showFilterOverlay && "opacity-60"
-        )}>
+        <div
+          className={cn(
+            "relative transition-opacity duration-300",
+            showFilterOverlay && "opacity-60"
+          )}
+        >
           {/* Subtle loading overlay during filtering */}
           {showFilterOverlay && (
             <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <div className="rounded-lg bg-background/90 px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
+              <div className="rounded-lg bg-background/90 px-3 py-1.5 text-muted-foreground text-sm shadow-sm">
                 Filtering...
               </div>
             </div>
@@ -199,7 +201,7 @@ export function ModelGrid() {
                     key={displayPage}
                     onClick={() => handlePageChange(displayPage)}
                     size="sm"
-                    variant={page === displayPage ? 'default' : 'outline'}
+                    variant={page === displayPage ? "default" : "outline"}
                   >
                     {displayPage}
                   </Button>

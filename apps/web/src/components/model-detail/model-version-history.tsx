@@ -1,20 +1,19 @@
-import { Download, History } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useQuery } from "@tanstack/react-query";
+import { Download, History } from "lucide-react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { downloadAllFiles } from '@/utils/download';
-import { formatDate } from '@/utils/formatters';
-import { orpc } from '@/utils/orpc';
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate } from "@/utils/formatters";
+import { orpc } from "@/utils/orpc";
 
 type ModelVersionHistoryProps = {
   modelId: string;
@@ -27,7 +26,11 @@ export const ModelVersionHistory = ({
   activeVersion,
   onVersionSelect,
 }: ModelVersionHistoryProps) => {
-  const { data: versions, isLoading, error } = useQuery(
+  const {
+    data: versions,
+    isLoading,
+    error,
+  } = useQuery(
     orpc.models.getModelVersions.queryOptions({ input: { modelId } })
   );
   const { data: model } = useQuery(
@@ -44,7 +47,7 @@ export const ModelVersionHistory = ({
           Version History
         </CardTitle>
         <CardDescription>
-          {totalVersions} version{totalVersions !== 1 ? 's' : ''}
+          {totalVersions} version{totalVersions !== 1 ? "s" : ""}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -53,7 +56,10 @@ export const ModelVersionHistory = ({
             {isLoading && (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-start justify-between rounded border p-3">
+                  <div
+                    className="flex items-start justify-between rounded border p-3"
+                    key={i}
+                  >
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-5 w-20" />
                       <Skeleton className="h-4 w-32" />
@@ -73,7 +79,7 @@ export const ModelVersionHistory = ({
               </div>
             )}
 
-            {!isLoading && !error && versions?.length === 0 && (
+            {!(isLoading || error) && versions?.length === 0 && (
               <div className="py-8 text-center text-muted-foreground text-sm">
                 No versions available
               </div>
@@ -84,7 +90,9 @@ export const ModelVersionHistory = ({
                 {versions.map((version, index) => (
                   <div
                     className={`flex items-start justify-between rounded border p-3 ${
-                      version.id === activeVersion ? 'border-l-4 border-l-brand' : ''
+                      version.id === activeVersion
+                        ? "border-l-4 border-l-brand"
+                        : ""
                     }`}
                     key={version.id}
                   >
@@ -92,9 +100,7 @@ export const ModelVersionHistory = ({
                       <div className="mb-1 flex items-center gap-2">
                         <Badge
                           variant={
-                            version.id === activeVersion
-                              ? 'default'
-                              : 'outline'
+                            version.id === activeVersion ? "default" : "outline"
                           }
                         >
                           {version.version}
@@ -116,34 +122,16 @@ export const ModelVersionHistory = ({
                     </div>
                     <div className="flex gap-2">
                       <Button
+                        className={
+                          version.id !== activeVersion ? "hover:text-brand" : ""
+                        }
                         onClick={() => onVersionSelect(version.id)}
                         size="sm"
                         variant={
-                          version.id === activeVersion
-                            ? 'secondary'
-                            : 'outline'
+                          version.id === activeVersion ? "secondary" : "outline"
                         }
-                        className={version.id !== activeVersion ? 'hover:text-brand' : ''}
                       >
-                        {version.id === activeVersion ? 'Viewing' : 'View'}
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          try {
-                            await downloadAllFiles(
-                              modelId,
-                              version.version,
-                              version.files
-                            );
-                            toast.success('Download started');
-                          } catch {
-                            toast.error('Download failed');
-                          }
-                        }}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Download className="h-3 w-3" />
+                        {version.id === activeVersion ? "Viewing" : "View"}
                       </Button>
                     </div>
                   </div>

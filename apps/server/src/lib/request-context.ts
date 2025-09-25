@@ -1,6 +1,6 @@
-import type { Context } from 'hono';
-import { auth } from '@/auth';
-import type { BaseContext, Session } from '@/lib/context';
+import type { Context } from "hono";
+import { auth } from "@/auth";
+import type { BaseContext, Session } from "@/lib/context";
 
 export async function createBaseContext(c: Context): Promise<BaseContext> {
   const ipAddress = extractClientIp(c);
@@ -23,11 +23,11 @@ export async function createBaseContext(c: Context): Promise<BaseContext> {
 }
 
 export function extractClientIp(c: Context): string | null {
-  const forwarded = c.req.header('x-forwarded-for');
+  const forwarded = c.req.header("x-forwarded-for");
   const candidates = [
-    c.req.header('cf-connecting-ip'),
-    c.req.header('x-real-ip'),
-    forwarded ? forwarded.split(',')[0]?.trim() : undefined,
+    c.req.header("cf-connecting-ip"),
+    c.req.header("x-real-ip"),
+    forwarded ? forwarded.split(",")[0]?.trim() : undefined,
   ];
 
   for (const candidate of candidates) {
