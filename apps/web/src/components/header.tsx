@@ -9,11 +9,19 @@ import {
   Sun,
   User,
 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
 import type { RouterAppContext } from "@/routes/__root";
+import { uploadModalActions } from "@/stores/upload-modal.store";
 import { Logo } from "./logo";
 import { useTheme } from "./theme-provider";
+
+const UploadModal = lazy(() =>
+  import("./models/upload-modal/upload-modal").then((mod) => ({
+    default: mod.UploadModal,
+  }))
+);
+
 import {
   AlertDialog,
   AlertDialogContent,
@@ -77,14 +85,12 @@ export default function Header() {
           {/* Upload button - Only show if user has organizations */}
           {hasOrganizations && (
             <Button
-              asChild
               className="bg-brand text-brand-foreground hover:bg-brand/90"
+              onClick={() => uploadModalActions.openModal()}
               size="sm"
             >
-              <Link to="/upload">
-                <Plus className="mr-2 h-4 w-4" />
-                Upload
-              </Link>
+              <Plus className="mr-2 h-4 w-4" />
+              Upload
             </Button>
           )}
           <DropdownMenu>
@@ -218,6 +224,11 @@ export default function Header() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Upload Modal */}
+      <Suspense fallback={null}>
+        <UploadModal />
+      </Suspense>
     </div>
   );
 }

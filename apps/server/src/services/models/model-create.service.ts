@@ -30,6 +30,7 @@ export type CreateModelInput = {
   description?: string | null;
   tags?: string[];
   files: File[];
+  previewImage?: File;
   ipAddress?: string | null;
 };
 
@@ -95,6 +96,33 @@ export class ModelCreationService {
       throw error;
     }
 
+    // Upload preview image if provided
+    let thumbnailPath: string | null = null;
+    if (input.previewImage) {
+      try {
+        const ext = input.previewImage.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const previewFilename = `preview.${ext}`;
+        const previewKey = storageService.generateStorageKey({
+          organizationId,
+          modelId,
+          version: versionLabel,
+          filename: previewFilename,
+          kind: "artifact"
+        });
+
+        await storageService.uploadFile({
+          key: previewKey,
+          file: input.previewImage,
+        });
+
+        thumbnailPath = previewKey;
+      } catch (error) {
+        // Clean up uploaded files if preview upload fails
+        await this.cleanupUploadedFiles(uploadResults);
+        throw error;
+      }
+    }
+
     try {
       const result = await db.transaction(async (tx) => {
         const [model] = await tx
@@ -125,6 +153,7 @@ export class ModelCreationService {
             version: versionLabel,
             name: input.name,
             description: input.description ?? null,
+            thumbnailPath,
             createdAt: timestamp,
             updatedAt: timestamp,
           })
