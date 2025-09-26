@@ -53,6 +53,7 @@ type ModelCardProps = {
     fileCount: number;
     totalSize: number;
     tags: string[];
+    thumbnailUrl: string | null;
     createdAt: string;
     updatedAt: string;
   };
@@ -141,15 +142,26 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
         </div>
       </CardHeader>
       <CardContent className="flex flex-grow flex-col">
-        {/* Thumbnail preview placeholder */}
+        {/* Thumbnail preview */}
         <div className="mb-3">
           <div className="aspect-video overflow-hidden rounded-md bg-muted transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <HardDrive className="mx-auto mb-2 h-8 w-8" />
-                <div className="text-sm">No Preview</div>
+            {model.thumbnailUrl ? (
+              <img
+                alt={`Preview of ${model.name}`}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                height={360}
+                loading="lazy"
+                src={model.thumbnailUrl}
+                width={640}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <HardDrive className="mx-auto mb-2 h-8 w-8" />
+                  <div className="text-sm">No Preview</div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

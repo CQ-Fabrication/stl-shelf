@@ -1,8 +1,15 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertCircle, CheckCircle, FileText, Upload, X } from "lucide-react";
-import { useCallback, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle,
+  FileText,
+  ImageIcon,
+  Upload,
+  X,
+} from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { z } from "zod/v4";
@@ -28,15 +35,13 @@ const modelUploadSchema = z.object({
   description: z
     .string()
     .max(2000, "Description must be less than 2000 characters")
-    .optional(),
-  tags: z
-    .array(z.string().min(1).max(64))
-    .max(20, "Maximum 20 tags allowed")
-    .default([]),
+    .transform((val) => (val === "" ? undefined : val)),
+  tags: z.array(z.string().min(1).max(64)).max(20, "Maximum 20 tags allowed"),
   files: z
     .array(z.instanceof(File))
     .min(1, "At least one file is required")
     .max(5, "Maximum 5 files allowed"),
+  previewImage: z.union([z.instanceof(File), z.undefined()]),
 });
 
 type UploadFile = {
@@ -64,6 +69,7 @@ export function ModelUpload() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   // Fetch available tags for the organization
   const { data: availableTags = [] } = useQuery(
@@ -104,6 +110,7 @@ export function ModelUpload() {
       description: "",
       tags: [] as string[],
       files: [] as File[],
+      previewImage: undefined as File | undefined,
     },
     validators: {
       onSubmit: modelUploadSchema,
@@ -188,6 +195,27 @@ export function ModelUpload() {
   };
 
   const isUploading = createModelMutation.isPending;
+  const previewImageInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePreviewImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      form.setFieldValue("previewImage", file);
+      const url = URL.createObjectURL(file);
+      setPreviewImageUrl(url);
+    }
+  };
+
+  const removePreviewImage = () => {
+    form.setFieldValue("previewImage", undefined);
+    if (previewImageUrl) {
+      URL.revokeObjectURL(previewImageUrl);
+      setPreviewImageUrl(null);
+    }
+    if (previewImageInputRef.current) {
+      previewImageInputRef.current.value = "";
+    }
+  };
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -283,6 +311,56 @@ export function ModelUpload() {
                 </div>
               )}
             </form.Field>
+
+            {/* Preview Image field */}
+            <div className="space-y-2">
+              <Label>Preview Image</Label>
+              <div className="space-y-3">
+                {previewImageUrl ? (
+                  <div className="relative">
+                    <img
+                      alt="Preview"
+                      className="aspect-video w-full rounded-lg border object-cover"
+                      height={360}
+                      src={previewImageUrl}
+                      width={640}
+                    />
+                    <Button
+                      className="absolute top-2 right-2"
+                      disabled={isUploading}
+                      onClick={removePreviewImage}
+                      size="sm"
+                      type="button"
+                      variant="secondary"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 transition-colors hover:border-muted-foreground/50"
+                    onClick={() => previewImageInputRef.current?.click()}
+                    type="button"
+                  >
+                    <ImageIcon className="mb-2 h-8 w-8 text-muted-foreground" />
+                    <p className="text-muted-foreground text-sm">
+                      Click to add preview image
+                    </p>
+                    <p className="mt-1 text-muted-foreground text-xs">
+                      JPEG, PNG, or WebP (Optional)
+                    </p>
+                  </button>
+                )}
+                <input
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  className="hidden"
+                  disabled={isUploading}
+                  onChange={handlePreviewImageSelect}
+                  ref={previewImageInputRef}
+                  type="file"
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 

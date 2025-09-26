@@ -173,20 +173,35 @@ class ModelDetailService {
 
     // Generate presigned URLs for all files in parallel
     const versionsWithPresignedUrls = await Promise.all(
-      versions.map(async (version) => ({
-        id: version.id,
-        modelId: version.modelId,
-        version: version.version,
-        name: version.name,
-        description: version.description,
-        thumbnailPath: version.thumbnailPath,
-        files:
-          version.files.length > 0
-            ? await this.generatePresignedUrlsForFiles(version.files)
-            : [],
-        createdAt: version.createdAt.toISOString(),
-        updatedAt: version.updatedAt.toISOString(),
-      }))
+      versions.map(async (version) => {
+        // Generate thumbnail URL if path exists
+        let thumbnailUrl: string | null = null;
+        if (version.thumbnailPath) {
+          try {
+            thumbnailUrl = await storageService.generateDownloadUrl(
+              version.thumbnailPath
+            );
+          } catch {
+            thumbnailUrl = null;
+          }
+        }
+
+        return {
+          id: version.id,
+          modelId: version.modelId,
+          version: version.version,
+          name: version.name,
+          description: version.description,
+          thumbnailPath: version.thumbnailPath,
+          thumbnailUrl,
+          files:
+            version.files.length > 0
+              ? await this.generatePresignedUrlsForFiles(version.files)
+              : [],
+          createdAt: version.createdAt.toISOString(),
+          updatedAt: version.updatedAt.toISOString(),
+        };
+      })
     );
 
     return versionsWithPresignedUrls;

@@ -2,21 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Box,
   Calendar,
-  Download,
   FileText,
   HardDrive,
+  ImageIcon,
   Tag,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  formatDate,
-  formatFileSize,
-  formatPrintTime,
-} from "@/utils/formatters";
+import { formatDate, formatFileSize } from "@/utils/formatters";
 import { orpc } from "@/utils/orpc";
 
 type ModelInfoCardProps = {
@@ -28,7 +22,7 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
   const { data: model } = useQuery(
     orpc.models.getModel.queryOptions({ input: { id: modelId } })
   );
-  const { data: stats, isLoading: statsLoading } = useQuery(
+  const { isLoading: statsLoading } = useQuery(
     orpc.models.getModelStatistics.queryOptions({ input: { id: modelId } })
   );
   const { data: tags } = useQuery(
@@ -36,7 +30,7 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
   );
   const { data: files } = useQuery({
     ...orpc.models.getModelFiles.queryOptions({
-      input: { modelId, versionId: versionId! },
+      input: { modelId, versionId: versionId || "" },
     }),
     enabled: !!versionId,
   });
@@ -47,8 +41,6 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
   const activeVersion = versionId
     ? versions?.find((v) => v.id === versionId)
     : versions?.[0];
-
-  const printSettings = activeVersion?.printSettings;
 
   const getFileIcon = (extension: string) => {
     const ext = extension.toLowerCase();
@@ -75,7 +67,6 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
         return "secondary";
     }
   };
-
 
   if (statsLoading || !model) {
     return (
@@ -108,6 +99,26 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Thumbnail Preview */}
+        {activeVersion?.thumbnailUrl && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-sm">Preview</span>
+            </div>
+            <div className="overflow-hidden rounded-lg border">
+              <img
+                alt={`Preview of ${model.name}`}
+                className="aspect-video w-full object-cover"
+                height={360}
+                loading="lazy"
+                src={activeVersion.thumbnailUrl}
+                width={640}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -194,29 +205,6 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
                   {tag.name}
                 </Badge>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* Print Settings */}
-        {printSettings && (
-          <div>
-            <div className="mb-2 font-medium text-sm">Print Settings</div>
-            <div className="space-y-1 text-muted-foreground text-sm">
-              {printSettings.material && (
-                <div>Material: {printSettings.material}</div>
-              )}
-              {printSettings.layerHeight && (
-                <div>Layer Height: {printSettings.layerHeight}mm</div>
-              )}
-              {printSettings.infill && (
-                <div>Infill: {printSettings.infill}%</div>
-              )}
-              {printSettings.printTime && (
-                <div>
-                  Print Time: {formatPrintTime(printSettings.printTime)}
-                </div>
-              )}
             </div>
           </div>
         )}

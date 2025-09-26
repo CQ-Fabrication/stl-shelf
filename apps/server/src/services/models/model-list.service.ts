@@ -18,6 +18,7 @@ import {
   tags,
 } from "@/db/schema/models";
 import type { ListModelsInput, ListModelsOutput } from "@/routers/models";
+import { storageService } from "@/services/storage";
 
 // Service-specific type that extends router input with organizationId
 type ServiceListModelsInput = ListModelsInput & {
@@ -114,6 +115,14 @@ export async function listModels({
           INNER JOIN ${tags} t ON t.id = mt.tag_id
           WHERE mt.model_id = models.id
         )`,
+        // Get thumbnail path from latest version
+        thumbnailPath: sql<string | null>`(
+          SELECT mv.thumbnail_path
+          FROM ${modelVersions} mv
+          WHERE mv.model_id = models.id
+          AND mv.version = models.current_version
+          LIMIT 1
+        )`,
       })
       .from(models)
       .where(and(...conditions))
@@ -122,18 +131,35 @@ export async function listModels({
       .offset(offset);
 
     // Transform to expected format with proper types (dates as ISO strings)
-    const modelList = modelsWithData.map((row) => ({
-      id: row.id,
-      slug: row.slug,
-      name: row.name,
-      description: row.description,
-      currentVersion: row.currentVersion,
-      fileCount: row.fileCount ?? 0,
-      totalSize: Number(row.totalSize ?? 0),
-      tags: row.tags ?? [],
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
-    }));
+    const modelList = await Promise.all(
+      modelsWithData.map(async (row) => {
+        // Generate thumbnail URL if path exists
+        let thumbnailUrl: string | null = null;
+        if (row.thumbnailPath) {
+          try {
+            thumbnailUrl = await storageService.generateDownloadUrl(
+              row.thumbnailPath
+            );
+          } catch {
+            thumbnailUrl = null;
+          }
+        }
+
+        return {
+          id: row.id,
+          slug: row.slug,
+          name: row.name,
+          description: row.description,
+          currentVersion: row.currentVersion,
+          fileCount: row.fileCount ?? 0,
+          totalSize: Number(row.totalSize ?? 0),
+          tags: row.tags ?? [],
+          thumbnailUrl,
+          createdAt: row.createdAt.toISOString(),
+          updatedAt: row.updatedAt.toISOString(),
+        };
+      })
+    );
 
     return {
       models: modelList,
