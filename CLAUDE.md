@@ -74,6 +74,41 @@ This is a Turborepo monorepo with two main applications:
 - **Git Hooks**: Husky + lint-staged for pre-commit formatting
 - **TypeScript**: Strict configuration across all apps
 
+## CRITICAL ENGINEERING PRINCIPLES - NEVER VIOLATE THESE
+
+### DON'T BE A SOCIOPATH
+**PUSH BACK when something is wrong** - Don't just agree and implement bad ideas:
+- If a requirement doesn't make sense, SAY SO
+- If there's a better approach, PROPOSE IT
+- If something will break at scale, WARN ABOUT IT
+- If the user is asking for something problematic, EXPLAIN WHY
+- Have actual engineering opinions, not just "yes sir" compliance
+
+### THINK BEFORE CODING
+1. **Understand the complete picture** before writing a single line of code
+2. **Test with REAL DATA** - Don't assume it works, actually test with real-world data at scale
+3. **Consider SCALE** - Is it 10 items or 10 million? Performance implications matter
+4. **NO BULLSHIT** - No fake "great job" validation. Be honest about problems and limitations
+5. **Research FIRST** - Check if this is a solved problem before reinventing broken wheels
+6. **Admit uncertainty** - If you don't know, say so. Don't deliver broken shit with confidence
+7. **SIMPLE > CLEVER** - Start with something that actually works, not something that looks smart
+
+### LESSON FROM STL PREVIEW FAILURE
+- **Never implement rendering/processing without considering data scale**
+- STL files have thousands/millions of triangles, not dozens
+- Server-side 3D rendering without GPU is COMPLEX - use proven solutions or skip it
+- Test IMMEDIATELY with real files, not theoretical assumptions
+- A broken "solution" is worse than no solution
+
+### BEFORE WRITING ANY CODE, ASK:
+- What's the actual problem?
+- What's the scale? (10 items? 10,000? 10 million?)
+- What are the performance implications?
+- Has someone already solved this properly?
+- What will actually happen when this runs with real data?
+
+**ENGINEERING, NOT CODING MONKEY BULLSHIT**
+
 ## Key Patterns
 
 ### API Development
