@@ -13,6 +13,7 @@ const createModelInputSchema = z.object({
   description: z.string().max(2000).optional(),
   tags: z.array(z.string().min(1).max(64)).max(20).default([]),
   files: z.array(fileSchema).min(1).max(5),
+  previewImage: fileSchema.optional(),
 });
 
 const modelFileResponseSchema = z.object({
@@ -61,6 +62,7 @@ const modelListItemSchema = z.object({
   fileCount: z.number(),
   totalSize: z.number(),
   tags: z.array(z.string()),
+  thumbnailUrl: z.string().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
@@ -115,6 +117,7 @@ export const createModelProcedure = protectedProcedure
       description: input.description ?? null,
       tags,
       files: input.files,
+      previewImage: input.previewImage,
       ipAddress: context.ipAddress,
     });
 
@@ -164,6 +167,7 @@ const modelVersionSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   thumbnailPath: z.string().nullable(),
+  thumbnailUrl: z.string().nullable(),
   files: z.array(modelFileResponseSchema),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),

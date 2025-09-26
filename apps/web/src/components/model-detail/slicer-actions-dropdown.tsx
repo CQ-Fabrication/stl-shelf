@@ -61,12 +61,12 @@ export const SlicerActionsDropdown = ({
   const queryOptions = versionId
     ? { input: { modelId, versionId } }
     : versions?.[0]?.id
-    ? { input: { modelId, versionId: versions[0].id } }
-    : skipToken;
+      ? { input: { modelId, versionId: versions[0].id } }
+      : skipToken;
 
   const filesQuery = useQuery(
     queryOptions === skipToken
-      ? { queryKey: ['skip'], queryFn: skipToken }
+      ? { queryKey: ["skip"], queryFn: skipToken }
       : orpc.models.getModelFiles.queryOptions(queryOptions)
   );
 
@@ -288,7 +288,7 @@ export const SlicerActionsDropdown = ({
             <Button
               className="rounded-l-none border-l border-l-brand-foreground/20 bg-brand px-2 text-brand-foreground hover:bg-brand/90"
               size="sm"
-                >
+            >
               <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>

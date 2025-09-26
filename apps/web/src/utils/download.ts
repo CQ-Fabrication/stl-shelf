@@ -15,9 +15,6 @@ export const triggerDownload = (blob: Blob, filename: string): void => {
 /**
  * Handles Blob object from RPC and triggers download
  */
-export const downloadFromBlob = (
-  blob: Blob,
-  filename: string
-): void => {
+export const downloadFromBlob = (blob: Blob, filename: string): void => {
   triggerDownload(blob, filename);
 };
