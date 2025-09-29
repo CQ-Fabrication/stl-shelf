@@ -4,6 +4,7 @@ import { modelCreationService } from "@/services/models/model-create.service";
 import { modelDetailService } from "@/services/models/model-detail.service";
 import { modelDownloadService } from "@/services/models/model-download.service";
 import { modelListService } from "@/services/models/model-list.service";
+import { modelVersionService } from "@/services/models/model-version.service";
 import { tagService } from "@/services/tags/tag.service";
 
 const fileSchema = z.instanceof(File);
@@ -129,6 +130,42 @@ export const createModelProcedure = protectedProcedure
       storageRoot: result.storageRoot,
       createdAt: result.createdAt.toISOString(),
       tags,
+      files: result.files,
+    };
+  });
+
+const addVersionInputSchema = z.object({
+  modelId: z.uuid(),
+  changelog: z.string().min(1).max(2000),
+  files: z.array(fileSchema).min(1).max(5),
+});
+
+const addVersionResponseSchema = z.object({
+  versionId: z.uuid(),
+  version: z.string(),
+  files: z.array(modelFileResponseSchema),
+});
+
+export const addModelVersionProcedure = protectedProcedure
+  .route({
+    method: "POST",
+    path: "/models/add-version",
+  })
+  .input(addVersionInputSchema)
+  .output(addVersionResponseSchema)
+  .handler(async ({ input, context }) => {
+    const result = await modelVersionService.addVersion({
+      modelId: input.modelId,
+      organizationId: context.organizationId,
+      ownerId: context.session.user.id,
+      changelog: input.changelog,
+      files: input.files,
+      ipAddress: context.ipAddress,
+    });
+
+    return {
+      versionId: result.versionId,
+      version: result.version,
       files: result.files,
     };
   });
@@ -320,6 +357,8 @@ export const getFileDownloadInfoProcedure = protectedProcedure
 export type ModelFileResponse = z.infer<typeof modelFileResponseSchema>;
 export type CreateModelInput = z.infer<typeof createModelInputSchema>;
 export type CreateModelResponse = z.infer<typeof createModelResponseSchema>;
+export type AddVersionInput = z.infer<typeof addVersionInputSchema>;
+export type AddVersionResponse = z.infer<typeof addVersionResponseSchema>;
 export type ModelListItem = z.infer<typeof modelListItemSchema>;
 export type ListModelsInput = z.infer<typeof listModelsInputSchema>;
 export type ListModelsOutput = z.infer<typeof listModelsOutputSchema>;
@@ -331,6 +370,7 @@ export type ModelTag = z.infer<typeof modelTagSchema>;
 
 export const modelsRouter = {
   create: createModelProcedure,
+  addVersion: addModelVersionProcedure,
   listModels: listModelsProcedure,
   getAllTags: getAllTagsProcedure,
   getModel: getModelProcedure,

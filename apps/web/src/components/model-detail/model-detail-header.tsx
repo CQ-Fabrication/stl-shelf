@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, MoreVertical, Trash2 } from "lucide-react";
+import { ArrowLeft, MoreVertical, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,12 +16,14 @@ type ModelDetailHeaderProps = {
   modelId: string;
   activeVersion?: string;
   onDeleteClick: () => void;
+  onUploadVersionClick: () => void;
 };
 
 export const ModelDetailHeader = ({
   modelId,
   activeVersion,
   onDeleteClick,
+  onUploadVersionClick,
 }: ModelDetailHeaderProps) => {
   const { data: model, isLoading } = useQuery(
     orpc.models.getModel.queryOptions({ input: { id: modelId } })
@@ -94,6 +96,10 @@ export const ModelDetailHeader = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onUploadVersionClick}>
+                <Upload className="mr-2 h-4 w-4" />
+                Upload New Version
+              </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive"
                 onClick={onDeleteClick}

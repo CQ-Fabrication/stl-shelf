@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Download, History } from "lucide-react";
-import { toast } from "sonner";
+import { History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,17 +41,19 @@ export const ModelVersionHistory = ({
   return (
     <Card className="shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <History className="h-5 w-5" />
-          Version History
-        </CardTitle>
-        <CardDescription>
-          {totalVersions} version{totalVersions !== 1 ? "s" : ""}
-        </CardDescription>
+        <div className="flex items-start justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Version History
+          </CardTitle>
+          <CardDescription>
+            {totalVersions} version{totalVersions !== 1 ? "s" : ""}
+          </CardDescription>
+        </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea aria-label="Version history" className="h-80">
-          <div className="space-y-3 pr-2">
+        <ScrollArea aria-label="Version history" className="h-40">
+          <div className="space-y-3">
             {isLoading && (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
@@ -85,59 +86,58 @@ export const ModelVersionHistory = ({
               </div>
             )}
 
-            {!isLoading && versions && versions.length > 0 && (
-              <>
-                {versions.map((version, index) => (
-                  <div
-                    className={`flex items-start justify-between rounded border p-3 ${
-                      version.id === activeVersion
-                        ? "border-l-4 border-l-brand"
-                        : ""
-                    }`}
-                    key={version.id}
-                  >
-                    <div className="flex-1">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Badge
-                          variant={
-                            version.id === activeVersion ? "default" : "outline"
-                          }
-                        >
-                          {version.version}
-                        </Badge>
-                        {version.id === activeVersion && (
-                          <Badge className="bg-brand text-brand-foreground text-xs">
-                            Active
-                          </Badge>
-                        )}
-                        {index === 0 && version.id !== activeVersion && (
-                          <Badge className="text-xs" variant="outline">
-                            Latest
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-muted-foreground text-sm">
-                        {formatDate(new Date(version.createdAt))}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        className={
-                          version.id !== activeVersion ? "hover:text-brand" : ""
-                        }
-                        onClick={() => onVersionSelect(version.id)}
-                        size="sm"
+            {!isLoading &&
+              versions &&
+              versions.length > 0 &&
+              versions.map((version, index) => (
+                <div
+                  className={`flex items-start justify-between rounded border p-3 ${
+                    version.id === activeVersion
+                      ? "border-l-4 border-l-brand"
+                      : ""
+                  }`}
+                  key={version.id}
+                >
+                  <div className="flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                      <Badge
                         variant={
-                          version.id === activeVersion ? "secondary" : "outline"
+                          version.id === activeVersion ? "default" : "outline"
                         }
                       >
-                        {version.id === activeVersion ? "Viewing" : "View"}
-                      </Button>
+                        {version.version}
+                      </Badge>
+                      {version.id === activeVersion && (
+                        <Badge className="bg-brand text-brand-foreground text-xs">
+                          Active
+                        </Badge>
+                      )}
+                      {index === 0 && version.id !== activeVersion && (
+                        <Badge className="text-xs" variant="outline">
+                          Latest
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-muted-foreground text-sm">
+                      {formatDate(new Date(version.createdAt))}
                     </div>
                   </div>
-                ))}
-              </>
-            )}
+                  <div className="flex gap-2">
+                    <Button
+                      className={
+                        version.id !== activeVersion ? "hover:text-brand" : ""
+                      }
+                      onClick={() => onVersionSelect(version.id)}
+                      size="sm"
+                      variant={
+                        version.id === activeVersion ? "secondary" : "outline"
+                      }
+                    >
+                      {version.id === activeVersion ? "Viewing" : "View"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
           </div>
         </ScrollArea>
       </CardContent>
