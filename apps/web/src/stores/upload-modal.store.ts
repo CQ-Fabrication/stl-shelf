@@ -41,10 +41,7 @@ export const uploadModalActions = {
   },
 
   closeModal: () => {
-    uploadModalStore.setState((state) => ({
-      ...state,
-      isOpen: false,
-    }));
+    uploadModalStore.setState(() => initialState);
   },
 
   setStep: (step: UploadStep) => {
@@ -84,45 +81,5 @@ export const uploadModalActions = {
     if (step === 3)
       return state.completedSteps.has(1) && state.completedSteps.has(2);
     return false;
-  },
-
-  persistToSession: () => {
-    const state = uploadModalStore.state;
-    const dataToStore = {
-      formData: {
-        name: state.formData.name,
-        description: state.formData.description,
-        tags: state.formData.tags,
-      },
-      currentStep: state.currentStep,
-      completedSteps: Array.from(state.completedSteps),
-    };
-    sessionStorage.setItem("upload-modal-state", JSON.stringify(dataToStore));
-  },
-
-  restoreFromSession: () => {
-    const stored = sessionStorage.getItem("upload-modal-state");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        uploadModalStore.setState((state) => ({
-          ...state,
-          formData: {
-            ...state.formData,
-            name: parsed.formData.name || "",
-            description: parsed.formData.description || "",
-            tags: parsed.formData.tags || [],
-          },
-          currentStep: parsed.currentStep || 1,
-          completedSteps: new Set(parsed.completedSteps || []),
-        }));
-      } catch (error) {
-        console.error("Failed to restore upload modal state:", error);
-      }
-    }
-  },
-
-  clearSession: () => {
-    sessionStorage.removeItem("upload-modal-state");
   },
 };

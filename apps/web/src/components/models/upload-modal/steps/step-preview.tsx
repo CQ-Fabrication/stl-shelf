@@ -1,7 +1,12 @@
 import type { FormApi } from "@tanstack/react-form";
 import { ImageIcon, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
-import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
+import ReactCrop, {
+  type Crop,
+  centerCrop,
+  makeAspectCrop,
+  type PixelCrop,
+} from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Button } from "@/components/ui/button";
 import { uploadModalActions } from "@/stores/upload-modal.store";
@@ -36,13 +41,7 @@ export function StepPreview({
     return null;
   });
 
-  const [crop, setCrop] = useState<Crop>({
-    unit: "%",
-    width: 90,
-    height: 90,
-    x: 5,
-    y: 5,
-  });
+  const [crop, setCrop] = useState<Crop>();
 
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   const [scale, setScale] = useState(1);
@@ -53,20 +52,14 @@ export function StepPreview({
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file && file.type.startsWith("image/")) {
+      if (file?.type.startsWith("image/")) {
         const url = URL.createObjectURL(file);
         setPreviewUrl(url);
         form.setFieldValue("previewImage", file);
         uploadModalActions.updateFormData("previewImage", file);
         uploadModalActions.updateFormData("previewImageUrl", url);
         setScale(1);
-        setCrop({
-          unit: "%",
-          width: 90,
-          height: 90,
-          x: 5,
-          y: 5,
-        });
+        setCrop(undefined);
       }
     },
     [form]
@@ -91,6 +84,24 @@ export function StepPreview({
 
   const handleZoomOut = () => {
     setScale((prev) => Math.max(prev - 0.1, 0.5));
+  };
+
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    const newCrop = centerCrop(
+      makeAspectCrop(
+        {
+          unit: "%",
+          width: 90,
+        },
+        16 / 9,
+        width,
+        height
+      ),
+      width,
+      height
+    );
+    setCrop(newCrop);
   };
 
   const generateCroppedImage = useCallback(() => {
@@ -152,21 +163,21 @@ export function StepPreview({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {previewUrl ? (
         <div className="space-y-4">
           <div className="relative">
-            <div className="overflow-hidden rounded-lg border bg-muted/20">
+            <div className="mx-auto flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/20">
               <ReactCrop
                 aspect={16 / 9}
-                className="max-h-[400px]"
                 crop={crop}
                 onChange={(c) => setCrop(c)}
                 onComplete={(c) => setCompletedCrop(c)}
               >
                 <img
                   alt="Preview"
-                  className="max-w-full"
+                  className="max-h-full max-w-full object-contain"
+                  onLoad={onImageLoad}
                   ref={imgRef}
                   src={previewUrl}
                   style={{ transform: `scale(${scale})` }}
@@ -174,7 +185,7 @@ export function StepPreview({
               </ReactCrop>
             </div>
             <Button
-              className="absolute top-2 right-2"
+              className="absolute top-3 right-3 z-10 shadow-md"
               disabled={isSubmitting}
               onClick={removePreview}
               size="sm"
@@ -195,7 +206,7 @@ export function StepPreview({
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <input
                 className="w-32"
                 max="3"
@@ -205,7 +216,7 @@ export function StepPreview({
                 type="range"
                 value={scale}
               />
-              <span className="text-muted-foreground text-sm">
+              <span className="min-w-[3rem] text-right text-muted-foreground text-sm">
                 {Math.round(scale * 100)}%
               </span>
             </div>
@@ -220,6 +231,10 @@ export function StepPreview({
             </Button>
           </div>
 
+          <p className="text-center text-muted-foreground text-sm">
+            Adjust the crop area to select your preview image (16:9 ratio)
+          </p>
+
           <canvas
             className="hidden"
             height={225}
@@ -229,19 +244,21 @@ export function StepPreview({
         </div>
       ) : (
         <div className="space-y-4">
-          <button
-            className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-muted-foreground/25 border-dashed p-8 transition-colors hover:border-muted-foreground/50"
-            onClick={() => fileInputRef.current?.click()}
-            type="button"
-          >
-            <ImageIcon className="mb-2 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground text-sm">
-              Click to add preview image
-            </p>
-            <p className="mt-1 text-muted-foreground text-xs">
-              JPEG, PNG, or WebP (Optional)
-            </p>
-          </button>
+          <div className="aspect-video w-full">
+            <button
+              className="flex h-full w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-muted-foreground/25 border-dashed bg-muted/10 transition-colors hover:border-muted-foreground/50 hover:bg-muted/20"
+              onClick={() => fileInputRef.current?.click()}
+              type="button"
+            >
+              <ImageIcon className="mb-3 h-16 w-16 text-muted-foreground" />
+              <p className="text-base text-muted-foreground">
+                Click to add preview image
+              </p>
+              <p className="mt-2 text-muted-foreground text-sm">
+                JPEG, PNG, or WebP • 16:9 ratio recommended
+              </p>
+            </button>
+          </div>
           <input
             accept="image/jpeg,image/jpg,image/png,image/webp"
             className="hidden"
@@ -250,12 +267,11 @@ export function StepPreview({
             ref={fileInputRef}
             type="file"
           />
+          <p className="text-center text-muted-foreground text-sm">
+            Preview image is optional and helps others discover your model
+          </p>
         </div>
       )}
-
-      <p className="text-center text-muted-foreground text-sm">
-        Preview image is optional and helps others discover your model
-      </p>
 
       <div className="flex justify-between pt-4">
         <Button

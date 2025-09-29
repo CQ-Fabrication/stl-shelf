@@ -147,14 +147,14 @@ export function StepFiles({ form, onNext, onPrev }: StepFilesProps) {
     <div className="space-y-4">
       <div
         {...getRootProps()}
-        className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+        className={`flex aspect-video cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
           isDragActive
             ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
             : "border-muted-foreground/25 hover:border-muted-foreground/50"
         }`}
       >
         <input {...getInputProps()} />
-        <Upload className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+        <Upload className="mb-4 h-10 w-10 text-muted-foreground" />
         {isDragActive ? (
           <p className="text-blue-600">Drop files here...</p>
         ) : (

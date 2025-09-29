@@ -2,7 +2,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod/v4";
 import {
@@ -70,7 +70,6 @@ export function UploadModal() {
           queryKey: orpc.models.getAllTags.key(),
         });
         uploadModalActions.resetForm();
-        uploadModalActions.clearSession();
         navigate({
           to: "/models/$modelId",
           params: { modelId: data.modelId },
@@ -95,16 +94,6 @@ export function UploadModal() {
   });
 
   useEffect(() => {
-    uploadModalActions.restoreFromSession();
-
-    return () => {
-      if (isOpen) {
-        uploadModalActions.persistToSession();
-      }
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
     form.setFieldValue("name", formData.name);
     form.setFieldValue("description", formData.description);
     form.setFieldValue("tags", formData.tags);
@@ -118,30 +107,14 @@ export function UploadModal() {
     }
   };
 
-  const modalSize = useMemo(() => {
-    switch (currentStep) {
-      case 1:
-        return "sm:max-w-lg";
-      case 2:
-        return "sm:max-w-2xl";
-      case 3:
-        return "sm:max-w-3xl";
-      default:
-        return "sm:max-w-lg";
-    }
-  }, [currentStep]);
-
   const handleClose = () => {
-    if (formData.name || formData.files.length > 0) {
-      uploadModalActions.persistToSession();
-    }
     uploadModalActions.closeModal();
   };
 
   return (
     <Dialog onOpenChange={(open) => !open && handleClose()} open={isOpen}>
       <DialogContent
-        className={modalSize}
+        className="sm:max-w-3xl"
         showCloseButton={!createModelMutation.isPending}
       >
         <DialogHeader>
