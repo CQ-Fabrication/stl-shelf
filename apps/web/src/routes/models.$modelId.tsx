@@ -61,18 +61,18 @@ function ModelDetailComponent() {
         <div className="space-y-6">
           {/* 3D Viewer */}
           <ModelPreviewCard modelId={modelId} versionId={activeVersion} />
-        </div>
-
-        {/* Right column */}
-        <div className="space-y-6">
-          {/* Model Info */}
-          <ModelInfoCard modelId={modelId} versionId={activeVersion} />
           {/* Version History */}
           <ModelVersionHistory
             activeVersion={activeVersion}
             modelId={modelId}
             onVersionSelect={handleVersionSelect}
           />
+        </div>
+
+        {/* Right column */}
+        <div className="space-y-6">
+          {/* Model Info */}
+          <ModelInfoCard modelId={modelId} versionId={activeVersion} />
         </div>
       </div>
 
