@@ -3,12 +3,9 @@ import { Link, useRouter } from "@tanstack/react-router";
 import {
   Building2,
   Check,
-  Laptop,
   LogOut,
-  Moon,
   Plus,
   Settings,
-  Sun,
   User,
   Users,
 } from "lucide-react";
@@ -17,7 +14,7 @@ import { toast } from "sonner";
 import type { RouterAppContext } from "@/routes/__root";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 import { Logo } from "./logo";
-import { useTheme } from "./theme-provider";
+import { AnimatedThemeToggler } from "./ui/animated-theme-toggler";
 
 const UploadModal = lazy(() =>
   import("./models/upload-modal/upload-modal").then((mod) => ({
@@ -49,7 +46,6 @@ import {
 export default function Header() {
   const router = useRouter();
   const { auth } = router.options.context as RouterAppContext;
-  const { setTheme } = useTheme();
 
   const [showLimitAlert, setShowLimitAlert] = useState(false);
 
@@ -200,22 +196,7 @@ export default function Header() {
                   <DropdownMenuSeparator />
                 </>
               )}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Sun /> Theme
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => setTheme("light")}>
-                    <Sun /> Light
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    <Moon /> Dark
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("system")}>
-                    <Laptop /> System
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+              <AnimatedThemeToggler showLabel />
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={async () => {
