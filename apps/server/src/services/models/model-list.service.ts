@@ -26,19 +26,18 @@ type ServiceListModelsInput = ListModelsInput & {
 };
 
 /**
- * Optimized listModels with single query using subqueries
+ * Optimized listModels with cursor-based pagination for infinite scroll
  * Reduces database round-trips and eliminates N+1 queries
  */
 export async function listModels({
   organizationId,
-  page = 1,
+  cursor = 0,
   limit = 12,
   search,
   tags: filterTags,
 }: ServiceListModelsInput): Promise<ListModelsOutput> {
-  const safePage = Math.max(1, page);
   const safeLimit = Math.min(100, Math.max(1, limit));
-  const offset = (safePage - 1) * safeLimit;
+  const offset = Math.max(0, cursor);
 
   // Build WHERE conditions array
   const conditions = [
@@ -75,16 +74,7 @@ export async function listModels({
   }
 
   try {
-    // Get total count separately
-    const [countResult] = await db
-      .select({ totalCount: count() })
-      .from(models)
-      .where(and(...conditions));
-
-    const totalItems = countResult?.totalCount ?? 0;
-    const totalPages = Math.ceil(totalItems / safeLimit);
-
-    // Main query with subqueries for aggregated data
+    // Fetch one extra item to determine if there's a next page
     const modelsWithData = await db
       .select({
         id: models.id,
@@ -127,12 +117,16 @@ export async function listModels({
       .from(models)
       .where(and(...conditions))
       .orderBy(desc(models.updatedAt))
-      .limit(safeLimit)
+      .limit(safeLimit + 1)
       .offset(offset);
+
+    // Check if there are more items beyond the requested limit
+    const hasMore = modelsWithData.length > safeLimit;
+    const items = hasMore ? modelsWithData.slice(0, safeLimit) : modelsWithData;
 
     // Transform to expected format with proper types (dates as ISO strings)
     const modelList = await Promise.all(
-      modelsWithData.map(async (row) => {
+      items.map(async (row) => {
         // Generate thumbnail URL if path exists
         let thumbnailUrl: string | null = null;
         if (row.thumbnailPath) {
@@ -161,16 +155,12 @@ export async function listModels({
       })
     );
 
+    // Calculate next cursor: if there are more items, next cursor is current offset + limit
+    const nextCursor = hasMore ? offset + safeLimit : null;
+
     return {
       models: modelList,
-      pagination: {
-        page: safePage,
-        limit: safeLimit,
-        totalItems,
-        totalPages,
-        hasNextPage: safePage < totalPages,
-        hasPrevPage: safePage > 1,
-      },
+      nextCursor,
     };
   } catch (error) {
     console.error(

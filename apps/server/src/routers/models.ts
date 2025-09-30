@@ -48,7 +48,7 @@ const tagInfoSchema = z.object({
 
 // List models schemas
 const listModelsInputSchema = z.object({
-  page: z.number().min(1).default(1),
+  cursor: z.number().min(0).optional(),
   limit: z.number().min(1).max(100).default(12),
   search: z.string().max(100).optional(),
   tags: z.array(z.string()).optional(),
@@ -68,18 +68,9 @@ const modelListItemSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
-const paginationSchema = z.object({
-  page: z.number(),
-  limit: z.number(),
-  totalItems: z.number(),
-  totalPages: z.number(),
-  hasNextPage: z.boolean(),
-  hasPrevPage: z.boolean(),
-});
-
 const listModelsOutputSchema = z.object({
   models: z.array(modelListItemSchema),
-  pagination: paginationSchema,
+  nextCursor: z.number().nullable(),
 });
 
 export const listModelsProcedure = protectedProcedure
@@ -88,7 +79,7 @@ export const listModelsProcedure = protectedProcedure
   .handler(async ({ input, context }) => {
     return await modelListService.listModels({
       organizationId: context.organizationId,
-      page: input.page,
+      cursor: input.cursor,
       limit: input.limit,
       search: input.search,
       tags: input.tags,
@@ -362,7 +353,6 @@ export type AddVersionResponse = z.infer<typeof addVersionResponseSchema>;
 export type ModelListItem = z.infer<typeof modelListItemSchema>;
 export type ListModelsInput = z.infer<typeof listModelsInputSchema>;
 export type ListModelsOutput = z.infer<typeof listModelsOutputSchema>;
-export type Pagination = z.infer<typeof paginationSchema>;
 export type ModelMetadata = z.infer<typeof modelMetadataSchema>;
 export type ModelVersion = z.infer<typeof modelVersionSchema>;
 export type ModelStatistics = z.infer<typeof modelStatisticsSchema>;
