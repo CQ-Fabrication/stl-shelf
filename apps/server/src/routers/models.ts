@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { protectedProcedure } from "@/lib/orpc";
 import { modelCreationService } from "@/services/models/model-create.service";
+import { modelDeleteService } from "@/services/models/model-delete.service";
 import { modelDetailService } from "@/services/models/model-detail.service";
 import { modelDownloadService } from "@/services/models/model-download.service";
 import { modelListService } from "@/services/models/model-list.service";
@@ -344,6 +345,35 @@ export const getFileDownloadInfoProcedure = protectedProcedure
     );
   });
 
+// Delete model procedure
+const deleteModelInputSchema = z.object({
+  id: z.uuid(),
+});
+
+const deleteModelOutputSchema = z.object({
+  success: z.boolean(),
+  deletedId: z.uuid(),
+});
+
+export const deleteModelProcedure = protectedProcedure
+  .route({
+    method: "POST",
+    path: "/models/delete",
+  })
+  .input(deleteModelInputSchema)
+  .output(deleteModelOutputSchema)
+  .handler(async ({ input, context }) => {
+    const result = await modelDeleteService.deleteModel({
+      modelId: input.id,
+      organizationId: context.organizationId,
+    });
+
+    return {
+      success: true,
+      deletedId: result.deletedId,
+    };
+  });
+
 // Export types for use in other parts of the application
 export type ModelFileResponse = z.infer<typeof modelFileResponseSchema>;
 export type CreateModelInput = z.infer<typeof createModelInputSchema>;
@@ -372,4 +402,5 @@ export const modelsRouter = {
   downloadModelZip: downloadModelZipProcedure,
   downloadVersionZip: downloadVersionZipProcedure,
   getFileDownloadInfo: getFileDownloadInfoProcedure,
+  deleteModel: deleteModelProcedure,
 };

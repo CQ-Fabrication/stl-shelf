@@ -8,60 +8,49 @@ export const useDeleteModel = () => {
   const navigate = useNavigate();
 
   return useMutation(
-    orpc.deleteModel.mutationOptions({
+    orpc.models.deleteModel.mutationOptions({
       onMutate: async (variables) => {
-        // Cancel any outgoing refetches to prevent overwriting optimistic update
         await queryClient.cancelQueries({
-          queryKey: orpc.listModels.key(),
+          queryKey: orpc.models.listModels.key(),
         });
 
-        // Get all listModels queries and snapshot them
-        const queries = queryClient.getQueriesData({
-          queryKey: orpc.listModels.key(),
+        const previousData = queryClient.getQueriesData({
+          queryKey: orpc.models.listModels.key(),
         });
 
-        // Store snapshots for rollback
-        const previousQueries = queries.map(([queryKey, data]) => ({
-          queryKey,
-          data,
-        }));
+        queryClient.setQueriesData(
+          { queryKey: orpc.models.listModels.key() },
+          (old) => {
+            if (!old || typeof old !== "object" || !("pages" in old)) {
+              return old;
+            }
 
-        // Optimistically update each query
-        queries.forEach(([queryKey, data]) => {
-          if (!data || typeof data !== "object") return;
-
-          // Handle paginated response structure
-          if ("models" in data && Array.isArray(data.models)) {
-            const updatedData = {
-              ...data,
-              models: data.models.filter(
-                (model: any) => model.id !== variables.id
-              ),
-              pagination: data.pagination
-                ? {
-                    ...data.pagination,
-                    total: Math.max(0, (data.pagination.total || 0) - 1),
-                    totalPages: Math.ceil(
-                      Math.max(0, (data.pagination.total || 0) - 1) /
-                        (data.pagination.limit || 12)
-                    ),
-                  }
-                : undefined,
+            const infiniteData = old as {
+              pages: Array<{
+                models: Array<{ id: string }>;
+              }>;
             };
 
-            queryClient.setQueryData(queryKey, updatedData);
+            return {
+              ...old,
+              pages: infiniteData.pages.map((page) => ({
+                ...page,
+                models: page.models.filter(
+                  (model) => model.id !== variables.id
+                ),
+              })),
+            };
           }
-        });
+        );
 
-        return { previousQueries };
+        return { previousData };
       },
 
       onError: (error, _variables, context) => {
-        // Rollback on error
-        if (context?.previousQueries) {
-          context.previousQueries.forEach(({ queryKey, data }) => {
+        if (context?.previousData) {
+          for (const [queryKey, data] of context.previousData) {
             queryClient.setQueryData(queryKey, data);
-          });
+          }
         }
         toast.error(`Failed to delete model: ${error.message}`);
       },
@@ -69,7 +58,6 @@ export const useDeleteModel = () => {
       onSuccess: () => {
         toast.success("Model deleted successfully");
 
-        // Navigate away if on model detail page
         const currentPath = window.location.pathname;
         if (currentPath !== "/") {
           navigate({ to: "/" });
@@ -77,10 +65,8 @@ export const useDeleteModel = () => {
       },
 
       onSettled: () => {
-        // Always refetch after mutation completes (success or error)
-        // This ensures data consistency with the server
         queryClient.invalidateQueries({
-          queryKey: orpc.listModels.key(),
+          queryKey: orpc.models.listModels.key(),
         });
       },
     })

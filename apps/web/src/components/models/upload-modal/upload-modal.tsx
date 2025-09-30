@@ -130,7 +130,12 @@ export function UploadModal() {
                 <StepperItem
                   className="not-last:flex-1"
                   completed={isCompleted}
-                  disabled={!uploadModalActions.canNavigateToStep(stepNumber, modalState)}
+                  disabled={
+                    !uploadModalActions.canNavigateToStep(
+                      stepNumber,
+                      modalState
+                    )
+                  }
                   key={step.id}
                   step={stepNumber}
                 >

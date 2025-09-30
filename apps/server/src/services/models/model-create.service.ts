@@ -100,14 +100,15 @@ export class ModelCreationService {
     let thumbnailPath: string | null = null;
     if (input.previewImage) {
       try {
-        const ext = input.previewImage.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const ext =
+          input.previewImage.name.split(".").pop()?.toLowerCase() || "jpg";
         const previewFilename = `preview.${ext}`;
         const previewKey = storageService.generateStorageKey({
           organizationId,
           modelId,
           version: versionLabel,
           filename: previewFilename,
-          kind: "artifact"
+          kind: "artifact",
         });
 
         await storageService.uploadFile({
