@@ -126,6 +126,82 @@ This is a Turborepo monorepo with two main applications:
 - UI components from shadcn/ui in `apps/web/src/components/ui/`
 - Global error handling via Sonner toast notifications
 
+### Frontend Architecture & Component Design
+
+**CRITICAL: Components MUST follow clean architecture principles**
+
+#### Component Structure Rules
+
+1. **Separation of Concerns** - Components should ONLY handle UI rendering
+   - Data fetching → Custom hooks (`useModelData`, `useFileSelection`, etc.)
+   - Business logic → Pure utility functions in `lib/` directory
+   - Configuration → Separate config files with `as const satisfies`
+   - Side effects → Custom hooks with clear responsibilities
+
+2. **Component Size Limits**
+   - UI components should be **< 150 lines** maximum
+   - If component exceeds 150 lines, it's doing too much - REFACTOR
+   - Each component should have ONE responsibility
+
+3. **Custom Hooks Best Practices**
+   - Extract ALL business logic into custom hooks
+   - Hooks should be focused: `useModelFiles`, `useFileSelection`, `useZipDownload`
+   - NO business logic in component bodies
+   - Hooks should return clean interfaces with descriptive names
+
+4. **Pure Functions for Business Logic**
+   - ALL business logic should be testable pure functions
+   - Create `lib/` directories for domain-specific utilities
+   - Example: `lib/slicers/utils.ts` for slicer-related logic
+   - NO mixing of logic and UI concerns
+
+5. **Configuration Over Code**
+   - Use configuration objects for extensibility
+   - Example: `SLICER_CONFIG` object instead of switch statements
+   - Type-safe configs with `as const satisfies Record<K, V>`
+   - Easy to add new features by adding config entries
+
+#### Anti-Patterns - NEVER DO THESE
+
+- ❌ **NO data fetching in components** - Use hooks
+- ❌ **NO business logic in render functions** - Extract to utilities
+- ❌ **NO IIFE (Immediately Invoked Function Expressions)** - Use named functions
+- ❌ **NO duplicate logic** - Extract to shared utilities
+- ❌ **NO magic strings/numbers** - Use constants
+- ❌ **NO nested ternaries** - Use if/else or helper functions
+- ❌ **NO mixing concerns** - Data/logic/UI should be separate layers
+
+#### Refactoring Checklist
+
+Before marking any component complete, verify:
+
+1. ✅ Component only contains UI rendering logic
+2. ✅ All data fetching is in custom hooks
+3. ✅ All business logic is in pure functions
+4. ✅ Configuration is in separate config files
+5. ✅ Component is < 150 lines
+6. ✅ Each piece is testable in isolation
+7. ✅ NO duplicate code exists
+8. ✅ Follows Single Responsibility Principle
+
+#### Example: Good Component Structure
+
+```
+/components/feature
+  feature-component.tsx          // Pure UI (80-120 lines)
+
+/hooks
+  use-feature-data.ts            // Data fetching
+  use-feature-logic.ts           // Business logic
+
+/lib/feature
+  config.ts                      // Configuration
+  utils.ts                       // Pure utilities
+  types.ts                       // Type definitions
+```
+
+**Remember: If Dan Abramov wouldn't approve it, don't ship it.**
+
 ### Code Quality Standards
 
 - Extremely strict code quality via Ultracite rules (see RULES.md)
