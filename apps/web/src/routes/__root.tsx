@@ -1,3 +1,5 @@
+import { AuthQueryProvider } from "@daveyplate/better-auth-tanstack";
+import { AuthUIProviderTanstack } from "@daveyplate/better-auth-ui/tanstack";
 import { createORPCClient } from "@orpc/client";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { QueryClient } from "@tanstack/react-query";
@@ -5,9 +7,11 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   createRootRouteWithContext,
   HeadContent,
+  Link,
   Outlet,
   redirect,
   Scripts,
+  useRouter,
   useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
@@ -16,6 +20,7 @@ import { useState } from "react";
 import Header from "@/components/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { auth } from "@/lib/auth";
 import { link, type orpc } from "@/utils/orpc";
 import type { AppRouterClient } from "../../../server/src/routers";
 import "../index.css";
@@ -121,6 +126,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const router = useRouter();
 
   const [client] = useState<AppRouterClient>(() => createORPCClient(link));
   const [_orpcUtils] = useState(() => createTanstackQueryUtils(client));
@@ -129,19 +135,30 @@ function RootComponent() {
     <>
       <HeadContent />
       <NuqsAdapter>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          disableTransitionOnChange
-          storageKey="vite-ui-theme"
-        >
-          <div className="grid h-svh grid-rows-[auto_1fr]">
-            {PUBLIC_ROUTES.includes(pathname) ? null : <Header />}
-            <Outlet />
-            <Scripts />
-          </div>
-          <Toaster richColors />
-        </ThemeProvider>
+        <AuthQueryProvider>
+          <AuthUIProviderTanstack
+            authClient={auth}
+            Link={({ href, ...props }) => <Link to={href} {...props} />}
+            navigate={(href: string) => router.navigate({ to: href })}
+            replace={(href: string) =>
+              router.navigate({ to: href, replace: true })
+            }
+          >
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              disableTransitionOnChange
+              storageKey="vite-ui-theme"
+            >
+              <div className="grid h-svh grid-rows-[auto_1fr]">
+                {PUBLIC_ROUTES.includes(pathname) ? null : <Header />}
+                <Outlet />
+                <Scripts />
+              </div>
+              <Toaster richColors />
+            </ThemeProvider>
+          </AuthUIProviderTanstack>
+        </AuthQueryProvider>
       </NuqsAdapter>
       <TanStackRouterDevtools position="bottom-left" />
       <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />

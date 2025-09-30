@@ -101,6 +101,13 @@ export default function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Account</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link to="/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               {/* Organization Submenu - Only show if user has organizations */}
               {!isLoadingOrgs && hasOrganizations && activeOrg && (
                 <>

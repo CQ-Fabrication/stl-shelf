@@ -11,6 +11,11 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "#assets": path.resolve(__dirname, "../../assets"),
+      // Force zod to resolve to v4.1.8 to fix @hookform/resolvers zod/v4/core import
+      zod: path.resolve(
+        __dirname,
+        "../../node_modules/.bun/zod@4.1.8/node_modules/zod"
+      ),
     },
   },
 });
