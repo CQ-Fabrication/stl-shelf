@@ -6,8 +6,10 @@ import {
   LogOut,
   Moon,
   Plus,
+  Settings,
   Sun,
   User,
+  Users,
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
@@ -166,6 +168,19 @@ export default function Header() {
                           </DropdownMenuItem>
                         );
                       })}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/organization/settings">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/organization/members">
+                          <Users className="mr-2 h-4 w-4" />
+                          Members
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleCreateOrganization}>
                         <Plus className="mr-2 h-4 w-4" />
