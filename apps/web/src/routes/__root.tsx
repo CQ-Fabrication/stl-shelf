@@ -138,11 +138,26 @@ function RootComponent() {
         <AuthQueryProvider>
           <AuthUIProviderTanstack
             authClient={auth}
+            avatar={{
+              upload: (file: File) => {
+                // Convert file to data URL (base64)
+                return new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    resolve(reader.result as string);
+                  };
+                  reader.onerror = reject;
+                  reader.readAsDataURL(file);
+                });
+              },
+              size: 256,
+              extension: "png",
+            }}
             Link={({ href, ...props }) => <Link to={href} {...props} />}
             navigate={(href: string) => router.navigate({ to: href })}
             organization={{
               logo: {
-                upload: async (file: File) => {
+                upload: (file: File) => {
                   // Convert file to data URL (base64)
                   return new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();

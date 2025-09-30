@@ -1,3 +1,4 @@
+import { UserAvatar } from "@daveyplate/better-auth-ui";
 import { Link, useRouter } from "@tanstack/react-router";
 import {
   Building2,
@@ -52,6 +53,7 @@ export default function Header() {
 
   const [showLimitAlert, setShowLimitAlert] = useState(false);
 
+  const { data: session } = auth.useSession();
   const { data: organizations, isPending: isLoadingOrgs } =
     auth.useListOrganizations();
   const { data: activeOrg } = auth.useActiveOrganization();
@@ -98,7 +100,14 @@ export default function Header() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button aria-label="User menu" size="icon" variant="outline">
-                <User className="h-[1.2rem] w-[1.2rem]" />
+                {session?.user ? (
+                  <UserAvatar
+                    className="h-[1.2rem] w-[1.2rem]"
+                    user={session.user}
+                  />
+                ) : (
+                  <User className="h-[1.2rem] w-[1.2rem]" />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
