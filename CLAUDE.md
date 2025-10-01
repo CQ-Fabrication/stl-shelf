@@ -32,7 +32,9 @@ This is a Turborepo monorepo with two main applications:
 
 **Server** (`cd apps/server`):
 
-- `bun dev` - Start server with Wrangler (port 3000)
+- `bun dev` - Start server (port 3000)
+- `bun dev:webhooks` - Start server with ngrok tunnel for webhook testing (see WEBHOOK_TESTING.md)
+- `bun ngrok` - Start only ngrok tunnel
 - `bun build` - Dry-run deployment build
 - `bun deploy` - Deploy to Cloudflare Workers
 - `bun compile` - Build standalone binary

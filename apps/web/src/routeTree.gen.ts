@@ -14,11 +14,13 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as BillingRouteImport } from './routes/billing'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
 import { Route as OrganizationMembersRouteImport } from './routes/organization/members'
 import { Route as OrganizationCreateRouteImport } from './routes/organization/create'
 import { Route as ModelsModelIdRouteImport } from './routes/models.$modelId'
+import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -43,6 +45,11 @@ const LoginRoute = LoginRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BillingRoute = BillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -70,14 +77,21 @@ const ModelsModelIdRoute = ModelsModelIdRouteImport.update({
   path: '/models/$modelId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
+  id: '/checkout/success',
+  path: '/checkout/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
   '/organization/members': typeof OrganizationMembersRoute
@@ -85,11 +99,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
   '/organization/members': typeof OrganizationMembersRoute
@@ -98,11 +114,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
   '/organization/members': typeof OrganizationMembersRoute
@@ -112,11 +130,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/billing'
     | '/forgot-password'
     | '/login'
     | '/profile'
     | '/reset-password'
     | '/signup'
+    | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
     | '/organization/members'
@@ -124,11 +144,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/billing'
     | '/forgot-password'
     | '/login'
     | '/profile'
     | '/reset-password'
     | '/signup'
+    | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
     | '/organization/members'
@@ -136,11 +158,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/billing'
     | '/forgot-password'
     | '/login'
     | '/profile'
     | '/reset-password'
     | '/signup'
+    | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
     | '/organization/members'
@@ -149,11 +173,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BillingRoute: typeof BillingRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   ModelsModelIdRoute: typeof ModelsModelIdRoute
   OrganizationCreateRoute: typeof OrganizationCreateRoute
   OrganizationMembersRoute: typeof OrganizationMembersRoute
@@ -197,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/billing': {
+      id: '/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -232,16 +265,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModelsModelIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/success': {
+      id: '/checkout/success'
+      path: '/checkout/success'
+      fullPath: '/checkout/success'
+      preLoaderRoute: typeof CheckoutSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BillingRoute: BillingRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
   ModelsModelIdRoute: ModelsModelIdRoute,
   OrganizationCreateRoute: OrganizationCreateRoute,
   OrganizationMembersRoute: OrganizationMembersRoute,

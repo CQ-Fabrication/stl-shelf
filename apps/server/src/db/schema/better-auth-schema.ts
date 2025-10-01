@@ -1,4 +1,10 @@
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -68,6 +74,27 @@ export const organization = pgTable("organization", {
   logo: text("logo"),
   createdAt: timestamp("created_at").notNull(),
   metadata: text("metadata"),
+
+  // Owner tracking (who pays for this org)
+  ownerId: text("owner_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+
+  // Polar.sh integration
+  polarCustomerId: text("polar_customer_id").unique(),
+  subscriptionTier: text("subscription_tier").default("free").notNull(),
+  subscriptionStatus: text("subscription_status").default("active").notNull(),
+  subscriptionId: text("subscription_id"),
+
+  // Resource limits (set based on tier)
+  storageLimit: integer("storage_limit").default(104_857_600).notNull(), // 100MB in bytes
+  modelCountLimit: integer("model_count_limit").default(20).notNull(),
+  memberLimit: integer("member_limit").default(1).notNull(),
+
+  // Current usage tracking
+  currentStorage: integer("current_storage").default(0).notNull(),
+  currentModelCount: integer("current_model_count").default(0).notNull(),
+  currentMemberCount: integer("current_member_count").default(1).notNull(),
 });
 
 export const member = pgTable("member", {

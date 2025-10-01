@@ -53,6 +53,14 @@ export const env = createEnv({
     // Server Configuration
     NODE_ENV: z.enum(["development", "production", "test"]),
     PORT: z.coerce.number().min(1),
+
+    // Polar.sh Billing
+    POLAR_ACCESS_TOKEN: z.string().min(1).default("polar_placeholder"),
+    POLAR_WEBHOOK_SECRET: z.string().min(1).default("whsec_placeholder"),
+    POLAR_SERVER: z.enum(["sandbox", "production"]).default("sandbox"),
+    POLAR_PRODUCT_FREE: z.string().optional(),
+    POLAR_PRODUCT_BASIC: z.string().optional(),
+    POLAR_PRODUCT_PRO: z.string().optional(),
   },
   runtimeEnv: process.env,
 });

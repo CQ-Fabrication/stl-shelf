@@ -1,6 +1,7 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { models } from "@/db/schema/models";
+import { organization } from "@/db/schema/better-auth-schema";
+import { modelFiles, models, modelVersions } from "@/db/schema/models";
 
 type DeleteModelInput = {
   modelId: string;
@@ -9,6 +10,7 @@ type DeleteModelInput = {
 
 /**
  * Soft delete a model by setting deletedAt timestamp
+ * Also decrements usage counters (storage and model count)
  */
 export async function deleteModel({
   modelId,
@@ -31,6 +33,17 @@ export async function deleteModel({
     throw new Error("Model not found or already deleted");
   }
 
+  // Calculate total storage used by this model's files
+  const [storageResult] = await db
+    .select({
+      totalStorage: sql<number>`COALESCE(SUM(${modelFiles.size}), 0)`,
+    })
+    .from(modelFiles)
+    .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
+    .where(eq(modelVersions.modelId, modelId));
+
+  const storageToFree = storageResult?.totalStorage ?? 0;
+
   // Soft delete by setting deletedAt timestamp
   await db
     .update(models)
@@ -39,6 +52,15 @@ export async function deleteModel({
       updatedAt: new Date(),
     })
     .where(eq(models.id, modelId));
+
+  // Decrement organization usage counters
+  await db
+    .update(organization)
+    .set({
+      currentModelCount: sql`GREATEST(${organization.currentModelCount} - 1, 0)`,
+      currentStorage: sql`GREATEST(${organization.currentStorage} - ${storageToFree}, 0)`,
+    })
+    .where(eq(organization.id, organizationId));
 
   return { deletedId: modelId };
 }

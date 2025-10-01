@@ -1,3 +1,5 @@
+import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
+import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { captcha, openAPI, organization } from "better-auth/plugins";
@@ -6,6 +8,14 @@ import { db } from "./db/client";
 // biome-ignore lint/performance/noNamespaceImport: we need the schema
 import * as authSchema from "./db/schema/better-auth-schema";
 import { env } from "./env";
+import { POLAR_PRODUCTS_CONFIG } from "./lib/billing/config";
+import {
+  handleCustomerStateChanged,
+  handleOrderPaid,
+  handleSubscriptionCanceled,
+  handleSubscriptionCreated,
+  handleSubscriptionRevoked,
+} from "./lib/billing/webhook-handlers";
 
 // Better Auth + Drizzle (Postgres) — per docs
 const isProd = env.NODE_ENV === "production";
@@ -23,6 +33,12 @@ const smtpTransport =
             : undefined,
       })
     : null;
+
+// Polar.sh client for billing
+const polarClient = new Polar({
+  accessToken: env.POLAR_ACCESS_TOKEN,
+  server: env.POLAR_SERVER,
+});
 
 export const auth = betterAuth({
   appName: "STL Shelf",
@@ -66,7 +82,7 @@ export const auth = betterAuth({
     regenerateOnLogin: true,
   },
   // Plugins
-  // Organization + captcha
+  // Organization + captcha + billing
   plugins: [
     organization({
       organizationLimit: 1,
@@ -77,6 +93,28 @@ export const auth = betterAuth({
       secretKey: env.TURNSTILE_SECRET_KEY,
     }),
     openAPI(),
+
+    // Polar plugin for billing
+    polar({
+      client: polarClient,
+      createCustomerOnSignUp: false, // Manual creation when org created
+      use: [
+        checkout({
+          products: POLAR_PRODUCTS_CONFIG,
+          successUrl: `${env.WEB_URL}/checkout/success?checkout_id={CHECKOUT_ID}`,
+          authenticatedUsersOnly: true,
+        }),
+        portal(),
+        webhooks({
+          secret: env.POLAR_WEBHOOK_SECRET,
+          onOrderPaid: handleOrderPaid,
+          onSubscriptionCreated: handleSubscriptionCreated,
+          onSubscriptionCanceled: handleSubscriptionCanceled,
+          onSubscriptionRevoked: handleSubscriptionRevoked,
+          onCustomerStateChanged: handleCustomerStateChanged,
+        }),
+      ],
+    }),
   ],
 
   database: drizzleAdapter(db, {

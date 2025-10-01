@@ -1,4 +1,9 @@
+import { eq } from "drizzle-orm";
 import { z } from "zod/v4";
+import { db } from "@/db/client";
+import { organization } from "@/db/schema/better-auth-schema";
+import type { SubscriptionTier } from "@/lib/billing/config";
+import { enforceLimits } from "@/lib/billing/limits";
 import { protectedProcedure } from "@/lib/orpc";
 import { modelCreationService } from "@/services/models/model-create.service";
 import { modelDeleteService } from "@/services/models/model-delete.service";
@@ -101,6 +106,31 @@ export const createModelProcedure = protectedProcedure
   .input(createModelInputSchema)
   .output(createModelResponseSchema)
   .handler(async ({ input, context }) => {
+    // Get organization for limit checking
+    const org = await db.query.organization.findFirst({
+      where: eq(organization.id, context.organizationId),
+    });
+
+    if (!org) {
+      throw new Error("Organization not found");
+    }
+
+    // Enforce model count limit
+    enforceLimits.checkModelLimit(
+      org.currentModelCount,
+      org.subscriptionTier as SubscriptionTier
+    );
+
+    // Calculate total file size
+    const totalFileSize = input.files.reduce((sum, file) => sum + file.size, 0);
+
+    // Enforce storage limit
+    enforceLimits.checkStorageLimit(
+      org.currentStorage,
+      totalFileSize,
+      org.subscriptionTier as SubscriptionTier
+    );
+
     const tags = Array.from(new Set(input.tags ?? []));
 
     const result = await modelCreationService.createModel({

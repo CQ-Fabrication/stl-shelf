@@ -1,4 +1,3 @@
-import type { Context as HonoContext } from "hono";
 import type { auth } from "@/auth";
 
 type BetterAuthSession = typeof auth.$Infer.Session;

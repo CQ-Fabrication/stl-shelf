@@ -3,6 +3,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import {
   Building2,
   Check,
+  CreditCard,
   LogOut,
   Plus,
   Settings,
@@ -184,6 +185,12 @@ export default function Header() {
                         <Link to="/organization/members">
                           <Users className="mr-2 h-4 w-4" />
                           Members
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/billing">
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Billing
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
