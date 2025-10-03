@@ -1,4 +1,5 @@
 import { createRootRoute, Outlet, Scripts } from "@tanstack/react-router";
+import { Navigation } from "@/components/navigation";
 import { ThemeProvider } from "@/components/theme-provider";
 import "../index.css";
 
@@ -27,6 +28,7 @@ function RootComponent() {
       storageKey="web-ui-theme"
     >
       <div className="min-h-screen bg-background">
+        <Navigation />
         <Outlet />
         <Scripts />
       </div>
