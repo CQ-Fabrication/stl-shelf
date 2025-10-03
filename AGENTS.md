@@ -4,15 +4,20 @@ This guide summarizes how to contribute safely and efficiently to the `stl-shelf
 
 ## Project Structure & Module Organization
 
-The codebase splits into `apps/web` (React 19 + Vite client) and `apps/server` (Bun + Hono API backed by Drizzle/PostgreSQL). Shared assets live in `assets/`, operational docs in `docs/`. Tooling and configuration sit at the root (`turbo.json`, `biome.json`, `bunfig.toml`). Keep new modules within their app boundary; cross-app sharing should go through published interfaces or shared packages.
+The codebase splits into three applications:
+- `apps/app` - Authenticated React 19 + Vite client (main application)
+- `apps/web` - Public-facing marketing website (to be created)
+- `apps/server` - Bun + Hono API backed by Drizzle/PostgreSQL
+
+Shared assets live in `assets/`, operational docs in `docs/`. Tooling and configuration sit at the root (`turbo.json`, `biome.json`, `bunfig.toml`). Keep new modules within their app boundary; cross-app sharing should go through published interfaces or shared packages.
 
 ## Build, Test, and Development Commands
 
-Run `bun run dev` for the full Turbo pipeline, or scope to `bun run dev:web` / `bun run dev:server`. Build all targets with `bun run build`, and run static analysis via `bun run check-types` and `bun run check`. Database workflows live in the server workspace: `bun run -F server db:generate`, `db:migrate`, and `db:studio`. Start the API with Docker when needed using `bun run -F server dev:docker` (leverages `docker-compose.development.yml`).
+Run `bun run dev` for the full Turbo pipeline, or scope to `bun run dev:app`, `bun run dev:web`, or `bun run dev:server`. Build all targets with `bun run build`, and run static analysis via `bun run check-types` and `bun run check`. Database workflows live in the server workspace: `bun run -F server db:generate`, `db:migrate`, and `db:studio`. Start the API with Docker when needed using `bun run -F server dev:docker` (leverages `docker-compose.development.yml`).
 
 ## Coding Style & Naming Conventions
 
-Write strict TypeScript—no `any`—and let Biome enforce 2-space indentation, single quotes, and configured trailing commas. Follow naming patterns: `kebab-case` filenames (`apps/web/src/routes/stl-viewer.tsx`), `camelCase` for functions/variables, and `PascalCase` for React components and types. Uphold accessibility guidelines: semantic elements first, always include `type` on `<button>`, and ensure interactive handlers are keyboard-accessible.
+Write strict TypeScript—no `any`—and let Biome enforce 2-space indentation, single quotes, and configured trailing commas. Follow naming patterns: `kebab-case` filenames (`apps/app/src/routes/stl-viewer.tsx`), `camelCase` for functions/variables, and `PascalCase` for React components and types. Uphold accessibility guidelines: semantic elements first, always include `type` on `<button>`, and ensure interactive handlers are keyboard-accessible.
 
 Avoid comments that restate what the code already expresses; only add comments when they convey important context or rationale that the implementation cannot make obvious.
 
