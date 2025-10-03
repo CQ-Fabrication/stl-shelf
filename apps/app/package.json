@@ -13,6 +13,7 @@
     "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
+    "@stl-shelf/assets": "workspace:*",
     "@hookform/resolvers": "5.2.2",
     "@orpc/client": "1.8.9",
     "@orpc/tanstack-query": "1.8.9",

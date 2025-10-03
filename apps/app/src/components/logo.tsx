@@ -1,9 +1,9 @@
 import type * as React from "react";
-import logoDarkUrl from "#assets/logo-dark.svg";
-// Use a shared assets alias so we don't duplicate files
+import logoDarkUrl from "@stl-shelf/assets/logo-dark.svg";
+// Use a shared assets package so we don't duplicate files
 // We invert for contrast: light theme -> dark logo, dark theme -> light logo
 // Vite treats imported SVGs as URLs by default
-import logoLightUrl from "#assets/logo-light.svg";
+import logoLightUrl from "@stl-shelf/assets/logo-light.svg";
 
 type LogoProps = React.ComponentProps<"img"> & {
   invertForContrast?: boolean;

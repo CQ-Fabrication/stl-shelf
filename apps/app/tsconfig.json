@@ -12,8 +12,7 @@
     "rootDirs": ["."],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "#assets/*": ["../assets/*"]
+      "@/*": ["./src/*"]
     }
   },
   "references": [
