@@ -1,14 +1,20 @@
-import type { Context as HonoContext } from 'hono';
+import type { auth } from "@/auth";
 
-export type CreateContextOptions = {
-  context: HonoContext;
+type BetterAuthSession = typeof auth.$Infer.Session;
+
+export type Session = BetterAuthSession & {
+  session: BetterAuthSession["session"] & {
+    activeOrganizationId?: string;
+  };
 };
 
-export function createContext(_options: CreateContextOptions) {
-  const session = _options.context.get('session');
-  return {
-    session,
-  };
-}
+export type BaseContext = {
+  session: Session | null;
+  ipAddress?: string | null;
+};
 
-export type Context = ReturnType<typeof createContext>;
+export type AuthenticatedContext = {
+  session: Session;
+  organizationId: string;
+  ipAddress?: string | null;
+};

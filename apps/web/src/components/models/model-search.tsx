@@ -1,28 +1,30 @@
-import { useQuery } from '@tanstack/react-query';
-import { Search, Tag, X } from 'lucide-react';
-import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
-import { orpc } from '@/utils/orpc';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { useQuery } from "@tanstack/react-query";
+import { Search, Tag, X } from "lucide-react";
+import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
+import { orpc } from "@/utils/orpc";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
-import { Input } from '../ui/input';
+} from "../ui/dropdown-menu";
+import { Input } from "../ui/input";
 
 function ModelSearch() {
   const [search, setSearch] = useQueryState(
-    'q', 
-    parseAsString.withDefault('').withOptions({ throttleMs: 300 })
+    "q",
+    parseAsString.withDefault("").withOptions({ throttleMs: 300 })
   );
   const [tags, setTags] = useQueryState(
-    'tags',
-    parseAsArrayOf(parseAsString, ',').withDefault([])
+    "tags",
+    parseAsArrayOf(parseAsString, ",").withDefault([])
   );
 
-  const { data: allTags = [] } = useQuery(orpc.getAllTags.queryOptions({}));
+  const { data: allTags = [] } = useQuery(
+    orpc.models.getAllTags.queryOptions()
+  );
 
   const handleTagToggle = (tag: string) => {
     const newTags = tags.includes(tag)
@@ -37,7 +39,7 @@ function ModelSearch() {
   };
 
   const clearFilters = () => {
-    setSearch('');
+    setSearch("");
     setTags([]);
   };
 
@@ -57,7 +59,7 @@ function ModelSearch() {
         {search && (
           <Button
             className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8 transform p-0"
-            onClick={() => setSearch('')}
+            onClick={() => setSearch("")}
             size="sm"
             variant="ghost"
           >
@@ -89,11 +91,11 @@ function ModelSearch() {
             ) : (
               allTags.map((tag) => (
                 <DropdownMenuCheckboxItem
-                  checked={tags.includes(tag)}
-                  key={tag}
-                  onCheckedChange={() => handleTagToggle(tag)}
+                  checked={tags.includes(tag.name)}
+                  key={tag.name}
+                  onCheckedChange={() => handleTagToggle(tag.name)}
                 >
-                  {tag}
+                  {tag.name}
                 </DropdownMenuCheckboxItem>
               ))
             )}
@@ -131,7 +133,7 @@ function ModelSearch() {
   );
 }
 
-ModelSearch.displayName = 'ModelSearch';
+ModelSearch.displayName = "ModelSearch";
 
 export { ModelSearch };
 export default ModelSearch;

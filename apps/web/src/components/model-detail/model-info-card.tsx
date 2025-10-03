@@ -1,92 +1,165 @@
+import { useQuery } from "@tanstack/react-query";
 import {
   Box,
   Calendar,
-  Download,
   FileText,
   HardDrive,
+  ImageIcon,
   Tag,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { downloadFile } from '@/utils/download';
-import {
-  formatDate,
-  formatFileSize,
-  formatPrintTime,
-} from '@/utils/formatters';
-import type { Model, ModelVersion } from '../../../../server/src/types/model';
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate, formatFileSize } from "@/utils/formatters";
+import { orpc } from "@/utils/orpc";
 
 type ModelInfoCardProps = {
-  model: Model;
-  totalSize: number;
-  activeVersion?: ModelVersion;
+  modelId: string;
+  versionId?: string;
 };
 
-export const ModelInfoCard = ({
-  model,
-  totalSize,
-  activeVersion,
-}: ModelInfoCardProps) => {
-  const { printSettings } = model.latestMetadata;
+export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
+  const { data: model } = useQuery(
+    orpc.models.getModel.queryOptions({ input: { id: modelId } })
+  );
+  const { isLoading: statsLoading } = useQuery(
+    orpc.models.getModelStatistics.queryOptions({ input: { id: modelId } })
+  );
+  const { data: tags } = useQuery(
+    orpc.models.getModelTags.queryOptions({ input: { id: modelId } })
+  );
+  const { data: files } = useQuery({
+    ...orpc.models.getModelFiles.queryOptions({
+      input: { modelId, versionId: versionId || "" },
+    }),
+    enabled: !!versionId,
+  });
+  const { data: versions } = useQuery(
+    orpc.models.getModelVersions.queryOptions({ input: { modelId } })
+  );
+
+  const activeVersion = versionId
+    ? versions?.find((v) => v.id === versionId)
+    : versions?.[0];
 
   const getFileIcon = (extension: string) => {
     const ext = extension.toLowerCase();
-    if (['.stl', '.3mf', '.obj', '.ply'].includes(ext)) {
+    if (["stl", "3mf", "obj", "ply"].includes(ext)) {
       return Box;
     }
     return FileText;
   };
 
-  const handleDownloadFile = async (filename: string) => {
-    if (!activeVersion) return;
-
-    try {
-      await downloadFile(model.id, activeVersion.version, filename);
-      toast.success(`Downloading ${filename}`);
-    } catch {
-      toast.error(`Failed to download ${filename}`);
+  const getFileTypeBadgeVariant = (
+    extension: string
+  ): "default" | "secondary" | "outline" | "destructive" => {
+    const ext = extension.toLowerCase();
+    switch (ext) {
+      case "stl":
+        return "default";
+      case "obj":
+        return "secondary";
+      case "3mf":
+        return "outline";
+      case "ply":
+        return "destructive";
+      default:
+        return "secondary";
     }
   };
+
+  if (statsLoading || !model) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Model Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
   return (
-    <Card>
+    <Card className="shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       <CardHeader>
-        <CardTitle>Model Information</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <span>Model Information</span>
+          {activeVersion && (
+            <Badge className="font-normal" variant="outline">
+              Version{" "}
+              <span className="text-brand">{activeVersion.version}</span>
+            </Badge>
+          )}
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
+        {/* Thumbnail Preview */}
+        {activeVersion?.thumbnailUrl && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-sm">Preview</span>
+            </div>
+            <div className="overflow-hidden rounded-lg border">
+              <img
+                alt={`Preview of ${model.name}`}
+                className="aspect-video w-full object-cover"
+                height={360}
+                loading="lazy"
+                src={activeVersion.thumbnailUrl}
+                width={640}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <div>
-              <div className="font-medium">Created</div>
+              <div className="font-medium">Version Created</div>
               <div className="text-muted-foreground">
-                {formatDate(model.createdAt)}
+                {activeVersion?.createdAt
+                  ? formatDate(new Date(activeVersion.createdAt))
+                  : "N/A"}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <HardDrive className="h-4 w-4 text-muted-foreground" />
             <div>
-              <div className="font-medium">Size</div>
+              <div className="font-medium">Version Size</div>
               <div className="text-muted-foreground">
-                {formatFileSize(totalSize)}
+                {activeVersion?.files
+                  ? formatFileSize(
+                      activeVersion.files.reduce(
+                        (sum, file) => sum + file.size,
+                        0
+                      )
+                    )
+                  : "N/A"}
               </div>
             </div>
           </div>
         </div>
 
         {/* Available Files */}
-        {activeVersion && activeVersion.files.length > 0 && (
+        {files && files.length > 0 && (
           <div>
             <div className="mb-2 flex items-center gap-2">
               <HardDrive className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium text-sm">Available Files</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {activeVersion.files
+              {files
                 .filter((file) =>
-                  ['.stl', '.3mf', '.obj', '.ply'].includes(
+                  ["stl", "3mf", "obj", "ply"].includes(
                     file.extension.toLowerCase()
                   )
                 )
@@ -94,25 +167,24 @@ export const ModelInfoCard = ({
                   const Icon = getFileIcon(file.extension);
                   return (
                     <div
-                      className="flex items-center gap-2 rounded-md border bg-muted/50 px-2 py-1"
+                      className="flex items-center gap-2 rounded-md border bg-muted/50 px-2 py-1 transition-colors hover:bg-muted/80"
                       key={file.filename}
                     >
                       <Icon className="h-4 w-4 text-muted-foreground" />
-                      <Badge className="text-xs" variant="secondary">
-                        {file.extension.slice(1).toUpperCase()}
+                      <span className="text-sm">{file.originalName}</span>
+                      <Badge
+                        className="text-xs"
+                        variant={
+                          file.extension.toLowerCase() === "stl"
+                            ? "default"
+                            : getFileTypeBadgeVariant(file.extension)
+                        }
+                      >
+                        {file.extension.toUpperCase()}
                       </Badge>
                       <span className="text-muted-foreground text-xs">
                         {formatFileSize(file.size)}
                       </span>
-                      <Button
-                        className="h-6 w-6"
-                        onClick={() => handleDownloadFile(file.filename)}
-                        size="icon"
-                        title={`Download ${file.filename}`}
-                        variant="ghost"
-                      >
-                        <Download className="h-3 w-3" />
-                      </Button>
                     </div>
                   );
                 })}
@@ -121,41 +193,18 @@ export const ModelInfoCard = ({
         )}
 
         {/* Tags */}
-        {model.latestMetadata.tags.length > 0 && (
+        {tags && tags.length > 0 && (
           <div>
             <div className="mb-2 flex items-center gap-2">
               <Tag className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium text-sm">Tags</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {model.latestMetadata.tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
+              {tags.map((tag) => (
+                <Badge key={tag.id} variant="secondary">
+                  {tag.name}
                 </Badge>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* Print Settings */}
-        {printSettings && (
-          <div>
-            <div className="mb-2 font-medium text-sm">Print Settings</div>
-            <div className="space-y-1 text-muted-foreground text-sm">
-              {printSettings.material && (
-                <div>Material: {printSettings.material}</div>
-              )}
-              {printSettings.layerHeight && (
-                <div>Layer Height: {printSettings.layerHeight}mm</div>
-              )}
-              {printSettings.infill && (
-                <div>Infill: {printSettings.infill}%</div>
-              )}
-              {printSettings.printTime && (
-                <div>
-                  Print Time: {formatPrintTime(printSettings.printTime)}
-                </div>
-              )}
             </div>
           </div>
         )}

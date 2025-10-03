@@ -1,5 +1,5 @@
-import { createEnv } from '@t3-oss/env-core';
-import { z } from 'zod';
+import { createEnv } from "@t3-oss/env-core";
+import { z } from "zod";
 
 export const env = createEnv({
   server: {
@@ -17,7 +17,7 @@ export const env = createEnv({
     STORAGE_BUCKET_NAME: z.string().min(1),
     STORAGE_BUCKET_THUMBNAILS: z.string().min(1),
     STORAGE_BUCKET_TEMP: z.string().min(1),
-    STORAGE_USE_SSL: z.enum(['true', 'false']),
+    STORAGE_USE_SSL: z.enum(["true", "false"]),
 
     // Redis
     REDIS_URL: z.url().min(1),
@@ -50,14 +50,17 @@ export const env = createEnv({
     SMTP_PASS: z.string().optional(),
     SMTP_FROM: z.string().optional(),
 
-    // Git Configuration
-    GIT_USER_NAME: z.string().min(1).optional(),
-    GIT_USER_EMAIL: z.string().email().optional(),
-    GIT_REMOTE_URL: z.string().url().optional(),
-
     // Server Configuration
-    NODE_ENV: z.enum(['development', 'production', 'test']),
+    NODE_ENV: z.enum(["development", "production", "test"]),
     PORT: z.coerce.number().min(1),
+
+    // Polar.sh Billing
+    POLAR_ACCESS_TOKEN: z.string().min(1).default("polar_placeholder"),
+    POLAR_WEBHOOK_SECRET: z.string().min(1).default("whsec_placeholder"),
+    POLAR_SERVER: z.enum(["sandbox", "production"]).default("sandbox"),
+    POLAR_PRODUCT_FREE: z.string().optional(),
+    POLAR_PRODUCT_BASIC: z.string().optional(),
+    POLAR_PRODUCT_PRO: z.string().optional(),
   },
   runtimeEnv: process.env,
 });

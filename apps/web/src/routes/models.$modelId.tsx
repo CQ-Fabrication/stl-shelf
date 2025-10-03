@@ -1,80 +1,94 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { ModelDetailError } from '@/components/model-detail/model-detail-error';
-import { ModelDetailHeader } from '@/components/model-detail/model-detail-header';
-import { ModelDetailSkeleton } from '@/components/model-detail/model-detail-skeleton';
-// import { ModelGitHistory } from '@/components/model-detail/model-git-history'; // Git not implemented yet
-import { ModelInfoCard } from '@/components/model-detail/model-info-card';
-import { ModelPreviewCard } from '@/components/model-detail/model-preview-card';
-import { ModelVersionHistory } from '@/components/model-detail/model-version-history';
-import { EditModelDialog } from '@/components/models/edit-model-dialog';
-import { UploadVersionDialog } from '@/components/models/upload-version-dialog';
-import { findMainModelFile, useModelDetail } from '@/hooks/use-model-detail';
-import { downloadAllFiles } from '@/utils/download';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
+import { ModelDetailHeader } from "@/components/model-detail/model-detail-header";
+import { ModelInfoCard } from "@/components/model-detail/model-info-card";
+import { ModelPreviewCard } from "@/components/model-detail/model-preview-card";
+import { ModelVersionHistory } from "@/components/model-detail/model-version-history";
+import { VersionUploadModal } from "@/components/model-detail/version-upload-modal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useDeleteModel } from "@/hooks/use-delete-model";
+import { orpc } from "@/utils/orpc";
 
-export const Route = createFileRoute('/models/$modelId')({
+export const Route = createFileRoute("/models/$modelId")({
   component: ModelDetailComponent,
 });
 
 function ModelDetailComponent() {
   const { modelId } = Route.useParams();
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [versionUploadModalOpen, setVersionUploadModalOpen] = useState(false);
+  const [selectedVersionId, setSelectedVersionId] = useState<string>();
 
-  const {
-    model,
-    latestVersion,
-    totalSize,
-    history,
-    isLoading,
-    error,
-  } = useModelDetail(modelId);
+  const queryClient = useQueryClient();
+  const deleteModel = useDeleteModel();
+  const { data: model } = useQuery(
+    orpc.models.getModel.queryOptions({ input: { id: modelId } })
+  );
+  const { data: versions } = useQuery(
+    orpc.models.getModelVersions.queryOptions({ input: { modelId } })
+  );
 
-  // Get the active version (selected or latest)
-  const activeVersion = selectedVersion 
-    ? model?.versions.find(v => v.version === selectedVersion) ?? latestVersion
-    : latestVersion;
+  const addVersionMutation = useMutation(
+    orpc.models.addVersion.mutationOptions({
+      onSuccess: (data) => {
+        toast.success("Version uploaded successfully", {
+          description: `Created ${data.version} with ${data.files.length} file${data.files.length > 1 ? "s" : ""}`,
+        });
+        queryClient.invalidateQueries({
+          queryKey: orpc.models.getModel.key({ input: { id: modelId } }),
+        });
+        queryClient.invalidateQueries({
+          queryKey: orpc.models.getModelVersions.key({ input: { modelId } }),
+        });
+        setVersionUploadModalOpen(false);
+        setSelectedVersionId(data.versionId);
+      },
+      onError: (error) => {
+        const message =
+          error instanceof Error ? error.message : "Failed to upload version";
+        toast.error(message);
+      },
+    })
+  );
 
-  // Find the main model file for the active version
-  const mainModelFile = activeVersion ? findMainModelFile(activeVersion.files) : undefined;
+  const activeVersion = selectedVersionId || versions?.[0]?.id;
 
-  const handleDownloadAll = async () => {
-    if (!(model && activeVersion)) return;
+  const handleVersionSelect = (versionId: string) => {
+    setSelectedVersionId(versionId);
+  };
 
-    try {
-      await downloadAllFiles(
-        model.id,
-        activeVersion.version,
-        activeVersion.files
-      );
-      toast.success('Download started');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Download failed');
+  const handleDelete = () => {
+    if (model) {
+      deleteModel.mutate({ id: model.id });
     }
   };
 
-  const handleVersionSelect = (version: string) => {
-    setSelectedVersion(version);
+  const handleVersionUpload = (data: { changelog: string; files: File[] }) => {
+    addVersionMutation.mutate({
+      modelId,
+      changelog: data.changelog,
+      files: data.files,
+    });
   };
-
-
-  if (isLoading) {
-    return <ModelDetailSkeleton />;
-  }
-
-  if (error || !model || !activeVersion) {
-    return <ModelDetailError error={error} />;
-  }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
       <ModelDetailHeader
-        model={model}
-        onDownloadClick={handleDownloadAll}
-        onEditClick={() => setEditDialogOpen(true)}
-        onUploadClick={() => setUploadDialogOpen(true)}
+        activeVersion={activeVersion}
+        modelId={modelId}
+        onDeleteClick={() => setDeleteDialogOpen(true)}
+        onUploadVersionClick={() => setVersionUploadModalOpen(true)}
       />
 
       {/* Main content grid */}
@@ -82,41 +96,52 @@ function ModelDetailComponent() {
         {/* Left column */}
         <div className="space-y-6">
           {/* 3D Viewer */}
-          <ModelPreviewCard
-            mainModelFile={mainModelFile}
-            modelId={model.id}
-            version={activeVersion}
+          <ModelPreviewCard modelId={modelId} versionId={activeVersion} />
+          {/* Version History */}
+          <ModelVersionHistory
+            activeVersion={activeVersion}
+            modelId={modelId}
+            onVersionSelect={handleVersionSelect}
           />
-          {/* Git History - removed until Git service is implemented */}
-          {/* <div className="h-64">
-            <ModelGitHistory history={history} />
-          </div> */}
         </div>
 
         {/* Right column */}
         <div className="space-y-6">
           {/* Model Info */}
-          <ModelInfoCard model={model} totalSize={totalSize} activeVersion={activeVersion} />
-          {/* Version History - starts immediately after Model Info */}
-          <ModelVersionHistory 
-            model={model} 
-            activeVersion={activeVersion.version}
-            onVersionSelect={handleVersionSelect}
-          />
+          <ModelInfoCard modelId={modelId} versionId={activeVersion} />
         </div>
       </div>
 
-      {/* Dialogs */}
-      <EditModelDialog
-        model={model}
-        onOpenChange={setEditDialogOpen}
-        open={editDialogOpen}
+      {/* Version Upload Modal */}
+      <VersionUploadModal
+        isOpen={versionUploadModalOpen}
+        isSubmitting={addVersionMutation.isPending}
+        modelId={modelId}
+        onClose={() => setVersionUploadModalOpen(false)}
+        onSubmit={handleVersionUpload}
       />
-      <UploadVersionDialog
-        model={model}
-        onOpenChange={setUploadDialogOpen}
-        open={uploadDialogOpen}
-      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Model</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{model?.name}"? This action can
+              be undone by contacting support.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

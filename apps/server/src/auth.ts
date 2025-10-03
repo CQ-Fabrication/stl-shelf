@@ -1,15 +1,24 @@
-import { betterAuth } from 'better-auth';
-import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { captcha, organization } from 'better-auth/plugins';
-// import { github, google } from 'better-auth/social-providers';
-import nodemailer from 'nodemailer';
-import { db } from './db/client';
+import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
+import { Polar } from "@polar-sh/sdk";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { captcha, openAPI, organization } from "better-auth/plugins";
+import nodemailer from "nodemailer";
+import { db } from "./db/client";
 // biome-ignore lint/performance/noNamespaceImport: we need the schema
-import * as authSchema from './db/schema/better-auth-schema';
-import { env } from './env';
+import * as authSchema from "./db/schema/better-auth-schema";
+import { env } from "./env";
+import { POLAR_PRODUCTS_CONFIG } from "./lib/billing/config";
+import {
+  handleCustomerStateChanged,
+  handleOrderPaid,
+  handleSubscriptionCanceled,
+  handleSubscriptionCreated,
+  handleSubscriptionRevoked,
+} from "./lib/billing/webhook-handlers";
 
 // Better Auth + Drizzle (Postgres) — per docs
-const isProd = env.NODE_ENV === 'production';
+const isProd = env.NODE_ENV === "production";
 
 // Optional SMTP transport for verification emails (Mailpit in dev via docker-compose)
 const smtpTransport =
@@ -25,29 +34,35 @@ const smtpTransport =
       })
     : null;
 
+// Polar.sh client for billing
+const polarClient = new Polar({
+  accessToken: env.POLAR_ACCESS_TOKEN,
+  server: env.POLAR_SERVER,
+});
+
 export const auth = betterAuth({
-  appName: 'STL Shelf',
+  appName: "STL Shelf",
   baseURL: env.AUTH_URL ?? `http://localhost:${env.PORT}`,
-  basePath: '/auth',
+  basePath: "/api/auth",
   // Allow the web app origin to call auth API (origin check)
-  trustedOrigins: [env.WEB_URL ?? 'http://localhost:3001'],
+  trustedOrigins: [env.WEB_URL ?? "http://localhost:3001"],
   // Prefer built-in header extraction for client IP (works with rateLimit)
   // Example mirrors BetterAuth docs for Cloudflare
   // You can add more headers if needed
   // Built-in rate limit configuration (per docs)
   rateLimit: {
     // Default limiter applied to routes without explicit settings
-    window: '1m',
+    window: "1m",
     max: 15,
     routes: {
       // Email/password sign-in attempts
-      signInEmail: { window: '1m', max: 3 },
+      signInEmail: { window: "1m", max: 3 },
       // Sign-up attempts
-      signUpEmail: { window: '1m', max: 3 },
+      signUpEmail: { window: "1m", max: 3 },
       // Magic/verification emails
-      sendVerificationEmail: { window: '5m', max: 3 },
+      sendVerificationEmail: { window: "5m", max: 3 },
       // Social auth initiations (conservative)
-      oauth: { window: '1m', max: 20 },
+      oauth: { window: "1m", max: 20 },
     },
   },
   // Session management (see BetterAuth docs)
@@ -67,20 +82,43 @@ export const auth = betterAuth({
     regenerateOnLogin: true,
   },
   // Plugins
-  // Organization + captcha
+  // Organization + captcha + billing
   plugins: [
     organization({
       organizationLimit: 1,
     }),
     captcha({
-      provider: 'cloudflare-turnstile',
-      endpoints: ['/login', '/signup', '/verify'],
+      provider: "cloudflare-turnstile",
+      endpoints: ["/login", "/signup", "/verify"],
       secretKey: env.TURNSTILE_SECRET_KEY,
+    }),
+    openAPI(),
+
+    // Polar plugin for billing
+    polar({
+      client: polarClient,
+      createCustomerOnSignUp: false, // Manual creation when org created
+      use: [
+        checkout({
+          products: POLAR_PRODUCTS_CONFIG,
+          successUrl: `${env.WEB_URL}/checkout/success?checkout_id={CHECKOUT_ID}`,
+          authenticatedUsersOnly: true,
+        }),
+        portal(),
+        webhooks({
+          secret: env.POLAR_WEBHOOK_SECRET,
+          onOrderPaid: handleOrderPaid,
+          onSubscriptionCreated: handleSubscriptionCreated,
+          onSubscriptionCanceled: handleSubscriptionCanceled,
+          onSubscriptionRevoked: handleSubscriptionRevoked,
+          onCustomerStateChanged: handleCustomerStateChanged,
+        }),
+      ],
     }),
   ],
 
   database: drizzleAdapter(db, {
-    provider: 'pg',
+    provider: "pg",
     schema: { ...authSchema },
   }),
 
@@ -90,12 +128,18 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     // Password reset configuration
     resetPasswordTokenExpiresIn: 60 * 60, // 1 hour in seconds
-    sendResetPassword: async ({ user, url }: { user: { email?: string }, url: string }) => {
+    sendResetPassword: async ({
+      user,
+      url,
+    }: {
+      user: { email?: string };
+      url: string;
+    }) => {
       if (smtpTransport) {
         await smtpTransport.sendMail({
-          from: env.SMTP_FROM ?? 'STL Shelf <no-reply@local.test>',
-          to: user.email ?? '',
-          subject: 'Reset your password',
+          from: env.SMTP_FROM ?? "STL Shelf <no-reply@local.test>",
+          to: user.email ?? "",
+          subject: "Reset your password",
           text: `You requested a password reset for your STL Shelf account.\n\nClick the link below to reset your password:\n${url}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, you can safely ignore this email.`,
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -132,9 +176,9 @@ export const auth = betterAuth({
     }) => {
       if (smtpTransport) {
         await smtpTransport.sendMail({
-          from: env.SMTP_FROM ?? 'STL Shelf <no-reply@local.test>',
-          to: user.email ?? '',
-          subject: 'Verify your email',
+          from: env.SMTP_FROM ?? "STL Shelf <no-reply@local.test>",
+          to: user.email ?? "",
+          subject: "Verify your email",
           text: `Click to verify: ${url}`,
           html: `<p>Click to verify: <a href="${url}">${url}</a></p>`,
         });
@@ -148,13 +192,13 @@ export const auth = betterAuth({
   // OAuth providers
   socialProviders: {
     github: {
-      clientId: env.GITHUB_CLIENT_ID ?? '',
-      clientSecret: env.GITHUB_CLIENT_SECRET ?? '',
+      clientId: env.GITHUB_CLIENT_ID ?? "",
+      clientSecret: env.GITHUB_CLIENT_SECRET ?? "",
       enabled: Boolean(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET),
     },
     google: {
-      clientId: env.GOOGLE_CLIENT_ID ?? '',
-      clientSecret: env.GOOGLE_CLIENT_SECRET ?? '',
+      clientId: env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: env.GOOGLE_CLIENT_SECRET ?? "",
       enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
     },
   },
@@ -163,15 +207,15 @@ export const auth = betterAuth({
   advanced: {
     ipAddress: {
       // Cloudflare specific header
-      ipAddressHeaders: ['cf-connecting-ip'],
+      ipAddressHeaders: ["cf-connecting-ip"],
     },
     useSecureCookies: isProd,
     defaultCookieAttributes: {
-      sameSite: isProd ? 'none' : 'lax',
+      sameSite: isProd ? "none" : "lax",
       secure: isProd,
       domain: env.AUTH_COOKIE_DOMAIN || undefined,
       httpOnly: true,
-      path: '/',
+      path: "/",
     },
   },
 } as unknown as Parameters<typeof betterAuth>[0]);

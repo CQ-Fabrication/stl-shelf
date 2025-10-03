@@ -1,251 +1,214 @@
-# STL Shelf — Product Requirements Document (PRD) — v0.2 (MVP)
+# STL Shelf — Product Requirements Document (PRD) — v1.0
 
-**Status:** Draft  
-**Owner:** Product  
-**Last updated:** 2025-08-26  
+**Status:** Active
+**Owner:** Product
+**Last updated:** 2025-09-16
 
 ---
 
 ## 0) Table of Contents
-1. Overview  
-2. Goals & Non-Goals  
-3. Target Users & Use Cases  
-4. Technical Stack  
-4.1 Setup & Configuration  
-5. Functional Requirements (MVP)  
-6. Extended Features (MVP+)  
-7. Non-Functional Requirements  
-8. Analytics & Success Metrics  
-9. Roadmap & Milestones  
-10. Out of Scope  
-11. Architecture Diagram  
+
+1. Overview
+2. Goals & Non-Goals
+3. Target Users & Use Cases
+4. Technical Stack
+4.1 Platform Components
+4.2 Deployment & Operations
+5. Functional Requirements
+5.1 TODO — Metadata Model
+6. Extended Features & Differentiators
+7. Non-Functional Requirements
+8. Analytics & Success Metrics
+9. Roadmap & Milestones
+10. Out of Scope
+11. Architecture Diagram
 
 ---
 
 ## 1) Overview
-**What.**  
-Self-hosted application for managing a personal library of 3D printable models (**STL, 3MF, OBJ**).  
-The app organizes models by version, extracts metadata, and provides a lightweight 3D preview. All data lives on the filesystem, fully **Git-versioned**, with optional GitHub sync for backup/fallback.  
 
-**Why.**  
-Existing tools (e.g., Manyfold) are either too heavy, DB-dependent, or visually outdated. The goal is a **simple, elegant, versionable shelf** that lives in Git, runs in Docker, and feels modern.  
+**What.**
+STL Shelf is an open-source, multi-tenant platform for organizing 3D-printable assets (STL, 3MF, G-code, sliced archives). It provides a web UI and API for organizations to curate models, manage print-ready versions, and share them across teams. The system persists structured metadata in PostgreSQL, stores binaries in Cloudflare R2 or other S3-compatible object storage, and uses Redis-backed caches for responsive browsing.
+
+**Why.**
+3D printing teams outgrow ad-hoc folders and legacy desktop tools. They need a modern, auditable library that scales beyond a single workstation, supports collaboration, and integrates with existing pipelines. STL Shelf offers a production-ready shelf that is still self-hostable via Docker Compose, while remaining deployable to managed infrastructure.
 
 ---
 
 ## 2) Goals & Non-Goals
+
 **Goals**
-- Lightweight, **filesystem-based** model library.  
-- **Versioning** of models via Git (LFS for large binaries).  
-- Easy **preview & browsing** in browser.  
-- **Drag & drop** upload/update.  
-- Metadata support (`meta.json` / `meta.yml`) for search and filtering.  
-- Self-hosted via Docker, accessible in LAN.  
+
+- Deliver a scalable library for organizations with role-aware access control.
+- Provide reliable storage for both raw models and sliced files using R2/MinIO.
+- Offer quick catalog navigation through indexed search.
+- Support API-first workflows for CI ingestion and external automations.
+- Ensure the project remains open source and self-hostable with a single Compose stack.
 
 **Non-Goals**
-- No full user management (MVP is single-user).  
-- No slicing/printing queue management (not a Print Farm tool).  
-- No online marketplace/sharing platform.  
+
+- No print farm orchestration (queues, live printer control).
+- No public marketplace functionality (licensing, payment flows).
+- No parametric modelling or CAD editing inside the platform.
 
 ---
 
 ## 3) Target Users & Use Cases
+
 **Users**
-- Makers & 3D printing enthusiasts with a growing personal library.  
-- Designers needing a private, versioned archive of models.  
-- Hobbyists wanting a LAN-accessible gallery of models.  
+
+- Makerspaces and print farms needing a central, multi-user catalog.
+- Product and hardware teams coordinating prototype revisions.
+- Agencies managing deliverables for multiple clients in separate orgs.
+- Individual makers who still want a self-hosted, versioned shelf.
 
 **Use Cases**
-- Upload and track multiple versions of a part.  
-- Browse models visually via thumbnails and 3D viewer.  
-- Retrieve older versions for re-printing.  
-- Store slicer metadata (time, material, weight) alongside files.  
+
+- Upload a new revision of a part and mark it as the published version.
+- Attach sliced G-code and manufacturing notes per printer profile.
+- Tag models for campaigns or client projects to support filtered browsing.
+- Invite collaborators and manage organization-level permissions.
+- Integrate CI pipelines that push verified artifacts into STL Shelf.
 
 ---
 
 ## 4) Technical Stack
-- **Backend:** [Hono](https://hono.dev/) + oRPC (typed API).  
-- **Frontend:** [TanStack](https://tanstack.com/) (Query, Router, Table).  
-- **Database:** Filesystem (models + `meta.json`).  
-- **Client persistence:** TanStackDB (local cache).  
-- **Versioning:** GitHub (primary) + optional secondary Git remote for fallback.  
-- **Packaging:** Docker container built on **Bun** (`oven/bun:alpine`), not Node.  
-  - Bun used as runtime + package manager for faster installs and lighter image.  
+
+- **Backend:** Bun runtime with Hono + oRPC for type-safe HTTP APIs, deployed to Cloudflare Workers (managed) or Bun server (self-host).
+- **Database:** PostgreSQL managed through Drizzle ORM migrations.
+- **Object Storage:** MinIO (self-host) or Cloudflare R2 (managed) for models, slices, and thumbnails.
+- **Frontend:** React 19 + TanStack Router/Query, TailwindCSS v4, shadcn/ui delivered via the same Cloudflare Worker bundle or standalone web host.
+- **Auth:** BetterAuth with passwordless login, and organization membership.
+- **Background Work:** Bun workers for file processing, metadata extraction, and cache invalidation.
+
+### 4.1 Platform Components
+
+- **API Server (`apps/server`):** Handles auth, organization context, uploads, notifications, and presigned URLs for storage. Ships as a Bun server (Docker) or Cloudflare Worker entrypoint.
+- **Web Client (`apps/web`):** Responsive dashboard for browsing, filtering, and managing models and organizations. Bundled with the API Cloudflare Worker or served separately when self-hosting.
+- **Storage Buckets:** Dedicated buckets for originals, thumbnails/renders, and temporary uploads.
+- **Observability:** Structured logging, monitor instrumentation hooks, and health endpoints for readiness probes.
+
+### 4.2 Deployment & Operations
+
+- Distributed as an open-source project with first-class Docker Compose support (API + Postgres + MinIO).
+- Supports managed deployments on Cloudflare Workers (single worker hosting API + web) and other platforms (Kubernetes, Fly, Render) using the same container images and env contract.
+- Environment variables defined via `apps/server/.env.example` and `apps/web/.env.example`; secrets injected through standard tooling (Docker secrets, Vault).
+- Migrations run via `bun run -F server db:migrate`; assets buckets must exist prior to boot.
+- Backups handled with Postgres logical dumps and MinIO/R2 lifecycle policies; document recommended retention in ops guides.
 
 ---
 
-## 4.1) Setup & Configuration
-**Directory binding**  
-- On container start, the user mounts a **host directory** into `/data`.  
-- This directory becomes the **root library** for all models.  
-- Example Docker Compose:  
-  ```yaml
-  services:
-    stl-shelf:
-      image: stl-shelf:latest
-      ports: ["8080:3000"]
-      volumes:
-        - /Users/you/3d-models:/data   # host path → container path
-  ```
+## 5) Functional Requirements
 
-**Config file (optional)**  
-- A `config.yml` inside `/data` stores additional preferences:  
-  ```yaml
-  repo_name: "My 3D Models"
-  default_tags: ["draft", "PLA"]
-  preview_size: 400
-  git_remote: "git@github.com:user/models.git"
-  ```
+- **Authentication & Organizations**
+  - Users sign in via email.
+  - Organization owners manage members, roles (owner/admin/member), and invitations.
+  - All API requests operate in the context of an active organization; tenant isolation is enforced at the DB layers.
+- **Model Catalog**
+  - Create models with slug, name, description, visibility (private/internal).
+  - Maintain version history; each version references uploaded files and notes.
+  - Promote a version to "current" to surface in listings and ensure download links.
+  - Soft delete and restore models or versions with audit tracking.
+- **File Handling**
+  - Upload flows use presigned URLs to stream files directly to object storage.
+  - Background workers generate thumbnails, extract geometry stats, and parse slicer info when available.
+  - Support storing STL, 3MF, OBJ, and sliced outputs (G-code, `.3mf` project archives, zipped slices).
+  - Provide signed download URLs and optional ZIP packaging for multi-file versions.
+- **Tagging & Classification**
+  - Global (per-org) tag registry with optional tag types and colors.
+  - Assign tags at model or version level; usage counts tracked for analytics.
+  - Filter catalog by tag, owner, updated date, or media type.
+- **Search & Browsing**
+  - List views with pagination, quick search, and cached cover images.
+  - Detail page with 3D preview (React Three Fiber) when asset supports it.
+  - Recently updated and starred sections for quick access.
+- **API & Integrations**
+  - API endpoints (oRPC) for CRUD on models, versions, files, and tags.
+  - Webhooks/event streams for ingestion pipelines (model published, version archived).
+  - CLI scaffolding (future) uses the same API tokens for automation.
 
-**Principles**
-- **Separation of concerns:** all files & metadata live in mounted directory, never in container.  
-- **Portability:** moving the library = moving one folder.  
-- **Transparency:** user always knows where files are stored (no hidden DB).  
+### 5.1 TODO — Metadata Model
 
----
-
-## 5) Functional Requirements (MVP)
-- **File Upload & Versioning**
-  - Upload via drag & drop.  
-  - Each upload creates a new **version folder** (`v1, v2...`) under model directory.  
-  - Old versions remain accessible.  
-- **3D Preview**
-  - STL/OBJ/3MF preview in browser via `react-three-fiber` + `three.js`.  
-  - Orbit controls, grid helper.  
-- **Metadata**
-  - `meta.json` per model/version: name, tags, notes, printer/material info.  
-  - Auto-extract bounding box (size in mm).  
-- **Indexing**
-  - Background scan generates `index.json` for faster load/search.  
-- **Browsing**
-  - Grid/list view of models with preview thumbnails.  
-  - Search/filter by name, tags.  
-- **Storage**
-  - All files on FS. Git LFS tracks binaries.  
+We still need to finalize the advanced metadata taxonomy (printer capabilities, quality gates, compliance flags).
+**TODO:** Define the normalized schema, validation rules, and UI presentation for extended metadata before we ship analytics tied to it.
 
 ---
 
-## 6) Extended Features (MVP+)
-- **Thumbnails:** Auto-generate `.png` preview at upload.  
-- **Tagging System:** Free-form tags in metadata for quick filtering.  
-- **Slicer Metadata Extraction:** Parse `.3mf` (Bambu Studio/PrusaSlicer) for:  
-  - Layer height, material, estimated print time, weight.  
-- **Diff View:** Compare metadata/dimensions between versions.  
-- **Public Read-only Mode:** Share library in LAN without write access.  
-- **Notes/Markdown:** Per-version notes about printing results.  
-- **Export/Backup:** Zip export with models + metadata.  
+## 6) Extended Features & Differentiators
+
+- Automated slicer metadata parsing (Bambu, PrusaSlicer, Orca) with validation reports.
+- Org-level analytics dashboards (print hours saved, tag distribution, top downloaded assets).
+- Bulk operations (CSV import/export, mass retagging, mass archive).
+- Offline sync tooling for studios needing on-site mirrors.
+- Optional CDN integration for edge delivery of large binaries.
 
 ---
 
 ## 7) Non-Functional Requirements
-- **Performance:**  
-  - Index large libraries (>1k models) under 3s.  
-  - STL preview load <2s for typical 10–20MB file.  
-- **Portability:** Single Docker container, minimal config.  
-- **Security:** Private by default. LAN access only; optional reverse proxy with TLS + basic auth for remote.  
-- **Resilience:** All data safe in Git; app should not corrupt FS.  
+
+- **Performance:**
+  - < 400 ms p95 API latency for catalog list endpoints.
+  - Background processing completes thumbnail + metadata extraction within 2 minutes for typical uploads (<200 MB).
+- **Scalability:**
+  - Support at least 100 organizations, each with >10k assets and 1 TB of storage.
+  - Redis cache hit rate above 80% for list endpoints.
+- **Reliability:**
+  - 99.5% uptime target for API/web when deployed with HA Postgres/Redis.
+  - Durable storage guaranteed through R2/MinIO replication policies.
+- **Security & Compliance:**
+  - Organization isolation enforced in DB queries and presigned URL scopes.
+  - Audit logs for critical actions (uploads, deletes, role changes).
+  - Support custom domain + TLS termination via reverse proxy.
+- **Operability:**
+  - Health, readiness, and metrics endpoints for orchestrators.
+  - Structured logs with request IDs for correlation.
 
 ---
 
 ## 8) Analytics & Success Metrics
-- Library load time < 3s.  
-- Upload → available for browsing < 5s.  
-- Git commit success rate 100% (no orphaned files).  
-- User satisfaction measured by simplicity: “faster and easier than file explorer.”  
 
----
-
-## 9) Roadmap & Milestones
-**Milestone 1 — MVP (4–6 weeks)**  
-- File upload (drag & drop).  
-- Git versioning (commit on upload).  
-- Metadata (`meta.json`), bounding box calc.  
-- Preview 3D viewer.  
-- Search/filter (basic).  
-- Docker packaging with Bun.  
-
-**Milestone 2 — MVP+ (6–10 weeks)**  
-- Thumbnail generation.  
-- Tagging system.  
-- Slicer metadata extraction.  
-- Diff view of versions.  
-- Read-only mode.  
-
-**Milestone 3 — Future (Post-MVP)**  
-- Multi-user access with auth.  
-- Advanced visualization (overlay diff).  
-- Cloud sync options (e.g., S3, R2).  
+- Active organizations per week and member growth.
+- Model publish-to-download conversion rate.
+- Median time from upload to processed/preview-ready.
+- Support queue response time (self-host issue triage once OSS community grows).
 
 ---
 
 ## 10) Out of Scope
-- Print queue management / OctoPrint integration.  
-- Marketplace for model sharing.  
-- Real-time collaboration.  
+
+- Direct printer control or job queue management.
+- In-browser CAD or mesh editing beyond preview transformations.
+- Payment processing, licensing enforcement, or public marketplace listings.
 
 ---
 
 ## 11) Architecture Diagram
 
 ### Mermaid
+
 ```mermaid
 flowchart LR
-  subgraph Host[Mac mini (Host)]
-    subgraph FS[/Host Filesystem/]
-      M[/ /Users/you/3d-models (mounted) /]
-      C[/ /Users/you/stl-shelf-config (optional) /]
-    end
-    subgraph Docker[Docker]
-      App[STL Shelf Container\n(Hono + oRPC · Bun Runtime)]
-      App ---|bind mount| M
-      App ---|read config| C
-    end
+  subgraph Deploy[Docker Compose / Managed Cluster]
+    API[(Bun + Hono API · Cloudflare Workers)]
+    Workers[Background Workers]
+    DB[(PostgreSQL)]
+    Storage[(MinIO / R2)]
+    API --> DB
+    API --> Storage
+    Workers --> DB
+    Workers --> Storage
   end
 
-  subgraph Client[Browser (LAN)]
-    UI[Frontend (TanStack)\nViewer (three.js)]
+  subgraph Web[Browser Clients]
+    UI[React Web App]
   end
 
-  subgraph Git[Git Remotes]
-    GH[(GitHub Remote)]
-    G2[(Secondary Remote · optional)]
+  subgraph Integrations[Integrations]
+    CI[CI/CD Pipelines]
+    Webhooks[Webhook Subscribers]
   end
 
-  UI <-->|HTTP :3000 (exposed as :8080)| App
-  App <-.git push/pull (LFS).-> GH
-  App <-.optional fallback.-> G2
-```
-
-### ASCII (portable)
-```
-+--------------------- Mac mini (Host) ----------------------+
-|                                                            |
-|  /Users/you/3d-models      /Users/you/stl-shelf-config     |
-|       (mounted)                    (optional)               |
-|           |                           |                     |
-|           | bind-mount                | read config         |
-|           v                           v                     |
-|      +---------------- Docker --------------------+        |
-|      |  STL Shelf Container                       |        |
-|      |  - Hono + oRPC (Backend API)               |        |
-|      |  - Bun runtime (server & package manager)  |        |
-|      |  - Serves frontend (TanStack)              |        |
-|      +------------------:3000 --------------------+        |
-|                         ^                                  |
-+-------------------------|----------------------------------+
-                          |
-                    expose as :8080 (LAN)
-                          |
-                    +-----v-------------------+
-                    |   Browser (Client)      |
-                    | - TanStack UI           |
-                    | - 3D Viewer (three.js)  |
-                    +-------------------------+
-
-                     . . . Git operations . . .
-                      push/pull (Git LFS)
-                          /           \
-                    +----v----+    +---v----+
-                    | GitHub  |    | Remote |
-                    |  Remote |    |  #2    |
-                    +---------+    +--------+
+  UI <-->|HTTPS :443| API
+  CI -->|Ingestion API| API
+  API -->|Events| Webhooks
 ```

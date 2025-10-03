@@ -1,81 +1,41 @@
-import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import {
-  parseAsArrayOf,
-  parseAsInteger,
-  parseAsString,
-  parseAsStringLiteral,
-  useQueryState,
-} from 'nuqs';
-import { orpc } from '@/utils/orpc';
-import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
-import { ModelCard } from './model-card';
-
-const SKELETON_COUNT = 8;
-const PAGINATION_DISPLAY_COUNT = 5;
-const PAGINATION_EDGE_THRESHOLD = 3;
-const PAGINATION_EDGE_OFFSET = 2;
+import { Loader2 } from "lucide-react";
+import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
+import { useEffect } from "react";
+import { useInView } from "react-intersection-observer";
+import { useInfiniteModels } from "@/hooks/use-infinite-models";
+import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
+import { EmptyState } from "./empty-state";
+import { LoadingSkeleton } from "./loading-skeleton";
+import { ModelCard } from "./model-card";
 
 export function ModelGrid() {
-  const [search] = useQueryState('q', parseAsString.withDefault(''));
+  const [search] = useQueryState("q", parseAsString.withDefault(""));
   const [tags] = useQueryState(
-    'tags',
-    parseAsArrayOf(parseAsString, ',').withDefault([])
-  );
-  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
-  const [sortBy, setSortBy] = useQueryState(
-    'sortBy',
-    parseAsStringLiteral([
-      'name',
-      'createdAt',
-      'updatedAt',
-      'size',
-    ]).withDefault('updatedAt')
-  );
-  const [sortOrder, setSortOrder] = useQueryState(
-    'sortOrder',
-    parseAsStringLiteral(['asc', 'desc']).withDefault('desc')
+    "tags",
+    parseAsArrayOf(parseAsString, ",").withDefault([])
   );
 
-  // Direct useQuery call
   const {
-    data: modelsData,
+    models,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
     isLoading,
+    isFetching,
     error,
-  } = useQuery(
-    orpc.listModels.queryOptions({
-      input: {
-        page,
-        limit: 12,
-        search: search || undefined,
-        tags: tags.length > 0 ? tags : undefined,
-        sortBy,
-        sortOrder,
-      },
-    })
-  );
+  } = useInfiniteModels({ search, tags });
 
-  const handleSortChange = (
-    newSortBy: typeof sortBy,
-    newSortOrder: typeof sortOrder
-  ) => {
-    setSortBy(newSortBy);
-    setSortOrder(newSortOrder);
-    if (page !== 1) {
-      setPage(1);
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: "100px",
+  });
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const clearFilters = () => {
-    // Clear pagination when filters change - filters are managed by parent
-    setPage(1);
-  };
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (error) {
     return (
@@ -86,165 +46,47 @@ export function ModelGrid() {
     );
   }
 
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (models.length === 0) {
+    const hasFilters = Boolean(search || tags.length > 0);
+    return <EmptyState hasFilters={hasFilters} />;
+  }
+
   return (
     <div className="space-y-6">
-      {/* Sort controls */}
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">Sort by:</span>
-        <div className="flex gap-1">
-          {(
-            [
-              { key: 'updatedAt', label: 'Recently Updated' },
-              { key: 'createdAt', label: 'Recently Created' },
-              { key: 'name', label: 'Name' },
-              { key: 'size', label: 'Size' },
-            ] as const
-          ).map(({ key, label }) => (
-            <Button
-              key={key}
-              onClick={() =>
-                handleSortChange(
-                  key,
-                  sortBy === key && sortOrder === 'desc' ? 'asc' : 'desc'
-                )
-              }
-              size="sm"
-              variant={sortBy === key ? 'default' : 'ghost'}
-            >
-              {label}
-              {sortBy === key && (
-                <span className="ml-1">{sortOrder === 'desc' ? '↓' : '↑'}</span>
-              )}
-            </Button>
-          ))}
-        </div>
+      <div
+        className={cn(
+          "text-muted-foreground text-sm transition-opacity duration-200",
+          isFetching && "opacity-50"
+        )}
+      >
+        Showing {models.length} model{models.length !== 1 ? "s" : ""}
+        {isFetching && (
+          <span className="ml-2 text-muted-foreground">• Updating...</span>
+        )}
       </div>
 
-      {/* Results summary */}
-      {modelsData && (
-        <div className="text-muted-foreground text-sm">
-          Showing{' '}
-          {(modelsData.pagination.page - 1) * modelsData.pagination.limit + 1}-
-          {Math.min(
-            modelsData.pagination.page * modelsData.pagination.limit,
-            modelsData.pagination.total
-          )}{' '}
-          of {modelsData.pagination.total} models
-        </div>
-      )}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {models.map((model) => (
+          <ModelCard key={model.id} model={model} />
+        ))}
+      </div>
 
-      {/* Models grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {Array.from({ length: SKELETON_COUNT }, (_, i) => (
-            <div className="space-y-4" key={`skeleton-${i}`}>
-              <Skeleton className="aspect-video rounded-lg" />
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <div className="flex gap-2">
-                  <Skeleton className="h-6 w-12" />
-                  <Skeleton className="h-6 w-16" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : modelsData?.models.length === 0 ? (
-        <div className="py-12 text-center">
-          <div className="mb-4 text-muted-foreground">No models found</div>
-          {search || tags.length > 0 ? (
-            <div className="space-y-2">
-              <div className="text-muted-foreground text-sm">
-                Try adjusting your search or filters
-              </div>
-              <Button onClick={clearFilters} variant="outline">
-                Clear Filters
-              </Button>
+      {hasNextPage && (
+        <div className="mt-8 flex justify-center" ref={loadMoreRef}>
+          {isFetchingNextPage ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Loading more models...</span>
             </div>
           ) : (
-            <div className="text-center">
-              <div className="text-muted-foreground">
-                No models found. Upload your first model using the button above.
-              </div>
-            </div>
+            <Button onClick={() => fetchNextPage()} size="lg" variant="outline">
+              Load More
+            </Button>
           )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {modelsData?.models.map((model) => (
-            <ModelCard key={model.id} model={model} />
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {modelsData && modelsData.pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-6">
-          <Button
-            disabled={page === 1}
-            onClick={() => handlePageChange(page - 1)}
-            size="sm"
-            variant="outline"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
-
-          <div className="flex gap-1">
-            {Array.from(
-              {
-                length: Math.min(
-                  PAGINATION_DISPLAY_COUNT,
-                  modelsData.pagination.totalPages
-                ),
-              },
-              (_, i) => {
-                const pageIndex = i + 1;
-                let displayPage = pageIndex;
-
-                if (
-                  modelsData.pagination.totalPages > PAGINATION_DISPLAY_COUNT
-                ) {
-                  if (page <= PAGINATION_EDGE_THRESHOLD) {
-                    displayPage = pageIndex;
-                  } else if (
-                    page >=
-                    modelsData.pagination.totalPages - PAGINATION_EDGE_OFFSET
-                  ) {
-                    displayPage =
-                      modelsData.pagination.totalPages -
-                      (PAGINATION_DISPLAY_COUNT - 1) +
-                      pageIndex;
-                  } else {
-                    displayPage = page - PAGINATION_EDGE_OFFSET + pageIndex;
-                  }
-                }
-
-                return (
-                  <Button
-                    className="min-w-[40px]"
-                    key={displayPage}
-                    onClick={() => handlePageChange(displayPage)}
-                    size="sm"
-                    variant={page === displayPage ? 'default' : 'outline'}
-                  >
-                    {displayPage}
-                  </Button>
-                );
-              }
-            )}
-          </div>
-
-          <Button
-            disabled={page === modelsData.pagination.totalPages}
-            onClick={() => handlePageChange(page + 1)}
-            size="sm"
-            variant="outline"
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       )}
     </div>

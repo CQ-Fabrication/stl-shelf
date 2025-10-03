@@ -1,7 +1,7 @@
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
-import { db } from '../../db/client';
-import { modelTags, models, tags } from '../../db/schema/models';
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { db } from "../../db/client";
+import { models, modelTags, tags } from "../../db/schema/models";
 
 // Type aliases from Drizzle schema
 type InsertTag = InferInsertModel<typeof tags>;
@@ -15,7 +15,7 @@ type DatabaseInstance = typeof db | any;
 // Clean input types that omit auto-generated fields
 type CreateTagInput = Omit<
   InsertTag,
-  'id' | 'usageCount' | 'createdAt' | 'updatedAt'
+  "id" | "usageCount" | "createdAt" | "updatedAt"
 >;
 
 // Return type for tag queries
@@ -43,23 +43,28 @@ export class TagService {
       .orderBy(desc(tags.usageCount), asc(tags.name));
   }
 
-  async getAllTagsForOrganization(organizationId: string): Promise<string[]> {
-    // Return distinct tag names for models in the organization
+  async getAllTagsForOrganization(organizationId: string): Promise<TagInfo[]> {
+    // Return distinct tags with colors for models in the organization
     const rows = await db
-      .select({ name: tags.name })
+      .select({
+        name: tags.name,
+        color: tags.color,
+        usageCount: tags.usageCount,
+      })
       .from(modelTags)
       .innerJoin(tags, eq(tags.id, modelTags.tagId))
       .innerJoin(models, eq(models.id, modelTags.modelId))
       .where(and(eq(models.organizationId, organizationId)))
-      .groupBy(tags.name)
+      .groupBy(tags.name, tags.color, tags.usageCount)
       .orderBy(asc(tags.name));
-    // dedupe by groupBy, but map as array of strings
-    return rows.map((r) => r.name);
+
+    return rows;
   }
 
   async addTagsToModel(
     modelId: string,
     tagNames: string[],
+    organizationId: string,
     tx?: DatabaseInstance
   ): Promise<void> {
     const dbInstance = tx || db;
@@ -68,21 +73,32 @@ export class TagService {
     for (const tagName of tagNames) {
       await dbInstance
         .insert(tags)
-        .values({ name: tagName })
+        .values({
+          name: tagName,
+          organizationId,
+        })
         .onConflictDoUpdate({
-          target: tags.name,
-          set: { usageCount: sql`${tags.usageCount} + 1` },
+          target: [tags.organizationId, tags.name],
+          set: {
+            usageCount: sql`${tags.usageCount} + 1`,
+            updatedAt: new Date(),
+          },
         });
     }
 
-    // Get tag IDs
+    // Get tag IDs for this organization
     const tagData = await dbInstance
       .select({ id: tags.id, name: tags.name })
       .from(tags)
-      .where(inArray(tags.name, tagNames));
+      .where(
+        and(
+          eq(tags.organizationId, organizationId),
+          inArray(tags.name, tagNames)
+        )
+      );
 
     // Link tags to model
-    const modelTagValues: Omit<InsertModelTag, 'id' | 'createdAt'>[] =
+    const modelTagValues: Omit<InsertModelTag, "id" | "createdAt">[] =
       tagData.map((tag: { id: string; name: string }) => ({
         modelId,
         tagId: tag.id,
@@ -96,14 +112,18 @@ export class TagService {
     }
   }
 
-  async updateModelTags(modelId: string, newTagNames: string[]): Promise<void> {
+  async updateModelTags(
+    modelId: string,
+    newTagNames: string[],
+    organizationId: string
+  ): Promise<void> {
     await db.transaction(async (tx) => {
       // Remove existing tags
       await tx.delete(modelTags).where(eq(modelTags.modelId, modelId));
 
       // Add new tags
       if (newTagNames.length > 0) {
-        await this.addTagsToModel(modelId, newTagNames, tx);
+        await this.addTagsToModel(modelId, newTagNames, organizationId, tx);
       }
     });
   }
@@ -129,7 +149,7 @@ export class TagService {
       await db
         .delete(modelTags)
         .where(
-          sql`${modelTags.modelId} = ${modelId} AND ${modelTags.tagId} IN (${tagIds.join(',')})`
+          and(eq(modelTags.modelId, modelId), inArray(modelTags.tagId, tagIds))
         );
 
       // Decrease usage count
@@ -158,7 +178,7 @@ export class TagService {
     const [newTag] = await db.insert(tags).values(data).returning();
 
     if (!newTag) {
-      throw new Error('Failed to create tag');
+      throw new Error("Failed to create tag");
     }
 
     return newTag;

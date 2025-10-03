@@ -1,40 +1,48 @@
-import { Grid, OrbitControls } from '@react-three/drei';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-import { Eye, EyeOff, Grid3X3, Pause, Play, RotateCcw } from 'lucide-react';
-import { Suspense, useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-import { STLLoader } from 'three/addons/loaders/STLLoader.js';
-import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
+import { OrbitControls } from "@react-three/drei";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { RotateCcw } from "lucide-react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { type BufferGeometry, DoubleSide, type Mesh, Vector3 } from "three";
+import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
+import { STLLoader } from "three/addons/loaders/STLLoader.js";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { useTheme } from "../theme-provider";
+import { Button } from "../ui/button";
+import { Skeleton } from "../ui/skeleton";
 
 type STLViewerProps = {
   modelId: string;
   version: string;
   filename: string;
   className?: string;
+  url: string; // Presigned URL from server
 };
 
 type ModelMeshProps = {
   url: string;
   filename: string;
   autoRotate: boolean;
+  color: string;
 };
 
-function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const extension = filename.split('.').pop()?.toLowerCase();
+function ModelMesh({ url, filename, autoRotate, color }: ModelMeshProps) {
+  const meshRef = useRef<Mesh>(null);
+  const extension = filename.split(".").pop()?.toLowerCase();
 
-  // Load geometry based on file type - useLoader handles errors internally
-  let geometry;
-  if (extension === 'stl') {
-    geometry = useLoader(STLLoader, url);
-  } else if (extension === 'obj') {
-    const object = useLoader(OBJLoader, url);
+  // Always call both loaders to satisfy React hooks rules
+  const stlGeometry = useLoader(STLLoader, url);
+  const objObject = useLoader(OBJLoader, url);
+
+  // Select the appropriate geometry based on file extension
+  let geometry: BufferGeometry | undefined;
+  if (extension === "stl") {
+    geometry = stlGeometry;
+  } else if (extension === "obj") {
     // Extract geometry from the first mesh in the OBJ
-    geometry = object.children[0]?.geometry;
-  } else {
-    return null;
+    const firstChild = objObject.children[0];
+    if (firstChild && "geometry" in firstChild) {
+      geometry = (firstChild as Mesh).geometry;
+    }
   }
 
   // Auto-rotate the model (only if enabled)
@@ -44,11 +52,7 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
     }
   });
 
-  if (!geometry) {
-    return null;
-  }
-
-  // Prepare geometry
+  // Prepare geometry - always call useEffect
   useEffect(() => {
     if (geometry) {
       geometry.center();
@@ -57,13 +61,17 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
     }
   }, [geometry]);
 
+  if (!geometry) {
+    return null;
+  }
+
   // Center and scale the geometry
   const boundingBox = geometry.boundingBox;
   if (!boundingBox) {
     geometry.computeBoundingBox();
   }
 
-  const size = new THREE.Vector3();
+  const size = new Vector3();
   geometry.boundingBox?.getSize(size);
   const maxDimension = Math.max(size.x, size.y, size.z);
   const scale = maxDimension > 0 ? 2 / maxDimension : 1; // Scale to fit in a 2-unit cube
@@ -71,10 +79,10 @@ function ModelMesh({ url, filename, autoRotate }: ModelMeshProps) {
   return (
     <mesh geometry={geometry} ref={meshRef} scale={[scale, scale, scale]}>
       <meshPhongMaterial
-        color="#e5e7eb"
+        color={color}
         opacity={0.9}
         shininess={100}
-        side={THREE.DoubleSide}
+        side={DoubleSide}
         transparent
       />
     </mesh>
@@ -93,25 +101,6 @@ function ViewerControls({ onResetCamera }: { onResetCamera: () => void }) {
       >
         <RotateCcw className="h-4 w-4" />
       </Button>
-    </div>
-  );
-}
-
-function ModelInfo({
-  filename,
-  modelId,
-  version,
-}: {
-  filename: string;
-  modelId: string;
-  version: string;
-}) {
-  return (
-    <div className="absolute bottom-4 left-4 rounded-md bg-background/80 px-3 py-2 text-sm backdrop-blur-sm">
-      <div className="font-medium">{filename}</div>
-      <div className="text-muted-foreground">
-        {modelId} • {version}
-      </div>
     </div>
   );
 }
@@ -142,32 +131,25 @@ export function STLViewer({
   modelId,
   version,
   filename,
-  className = '',
+  className = "",
+  url,
 }: STLViewerProps) {
-  const controlsRef = useRef<any>(null);
-  const [showGrid, setShowGrid] = useState(false);
-  const [showWireframe, setShowWireframe] = useState(false);
-  const [autoRotate, setAutoRotate] = useState(false); // Start with auto-rotation off
+  const controlsRef = useRef<OrbitControlsImpl>(null);
   const [error, _setError] = useState<Error | null>(null);
+  const { theme } = useTheme();
 
-  const modelUrl = `${import.meta.env.VITE_SERVER_URL}/files/${modelId}/${version}/${filename}`;
+  // Use the presigned URL from server
+  const modelUrl = url;
+
+  // Theme-aware colors
+  const isDark = theme === "dark";
+  const modelColor = isDark ? "#9ca3af" : "#e5e7eb"; // gray-400 : gray-200
+  const canvasBackground = isDark ? "#0a0a0a" : "#fafafa";
 
   const handleResetCamera = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
     }
-  };
-
-  const handleToggleGrid = () => {
-    setShowGrid((prev) => !prev);
-  };
-
-  const handleToggleWireframe = () => {
-    setShowWireframe((prev) => !prev);
-  };
-
-  const handleToggleAutoRotate = () => {
-    setAutoRotate((prev) => !prev);
   };
 
   if (error) {
@@ -187,7 +169,7 @@ export function STLViewer({
           near: 0.1,
           far: 1000,
         }}
-        style={{ background: '#fafafa' }}
+        style={{ background: canvasBackground }}
       >
         {/* Lighting */}
         <ambientLight intensity={0.4} />
@@ -199,19 +181,6 @@ export function STLViewer({
           shadow-mapSize-width={1024}
         />
         <directionalLight intensity={0.3} position={[-10, -10, -5]} />
-
-        {/* Grid */}
-        {showGrid && (
-          <Grid
-            args={[10, 10]}
-            cellSize={0.5}
-            cellThickness={0.5}
-            fadeDistance={25}
-            fadeStrength={1}
-            sectionSize={2}
-            sectionThickness={1}
-          />
-        )}
 
         {/* Controls */}
         <OrbitControls
@@ -228,7 +197,8 @@ export function STLViewer({
         {/* Model */}
         <Suspense fallback={null}>
           <ModelMesh
-            autoRotate={autoRotate}
+            autoRotate={false}
+            color={modelColor}
             filename={filename}
             url={modelUrl}
           />
@@ -237,9 +207,6 @@ export function STLViewer({
 
       {/* Overlay controls */}
       <ViewerControls onResetCamera={handleResetCamera} />
-
-      {/* Model info */}
-      <ModelInfo filename={filename} modelId={modelId} version={version} />
     </div>
   );
 }

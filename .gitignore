@@ -7,3 +7,6 @@ assets/*.stl
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Ngrok
+.ngrok-url

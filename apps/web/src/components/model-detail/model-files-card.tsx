@@ -1,28 +1,31 @@
-import { Download, FileText } from 'lucide-react';
-import type { ModelVersion } from '../../../../server/src/types/model';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Download, FileText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { formatFileSize } from '@/utils/formatters';
+} from "@/components/ui/card";
+import { formatFileSize } from "@/utils/formatters";
+import type { ModelVersion } from "../../../../server/src/types/model";
 
 type ModelFilesCardProps = {
   version: ModelVersion;
   onDownloadFile: (filename: string) => void;
 };
 
-export const ModelFilesCard = ({ version, onDownloadFile }: ModelFilesCardProps) => {
+export const ModelFilesCard = ({
+  version,
+  onDownloadFile,
+}: ModelFilesCardProps) => {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Files ({version.version})</CardTitle>
         <CardDescription>
-          {version.files.length} file{version.files.length !== 1 ? 's' : ''}
+          {version.files.length} file{version.files.length !== 1 ? "s" : ""}
         </CardDescription>
       </CardHeader>
       <CardContent>

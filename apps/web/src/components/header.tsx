@@ -1,19 +1,28 @@
-import { Link, useRouter } from '@tanstack/react-router';
+import { UserAvatar } from "@daveyplate/better-auth-ui";
+import { Link, useRouter } from "@tanstack/react-router";
 import {
   Building2,
   Check,
-  Laptop,
+  CreditCard,
   LogOut,
-  Moon,
   Plus,
-  Sun,
+  Settings,
   User,
-} from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import type { RouterAppContext } from '@/routes/__root';
-import { Logo } from './logo';
-import { useTheme } from './theme-provider';
+  Users,
+} from "lucide-react";
+import { lazy, Suspense, useState } from "react";
+import { toast } from "sonner";
+import type { RouterAppContext } from "@/routes/__root";
+import { uploadModalActions } from "@/stores/upload-modal.store";
+import { Logo } from "./logo";
+import { AnimatedThemeToggler } from "./ui/animated-theme-toggler";
+
+const UploadModal = lazy(() =>
+  import("./models/upload-modal/upload-modal").then((mod) => ({
+    default: mod.UploadModal,
+  }))
+);
+
 import {
   AlertDialog,
   AlertDialogContent,
@@ -21,8 +30,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from './ui/alert-dialog';
-import { Button } from './ui/button';
+} from "./ui/alert-dialog";
+import { Button } from "./ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,16 +42,17 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+} from "./ui/dropdown-menu";
 
 export default function Header() {
   const router = useRouter();
   const { auth } = router.options.context as RouterAppContext;
-  const { setTheme } = useTheme();
 
   const [showLimitAlert, setShowLimitAlert] = useState(false);
 
-  const { data: organizations, isPending: isLoadingOrgs } = auth.useListOrganizations();
+  const { data: session } = auth.useSession();
+  const { data: organizations, isPending: isLoadingOrgs } =
+    auth.useListOrganizations();
   const { data: activeOrg } = auth.useActiveOrganization();
 
   async function switchOrganization(orgId: string) {
@@ -54,8 +64,8 @@ export default function Header() {
         await router.invalidate();
       }
     } catch (error) {
-      console.error('Failed to switch organization:', error);
-      toast.error('Failed to switch organization');
+      console.error("Failed to switch organization:", error);
+      toast.error("Failed to switch organization");
     }
   }
 
@@ -75,21 +85,37 @@ export default function Header() {
         <div className="flex items-center gap-2">
           {/* Upload button - Only show if user has organizations */}
           {hasOrganizations && (
-            <Button asChild size="sm">
-              <Link to="/upload">
-                <Plus className="mr-2 h-4 w-4" />
-                Upload
-              </Link>
+            <Button
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              onClick={() => uploadModalActions.openModal()}
+              size="sm"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Upload
             </Button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button aria-label="User menu" size="icon" variant="outline">
-                <User className="h-[1.2rem] w-[1.2rem]" />
+                {session?.user ? (
+                  <UserAvatar
+                    className="h-[1.2rem] w-[1.2rem]"
+                    user={session.user}
+                  />
+                ) : (
+                  <User className="h-[1.2rem] w-[1.2rem]" />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Account</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link to="/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               {/* Organization Submenu - Only show if user has organizations */}
               {!isLoadingOrgs && hasOrganizations && activeOrg && (
                 <>
@@ -117,7 +143,7 @@ export default function Header() {
                         const isActive = org.id === activeOrg.id;
                         return (
                           <DropdownMenuItem
-                            className={isActive ? 'bg-accent' : ''}
+                            className={isActive ? "bg-accent" : ""}
                             disabled={isActive}
                             key={org.id}
                             onClick={() =>
@@ -149,6 +175,25 @@ export default function Header() {
                         );
                       })}
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/organization/settings">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/organization/members">
+                          <Users className="mr-2 h-4 w-4" />
+                          Members
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/billing">
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Billing
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleCreateOrganization}>
                         <Plus className="mr-2 h-4 w-4" />
                         Create Organization
@@ -158,22 +203,7 @@ export default function Header() {
                   <DropdownMenuSeparator />
                 </>
               )}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Sun /> Theme
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => setTheme('light')}>
-                    <Sun /> Light
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('dark')}>
-                    <Moon /> Dark
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('system')}>
-                    <Laptop /> System
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+              <AnimatedThemeToggler showLabel />
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={async () => {
@@ -213,6 +243,11 @@ export default function Header() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Upload Modal */}
+      <Suspense fallback={null}>
+        <UploadModal />
+      </Suspense>
     </div>
   );
 }

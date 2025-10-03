@@ -1,218 +1,143 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { AlertCircle, Download, History, Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
-import { useInView } from 'react-intersection-observer';
-import { toast } from 'sonner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useQuery } from "@tanstack/react-query";
+import { History } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { downloadAllFiles } from '@/utils/download';
-import { formatDate } from '@/utils/formatters';
-import { client } from '@/utils/orpc';
-import type { Model } from '../../../../server/src/types/model';
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate } from "@/utils/formatters";
+import { orpc } from "@/utils/orpc";
 
 type ModelVersionHistoryProps = {
-  model: Model;
-  activeVersion: string;
-  onVersionSelect: (version: string) => void;
+  modelId: string;
+  activeVersion?: string;
+  onVersionSelect: (versionId: string) => void;
 };
 
 export const ModelVersionHistory = ({
-  model,
+  modelId,
   activeVersion,
   onVersionSelect,
 }: ModelVersionHistoryProps) => {
-  const LIMIT = 5;
-
   const {
-    data,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
+    data: versions,
     isLoading,
-    isError,
-  } = useInfiniteQuery({
-    queryKey: ['modelVersions', model.id, LIMIT],
-    queryFn: async ({ pageParam = 0, signal }) => {
-      const result = await client.getModelVersions(
-        { modelId: model.id, offset: pageParam, limit: LIMIT },
-        { signal }
-      );
-      return result;
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage?.hasMore) return;
-      const loaded = allPages.reduce(
-        (sum, p) => sum + (p?.versions?.length ?? 0),
-        0
-      );
-      return loaded;
-    },
-  });
+    error,
+  } = useQuery(
+    orpc.models.getModelVersions.queryOptions({ input: { modelId } })
+  );
+  const { data: model } = useQuery(
+    orpc.models.getModel.queryOptions({ input: { id: modelId } })
+  );
 
-  // Flatten all pages into a single array of versions
-  const versions = data?.pages?.flatMap((page) => page.versions ?? []) ?? [];
-  const totalVersions = data?.pages?.[0]?.total ?? model.totalVersions;
-
-  // Setup intersection observer for infinite scroll
-  const { ref: inViewRef, inView } = useInView({
-    threshold: 0,
-    rootMargin: '100px',
-  });
-
-  // Trigger fetch when scrolling near the bottom
-  useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const totalVersions = model?.totalVersions ?? 0;
 
   return (
-    <Card>
+    <Card className="shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <History className="h-5 w-5" />
-          Version History
-        </CardTitle>
-        <CardDescription>
-          {totalVersions} version{totalVersions !== 1 ? 's' : ''}
-        </CardDescription>
+        <div className="flex items-start justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Version History
+          </CardTitle>
+          <CardDescription>
+            {totalVersions} version{totalVersions !== 1 ? "s" : ""}
+          </CardDescription>
+        </div>
       </CardHeader>
       <CardContent>
-        {isError && (
-          <Alert className="mb-4" variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error?.message ?? 'Failed to load version history'}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <ScrollArea aria-label="Version history" className="h-80">
-          <div className="space-y-3 pr-2">
+        <ScrollArea aria-label="Version history" className="h-40">
+          <div className="space-y-3">
             {isLoading && (
-              <div
-                aria-busy="true"
-                className="flex items-center justify-center py-8"
-              >
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="ml-2 text-muted-foreground text-sm">
-                  Loading versions...
-                </span>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    className="flex items-start justify-between rounded border p-3"
+                    key={i}
+                  >
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
-            {!isLoading && versions.length === 0 && (
+            {error && (
+              <div className="py-8 text-center text-muted-foreground text-sm">
+                Failed to load version history
+              </div>
+            )}
+
+            {!(isLoading || error) && versions?.length === 0 && (
               <div className="py-8 text-center text-muted-foreground text-sm">
                 No versions available
               </div>
             )}
 
-            {!isLoading && versions.length > 0 && (
-              <>
-                {versions.map((version, index) => (
-                  <div
-                    className="flex items-start justify-between rounded border p-3"
-                    key={`${version.version}-${index}`}
-                  >
-                    <div className="flex-1">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Badge
-                          variant={
-                            version.version === activeVersion
-                              ? 'default'
-                              : 'outline'
-                          }
-                        >
-                          {version.version}
-                        </Badge>
-                        {version.version === activeVersion && (
-                          <Badge className="text-xs" variant="secondary">
-                            Active
-                          </Badge>
-                        )}
-                        {index === 0 && version.version !== activeVersion && (
-                          <Badge className="text-xs" variant="outline">
-                            Latest
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-muted-foreground text-sm">
-                        {formatDate(version.createdAt)}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => onVersionSelect(version.version)}
-                        size="sm"
+            {!isLoading &&
+              versions &&
+              versions.length > 0 &&
+              versions.map((version, index) => (
+                <div
+                  className={`flex items-start justify-between rounded border p-3 ${
+                    version.id === activeVersion
+                      ? "border-l-4 border-l-brand"
+                      : ""
+                  }`}
+                  key={version.id}
+                >
+                  <div className="flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                      <Badge
                         variant={
-                          version.version === activeVersion
-                            ? 'secondary'
-                            : 'outline'
+                          version.id === activeVersion ? "default" : "outline"
                         }
                       >
-                        {version.version === activeVersion ? 'Viewing' : 'View'}
-                      </Button>
-                      <Button
-                        onClick={async () => {
-                          try {
-                            await downloadAllFiles(
-                              model.id,
-                              version.version,
-                              version.files
-                            );
-                            toast.success('Download started');
-                          } catch {
-                            toast.error('Download failed');
-                          }
-                        }}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Download className="h-3 w-3" />
-                      </Button>
+                        {version.version}
+                      </Badge>
+                      {version.id === activeVersion && (
+                        <Badge className="bg-brand text-brand-foreground text-xs">
+                          Active
+                        </Badge>
+                      )}
+                      {index === 0 && version.id !== activeVersion && (
+                        <Badge className="text-xs" variant="outline">
+                          Latest
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-muted-foreground text-sm">
+                      {formatDate(new Date(version.createdAt))}
                     </div>
                   </div>
-                ))}
-
-                {/* Intersection observer target */}
-                {hasNextPage && (
-                  <div
-                    className="flex items-center justify-center py-4"
-                    ref={inViewRef}
-                  >
-                    {isFetchingNextPage ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="ml-2 text-muted-foreground text-sm">
-                          Loading more...
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">
-                        Scroll for more
-                      </span>
-                    )}
+                  <div className="flex gap-2">
+                    <Button
+                      className={
+                        version.id !== activeVersion ? "hover:text-brand" : ""
+                      }
+                      onClick={() => onVersionSelect(version.id)}
+                      size="sm"
+                      variant={
+                        version.id === activeVersion ? "secondary" : "outline"
+                      }
+                    >
+                      {version.id === activeVersion ? "Viewing" : "View"}
+                    </Button>
                   </div>
-                )}
-
-                {!hasNextPage && versions.length > 0 && (
-                  <div className="py-2 text-center text-muted-foreground text-xs">
-                    All versions loaded
-                  </div>
-                )}
-              </>
-            )}
+                </div>
+              ))}
           </div>
         </ScrollArea>
       </CardContent>

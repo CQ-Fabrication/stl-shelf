@@ -1,5 +1,5 @@
-import { S3Client } from 'bun';
-import { env } from '../env';
+import { S3Client } from "bun";
+import { env } from "../env";
 
 const DEFAULT_LIST_LIMIT = 1000;
 const DEFAULT_EXPIRES_IN_MINUTES = 60;
@@ -39,10 +39,10 @@ export class StorageService {
   }
 
   private getCredentials(bucket: string) {
-    const useSSL = env.STORAGE_USE_SSL === 'true';
+    const useSSL = env.STORAGE_USE_SSL === "true";
     return {
       region: this.region,
-      endpoint: `${useSSL ? 'https' : 'http'}://${this.endpoint}`,
+      endpoint: `${useSSL ? "https" : "http"}://${this.endpoint}`,
       accessKeyId: this.accessKeyId,
       secretAccessKey: this.secretAccessKey,
       bucket,
@@ -51,9 +51,9 @@ export class StorageService {
 
   private async ensureBucketsExist() {
     const buckets = [
-      { name: this.modelsBucket, type: 'models' },
-      { name: this.thumbnailsBucket, type: 'thumbnails' },
-      { name: this.tempBucket, type: 'temp' },
+      { name: this.modelsBucket, type: "models" },
+      { name: this.thumbnailsBucket, type: "thumbnails" },
+      { name: this.tempBucket, type: "temp" },
     ];
 
     const missingBuckets: string[] = [];
@@ -68,7 +68,7 @@ export class StorageService {
     }
 
     if (missingBuckets.length > 0) {
-      const bucketList = missingBuckets.join(', ');
+      const bucketList = missingBuckets.join(", ");
       throw new Error(
         `Missing S3 buckets: ${bucketList}. Please create these buckets via MinIO console or mc CLI before starting the application.`
       );
@@ -112,11 +112,11 @@ export class StorageService {
         key: options.key,
         url: this.getFileUrl(options.key, bucket),
         size,
-        etag: '', // Bun's write() returns number, not object with etag
+        etag: "", // Bun's write() returns number, not object with etag
       };
     } catch (error) {
       throw new Error(
-        `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to upload file: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }
@@ -140,18 +140,18 @@ export class StorageService {
       // Note: Bun's S3Client presign() doesn't support headers
       const uploadUrl = await S3Client.presign(options.key, {
         ...this.getCredentials(bucket),
-        method: 'PUT',
+        method: "PUT",
         expiresIn: expiresIn * 60,
       });
 
       return {
-        uploadUrl: uploadUrl || '',
+        uploadUrl: uploadUrl || "",
         fields: {}, // Bun's presign doesn't use fields like AWS S3 presigned posts
         url: this.getFileUrl(options.key, bucket),
       };
     } catch (error) {
       throw new Error(
-        `Failed to generate upload URL: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to generate upload URL: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }
@@ -167,13 +167,13 @@ export class StorageService {
     try {
       const downloadUrl = await S3Client.presign(key, {
         ...this.getCredentials(bucketName),
-        method: 'GET',
+        method: "GET",
         expiresIn: expiresInMinutes * 60,
       });
-      return downloadUrl || '';
+      return downloadUrl || "";
     } catch (error) {
       throw new Error(
-        `Failed to generate download URL: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to generate download URL: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }
@@ -201,14 +201,14 @@ export class StorageService {
 
       return {
         body,
-        contentType: result.type || 'application/octet-stream',
+        contentType: result.type || "application/octet-stream",
         size: result.size,
         lastModified: new Date(), // Bun's file() doesn't provide lastModified, use stat() for that
         metadata: {}, // Metadata would need to be stored separately or retrieved via stat()
       };
     } catch (error) {
       throw new Error(
-        `Failed to get file: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to get file: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }
@@ -248,13 +248,13 @@ export class StorageService {
       return {
         size: result.size,
         lastModified: new Date(result.lastModified || Date.now()), // Use lastModified instead of mtime
-        contentType: result.type || 'application/octet-stream',
-        etag: result.etag || '',
+        contentType: result.type || "application/octet-stream",
+        etag: result.etag || "",
         metadata: {}, // Metadata not available in Bun's stat(), would need separate storage
       };
     } catch (error) {
       throw new Error(
-        `Failed to get file metadata: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to get file metadata: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }
@@ -267,7 +267,7 @@ export class StorageService {
       await S3Client.delete(key, this.getCredentials(bucketName));
     } catch (error) {
       throw new Error(
-        `Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to delete file: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }
@@ -291,7 +291,7 @@ export class StorageService {
       } catch (err) {
         failed.push({
           key,
-          error: err instanceof Error ? err.message : 'Unknown error',
+          error: err instanceof Error ? err.message : "Unknown error",
         });
       }
     }
@@ -322,7 +322,7 @@ export class StorageService {
     try {
       const result = await S3Client.list(
         {
-          prefix: options.prefix || '',
+          prefix: options.prefix || "",
           maxKeys: options.limit || DEFAULT_LIST_LIMIT,
         },
         this.getCredentials(bucket)
@@ -337,12 +337,12 @@ export class StorageService {
       }
 
       const files = result.map((item) => ({
-        key: item.key || item.name || '',
+        key: item.key || item.name || "",
         size: item.size || 0,
         lastModified: new Date(
           item.lastModified || item.modified || Date.now()
         ),
-        etag: item.etag || '',
+        etag: item.etag || "",
       }));
 
       return {
@@ -352,7 +352,7 @@ export class StorageService {
       };
     } catch (error) {
       throw new Error(
-        `Failed to list files: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to list files: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }
@@ -372,33 +372,55 @@ export class StorageService {
 
   getFileUrl(key: string, bucket?: string): string {
     const bucketName = bucket || this.modelsBucket;
-    const useSSL = env.STORAGE_USE_SSL === 'true';
-    return `${useSSL ? 'https' : 'http'}://${this.endpoint}/${bucketName}/${key}`;
+    const useSSL = env.STORAGE_USE_SSL === "true";
+    return `${useSSL ? "https" : "http"}://${this.endpoint}/${bucketName}/${key}`;
   }
 
   generateStorageKey(options: {
+    organizationId: string;
     modelId: string;
-    version?: string;
+    version: string;
     filename: string;
-    type?: 'model' | 'thumbnail' | 'temp';
+    kind?: "source" | "artifact" | "temp";
   }): string {
-    const { modelId, version, filename, type = 'model' } = options;
+    const {
+      organizationId,
+      modelId,
+      version,
+      filename,
+      kind = "source",
+    } = options;
     const timestamp = Date.now();
 
-    if (type === 'temp') {
+    if (kind === "temp") {
       return `temp/${timestamp}-${filename}`;
     }
 
-    if (version) {
-      return `models/${modelId}/${version}/${filename}`;
+    const root = this.getModelVersionRoot({
+      organizationId,
+      modelId,
+      version,
+    });
+
+    if (kind === "artifact") {
+      return `${root}/artifacts/${filename}`;
     }
 
-    return `models/${modelId}/${filename}`;
+    return `${root}/sources/${filename}`;
+  }
+
+  getModelVersionRoot(options: {
+    organizationId: string;
+    modelId: string;
+    version: string;
+  }): string {
+    const { organizationId, modelId, version } = options;
+    return `${organizationId}/${modelId}/${version}`;
   }
 
   // Health check
   async health(): Promise<{
-    status: 'healthy' | 'unhealthy';
+    status: "healthy" | "unhealthy";
     buckets?: string[];
   }> {
     try {
@@ -409,11 +431,11 @@ export class StorageService {
       );
 
       return {
-        status: 'healthy',
+        status: "healthy",
         buckets: [this.modelsBucket, this.thumbnailsBucket, this.tempBucket],
       };
     } catch {
-      return { status: 'unhealthy' };
+      return { status: "unhealthy" };
     }
   }
 }

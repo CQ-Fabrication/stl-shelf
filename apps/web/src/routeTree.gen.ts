@@ -9,20 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as BillingRouteImport } from './routes/billing'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
+import { Route as OrganizationMembersRouteImport } from './routes/organization/members'
 import { Route as OrganizationCreateRouteImport } from './routes/organization/create'
 import { Route as ModelsModelIdRouteImport } from './routes/models.$modelId'
+import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
 
-const UploadRoute = UploadRouteImport.update({
-  id: '/upload',
-  path: '/upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -31,6 +30,11 @@ const SignupRoute = SignupRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -43,9 +47,24 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BillingRoute = BillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationSettingsRoute = OrganizationSettingsRouteImport.update({
+  id: '/organization/settings',
+  path: '/organization/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationMembersRoute = OrganizationMembersRouteImport.update({
+  id: '/organization/members',
+  path: '/organization/members',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizationCreateRoute = OrganizationCreateRouteImport.update({
@@ -58,91 +77,117 @@ const ModelsModelIdRoute = ModelsModelIdRouteImport.update({
   path: '/models/$modelId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
+  id: '/checkout/success',
+  path: '/checkout/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/upload': typeof UploadRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
+  '/organization/members': typeof OrganizationMembersRoute
+  '/organization/settings': typeof OrganizationSettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/upload': typeof UploadRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
+  '/organization/members': typeof OrganizationMembersRoute
+  '/organization/settings': typeof OrganizationSettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/upload': typeof UploadRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
+  '/organization/members': typeof OrganizationMembersRoute
+  '/organization/settings': typeof OrganizationSettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/billing'
     | '/forgot-password'
     | '/login'
+    | '/profile'
     | '/reset-password'
     | '/signup'
-    | '/upload'
+    | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
+    | '/organization/members'
+    | '/organization/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/billing'
     | '/forgot-password'
     | '/login'
+    | '/profile'
     | '/reset-password'
     | '/signup'
-    | '/upload'
+    | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
+    | '/organization/members'
+    | '/organization/settings'
   id:
     | '__root__'
     | '/'
+    | '/billing'
     | '/forgot-password'
     | '/login'
+    | '/profile'
     | '/reset-password'
     | '/signup'
-    | '/upload'
+    | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
+    | '/organization/members'
+    | '/organization/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BillingRoute: typeof BillingRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
-  UploadRoute: typeof UploadRoute
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   ModelsModelIdRoute: typeof ModelsModelIdRoute
   OrganizationCreateRoute: typeof OrganizationCreateRoute
+  OrganizationMembersRoute: typeof OrganizationMembersRoute
+  OrganizationSettingsRoute: typeof OrganizationSettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/upload': {
-      id: '/upload'
-      path: '/upload'
-      fullPath: '/upload'
-      preLoaderRoute: typeof UploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -155,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -171,11 +223,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/billing': {
+      id: '/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/settings': {
+      id: '/organization/settings'
+      path: '/organization/settings'
+      fullPath: '/organization/settings'
+      preLoaderRoute: typeof OrganizationSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organization/members': {
+      id: '/organization/members'
+      path: '/organization/members'
+      fullPath: '/organization/members'
+      preLoaderRoute: typeof OrganizationMembersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organization/create': {
@@ -192,18 +265,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModelsModelIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/success': {
+      id: '/checkout/success'
+      path: '/checkout/success'
+      fullPath: '/checkout/success'
+      preLoaderRoute: typeof CheckoutSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BillingRoute: BillingRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
-  UploadRoute: UploadRoute,
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
   ModelsModelIdRoute: ModelsModelIdRoute,
   OrganizationCreateRoute: OrganizationCreateRoute,
+  OrganizationMembersRoute: OrganizationMembersRoute,
+  OrganizationSettingsRoute: OrganizationSettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
