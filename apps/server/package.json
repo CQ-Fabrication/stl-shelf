@@ -32,7 +32,7 @@
     "dotenv": "17.2.2",
     "drizzle-kit": "0.31.4",
     "drizzle-orm": "0.44.5",
-    "hono": "4.9.7",
+    "hono": "4.10.2",
     "multer": "2.0.2",
     "nodemailer": "7.0.6",
     "postgres": "3.4.7",
