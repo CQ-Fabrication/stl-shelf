@@ -10,7 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@stl-shelf/ui/components/dialog";
 import {
   Stepper,
   StepperDescription,
@@ -19,7 +19,7 @@ import {
   StepperSeparator,
   StepperTitle,
   StepperTrigger,
-} from "@/components/ui/stepper";
+} from "@stl-shelf/ui/components/stepper";
 import {
   uploadModalActions,
   uploadModalStore,

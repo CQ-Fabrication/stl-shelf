@@ -16,7 +16,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@stl-shelf/ui/components/alert-dialog";
 import { useDeleteModel } from "@/hooks/use-delete-model";
 import { orpc } from "@/utils/orpc";
 

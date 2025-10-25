@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, MoreVertical, Trash2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@stl-shelf/ui/components/dropdown-menu";
+import { Skeleton } from "@stl-shelf/ui/components/skeleton";
 import { orpc } from "@/utils/orpc";
 import { SlicerActionsDropdown } from "./slicer-actions-dropdown";
 

@@ -1,8 +1,9 @@
+import { Button } from "@stl-shelf/ui/components/button";
+import { Logo } from "@stl-shelf/ui/components/logo";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { fadeInDown, slideInLeft } from "@/lib/animation-variants";
-import { Button } from "./ui/button";
 
 const navItems = [
   { label: "Features", href: "#features" },
@@ -25,28 +26,25 @@ export function Navigation() {
   return (
     <>
       <motion.nav
-        className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b"
-        variants={fadeInDown}
-        initial="hidden"
         animate="visible"
+        className="fixed top-0 right-0 left-0 z-50 border-b bg-background/80 backdrop-blur-lg"
+        initial="hidden"
+        variants={fadeInDown}
       >
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
           {/* Logo */}
-          <a href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">S</span>
-            </div>
-            <span className="font-bold text-xl">STL Shelf</span>
+          <a className="flex items-center" href="/">
+            <Logo className="h-8" />
           </a>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden items-center space-x-8 md:flex">
             {navItems.map((item) => (
               <button
+                className="font-medium text-muted-foreground text-sm transition-colors hover:text-foreground"
                 key={item.href}
-                type="button"
                 onClick={() => scrollToSection(item.href)}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                type="button"
               >
                 {item.label}
               </button>
@@ -62,15 +60,15 @@ export function Navigation() {
 
           {/* Mobile Menu Button */}
           <button
-            type="button"
-            className="md:hidden p-2 hover:bg-accent rounded-lg transition-colors"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
+            className="rounded-lg p-2 transition-colors hover:bg-accent md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            type="button"
           >
             {mobileMenuOpen ? (
-              <X className="w-6 h-6" />
+              <X className="h-6 w-6" />
             ) : (
-              <Menu className="w-6 h-6" />
+              <Menu className="h-6 w-6" />
             )}
           </button>
         </div>
@@ -82,40 +80,40 @@ export function Navigation() {
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
-              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
               exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }}
               onClick={() => setMobileMenuOpen(false)}
             />
 
             {/* Menu Panel */}
             <motion.div
-              className="fixed top-16 left-0 right-0 bottom-0 bg-background border-t z-40 md:hidden overflow-y-auto"
-              variants={slideInLeft}
-              initial="hidden"
               animate="visible"
+              className="fixed top-16 right-0 bottom-0 left-0 z-40 overflow-y-auto border-t bg-background md:hidden"
               exit="exit"
+              initial="hidden"
+              variants={slideInLeft}
             >
-              <div className="container mx-auto px-4 py-8 space-y-6">
+              <div className="container mx-auto space-y-6 px-4 py-8">
                 {navItems.map((item, index) => (
                   <motion.button
-                    key={item.href}
-                    type="button"
-                    onClick={() => scrollToSection(item.href)}
-                    className="block w-full text-left text-lg font-medium py-3 hover:text-primary transition-colors"
-                    initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
+                    className="block w-full py-3 text-left font-medium text-lg transition-colors hover:text-primary"
+                    initial={{ opacity: 0, x: -20 }}
+                    key={item.href}
+                    onClick={() => scrollToSection(item.href)}
                     transition={{ delay: index * 0.1 }}
+                    type="button"
                   >
                     {item.label}
                   </motion.button>
                 ))}
 
                 <motion.div
+                  animate={{ opacity: 1, x: 0 }}
                   className="pt-4"
                   initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: navItems.length * 0.1 }}
                 >
                   <Button asChild className="w-full">

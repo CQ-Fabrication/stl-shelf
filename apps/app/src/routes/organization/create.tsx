@@ -2,17 +2,17 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertCircle, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@stl-shelf/ui/components/alert";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@stl-shelf/ui/components/card";
+import { Input } from "@stl-shelf/ui/components/input";
+import { Label } from "@stl-shelf/ui/components/label";
 import type { RouterAppContext } from "../__root";
 
 export const Route = createFileRoute("/organization/create")({

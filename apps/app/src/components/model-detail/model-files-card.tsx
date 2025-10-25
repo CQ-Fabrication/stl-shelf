@@ -1,13 +1,13 @@
 import { Download, FileText } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@stl-shelf/ui/components/card";
 import { formatFileSize } from "@/utils/formatters";
 import type { ModelVersion } from "../../../../server/src/types/model";
 

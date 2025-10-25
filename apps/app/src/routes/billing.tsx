@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { PlanSelector } from "@/components/billing/plan-selector";
 import { SubscriptionStatusCard } from "@/components/billing/subscription-status-card";
 import { UsageCard } from "@/components/billing/usage-card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stl-shelf/ui/components/button";
 
 export const Route = createFileRoute("/billing")({
   component: BillingPage,

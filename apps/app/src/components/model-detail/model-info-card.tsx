@@ -7,9 +7,9 @@ import {
   ImageIcon,
   Tag,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@stl-shelf/ui/components/card";
+import { Skeleton } from "@stl-shelf/ui/components/skeleton";
 import { formatDate, formatFileSize } from "@/utils/formatters";
 import { orpc } from "@/utils/orpc";
 

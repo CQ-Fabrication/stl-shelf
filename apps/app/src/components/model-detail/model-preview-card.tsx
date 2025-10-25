@@ -6,8 +6,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@stl-shelf/ui/components/card";
+import { Skeleton } from "@stl-shelf/ui/components/skeleton";
 import { STLViewerWithSuspense } from "@/components/viewer/stl-viewer";
 import { orpc } from "@/utils/orpc";
 

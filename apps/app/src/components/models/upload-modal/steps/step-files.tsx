@@ -2,7 +2,7 @@ import type { FormApi } from "@tanstack/react-form";
 import { AlertCircle, CheckCircle, FileText, Upload, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stl-shelf/ui/components/button";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 
 type UploadFile = {

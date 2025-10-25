@@ -2,15 +2,15 @@ import { useForm } from "@tanstack/react-form";
 import { Upload, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from "@stl-shelf/ui/components/dialog";
+import { Label } from "@stl-shelf/ui/components/label";
+import { Textarea } from "@stl-shelf/ui/components/textarea";
 
 type UploadFile = {
   file: File;

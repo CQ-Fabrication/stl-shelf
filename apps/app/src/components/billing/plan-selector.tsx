@@ -1,14 +1,14 @@
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@stl-shelf/ui/components/card";
 import { useCheckout } from "@/hooks/use-checkout";
 import { useSubscription } from "@/hooks/use-subscription";
 import {

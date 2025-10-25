@@ -2,14 +2,14 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CheckCircle } from "lucide-react";
 import { useEffect } from "react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@stl-shelf/ui/components/card";
 import { queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/checkout/success")({

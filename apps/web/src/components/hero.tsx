@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { blurFadeIn, fadeInUp, scaleIn, staggerContainer } from "@/lib/animation-variants";
 import { HeroBackground } from "./hero-background";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
-import { ShimmerButton } from "./ui/shimmer-button";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Button } from "@stl-shelf/ui/components/button";
+import { ShimmerButton } from "@stl-shelf/ui/components/shimmer-button";
 
 const techStack = [
   "React 19",

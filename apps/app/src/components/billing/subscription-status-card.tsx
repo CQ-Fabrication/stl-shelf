@@ -1,13 +1,13 @@
 import { CreditCard, Crown, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@stl-shelf/ui/components/card";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useSubscription } from "@/hooks/use-subscription";
 import { getTierDisplayName } from "@/lib/billing/utils";

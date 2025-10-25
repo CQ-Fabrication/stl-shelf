@@ -1,6 +1,6 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Particles } from "./ui/particles";
+import { Particles } from "@stl-shelf/ui/components/particles";
 
 export function HeroBackground() {
   const { theme } = useTheme();

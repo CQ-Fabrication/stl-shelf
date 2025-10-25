@@ -1,12 +1,12 @@
 import { ChevronDown, Download } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@stl-shelf/ui/components/dropdown-menu";
 import { useFileSelection } from "@/hooks/use-file-selection";
 import { useModelFiles } from "@/hooks/use-model-files";
 import { useZipDownload } from "@/hooks/use-zip-download";

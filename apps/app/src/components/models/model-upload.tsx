@@ -13,10 +13,10 @@ import { useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { z } from "zod/v4";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { TagCombobox } from "@/components/ui/tag-combobox";
+import { Button } from "@stl-shelf/ui/components/button";
+import { Input } from "@stl-shelf/ui/components/input";
+import { Label } from "@stl-shelf/ui/components/label";
+import { TagCombobox } from "@stl-shelf/ui/components/tag-combobox";
 import { orpc } from "@/utils/orpc";
 import {
   Card,
@@ -24,7 +24,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../ui/card";
+} from "@stl-shelf/ui/components/card";
 
 // Validation schema matching server expectations
 const modelUploadSchema = z.object({

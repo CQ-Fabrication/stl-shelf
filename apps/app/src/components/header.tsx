@@ -14,8 +14,8 @@ import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
 import type { RouterAppContext } from "@/routes/__root";
 import { uploadModalActions } from "@/stores/upload-modal.store";
-import { Logo } from "./logo";
-import { AnimatedThemeToggler } from "./ui/animated-theme-toggler";
+import { Logo } from "@stl-shelf/ui/components/logo";
+import { AnimatedThemeToggler } from "@stl-shelf/ui/components/animated-theme-toggler";
 
 const UploadModal = lazy(() =>
   import("./models/upload-modal/upload-modal").then((mod) => ({
@@ -30,8 +30,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "./ui/alert-dialog";
-import { Button } from "./ui/button";
+} from "@stl-shelf/ui/components/alert-dialog";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +42,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "@stl-shelf/ui/components/dropdown-menu";
 
 export default function Header() {
   const router = useRouter();

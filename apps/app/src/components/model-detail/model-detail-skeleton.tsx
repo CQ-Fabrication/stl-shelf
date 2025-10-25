@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@stl-shelf/ui/components/skeleton";
 
 export const ModelDetailSkeleton = () => {
   return (

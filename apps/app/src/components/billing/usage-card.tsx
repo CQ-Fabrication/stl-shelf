@@ -5,8 +5,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+} from "@stl-shelf/ui/components/card";
+import { Progress } from "@stl-shelf/ui/components/progress";
 import { useUsageStats } from "@/hooks/use-usage-stats";
 import {
   formatPercentage,

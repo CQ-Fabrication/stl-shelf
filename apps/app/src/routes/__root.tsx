@@ -19,7 +19,7 @@ import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import { useState } from "react";
 import Header from "@/components/header";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@stl-shelf/ui/components/sonner";
 import { auth } from "@/lib/auth";
 import { link, type orpc } from "@/utils/orpc";
 import type { AppRouterClient } from "../../../server/src/routers";

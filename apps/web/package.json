@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@stl-shelf/assets": "workspace:*",
+    "@stl-shelf/ui": "workspace:*",
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/vite": "^4.0.15",
     "@tanstack/react-router": "1.131.44",

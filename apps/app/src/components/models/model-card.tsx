@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { memo, useState } from "react";
 import { useDeleteModel } from "@/hooks/use-delete-model";
-import { cn } from "@/lib/utils";
+import { cn } from "@stl-shelf/ui/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,29 +19,29 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../ui/alert-dialog";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+} from "@stl-shelf/ui/components/alert-dialog";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../ui/card";
+} from "@stl-shelf/ui/components/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+} from "@stl-shelf/ui/components/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../ui/tooltip";
+} from "@stl-shelf/ui/components/tooltip";
 
 type ModelCardProps = {
   model: {

@@ -1,8 +1,8 @@
 import type { FormApi } from "@tanstack/react-form";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { TagCombobox } from "@/components/ui/tag-combobox";
+import { Button } from "@stl-shelf/ui/components/button";
+import { Input } from "@stl-shelf/ui/components/input";
+import { Label } from "@stl-shelf/ui/components/label";
+import { TagCombobox } from "@stl-shelf/ui/components/tag-combobox";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 
 type FormData = {

@@ -1,7 +1,7 @@
 import { OrganizationMembersCard } from "@daveyplate/better-auth-ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stl-shelf/ui/components/button";
 
 export const Route = createFileRoute("/organization/members")({
   component: OrganizationMembersPage,

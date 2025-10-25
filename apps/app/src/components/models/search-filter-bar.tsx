@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronDown, Search, Tag, Trash2, X } from "lucide-react";
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
-import { cn } from "@/lib/utils";
+import { cn } from "@stl-shelf/ui/lib/utils";
 import { orpc } from "@/utils/orpc";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Command,
   CommandEmpty,
@@ -12,10 +12,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "../ui/command";
-import { Input } from "../ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Separator } from "../ui/separator";
+} from "@stl-shelf/ui/components/command";
+import { Input } from "@stl-shelf/ui/components/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@stl-shelf/ui/components/popover";
+import { Separator } from "@stl-shelf/ui/components/separator";
 
 type SearchFilterBarProps = {
   className?: string;

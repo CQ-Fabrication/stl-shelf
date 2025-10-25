@@ -8,7 +8,7 @@ import ReactCrop, {
   type PixelCrop,
 } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { Button } from "@/components/ui/button";
+import { Button } from "@stl-shelf/ui/components/button";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 
 type FormData = {

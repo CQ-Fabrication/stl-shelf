@@ -1,16 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { History } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@stl-shelf/ui/components/card";
+import { ScrollArea } from "@stl-shelf/ui/components/scroll-area";
+import { Skeleton } from "@stl-shelf/ui/components/skeleton";
 import { formatDate } from "@/utils/formatters";
 import { orpc } from "@/utils/orpc";
 

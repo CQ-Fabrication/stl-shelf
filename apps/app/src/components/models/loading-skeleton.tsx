@@ -1,4 +1,4 @@
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "@stl-shelf/ui/components/skeleton";
 
 const SKELETON_COUNT = 8;
 const SKELETON_KEYS = Array.from(

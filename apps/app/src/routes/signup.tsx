@@ -3,10 +3,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod/v4";
 import { Logo } from "@/components/logo";
 import { Turnstile } from "@/components/turnstile";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@stl-shelf/ui/components/button";
+import { Card, CardContent, CardHeader } from "@stl-shelf/ui/components/card";
+import { Input } from "@stl-shelf/ui/components/input";
+import { Label } from "@stl-shelf/ui/components/label";
 import type { RouterAppContext } from "./__root";
 
 export const Route = createFileRoute("/signup")({

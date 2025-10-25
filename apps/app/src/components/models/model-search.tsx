@@ -2,15 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Tag, X } from "lucide-react";
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
 import { orpc } from "@/utils/orpc";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { Input } from "../ui/input";
+} from "@stl-shelf/ui/components/dropdown-menu";
+import { Input } from "@stl-shelf/ui/components/input";
 
 function ModelSearch() {
   const [search, setSearch] = useQueryState(

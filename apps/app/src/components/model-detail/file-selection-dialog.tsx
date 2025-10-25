@@ -1,7 +1,7 @@
 import { Box, FileText } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@stl-shelf/ui/components/badge";
+import { Button } from "@stl-shelf/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -9,10 +9,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@stl-shelf/ui/components/dialog";
+import { Label } from "@stl-shelf/ui/components/label";
+import { RadioGroup, RadioGroupItem } from "@stl-shelf/ui/components/radio-group";
+import { ScrollArea } from "@stl-shelf/ui/components/scroll-area";
 import { formatFileSize } from "@/utils/formatters";
 
 type ModelFile = {

@@ -7,8 +7,8 @@ import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useTheme } from "../theme-provider";
-import { Button } from "../ui/button";
-import { Skeleton } from "../ui/skeleton";
+import { Button } from "@stl-shelf/ui/components/button";
+import { Skeleton } from "@stl-shelf/ui/components/skeleton";
 
 type STLViewerProps = {
   modelId: string;
