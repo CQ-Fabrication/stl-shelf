@@ -10,11 +10,11 @@
     "cssVariables": true
   },
   "aliases": {
-    "components": "@/components",
+    "components": "~/components",
     "utils": "@stl-shelf/ui/lib/utils",
     "ui": "@stl-shelf/ui/components",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "lib": "~/lib",
+    "hooks": "~/hooks"
   },
   "iconLibrary": "lucide"
 }

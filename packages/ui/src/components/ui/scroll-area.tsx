@@ -1,9 +1,10 @@
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
-import * as React from "react";
+import type * as React from "react";
+import { forwardRef } from "react";
 
 import { cn } from "@stl-shelf/ui/lib/utils";
 
-const ScrollArea = React.forwardRef<
+const ScrollArea = forwardRef<
   HTMLDivElement,
   React.ComponentProps<typeof ScrollAreaPrimitive.Root>
 >(function ScrollArea({ className, children, ...props }, ref) {

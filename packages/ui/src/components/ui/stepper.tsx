@@ -1,3 +1,4 @@
+import type { ButtonHTMLAttributes, HTMLAttributes } from "react";
 import { CheckIcon, LoaderCircleIcon } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import { createContext, useCallback, useContext, useState } from "react";
@@ -45,7 +46,7 @@ const useStepItem = () => {
 };
 
 // Components
-interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
+interface StepperProps extends HTMLAttributes<HTMLDivElement> {
   defaultValue?: number;
   value?: number;
   onValueChange?: (value: number) => void;
@@ -96,7 +97,7 @@ function Stepper({
 }
 
 // StepperItem
-interface StepperItemProps extends React.HTMLAttributes<HTMLDivElement> {
+interface StepperItemProps extends HTMLAttributes<HTMLDivElement> {
   step: number;
   completed?: boolean;
   disabled?: boolean;
@@ -145,7 +146,7 @@ function StepperItem({
 
 // StepperTrigger
 interface StepperTriggerProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
 }
 
@@ -184,7 +185,7 @@ function StepperTrigger({
 }
 
 // StepperIndicator
-interface StepperIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
+interface StepperIndicatorProps extends HTMLAttributes<HTMLDivElement> {
   asChild?: boolean;
 }
 
@@ -237,7 +238,7 @@ function StepperIndicator({
 function StepperTitle({
   className,
   ...props
-}: React.HTMLAttributes<HTMLHeadingElement>) {
+}: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
       className={cn("font-medium text-sm", className)}
@@ -251,7 +252,7 @@ function StepperTitle({
 function StepperDescription({
   className,
   ...props
-}: React.HTMLAttributes<HTMLParagraphElement>) {
+}: HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
       className={cn("text-muted-foreground text-sm", className)}
@@ -265,7 +266,7 @@ function StepperDescription({
 function StepperSeparator({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(

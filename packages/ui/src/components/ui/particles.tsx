@@ -1,9 +1,7 @@
-import React, {
-  ComponentPropsWithoutRef,
-  useEffect,
-  useRef,
-  useState,
-} from "react"
+"use client"
+
+import type * as React from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { cn } from "@stl-shelf/ui/lib/utils"
 
@@ -12,13 +10,15 @@ interface MousePosition {
   y: number
 }
 
-function MousePosition(): MousePosition {
+function useMousePosition(): MousePosition {
   const [mousePosition, setMousePosition] = useState<MousePosition>({
     x: 0,
     y: 0,
   })
 
   useEffect(() => {
+    if (typeof window === "undefined") return
+
     const handleMouseMove = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY })
     }
@@ -33,7 +33,7 @@ function MousePosition(): MousePosition {
   return mousePosition
 }
 
-interface ParticlesProps extends ComponentPropsWithoutRef<"div"> {
+interface ParticlesProps extends React.ComponentProps<"div"> {
   className?: string
   quantity?: number
   staticity?: number
@@ -75,7 +75,7 @@ type Circle = {
   magnetism: number
 }
 
-export const Particles: React.FC<ParticlesProps> = ({
+export function Particles({
   className = "",
   quantity = 100,
   staticity = 50,
@@ -86,19 +86,28 @@ export const Particles: React.FC<ParticlesProps> = ({
   vx = 0,
   vy = 0,
   ...props
-}) => {
+}: ParticlesProps) {
+  // SSR guard - return null during server-side rendering
+  const [isMounted, setIsMounted] = useState(false)
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   const context = useRef<CanvasRenderingContext2D | null>(null)
   const circles = useRef<Circle[]>([])
-  const mousePosition = MousePosition()
+  const mousePosition = useMousePosition()
   const mouse = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const canvasSize = useRef<{ w: number; h: number }>({ w: 0, h: 0 })
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio : 1
   const rafID = useRef<number | null>(null)
   const resizeTimeout = useRef<NodeJS.Timeout | null>(null)
 
+  // Set mounted state on client
   useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted) return
     if (canvasRef.current) {
       context.current = canvasRef.current.getContext("2d")
     }
@@ -125,7 +134,7 @@ export const Particles: React.FC<ParticlesProps> = ({
       }
       window.removeEventListener("resize", handleResize)
     }
-  }, [color])
+  }, [color, isMounted])
 
   useEffect(() => {
     onMouseMove()
@@ -297,6 +306,17 @@ export const Particles: React.FC<ParticlesProps> = ({
       }
     })
     rafID.current = window.requestAnimationFrame(animate)
+  }
+
+  // Don't render anything during SSR
+  if (!isMounted) {
+    return (
+      <div
+        className={cn("pointer-events-none", className)}
+        aria-hidden="true"
+        {...props}
+      />
+    )
   }
 
   return (
