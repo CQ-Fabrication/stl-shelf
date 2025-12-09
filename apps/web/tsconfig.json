@@ -1,24 +1,22 @@
 {
   "compilerOptions": {
-    "strict": true,
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
-    "target": "ESNext",
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "verbatimModuleSyntax": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "strictNullChecks": true,
     "skipLibCheck": true,
-    "types": ["vite/client"],
-    "rootDirs": ["."],
+    "noEmit": true,
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "#assets/*": ["../assets/*"]
-    }
+      "~/*": ["./app/*"]
+    },
+    "types": ["vite/client", "node"]
   },
-  "references": [
-    {
-      "path": "../server"
-    }
-  ]
+  "include": ["app/**/*"]
 }

@@ -8,25 +8,27 @@ STL Shelf is a self-hosted application for managing a personal library of 3D pri
 
 ## Architecture
 
-This is a Turborepo monorepo with two main applications:
+This is a Turborepo monorepo with three main applications:
 
 - **Server** (`apps/server/`): Hono-based API with oRPC for type-safe endpoints, designed to run on Cloudflare Workers
-- **Web** (`apps/web/`): React frontend using TanStack Router, TanStack Query, and Vite, with shadcn/ui components
+- **App** (`apps/app/`): Authenticated React application using TanStack Router, TanStack Query, and Vite, with shadcn/ui components
+- **Web** (`apps/web/`): Public-facing marketing website (to be created)
 
 ## Development Commands
 
 ### Primary Commands (run from root)
 
 - `bun install` - Install all dependencies
-- `bun dev` - Start both server (port 3000) and web (port 3001) in development
+- `bun dev` - Start all applications in development (server: 3000, app: 3001, web: 3002)
 - `bun build` - Build all applications
 - `bun check-types` - Type check across all apps
 - `bun check` - Run Biome linting and formatting
 
 ### Individual App Commands
 
-- `bun dev:web` - Start only web application (port 3001)
 - `bun dev:server` - Start only server application (port 3000)
+- `bun dev:app` - Start only authenticated app (port 3001)
+- `bun dev:web` - Start only public website (port 3002)
 
 ### App-Specific Commands
 
@@ -39,9 +41,15 @@ This is a Turborepo monorepo with two main applications:
 - `bun deploy` - Deploy to Cloudflare Workers
 - `bun compile` - Build standalone binary
 
+**App** (`cd apps/app`):
+
+- `bun dev` - Start authenticated app Vite dev server (port 3001)
+- `bun build` - Build for production
+- `bun deploy` - Build and deploy via Wrangler
+
 **Web** (`cd apps/web`):
 
-- `bun dev` - Start Vite dev server (port 3001)
+- `bun dev` - Start public website Vite dev server (port 3002)
 - `bun build` - Build for production
 - `bun deploy` - Build and deploy via Wrangler
 
@@ -79,7 +87,9 @@ This is a Turborepo monorepo with two main applications:
 ## CRITICAL ENGINEERING PRINCIPLES - NEVER VIOLATE THESE
 
 ### DON'T BE A SOCIOPATH
+
 **PUSH BACK when something is wrong** - Don't just agree and implement bad ideas:
+
 - If a requirement doesn't make sense, SAY SO
 - If there's a better approach, PROPOSE IT
 - If something will break at scale, WARN ABOUT IT
@@ -87,6 +97,7 @@ This is a Turborepo monorepo with two main applications:
 - Have actual engineering opinions, not just "yes sir" compliance
 
 ### THINK BEFORE CODING
+
 1. **Understand the complete picture** before writing a single line of code
 2. **Test with REAL DATA** - Don't assume it works, actually test with real-world data at scale
 3. **Consider SCALE** - Is it 10 items or 10 million? Performance implications matter
@@ -96,13 +107,15 @@ This is a Turborepo monorepo with two main applications:
 7. **SIMPLE > CLEVER** - Start with something that actually works, not something that looks smart
 
 ### LESSON FROM STL PREVIEW FAILURE
+
 - **Never implement rendering/processing without considering data scale**
 - STL files have thousands/millions of triangles, not dozens
 - Server-side 3D rendering without GPU is COMPLEX - use proven solutions or skip it
 - Test IMMEDIATELY with real files, not theoretical assumptions
 - A broken "solution" is worse than no solution
 
-### BEFORE WRITING ANY CODE, ASK:
+### BEFORE WRITING ANY CODE, ASK
+
 - What's the actual problem?
 - What's the scale? (10 items? 10,000? 10 million?)
 - What are the performance implications?
@@ -123,9 +136,9 @@ This is a Turborepo monorepo with two main applications:
 
 ### Frontend Development
 
-- Use TanStack Router for routing (file-based in `apps/web/src/routes/`)
-- Use TanStack Query via oRPC utils for data fetching (`orpc` from `apps/web/src/utils/orpc.ts`)
-- UI components from shadcn/ui in `apps/web/src/components/ui/`
+- Use TanStack Router for routing (file-based in `apps/app/src/routes/`)
+- Use TanStack Query via oRPC utils for data fetching (`orpc` from `apps/app/src/utils/orpc.ts`)
+- UI components from shadcn/ui in `apps/app/src/components/ui/`
 - Global error handling via Sonner toast notifications
 
 ### Frontend Architecture & Component Design

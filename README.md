@@ -23,15 +23,17 @@ A self-hosted web application for managing your personal library of 3D printable
 
 ### Access the Application
 
-- **Web Interface**: [http://localhost:3001](http://localhost:3001)
-- **API Server**: [http://localhost:3000](http://localhost:3000)
+- **Authenticated App**: [http://localhost:3001](http://localhost:3001) - Main application interface
+- **Public Website**: [http://localhost:3002](http://localhost:3002) - Marketing/landing pages
+- **API Server**: [http://localhost:3000](http://localhost:3000) - Backend API
 
 ## Available Scripts
 
 - `bun dev`: Start all applications in development mode
 - `bun build`: Build all applications for production
-- `bun dev:web`: Start only the web application (port 3001)
 - `bun dev:server`: Start only the server (port 3000)
+- `bun dev:app`: Start only the authenticated app (port 3001)
+- `bun dev:web`: Start only the public website (port 3002)
 - `bun check-types`: Run TypeScript type checking
 - `bun check`: Run Biome linting and formatting
 
@@ -47,7 +49,10 @@ docker-compose up -d
 ### Cloudflare Workers
 
 ```bash
-# Deploy web application
+# Deploy authenticated app
+cd apps/app && bun deploy
+
+# Deploy public website
 cd apps/web && bun deploy
 
 # Deploy server API
