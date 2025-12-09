@@ -2,7 +2,7 @@ import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod/v4";
-import { Logo } from "@/components/logo";
+import { Logo } from "@stl-shelf/ui/components/logo";
 import { Turnstile } from "@/components/turnstile";
 import { Button } from "@stl-shelf/ui/components/button";
 import { Card, CardContent, CardHeader } from "@stl-shelf/ui/components/card";

@@ -43,12 +43,12 @@ export const env = createEnv({
     TURNSTILE_SITE_KEY: z.string(),
     TURNSTILE_SECRET_KEY: z.string(),
 
-    // SMTP for magic links / transactional emails
-    SMTP_HOST: z.string().optional(),
-    SMTP_PORT: z.coerce.number().optional(),
-    SMTP_USER: z.string().optional(),
-    SMTP_PASS: z.string().optional(),
-    SMTP_FROM: z.string().optional(),
+    // Resend for transactional emails
+    RESEND_API_KEY: z.string(),
+    EMAIL_FROM: z
+      .string()
+      .optional()
+      .default("STL Shelf <noreply@mail.stl-shelf.com>"),
 
     // Server Configuration
     NODE_ENV: z.enum(["development", "production", "test"]),
