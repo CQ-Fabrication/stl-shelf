@@ -24,6 +24,8 @@
     "@orpc/server": "1.8.9",
     "@polar-sh/better-auth": "^1.1.7",
     "@polar-sh/sdk": "^0.35.4",
+    "@react-email/components": "^0.0.31",
+    "@stl-shelf/email": "workspace:*",
     "@t3-oss/env-core": "0.13.8",
     "@types/bun": "1.2.22",
     "@types/multer": "2.0.0",

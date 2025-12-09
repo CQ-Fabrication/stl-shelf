@@ -49,6 +49,7 @@ export const env = createEnv({
       .string()
       .optional()
       .default("STL Shelf <noreply@mail.stl-shelf.com>"),
+    EMAIL_LOGO_URL: z.string().url().optional(),
 
     // Server Configuration
     NODE_ENV: z.enum(["development", "production", "test"]),

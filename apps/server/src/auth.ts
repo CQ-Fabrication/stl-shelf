@@ -1,5 +1,10 @@
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
+import { render } from "@react-email/components";
+import {
+  PasswordResetTemplate,
+  VerifyEmailTemplate,
+} from "@stl-shelf/email";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { captcha, openAPI, organization } from "better-auth/plugins";
@@ -124,25 +129,17 @@ export const auth = betterAuth({
       user: { email?: string };
       url: string;
     }) => {
+      const html = await render(
+        PasswordResetTemplate({
+          resetUrl: url,
+          logoUrl: env.EMAIL_LOGO_URL,
+        })
+      );
       await resend.emails.send({
         from: env.EMAIL_FROM,
         to: user.email ?? "",
         subject: "Reset your password",
-        text: `You requested a password reset for your STL Shelf account.\n\nClick the link below to reset your password:\n${url}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, you can safely ignore this email.`,
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #333;">Reset your password</h2>
-            <p>You requested a password reset for your STL Shelf account.</p>
-            <p>Click the button below to reset your password:</p>
-            <div style="margin: 30px 0;">
-              <a href="${url}" style="background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a>
-            </div>
-            <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
-            <p style="color: #666; font-size: 14px; word-break: break-all;">${url}</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #999; font-size: 12px;">This link will expire in 1 hour. If you didn't request this password reset, you can safely ignore this email.</p>
-          </div>
-        `,
+        html,
       });
     },
     onPasswordReset: ({ user }: { user: { email?: string } }) => {
@@ -159,12 +156,17 @@ export const auth = betterAuth({
       user: { email?: string };
       url: string;
     }) => {
+      const html = await render(
+        VerifyEmailTemplate({
+          verificationUrl: url,
+          logoUrl: env.EMAIL_LOGO_URL,
+        })
+      );
       await resend.emails.send({
         from: env.EMAIL_FROM,
         to: user.email ?? "",
-        subject: "Verify your email",
-        text: `Click to verify: ${url}`,
-        html: `<p>Click to verify: <a href="${url}">${url}</a></p>`,
+        subject: "Verify your email address",
+        html,
       });
     },
     sendOnSignUp: true,
