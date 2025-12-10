@@ -1,8 +1,16 @@
 import type { Context } from "hono";
-import { auth } from "@/auth";
+import type { Auth } from "@/auth";
 import type { BaseContext, Session } from "@/lib/context";
 
-export async function createBaseContext(c: Context): Promise<BaseContext> {
+/**
+ * Create base context for RPC handlers
+ * @param c - Hono context
+ * @param auth - Better Auth instance (created per-request with Hyperdrive)
+ */
+export async function createBaseContext(
+  c: Context,
+  auth: Auth
+): Promise<BaseContext> {
   const ipAddress = extractClientIp(c);
 
   try {

@@ -5,7 +5,8 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { auth } from "./auth";
+import { createAuth } from "./auth";
+import { createDb } from "./db/client";
 import { env } from "./env";
 import type { BaseContext, Session } from "./lib/context";
 import { appRouter } from "./routers/index";
@@ -57,13 +58,32 @@ app.use(
   })
 );
 
-// Better Auth routes
+/**
+ * Get database connection string from Hyperdrive (production) or DATABASE_URL (development)
+ *
+ * Per Cloudflare docs, Hyperdrive connection must be created per-request:
+ * https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-drivers-and-libraries/drizzle-orm/
+ */
+function getConnectionString(c: Context<{ Bindings: Env }>): string {
+  // Use Hyperdrive in production (Workers), fall back to DATABASE_URL for dev
+  return c.env?.HYPERDRIVE?.connectionString ?? env.DATABASE_URL;
+}
+
+// Better Auth routes - create db + auth per-request with Hyperdrive
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
+  const connectionString = getConnectionString(c);
+  const db = createDb(connectionString);
+  const auth = createAuth(db);
   return auth.handler(c.req.raw);
 });
 
+// oRPC routes - also use per-request db/auth
 app.use("/rpc/*", async (c, next) => {
-  const context = await createRpcContext(c);
+  const connectionString = getConnectionString(c);
+  const db = createDb(connectionString);
+  const auth = createAuth(db);
+  const context = await createRpcContext(c, auth);
+
   const { matched, response } = await handler.handle(c.req.raw, {
     prefix: "/rpc",
     context,
@@ -77,7 +97,10 @@ app.use("/rpc/*", async (c, next) => {
 
 export default app;
 
-async function createRpcContext(c: Context): Promise<BaseContext> {
+async function createRpcContext(
+  c: Context,
+  auth: ReturnType<typeof createAuth>
+): Promise<BaseContext> {
   const ipAddress = extractClientIp(c);
 
   try {

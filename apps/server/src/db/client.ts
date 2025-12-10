@@ -1,6 +1,5 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { env } from "../env";
 import {
   account as authAccount,
   invitation as authInvitation,
@@ -45,56 +44,39 @@ const schema = {
 };
 
 /**
- * Hyperdrive binding interface for Cloudflare Workers
- */
-interface Hyperdrive {
-  connectionString: string;
-}
-
-/**
- * Create database connection
+ * Create database connection from connection string
  *
- * Supports two modes:
- * - Development: Uses DATABASE_URL from env
- * - Cloudflare Workers: Uses Hyperdrive binding for connection pooling
+ * For Workers: Use env.HYPERDRIVE.connectionString (per-request)
+ * For Development: Use DATABASE_URL
+ *
+ * Per Cloudflare docs, connections must be created per-request in Workers:
+ * https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-drivers-and-libraries/drizzle-orm/
  */
-function createDbConnection(hyperdrive?: Hyperdrive) {
-  // Use Hyperdrive connection string if provided (Workers environment)
-  // Otherwise fall back to DATABASE_URL (development)
-  const connectionString = hyperdrive?.connectionString || env.DATABASE_URL;
-
-  // In Workers with Hyperdrive, don't configure connection pooling
-  // (Hyperdrive handles it). In development, use local pooling.
-  const poolConfig = hyperdrive
-    ? {} // Hyperdrive handles pooling
-    : {
-        max: env.POSTGRES_MAX_CONNECTIONS,
-        idle_timeout: env.POSTGRES_IDLE_TIMEOUT,
-        connect_timeout: env.POSTGRES_CONNECTION_TIMEOUT,
-      };
-
-  // Disable prepared statements in production (Workers are stateless)
-  // Only enable in development where connections persist
-  const isProd = env.NODE_ENV === "production";
-
+export function createDb(connectionString: string) {
   const client = postgres(connectionString, {
-    ...poolConfig,
-    // Disable prepare for Workers/Hyperdrive - stateless environments can't use prepared statements
-    prepare: hyperdrive ? false : !isProd,
+    // Disable prepared statements - required for Hyperdrive/Workers
+    // Workers are stateless and can't maintain prepared statement caches
+    prepare: false,
   });
 
-  return {
-    db: drizzle(client, { schema }),
-    client,
-  };
+  return drizzle(client, { schema });
 }
 
-// Default connection for development/standalone mode
-const { db: defaultDb, client: defaultClient } = createDbConnection();
+/** Database instance type for type-safe usage */
+export type Database = ReturnType<typeof createDb>;
 
-// Export default instances
-export const db = defaultDb;
-export { defaultClient as pgClient };
+/** Schema export for use in other modules */
+export { schema };
 
-// Export factory for Workers with Hyperdrive
-export { createDbConnection };
+/**
+ * Default database instance for services that haven't been migrated to per-request pattern.
+ *
+ * WARNING: This uses DATABASE_URL directly, not Hyperdrive.
+ * Auth routes use per-request Hyperdrive connections via createDb().
+ * Services should be migrated to receive db from context for full Hyperdrive support.
+ *
+ * @deprecated Use createDb(connectionString) for new code
+ */
+// biome-ignore lint/style/noNonNullAssertion: DATABASE_URL is validated at startup
+const defaultDb = createDb(process.env.DATABASE_URL!);
+export { defaultDb as db };

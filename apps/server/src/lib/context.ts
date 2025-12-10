@@ -1,6 +1,6 @@
-import type { auth } from "@/auth";
+import type { Auth } from "@/auth";
 
-type BetterAuthSession = typeof auth.$Infer.Session;
+type BetterAuthSession = Auth["$Infer"]["Session"];
 
 export type Session = BetterAuthSession & {
   session: BetterAuthSession["session"] & {
