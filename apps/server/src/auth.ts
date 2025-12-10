@@ -10,6 +10,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { captcha, magicLink, openAPI, organization } from "better-auth/plugins";
 import { Resend } from "resend";
+import { z } from "zod";
 import { db } from "./db/client";
 // biome-ignore lint/performance/noNamespaceImport: we need the schema
 import * as authSchema from "./db/schema/better-auth-schema";
@@ -26,6 +27,9 @@ import {
 // Better Auth + Drizzle (Postgres) — per docs
 const isProd = env.NODE_ENV === "production";
 
+// Email validation schema
+const emailSchema = z.string().email().max(255);
+
 // Lazy-initialized Resend client for transactional emails
 let resendClient: Resend | null = null;
 function getResendClient(): Resend {
@@ -33,6 +37,15 @@ function getResendClient(): Resend {
     resendClient = new Resend(env.RESEND_API_KEY);
   }
   return resendClient;
+}
+
+/** Validates email format before sending */
+function validateEmail(email: string | undefined): string {
+  const result = emailSchema.safeParse(email);
+  if (!result.success) {
+    throw new Error("Invalid email address");
+  }
+  return result.data;
 }
 
 // Polar.sh client for billing
@@ -96,9 +109,7 @@ export const auth = betterAuth({
     magicLink({
       expiresIn: 60 * 15, // 15 minutes
       sendMagicLink: async ({ email, url }: { email: string; url: string }) => {
-        if (!email) {
-          throw new Error("Cannot send magic link: no email provided");
-        }
+        const validEmail = validateEmail(email);
         const html = await render(
           MagicLinkTemplate({
             magicLinkUrl: url,
@@ -107,7 +118,7 @@ export const auth = betterAuth({
         );
         const { error } = await getResendClient().emails.send({
           from: env.EMAIL_FROM,
-          to: email,
+          to: validEmail,
           subject: "Sign in to STL Shelf",
           html,
         });
@@ -159,9 +170,7 @@ export const auth = betterAuth({
       user: { email?: string };
       url: string;
     }) => {
-      if (!user.email) {
-        throw new Error("Cannot send password reset: no email provided");
-      }
+      const validEmail = validateEmail(user.email);
       const html = await render(
         PasswordResetTemplate({
           resetUrl: url,
@@ -170,7 +179,7 @@ export const auth = betterAuth({
       );
       const { error } = await getResendClient().emails.send({
         from: env.EMAIL_FROM,
-        to: user.email,
+        to: validEmail,
         subject: "Reset your password",
         html,
       });
@@ -191,9 +200,7 @@ export const auth = betterAuth({
       user: { email?: string };
       url: string;
     }) => {
-      if (!user.email) {
-        throw new Error("Cannot send verification email: no email provided");
-      }
+      const validEmail = validateEmail(user.email);
       const html = await render(
         VerifyEmailTemplate({
           verificationUrl: url,
@@ -202,7 +209,7 @@ export const auth = betterAuth({
       );
       const { error } = await getResendClient().emails.send({
         from: env.EMAIL_FROM,
-        to: user.email,
+        to: validEmail,
         subject: "Verify your email address",
         html,
       });
