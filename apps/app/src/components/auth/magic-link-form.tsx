@@ -109,7 +109,11 @@ export function MagicLinkForm({
 function MagicLinkSentState() {
   return (
     <div className="space-y-6 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+      <div
+        aria-label="Email sent successfully"
+        className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100"
+        role="img"
+      >
         <svg
           aria-hidden="true"
           className="h-6 w-6 text-green-600"
