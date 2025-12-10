@@ -1,9 +1,16 @@
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
+import { render } from "@react-email/components";
+import {
+  MagicLinkTemplate,
+  PasswordResetTemplate,
+  VerifyEmailTemplate,
+} from "@stl-shelf/email";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { captcha, openAPI, organization } from "better-auth/plugins";
-import nodemailer from "nodemailer";
+import { captcha, magicLink, openAPI, organization } from "better-auth/plugins";
+import { Resend } from "resend";
+import { z } from "zod";
 import { db } from "./db/client";
 // biome-ignore lint/performance/noNamespaceImport: we need the schema
 import * as authSchema from "./db/schema/better-auth-schema";
@@ -20,19 +27,26 @@ import {
 // Better Auth + Drizzle (Postgres) — per docs
 const isProd = env.NODE_ENV === "production";
 
-// Optional SMTP transport for verification emails (Mailpit in dev via docker-compose)
-const smtpTransport =
-  env.SMTP_HOST && env.SMTP_PORT
-    ? nodemailer.createTransport({
-        host: env.SMTP_HOST,
-        port: env.SMTP_PORT,
-        secure: false,
-        auth:
-          env.SMTP_USER && env.SMTP_PASS
-            ? { user: env.SMTP_USER, pass: env.SMTP_PASS }
-            : undefined,
-      })
-    : null;
+// Email validation schema
+const emailSchema = z.string().email().max(255);
+
+// Lazy-initialized Resend client for transactional emails
+let resendClient: Resend | null = null;
+function getResendClient(): Resend {
+  if (!resendClient) {
+    resendClient = new Resend(env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
+
+/** Validates email format before sending */
+function validateEmail(email: string | undefined): string {
+  const result = emailSchema.safeParse(email);
+  if (!result.success) {
+    throw new Error("Invalid email address");
+  }
+  return result.data;
+}
 
 // Polar.sh client for billing
 const polarClient = new Polar({
@@ -89,8 +103,29 @@ export const auth = betterAuth({
     }),
     captcha({
       provider: "cloudflare-turnstile",
-      endpoints: ["/login", "/signup", "/verify"],
+      endpoints: ["/sign-in/email", "/sign-up/email"],
       secretKey: env.TURNSTILE_SECRET_KEY,
+    }),
+    magicLink({
+      expiresIn: 60 * 15, // 15 minutes
+      sendMagicLink: async ({ email, url }: { email: string; url: string }) => {
+        const validEmail = validateEmail(email);
+        const html = await render(
+          MagicLinkTemplate({
+            magicLinkUrl: url,
+            logoUrl: env.EMAIL_LOGO_URL,
+          })
+        );
+        const { error } = await getResendClient().emails.send({
+          from: env.EMAIL_FROM,
+          to: validEmail,
+          subject: "Sign in to STL Shelf",
+          html,
+        });
+        if (error) {
+          throw new Error(`Failed to send magic link email: ${error.message}`);
+        }
+      },
     }),
     openAPI(),
 
@@ -135,33 +170,24 @@ export const auth = betterAuth({
       user: { email?: string };
       url: string;
     }) => {
-      if (smtpTransport) {
-        await smtpTransport.sendMail({
-          from: env.SMTP_FROM ?? "STL Shelf <no-reply@local.test>",
-          to: user.email ?? "",
-          subject: "Reset your password",
-          text: `You requested a password reset for your STL Shelf account.\n\nClick the link below to reset your password:\n${url}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, you can safely ignore this email.`,
-          html: `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #333;">Reset your password</h2>
-              <p>You requested a password reset for your STL Shelf account.</p>
-              <p>Click the button below to reset your password:</p>
-              <div style="margin: 30px 0;">
-                <a href="${url}" style="background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a>
-              </div>
-              <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
-              <p style="color: #666; font-size: 14px; word-break: break-all;">${url}</p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-              <p style="color: #999; font-size: 12px;">This link will expire in 1 hour. If you didn't request this password reset, you can safely ignore this email.</p>
-            </div>
-          `,
-        });
-      } else {
-        console.log(`[auth] Password reset link for ${user.email}: ${url}`);
+      const validEmail = validateEmail(user.email);
+      const html = await render(
+        PasswordResetTemplate({
+          resetUrl: url,
+          logoUrl: env.EMAIL_LOGO_URL,
+        })
+      );
+      const { error } = await getResendClient().emails.send({
+        from: env.EMAIL_FROM,
+        to: validEmail,
+        subject: "Reset your password",
+        html,
+      });
+      if (error) {
+        throw new Error(
+          `Failed to send password reset email: ${error.message}`
+        );
       }
-    },
-    onPasswordReset: ({ user }: { user: { email?: string } }) => {
-      console.log(`[auth] Password reset completed for user: ${user.email}`);
     },
   },
 
@@ -174,16 +200,21 @@ export const auth = betterAuth({
       user: { email?: string };
       url: string;
     }) => {
-      if (smtpTransport) {
-        await smtpTransport.sendMail({
-          from: env.SMTP_FROM ?? "STL Shelf <no-reply@local.test>",
-          to: user.email ?? "",
-          subject: "Verify your email",
-          text: `Click to verify: ${url}`,
-          html: `<p>Click to verify: <a href="${url}">${url}</a></p>`,
-        });
-      } else {
-        console.log(`[auth] Verification link for ${user.email}: ${url}`);
+      const validEmail = validateEmail(user.email);
+      const html = await render(
+        VerifyEmailTemplate({
+          verificationUrl: url,
+          logoUrl: env.EMAIL_LOGO_URL,
+        })
+      );
+      const { error } = await getResendClient().emails.send({
+        from: env.EMAIL_FROM,
+        to: validEmail,
+        subject: "Verify your email address",
+        html,
+      });
+      if (error) {
+        throw new Error(`Failed to send verification email: ${error.message}`);
       }
     },
     sendOnSignUp: true,
