@@ -2,12 +2,13 @@ import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { render } from "@react-email/components";
 import {
+  MagicLinkTemplate,
   PasswordResetTemplate,
   VerifyEmailTemplate,
 } from "@stl-shelf/email";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { captcha, openAPI, organization } from "better-auth/plugins";
+import { captcha, magicLink, openAPI, organization } from "better-auth/plugins";
 import { Resend } from "resend";
 import { db } from "./db/client";
 // biome-ignore lint/performance/noNamespaceImport: we need the schema
@@ -83,8 +84,31 @@ export const auth = betterAuth({
     }),
     captcha({
       provider: "cloudflare-turnstile",
-      endpoints: ["/login", "/signup", "/verify"],
+      endpoints: ["/sign-in/email", "/sign-up/email"],
       secretKey: env.TURNSTILE_SECRET_KEY,
+    }),
+    magicLink({
+      expiresIn: 60 * 15, // 15 minutes
+      sendMagicLink: async ({
+        email,
+        url,
+      }: {
+        email: string;
+        url: string;
+      }) => {
+        const html = await render(
+          MagicLinkTemplate({
+            magicLinkUrl: url,
+            logoUrl: env.EMAIL_LOGO_URL,
+          })
+        );
+        await resend.emails.send({
+          from: env.EMAIL_FROM,
+          to: email,
+          subject: "Sign in to STL Shelf",
+          html,
+        });
+      },
     }),
     openAPI(),
 

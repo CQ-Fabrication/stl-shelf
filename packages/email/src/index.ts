@@ -11,6 +11,10 @@ export {
   default as PasswordResetTemplate,
   PasswordResetTemplate as PasswordReset,
 } from "./emails/password-reset";
+export {
+  default as MagicLinkTemplate,
+  MagicLinkTemplate as MagicLink,
+} from "./emails/magic-link";
 
 // Sending utilities
 export { getResend, sendEmail } from "./send";
@@ -18,3 +22,4 @@ export { getResend, sendEmail } from "./send";
 // Types
 export type { VerifyEmailTemplateProps } from "./emails/verify-email";
 export type { PasswordResetTemplateProps } from "./emails/password-reset";
+export type { MagicLinkTemplateProps } from "./emails/magic-link";
