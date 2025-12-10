@@ -85,6 +85,7 @@ export function MagicLinkTemplate({
 MagicLinkTemplate.PreviewProps = {
   magicLinkUrl:
     "https://app.stl-shelf.com/auth/magic-link?token=abc123def456ghi789",
+  logoUrl: "https://cdn.stl-shelf.com/logo-dark.svg",
 } satisfies MagicLinkTemplateProps;
 
 export default MagicLinkTemplate;

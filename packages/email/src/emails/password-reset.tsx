@@ -100,6 +100,7 @@ export function PasswordResetTemplate({
 
 PasswordResetTemplate.PreviewProps = {
   resetUrl: "https://app.stl-shelf.com/reset-password?token=xyz789abc123def456",
+  logoUrl: "https://cdn.stl-shelf.com/logo-dark.svg",
 } satisfies PasswordResetTemplateProps;
 
 export default PasswordResetTemplate;

@@ -91,6 +91,7 @@ export function VerifyEmailTemplate({
 VerifyEmailTemplate.PreviewProps = {
   verificationUrl:
     "https://app.stl-shelf.com/auth/verify?token=abc123def456ghi789",
+  logoUrl: "https://cdn.stl-shelf.com/logo-dark.svg",
 } satisfies VerifyEmailTemplateProps;
 
 export default VerifyEmailTemplate;
