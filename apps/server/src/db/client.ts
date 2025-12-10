@@ -73,10 +73,14 @@ function createDbConnection(hyperdrive?: Hyperdrive) {
         connect_timeout: env.POSTGRES_CONNECTION_TIMEOUT,
       };
 
+  // Disable prepared statements in production (Workers are stateless)
+  // Only enable in development where connections persist
+  const isProd = env.NODE_ENV === "production";
+
   const client = postgres(connectionString, {
     ...poolConfig,
-    // Disable prepare for Hyperdrive compatibility
-    prepare: hyperdrive ? false : true,
+    // Disable prepare for Workers/Hyperdrive - stateless environments can't use prepared statements
+    prepare: hyperdrive ? false : !isProd,
   });
 
   return {
