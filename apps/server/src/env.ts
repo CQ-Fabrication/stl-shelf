@@ -4,43 +4,39 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     // Database
-    DATABASE_URL: z.url(),
-    POSTGRES_MAX_CONNECTIONS: z.coerce.number().min(1),
-    POSTGRES_IDLE_TIMEOUT: z.coerce.number().min(1),
-    POSTGRES_CONNECTION_TIMEOUT: z.coerce.number().min(1),
+    // In Workers with Hyperdrive, connection is provided via binding
+    // DATABASE_URL is still used as fallback for development
+    DATABASE_URL: z.string().url(),
+    POSTGRES_MAX_CONNECTIONS: z.coerce.number().min(1).default(20),
+    POSTGRES_IDLE_TIMEOUT: z.coerce.number().min(1).default(30),
+    POSTGRES_CONNECTION_TIMEOUT: z.coerce.number().min(1).default(5),
 
-    // Storage (MinIO/S3)
-    STORAGE_REGION: z.string().min(1),
+    // Storage (R2/MinIO/S3-compatible)
+    STORAGE_REGION: z.string().min(1).default("auto"),
     STORAGE_ENDPOINT: z.string().min(1),
     STORAGE_ACCESS_KEY: z.string().min(1),
     STORAGE_SECRET_KEY: z.string().min(1),
-    STORAGE_BUCKET_NAME: z.string().min(1),
-    STORAGE_BUCKET_THUMBNAILS: z.string().min(1),
-    STORAGE_BUCKET_TEMP: z.string().min(1),
-    STORAGE_USE_SSL: z.enum(["true", "false"]),
-
-    // Redis
-    REDIS_URL: z.url().min(1),
-    REDIS_TTL_DEFAULT: z.coerce.number().min(1),
-    REDIS_TTL_MODEL_LIST: z.coerce.number().min(1),
-    REDIS_TTL_MODEL_METADATA: z.coerce.number().min(1),
+    STORAGE_BUCKET_NAME: z.string().min(1).default("stl-models"),
+    STORAGE_BUCKET_THUMBNAILS: z.string().min(1).default("stl-thumbnails"),
+    STORAGE_BUCKET_TEMP: z.string().min(1).default("stl-temp"),
+    STORAGE_USE_SSL: z.enum(["true", "false"]).default("true"),
 
     // CORS
-    CORS_ORIGIN: z.url(),
+    CORS_ORIGIN: z.string().url(),
 
     // BetterAuth / Auth
-    AUTH_URL: z.url(),
-    WEB_URL: z.url(),
+    AUTH_URL: z.string().url(),
+    WEB_URL: z.string().url(),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
 
-    // OAuth Providers
+    // OAuth Providers (optional)
     GITHUB_CLIENT_ID: z.string().optional(),
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
 
     // Captcha (Cloudflare Turnstile)
-    TURNSTILE_SITE_KEY: z.string(),
+    TURNSTILE_SITE_KEY: z.string().optional(), // Only needed on frontend
     TURNSTILE_SECRET_KEY: z.string(),
 
     // Resend for transactional emails
@@ -52,8 +48,9 @@ export const env = createEnv({
     EMAIL_LOGO_URL: z.string().url().optional(),
 
     // Server Configuration
-    NODE_ENV: z.enum(["development", "production", "test"]),
-    PORT: z.coerce.number().min(1),
+    NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
+    // PORT is optional - not used in Workers
+    PORT: z.coerce.number().min(1).default(3000),
 
     // Polar.sh Billing
     POLAR_ACCESS_TOKEN: z.string().min(1).default("polar_placeholder"),

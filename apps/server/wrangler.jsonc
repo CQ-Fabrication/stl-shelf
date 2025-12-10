@@ -1,14 +1,62 @@
 {
-	"name": "my-better-t-app-server",
+	"name": "stl-shelf-api",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-06-15",
 	"compatibility_flags": ["nodejs_compat"],
+
+	// Public environment variables
 	"vars": {
-		"NODE_ENV": "production"
-		// Add public environment variables here
-		// Example: "CORS_ORIGIN": "https://your-domain.com"
+		"NODE_ENV": "production",
+		"CORS_ORIGIN": "https://app.stl-shelf.com",
+		"AUTH_URL": "https://api.stl-shelf.com",
+		"WEB_URL": "https://app.stl-shelf.com",
+		"AUTH_COOKIE_DOMAIN": ".stl-shelf.com",
+		"STORAGE_REGION": "auto",
+		"STORAGE_BUCKET_NAME": "stl-models",
+		"STORAGE_BUCKET_THUMBNAILS": "stl-thumbnails",
+		"STORAGE_BUCKET_TEMP": "stl-temp",
+		"STORAGE_USE_SSL": "true",
+		"POLAR_SERVER": "production"
+	},
+
+	// R2 Storage bindings
+	"r2_buckets": [
+		{ "binding": "R2_MODELS", "bucket_name": "stl-models" },
+		{ "binding": "R2_THUMBNAILS", "bucket_name": "stl-thumbnails" },
+		{ "binding": "R2_TEMP", "bucket_name": "stl-temp" }
+	],
+
+	// Hyperdrive database connection pooling
+	// Create Hyperdrive config in dashboard first, then add ID here
+	"hyperdrive": [
+		{ "binding": "HYPERDRIVE", "id": "134a95649b1e4a55bb42ffc41b46a0f2" }
+	],
+
+	// Custom domain routing
+	"routes": [
+		{ "pattern": "api.stl-shelf.com", "custom_domain": true }
+	],
+
+	// Observability
+	"observability": {
+		"enabled": true
 	}
-	// For sensitive data, use:
-	// wrangler secret put SECRET_NAME
-	// Don't add secrets to "vars" - they're visible in the dashboard!
+
+	// Secrets (set via CLI, not here):
+	// wrangler secret put RESEND_API_KEY
+	// wrangler secret put EMAIL_FROM
+	// wrangler secret put EMAIL_LOGO_URL
+	// wrangler secret put POLAR_ACCESS_TOKEN
+	// wrangler secret put POLAR_WEBHOOK_SECRET
+	// wrangler secret put POLAR_PRODUCT_FREE
+	// wrangler secret put POLAR_PRODUCT_BASIC
+	// wrangler secret put POLAR_PRODUCT_PRO
+	// wrangler secret put TURNSTILE_SECRET_KEY
+	// wrangler secret put GITHUB_CLIENT_ID
+	// wrangler secret put GITHUB_CLIENT_SECRET
+	// wrangler secret put GOOGLE_CLIENT_ID
+	// wrangler secret put GOOGLE_CLIENT_SECRET
+	// wrangler secret put STORAGE_ENDPOINT
+	// wrangler secret put STORAGE_ACCESS_KEY
+	// wrangler secret put STORAGE_SECRET_KEY
 }

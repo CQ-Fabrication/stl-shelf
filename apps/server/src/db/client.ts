@@ -44,15 +44,53 @@ const schema = {
   organization: authOrganization,
 };
 
-// Create postgres client with connection pooling
-const client = postgres(env.DATABASE_URL, {
-  max: env.POSTGRES_MAX_CONNECTIONS,
-  idle_timeout: env.POSTGRES_IDLE_TIMEOUT,
-  connect_timeout: env.POSTGRES_CONNECTION_TIMEOUT,
-});
+/**
+ * Hyperdrive binding interface for Cloudflare Workers
+ */
+interface Hyperdrive {
+  connectionString: string;
+}
 
-// Create drizzle instance
-export const db = drizzle(client, { schema });
+/**
+ * Create database connection
+ *
+ * Supports two modes:
+ * - Development: Uses DATABASE_URL from env
+ * - Cloudflare Workers: Uses Hyperdrive binding for connection pooling
+ */
+function createDbConnection(hyperdrive?: Hyperdrive) {
+  // Use Hyperdrive connection string if provided (Workers environment)
+  // Otherwise fall back to DATABASE_URL (development)
+  const connectionString = hyperdrive?.connectionString || env.DATABASE_URL;
 
-// Export client for raw queries if needed
-export { client as pgClient };
+  // In Workers with Hyperdrive, don't configure connection pooling
+  // (Hyperdrive handles it). In development, use local pooling.
+  const poolConfig = hyperdrive
+    ? {} // Hyperdrive handles pooling
+    : {
+        max: env.POSTGRES_MAX_CONNECTIONS,
+        idle_timeout: env.POSTGRES_IDLE_TIMEOUT,
+        connect_timeout: env.POSTGRES_CONNECTION_TIMEOUT,
+      };
+
+  const client = postgres(connectionString, {
+    ...poolConfig,
+    // Disable prepare for Hyperdrive compatibility
+    prepare: hyperdrive ? false : true,
+  });
+
+  return {
+    db: drizzle(client, { schema }),
+    client,
+  };
+}
+
+// Default connection for development/standalone mode
+const { db: defaultDb, client: defaultClient } = createDbConnection();
+
+// Export default instances
+export const db = defaultDb;
+export { defaultClient as pgClient };
+
+// Export factory for Workers with Hyperdrive
+export { createDbConnection };

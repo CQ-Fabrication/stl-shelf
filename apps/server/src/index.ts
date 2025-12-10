@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 import "dotenv/config";
 import { RPCHandler } from "@orpc/server/fetch";
 import type { Context } from "hono";
@@ -9,12 +10,27 @@ import { env } from "./env";
 import type { BaseContext, Session } from "./lib/context";
 import { appRouter } from "./routers/index";
 
-const app = new Hono();
+/**
+ * Cloudflare Workers environment bindings
+ * These are injected by the Workers runtime
+ */
+export interface Env {
+  // Hyperdrive database connection
+  HYPERDRIVE: {
+    connectionString: string;
+  };
+  // R2 bucket bindings
+  R2_MODELS: R2Bucket;
+  R2_THUMBNAILS: R2Bucket;
+  R2_TEMP: R2Bucket;
+  // Environment variables (from wrangler.jsonc vars + secrets)
+  [key: string]: unknown;
+}
+
+const app = new Hono<{ Bindings: Env }>();
 
 // oRPC handler for all API routes
 const handler = new RPCHandler(appRouter);
-
-console.log("STL Shelf API starting...");
 
 // Apply middleware in correct order
 app.use(logger());

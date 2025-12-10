@@ -1,52 +1,54 @@
-import { S3Client } from "bun";
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "../env";
 
 const DEFAULT_LIST_LIMIT = 1000;
 const DEFAULT_EXPIRES_IN_MINUTES = 60;
 
 /**
- * StorageService using Bun's native S3Client
+ * StorageService using AWS SDK v3 (S3-compatible)
  *
- * IMPORTANT LIMITATIONS:
- * - Metadata headers are not supported in write() operations
- * - File metadata must be stored separately if needed
- * - ETags are not returned from write() operations
- * - Bucket creation must be done externally (MinIO console or mc CLI)
+ * Works with:
+ * - Cloudflare R2 (production)
+ * - MinIO (local development)
+ * - AWS S3
  */
 export class StorageService {
-  private readonly region: string;
-  private readonly endpoint: string;
-  private readonly accessKeyId: string;
-  private readonly secretAccessKey: string;
+  private readonly client: S3Client;
   private readonly modelsBucket: string;
   private readonly thumbnailsBucket: string;
   private readonly tempBucket: string;
+  private readonly endpoint: string;
 
   constructor() {
-    // Environment variables are validated by T3 env schema
-    this.region = env.STORAGE_REGION;
-    this.endpoint = env.STORAGE_ENDPOINT;
-    this.accessKeyId = env.STORAGE_ACCESS_KEY;
-    this.secretAccessKey = env.STORAGE_SECRET_KEY;
+    const useSSL = env.STORAGE_USE_SSL === "true";
+    this.endpoint = `${useSSL ? "https" : "http"}://${env.STORAGE_ENDPOINT}`;
+
+    this.client = new S3Client({
+      region: env.STORAGE_REGION,
+      endpoint: this.endpoint,
+      credentials: {
+        accessKeyId: env.STORAGE_ACCESS_KEY,
+        secretAccessKey: env.STORAGE_SECRET_KEY,
+      },
+      forcePathStyle: true, // Required for MinIO and R2 compatibility
+    });
+
     this.modelsBucket = env.STORAGE_BUCKET_NAME;
     this.thumbnailsBucket = env.STORAGE_BUCKET_THUMBNAILS;
     this.tempBucket = env.STORAGE_BUCKET_TEMP;
   }
 
   async initialize() {
-    // Ensure buckets exist
     await this.ensureBucketsExist();
-  }
-
-  private getCredentials(bucket: string) {
-    const useSSL = env.STORAGE_USE_SSL === "true";
-    return {
-      region: this.region,
-      endpoint: `${useSSL ? "https" : "http"}://${this.endpoint}`,
-      accessKeyId: this.accessKeyId,
-      secretAccessKey: this.secretAccessKey,
-      bucket,
-    };
   }
 
   private async ensureBucketsExist() {
@@ -60,8 +62,12 @@ export class StorageService {
 
     for (const { name } of buckets) {
       try {
-        // Test bucket accessibility by attempting to list bucket contents
-        await S3Client.list({ maxKeys: 1 }, this.getCredentials(name));
+        await this.client.send(
+          new ListObjectsV2Command({
+            Bucket: name,
+            MaxKeys: 1,
+          })
+        );
       } catch {
         missingBuckets.push(name);
       }
@@ -70,12 +76,11 @@ export class StorageService {
     if (missingBuckets.length > 0) {
       const bucketList = missingBuckets.join(", ");
       throw new Error(
-        `Missing S3 buckets: ${bucketList}. Please create these buckets via MinIO console or mc CLI before starting the application.`
+        `Missing S3 buckets: ${bucketList}. Please create these buckets before starting the application.`
       );
     }
   }
 
-  // File upload operations
   async uploadFile(options: {
     key: string;
     file: File | Buffer | Uint8Array;
@@ -90,29 +95,36 @@ export class StorageService {
   }> {
     const bucket = options.bucket || this.modelsBucket;
 
-    let data: Buffer | Uint8Array;
+    let body: Buffer | Uint8Array;
     let size: number;
 
     if (options.file instanceof File) {
-      data = new Uint8Array(await options.file.arrayBuffer());
+      body = new Uint8Array(await options.file.arrayBuffer());
       size = options.file.size;
     } else if (Buffer.isBuffer(options.file)) {
-      data = options.file;
+      body = options.file;
       size = options.file.length;
     } else {
-      data = options.file;
+      body = options.file;
       size = options.file.length;
     }
 
     try {
-      // Note: Bun's S3Client write() doesn't support headers or metadata
-      await S3Client.write(options.key, data, this.getCredentials(bucket));
+      const response = await this.client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: options.key,
+          Body: body,
+          ContentType: options.contentType,
+          Metadata: options.metadata,
+        })
+      );
 
       return {
         key: options.key,
         url: this.getFileUrl(options.key, bucket),
         size,
-        etag: "", // Bun's write() returns number, not object with etag
+        etag: response.ETag?.replace(/"/g, "") || "",
       };
     } catch (error) {
       throw new Error(
@@ -121,7 +133,6 @@ export class StorageService {
     }
   }
 
-  // Generate presigned URLs for direct browser uploads
   async generateUploadUrl(options: {
     key: string;
     bucket?: string;
@@ -134,19 +145,20 @@ export class StorageService {
     url: string;
   }> {
     const bucket = options.bucket || this.modelsBucket;
-    const expiresIn = options.expiresInMinutes || DEFAULT_EXPIRES_IN_MINUTES;
+    const expiresIn = (options.expiresInMinutes || DEFAULT_EXPIRES_IN_MINUTES) * 60;
 
     try {
-      // Note: Bun's S3Client presign() doesn't support headers
-      const uploadUrl = await S3Client.presign(options.key, {
-        ...this.getCredentials(bucket),
-        method: "PUT",
-        expiresIn: expiresIn * 60,
+      const command = new PutObjectCommand({
+        Bucket: bucket,
+        Key: options.key,
+        ContentType: options.contentType,
       });
 
+      const uploadUrl = await getSignedUrl(this.client, command, { expiresIn });
+
       return {
-        uploadUrl: uploadUrl || "",
-        fields: {}, // Bun's presign doesn't use fields like AWS S3 presigned posts
+        uploadUrl,
+        fields: {},
         url: this.getFileUrl(options.key, bucket),
       };
     } catch (error) {
@@ -156,7 +168,6 @@ export class StorageService {
     }
   }
 
-  // Generate presigned URLs for file downloads
   async generateDownloadUrl(
     key: string,
     bucket?: string,
@@ -165,12 +176,14 @@ export class StorageService {
     const bucketName = bucket || this.modelsBucket;
 
     try {
-      const downloadUrl = await S3Client.presign(key, {
-        ...this.getCredentials(bucketName),
-        method: "GET",
+      const command = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+      });
+
+      return await getSignedUrl(this.client, command, {
         expiresIn: expiresInMinutes * 60,
       });
-      return downloadUrl || "";
     } catch (error) {
       throw new Error(
         `Failed to generate download URL: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -178,7 +191,6 @@ export class StorageService {
     }
   }
 
-  // File retrieval operations
   async getFile(
     key: string,
     bucket?: string
@@ -192,19 +204,25 @@ export class StorageService {
     const bucketName = bucket || this.modelsBucket;
 
     try {
-      const result = await S3Client.file(key, this.getCredentials(bucketName));
-      if (!result) {
+      const response = await this.client.send(
+        new GetObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        })
+      );
+
+      if (!response.Body) {
         throw new Error(`File not found: ${key}`);
       }
 
-      const body = new Uint8Array(await result.arrayBuffer());
+      const body = new Uint8Array(await response.Body.transformToByteArray());
 
       return {
         body,
-        contentType: result.type || "application/octet-stream",
-        size: result.size,
-        lastModified: new Date(), // Bun's file() doesn't provide lastModified, use stat() for that
-        metadata: {}, // Metadata would need to be stored separately or retrieved via stat()
+        contentType: response.ContentType || "application/octet-stream",
+        size: response.ContentLength || body.length,
+        lastModified: response.LastModified || new Date(),
+        metadata: response.Metadata || {},
       };
     } catch (error) {
       throw new Error(
@@ -217,11 +235,13 @@ export class StorageService {
     const bucketName = bucket || this.modelsBucket;
 
     try {
-      const exists = await S3Client.exists(
-        key,
-        this.getCredentials(bucketName)
+      await this.client.send(
+        new HeadObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        })
       );
-      return Boolean(exists);
+      return true;
     } catch {
       return false;
     }
@@ -240,17 +260,19 @@ export class StorageService {
     const bucketName = bucket || this.modelsBucket;
 
     try {
-      const result = await S3Client.stat(key, this.getCredentials(bucketName));
-      if (!result) {
-        throw new Error(`File not found: ${key}`);
-      }
+      const response = await this.client.send(
+        new HeadObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        })
+      );
 
       return {
-        size: result.size,
-        lastModified: new Date(result.lastModified || Date.now()), // Use lastModified instead of mtime
-        contentType: result.type || "application/octet-stream",
-        etag: result.etag || "",
-        metadata: {}, // Metadata not available in Bun's stat(), would need separate storage
+        size: response.ContentLength || 0,
+        lastModified: response.LastModified || new Date(),
+        contentType: response.ContentType || "application/octet-stream",
+        etag: response.ETag?.replace(/"/g, "") || "",
+        metadata: response.Metadata || {},
       };
     } catch (error) {
       throw new Error(
@@ -259,12 +281,16 @@ export class StorageService {
     }
   }
 
-  // File deletion
   async deleteFile(key: string, bucket?: string): Promise<void> {
     const bucketName = bucket || this.modelsBucket;
 
     try {
-      await S3Client.delete(key, this.getCredentials(bucketName));
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        })
+      );
     } catch (error) {
       throw new Error(
         `Failed to delete file: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -280,26 +306,41 @@ export class StorageService {
     failed: Array<{ key: string; error: string }>;
   }> {
     const bucketName = bucket || this.modelsBucket;
-    const deleted: string[] = [];
-    const failed: Array<{ key: string; error: string }> = [];
 
-    // Delete files individually as Bun's S3Client doesn't have bulk delete
-    for (const key of keys) {
-      try {
-        await S3Client.delete(key, this.getCredentials(bucketName));
-        deleted.push(key);
-      } catch (err) {
-        failed.push({
-          key,
-          error: err instanceof Error ? err.message : "Unknown error",
-        });
-      }
+    if (keys.length === 0) {
+      return { deleted: [], failed: [] };
     }
 
-    return { deleted, failed };
+    try {
+      const response = await this.client.send(
+        new DeleteObjectsCommand({
+          Bucket: bucketName,
+          Delete: {
+            Objects: keys.map((key) => ({ Key: key })),
+            Quiet: false,
+          },
+        })
+      );
+
+      const deleted = response.Deleted?.map((d) => d.Key || "") || [];
+      const failed =
+        response.Errors?.map((e) => ({
+          key: e.Key || "",
+          error: e.Message || "Unknown error",
+        })) || [];
+
+      return { deleted, failed };
+    } catch (error) {
+      return {
+        deleted: [],
+        failed: keys.map((key) => ({
+          key,
+          error: error instanceof Error ? error.message : "Unknown error",
+        })),
+      };
+    }
   }
 
-  // List files
   async listFiles(
     options: {
       prefix?: string;
@@ -320,35 +361,27 @@ export class StorageService {
     const bucket = options.bucket || this.modelsBucket;
 
     try {
-      const result = await S3Client.list(
-        {
-          prefix: options.prefix || "",
-          maxKeys: options.limit || DEFAULT_LIST_LIMIT,
-        },
-        this.getCredentials(bucket)
+      const response = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: bucket,
+          Prefix: options.prefix,
+          MaxKeys: options.limit || DEFAULT_LIST_LIMIT,
+          ContinuationToken: options.continuationToken,
+        })
       );
 
-      if (!result) {
-        return { files: [], isTruncated: false };
-      }
-
-      if (!Array.isArray(result)) {
-        return { files: [], isTruncated: false };
-      }
-
-      const files = result.map((item) => ({
-        key: item.key || item.name || "",
-        size: item.size || 0,
-        lastModified: new Date(
-          item.lastModified || item.modified || Date.now()
-        ),
-        etag: item.etag || "",
-      }));
+      const files =
+        response.Contents?.map((item) => ({
+          key: item.Key || "",
+          size: item.Size || 0,
+          lastModified: item.LastModified || new Date(),
+          etag: item.ETag?.replace(/"/g, "") || "",
+        })) || [];
 
       return {
         files,
-        continuationToken: undefined, // Bun's list doesn't support continuation tokens
-        isTruncated: files.length === (options.limit || DEFAULT_LIST_LIMIT),
+        continuationToken: response.NextContinuationToken,
+        isTruncated: response.IsTruncated || false,
       };
     } catch (error) {
       throw new Error(
@@ -357,7 +390,6 @@ export class StorageService {
     }
   }
 
-  // Utility methods
   get defaultModelsBucket(): string {
     return this.modelsBucket;
   }
@@ -372,8 +404,7 @@ export class StorageService {
 
   getFileUrl(key: string, bucket?: string): string {
     const bucketName = bucket || this.modelsBucket;
-    const useSSL = env.STORAGE_USE_SSL === "true";
-    return `${useSSL ? "https" : "http"}://${this.endpoint}/${bucketName}/${key}`;
+    return `${this.endpoint}/${bucketName}/${key}`;
   }
 
   generateStorageKey(options: {
@@ -418,16 +449,16 @@ export class StorageService {
     return `${organizationId}/${modelId}/${version}`;
   }
 
-  // Health check
   async health(): Promise<{
     status: "healthy" | "unhealthy";
     buckets?: string[];
   }> {
     try {
-      // Test basic connectivity by checking if we can list the models bucket
-      await S3Client.list(
-        { maxKeys: 1 },
-        this.getCredentials(this.modelsBucket)
+      await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.modelsBucket,
+          MaxKeys: 1,
+        })
       );
 
       return {
