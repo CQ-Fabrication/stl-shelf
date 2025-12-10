@@ -28,6 +28,7 @@ export const env = createEnv({
     AUTH_URL: z.string().url(),
     WEB_URL: z.string().url(),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
+    BETTER_AUTH_SECRET: z.string().min(32),
 
     // OAuth Providers (optional)
     GITHUB_CLIENT_ID: z.string().optional(),

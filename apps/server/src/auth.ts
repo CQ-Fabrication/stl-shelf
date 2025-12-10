@@ -66,6 +66,7 @@ const polarClient = new Polar({
 export function createAuth(db: Database) {
   return betterAuth({
     appName: "STL Shelf",
+    secret: env.BETTER_AUTH_SECRET,
     baseURL: env.AUTH_URL ?? `http://localhost:${env.PORT}`,
     basePath: "/api/auth",
     // Allow the web app origin to call auth API (origin check)
