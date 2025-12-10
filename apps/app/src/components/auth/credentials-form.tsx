@@ -28,7 +28,7 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
           email: value.email,
           password: value.password,
           captcha: value.captcha,
-        } as Parameters<typeof auth.signIn.email>[0]);
+        });
         toast.success("Welcome back!");
         await navigate({ to: "/" });
       } catch (error) {
@@ -38,7 +38,9 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
     },
     validators: {
       onSubmit: z.object({
-        email: z.email("Enter a valid email address"),
+        email: z
+          .email("Enter a valid email address")
+          .max(255, "Email is too long"),
         password: z.string().min(1, "Password is required"),
         captcha: z.string().min(1, "Please complete the captcha"),
       }),

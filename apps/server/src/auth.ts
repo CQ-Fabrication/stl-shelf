@@ -26,8 +26,14 @@ import {
 // Better Auth + Drizzle (Postgres) — per docs
 const isProd = env.NODE_ENV === "production";
 
-// Resend client for transactional emails
-const resend = new Resend(env.RESEND_API_KEY);
+// Lazy-initialized Resend client for transactional emails
+let resendClient: Resend | null = null;
+function getResendClient(): Resend {
+  if (!resendClient) {
+    resendClient = new Resend(env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 // Polar.sh client for billing
 const polarClient = new Polar({
@@ -91,27 +97,22 @@ export const auth = betterAuth({
       expiresIn: 60 * 15, // 15 minutes
       sendMagicLink: async ({ email, url }: { email: string; url: string }) => {
         if (!email) {
-          console.error("[auth] Cannot send magic link: no email provided");
-          return;
+          throw new Error("Cannot send magic link: no email provided");
         }
-        try {
-          const html = await render(
-            MagicLinkTemplate({
-              magicLinkUrl: url,
-              logoUrl: env.EMAIL_LOGO_URL,
-            })
-          );
-          const { error } = await resend.emails.send({
-            from: env.EMAIL_FROM,
-            to: email,
-            subject: "Sign in to STL Shelf",
-            html,
-          });
-          if (error) {
-            console.error("[auth] Failed to send magic link email:", error);
-          }
-        } catch (err) {
-          console.error("[auth] Error sending magic link email:", err);
+        const html = await render(
+          MagicLinkTemplate({
+            magicLinkUrl: url,
+            logoUrl: env.EMAIL_LOGO_URL,
+          })
+        );
+        const { error } = await getResendClient().emails.send({
+          from: env.EMAIL_FROM,
+          to: email,
+          subject: "Sign in to STL Shelf",
+          html,
+        });
+        if (error) {
+          throw new Error(`Failed to send magic link email: ${error.message}`);
         }
       },
     }),
@@ -159,31 +160,25 @@ export const auth = betterAuth({
       url: string;
     }) => {
       if (!user.email) {
-        console.error("[auth] Cannot send password reset: no email provided");
-        return;
+        throw new Error("Cannot send password reset: no email provided");
       }
-      try {
-        const html = await render(
-          PasswordResetTemplate({
-            resetUrl: url,
-            logoUrl: env.EMAIL_LOGO_URL,
-          })
+      const html = await render(
+        PasswordResetTemplate({
+          resetUrl: url,
+          logoUrl: env.EMAIL_LOGO_URL,
+        })
+      );
+      const { error } = await getResendClient().emails.send({
+        from: env.EMAIL_FROM,
+        to: user.email,
+        subject: "Reset your password",
+        html,
+      });
+      if (error) {
+        throw new Error(
+          `Failed to send password reset email: ${error.message}`
         );
-        const { error } = await resend.emails.send({
-          from: env.EMAIL_FROM,
-          to: user.email,
-          subject: "Reset your password",
-          html,
-        });
-        if (error) {
-          console.error("[auth] Failed to send password reset email:", error);
-        }
-      } catch (err) {
-        console.error("[auth] Error sending password reset email:", err);
       }
-    },
-    onPasswordReset: ({ user }: { user: { email?: string } }) => {
-      console.log(`[auth] Password reset completed for user: ${user.email}`);
     },
   },
 
@@ -197,29 +192,22 @@ export const auth = betterAuth({
       url: string;
     }) => {
       if (!user.email) {
-        console.error(
-          "[auth] Cannot send verification email: no email provided"
-        );
-        return;
+        throw new Error("Cannot send verification email: no email provided");
       }
-      try {
-        const html = await render(
-          VerifyEmailTemplate({
-            verificationUrl: url,
-            logoUrl: env.EMAIL_LOGO_URL,
-          })
-        );
-        const { error } = await resend.emails.send({
-          from: env.EMAIL_FROM,
-          to: user.email,
-          subject: "Verify your email address",
-          html,
-        });
-        if (error) {
-          console.error("[auth] Failed to send verification email:", error);
-        }
-      } catch (err) {
-        console.error("[auth] Error sending verification email:", err);
+      const html = await render(
+        VerifyEmailTemplate({
+          verificationUrl: url,
+          logoUrl: env.EMAIL_LOGO_URL,
+        })
+      );
+      const { error } = await getResendClient().emails.send({
+        from: env.EMAIL_FROM,
+        to: user.email,
+        subject: "Verify your email address",
+        html,
+      });
+      if (error) {
+        throw new Error(`Failed to send verification email: ${error.message}`);
       }
     },
     sendOnSignUp: true,

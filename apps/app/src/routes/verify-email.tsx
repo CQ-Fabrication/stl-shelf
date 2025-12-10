@@ -1,9 +1,9 @@
+import { Button } from "@stl-shelf/ui/components/button";
+import { Card, CardContent, CardHeader } from "@stl-shelf/ui/components/card";
+import { Logo } from "@stl-shelf/ui/components/logo";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Logo } from "@stl-shelf/ui/components/logo";
-import { Button } from "@stl-shelf/ui/components/button";
-import { Card, CardContent, CardHeader } from "@stl-shelf/ui/components/card";
 import type { RouterAppContext } from "./__root";
 
 export const Route = createFileRoute("/verify-email")({
@@ -16,6 +16,9 @@ export const Route = createFileRoute("/verify-email")({
 });
 
 type VerificationState = "pending" | "verifying" | "success" | "error";
+
+/** Delay before redirecting to app after successful verification (ms) */
+const SUCCESS_REDIRECT_DELAY_MS = 2000;
 
 function VerifyEmailPage() {
   const { auth } = Route.useRouteContext() as RouterAppContext;
@@ -38,7 +41,7 @@ function VerifyEmailPage() {
         // Redirect to home after successful verification
         setTimeout(() => {
           navigate({ to: "/" });
-        }, 2000);
+        }, SUCCESS_REDIRECT_DELAY_MS);
       } catch (_error) {
         setState("error");
         toast.error("Failed to verify email");
@@ -81,12 +84,12 @@ function VerifyEmailPage() {
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
           {state === "pending" && (
-            <PendingState onResend={handleResend} isResending={isResending} />
+            <PendingState isResending={isResending} onResend={handleResend} />
           )}
           {state === "verifying" && <VerifyingState />}
           {state === "success" && <SuccessState />}
           {state === "error" && (
-            <ErrorState onResend={handleResend} isResending={isResending} />
+            <ErrorState isResending={isResending} onResend={handleResend} />
           )}
         </CardContent>
       </Card>
@@ -106,18 +109,17 @@ function PendingState({
       <div className="space-y-4 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
           <svg
+            aria-hidden="true"
             className="h-6 w-6 text-blue-600"
             fill="none"
-            viewBox="0 0 24 24"
             stroke="currentColor"
-            aria-hidden="true"
+            viewBox="0 0 24 24"
           >
-            <title>Mail icon</title>
             <path
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
             />
           </svg>
         </div>
@@ -137,15 +139,15 @@ function PendingState({
           </span>
         </div>
         <Button
-          variant="outline"
           className="w-full"
-          onClick={onResend}
           disabled={isResending}
+          onClick={onResend}
+          variant="outline"
         >
           {isResending ? "Resending..." : "Resend verification email"}
         </Button>
         <Link to="/login">
-          <Button variant="ghost" className="w-full">
+          <Button className="w-full" variant="ghost">
             Back to login
           </Button>
         </Link>
@@ -174,18 +176,17 @@ function SuccessState() {
       <div className="space-y-4 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
           <svg
+            aria-hidden="true"
             className="h-6 w-6 text-green-600"
             fill="none"
-            viewBox="0 0 24 24"
             stroke="currentColor"
-            aria-hidden="true"
+            viewBox="0 0 24 24"
           >
-            <title>Success icon</title>
             <path
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
         </div>
@@ -217,18 +218,17 @@ function ErrorState({
       <div className="space-y-4 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
           <svg
+            aria-hidden="true"
             className="h-6 w-6 text-red-600"
             fill="none"
-            viewBox="0 0 24 24"
             stroke="currentColor"
-            aria-hidden="true"
+            viewBox="0 0 24 24"
           >
-            <title>Error icon</title>
             <path
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
             />
           </svg>
         </div>
@@ -242,11 +242,11 @@ function ErrorState({
       </div>
 
       <div className="space-y-3">
-        <Button className="w-full" onClick={onResend} disabled={isResending}>
+        <Button className="w-full" disabled={isResending} onClick={onResend}>
           {isResending ? "Resending..." : "Request new verification email"}
         </Button>
         <Link to="/login">
-          <Button variant="outline" className="w-full">
+          <Button className="w-full" variant="outline">
             Back to login
           </Button>
         </Link>
