@@ -11,6 +11,7 @@
 		"AUTH_URL": "https://api.stl-shelf.com",
 		"WEB_URL": "https://app.stl-shelf.com",
 		"AUTH_COOKIE_DOMAIN": ".stl-shelf.com",
+		"EMAIL_LOGO_URL": "https://cdn.stl-shelf.com/logo-dark.svg",
 		"STORAGE_REGION": "auto",
 		"STORAGE_BUCKET_NAME": "stl-models",
 		"STORAGE_BUCKET_THUMBNAILS": "stl-thumbnails",
@@ -42,7 +43,9 @@
 		"enabled": true
 	}
 
-	// Secrets (set via CLI, not here):
+	// Secrets (set via CLI or Dashboard, not here):
+	// wrangler secret put DATABASE_URL
+	// wrangler secret put BETTER_AUTH_SECRET
 	// wrangler secret put RESEND_API_KEY
 	// wrangler secret put EMAIL_FROM
 	// wrangler secret put EMAIL_LOGO_URL
