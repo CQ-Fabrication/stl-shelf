@@ -104,6 +104,17 @@ export function createAuth(db: Database) {
     plugins: [
       organization({
         organizationLimit: 1,
+        organizationHooks: {
+          // Set ownerId to the user who created the organization
+          beforeCreateOrganization: async ({ organization, user }) => {
+            return {
+              data: {
+                ...organization,
+                ownerId: user.id,
+              },
+            };
+          },
+        },
       }),
       captcha({
         provider: "cloudflare-turnstile",
