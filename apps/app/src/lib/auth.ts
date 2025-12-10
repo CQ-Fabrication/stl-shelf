@@ -1,5 +1,8 @@
 import { polarClient } from "@polar-sh/better-auth";
-import { magicLinkClient, organizationClient } from "better-auth/client/plugins";
+import {
+  magicLinkClient,
+  organizationClient,
+} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 export const auth = createAuthClient({
@@ -9,3 +12,5 @@ export const auth = createAuthClient({
   },
   plugins: [magicLinkClient(), organizationClient(), polarClient()],
 });
+
+export type AuthClient = typeof auth;

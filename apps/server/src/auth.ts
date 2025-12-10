@@ -89,25 +89,30 @@ export const auth = betterAuth({
     }),
     magicLink({
       expiresIn: 60 * 15, // 15 minutes
-      sendMagicLink: async ({
-        email,
-        url,
-      }: {
-        email: string;
-        url: string;
-      }) => {
-        const html = await render(
-          MagicLinkTemplate({
-            magicLinkUrl: url,
-            logoUrl: env.EMAIL_LOGO_URL,
-          })
-        );
-        await resend.emails.send({
-          from: env.EMAIL_FROM,
-          to: email,
-          subject: "Sign in to STL Shelf",
-          html,
-        });
+      sendMagicLink: async ({ email, url }: { email: string; url: string }) => {
+        if (!email) {
+          console.error("[auth] Cannot send magic link: no email provided");
+          return;
+        }
+        try {
+          const html = await render(
+            MagicLinkTemplate({
+              magicLinkUrl: url,
+              logoUrl: env.EMAIL_LOGO_URL,
+            })
+          );
+          const { error } = await resend.emails.send({
+            from: env.EMAIL_FROM,
+            to: email,
+            subject: "Sign in to STL Shelf",
+            html,
+          });
+          if (error) {
+            console.error("[auth] Failed to send magic link email:", error);
+          }
+        } catch (err) {
+          console.error("[auth] Error sending magic link email:", err);
+        }
       },
     }),
     openAPI(),
@@ -153,18 +158,29 @@ export const auth = betterAuth({
       user: { email?: string };
       url: string;
     }) => {
-      const html = await render(
-        PasswordResetTemplate({
-          resetUrl: url,
-          logoUrl: env.EMAIL_LOGO_URL,
-        })
-      );
-      await resend.emails.send({
-        from: env.EMAIL_FROM,
-        to: user.email ?? "",
-        subject: "Reset your password",
-        html,
-      });
+      if (!user.email) {
+        console.error("[auth] Cannot send password reset: no email provided");
+        return;
+      }
+      try {
+        const html = await render(
+          PasswordResetTemplate({
+            resetUrl: url,
+            logoUrl: env.EMAIL_LOGO_URL,
+          })
+        );
+        const { error } = await resend.emails.send({
+          from: env.EMAIL_FROM,
+          to: user.email,
+          subject: "Reset your password",
+          html,
+        });
+        if (error) {
+          console.error("[auth] Failed to send password reset email:", error);
+        }
+      } catch (err) {
+        console.error("[auth] Error sending password reset email:", err);
+      }
     },
     onPasswordReset: ({ user }: { user: { email?: string } }) => {
       console.log(`[auth] Password reset completed for user: ${user.email}`);
@@ -180,18 +196,31 @@ export const auth = betterAuth({
       user: { email?: string };
       url: string;
     }) => {
-      const html = await render(
-        VerifyEmailTemplate({
-          verificationUrl: url,
-          logoUrl: env.EMAIL_LOGO_URL,
-        })
-      );
-      await resend.emails.send({
-        from: env.EMAIL_FROM,
-        to: user.email ?? "",
-        subject: "Verify your email address",
-        html,
-      });
+      if (!user.email) {
+        console.error(
+          "[auth] Cannot send verification email: no email provided"
+        );
+        return;
+      }
+      try {
+        const html = await render(
+          VerifyEmailTemplate({
+            verificationUrl: url,
+            logoUrl: env.EMAIL_LOGO_URL,
+          })
+        );
+        const { error } = await resend.emails.send({
+          from: env.EMAIL_FROM,
+          to: user.email,
+          subject: "Verify your email address",
+          html,
+        });
+        if (error) {
+          console.error("[auth] Failed to send verification email:", error);
+        }
+      } catch (err) {
+        console.error("[auth] Error sending verification email:", err);
+      }
     },
     sendOnSignUp: true,
   },
