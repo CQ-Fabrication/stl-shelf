@@ -36,31 +36,14 @@ const handler = new RPCHandler(appRouter);
 // Apply middleware in correct order
 app.use(logger());
 
-// Configure CORS
-const allowedOrigins = [
-  env.CORS_ORIGIN,
-  env.WEB_URL,
-  "http://localhost:3001",
-  "http://127.0.0.1:3001",
-].filter(Boolean) as string[];
-
+// Configure CORS - env values are validated by Zod, always defined
 app.use(
   "*",
   cors({
-    origin: (origin) => {
-      // No origin = server-to-server or Postman, allow through
-      if (!origin) return allowedOrigins[0];
-      // Check if origin is in allowed list
-      if (allowedOrigins.includes(origin)) return origin;
-      // Not allowed - return first allowed origin (will fail CORS but with proper header)
-      console.log(`CORS: Rejected origin: ${origin}`);
-      return allowedOrigins[0];
-    },
+    origin: [env.CORS_ORIGIN, "http://localhost:3001"],
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    exposeHeaders: ["Content-Length", "X-Request-Id"],
-    maxAge: 600,
+    allowHeaders: ["Content-Type", "Authorization"],
   })
 );
 
