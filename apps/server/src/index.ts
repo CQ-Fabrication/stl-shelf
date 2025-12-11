@@ -37,24 +37,30 @@ const handler = new RPCHandler(appRouter);
 app.use(logger());
 
 // Configure CORS
+const allowedOrigins = [
+  env.CORS_ORIGIN,
+  env.WEB_URL,
+  "http://localhost:3001",
+  "http://127.0.0.1:3001",
+].filter(Boolean) as string[];
+
 app.use(
   "*",
   cors({
     origin: (origin) => {
-      // Allow requests from configured origins
-      const allowedOrigins = [
-        env.CORS_ORIGIN,
-        env.WEB_URL,
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-      ].filter(Boolean);
-
-      if (!origin) return null; // Allow requests with no origin (e.g., Postman)
-      return allowedOrigins.includes(origin) ? origin : null;
+      // No origin = server-to-server or Postman, allow through
+      if (!origin) return allowedOrigins[0];
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) return origin;
+      // Not allowed - return first allowed origin (will fail CORS but with proper header)
+      console.log(`CORS: Rejected origin: ${origin}`);
+      return allowedOrigins[0];
     },
     credentials: true,
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    exposeHeaders: ["Content-Length", "X-Request-Id"],
+    maxAge: 600,
   })
 );
 
