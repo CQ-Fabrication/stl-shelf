@@ -22,6 +22,6 @@ export const SLICER_CONFIG = {
   },
 } as const satisfies Record<SlicerId, SlicerConfig>;
 
-export const MODEL_FILE_EXTENSIONS = ["stl", "3mf", "obj", "ply"] as const;
+export const MODEL_FILE_EXTENSIONS = ["stl", "3mf", "obj", "ply", "step", "stp"] as const;
 export const SELECTABLE_FILE_EXTENSIONS = ["stl", "obj"] as const;
 export const PREFERRED_FILE_EXTENSION = "3mf" as const;

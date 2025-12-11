@@ -39,9 +39,11 @@ const ACCEPTED_FORMATS = {
   "model/3mf": [".3mf"],
   "application/x-ply": [".ply"],
   "model/ply": [".ply"],
+  "application/stp": [".step", ".stp"],
+  "model/step": [".step", ".stp"],
 };
 
-const ACCEPTED_EXTENSIONS = [".stl", ".obj", ".3mf", ".ply"];
+const ACCEPTED_EXTENSIONS = [".stl", ".obj", ".3mf", ".ply", ".step", ".stp"];
 
 export function VersionUploadModal({
   isOpen,
