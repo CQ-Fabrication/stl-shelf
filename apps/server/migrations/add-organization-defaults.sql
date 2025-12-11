@@ -1,9 +1,14 @@
 -- Migration: Add database-level defaults for custom organization columns
 -- Run this against the production Neon database
--- Drizzle's .default() only creates JS-level defaults, not database-level defaults
--- Better Auth needs database-level defaults for custom columns it doesn't know about
+--
+-- NOTE: This migration is OPTIONAL if you use db:push to create a fresh database.
+-- Drizzle's .default() creates database-level defaults when using db:push.
+-- This file exists as documentation and for manual fixes if needed.
+--
+-- The Better Auth organization plugin now has additionalFields config in auth.ts
+-- that makes it aware of our custom fields, so values are set properly via hooks.
 
--- Add defaults for subscription fields
+-- Add defaults for subscription fields (safety net)
 ALTER TABLE organization ALTER COLUMN subscription_tier SET DEFAULT 'free';
 ALTER TABLE organization ALTER COLUMN subscription_status SET DEFAULT 'active';
 
@@ -16,5 +21,3 @@ ALTER TABLE organization ALTER COLUMN member_limit SET DEFAULT 1;
 ALTER TABLE organization ALTER COLUMN current_storage SET DEFAULT 0;
 ALTER TABLE organization ALTER COLUMN current_model_count SET DEFAULT 0;
 ALTER TABLE organization ALTER COLUMN current_member_count SET DEFAULT 1;
-
--- Note: owner_id is now set via Better Auth's beforeCreateOrganization hook in auth.ts

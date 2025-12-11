@@ -76,6 +76,7 @@ export const organization = pgTable("organization", {
   metadata: text("metadata"),
 
   // Owner tracking (who pays for this org)
+  // Set via beforeCreateOrganization hook + additionalFields schema config
   ownerId: text("owner_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),

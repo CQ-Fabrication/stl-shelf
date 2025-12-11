@@ -104,6 +104,65 @@ export function createAuth(db: Database) {
     plugins: [
       organization({
         organizationLimit: 1,
+        // Tell Better Auth about our custom fields so it passes them to the adapter
+        schema: {
+          organization: {
+            additionalFields: {
+              ownerId: {
+                type: "string",
+                required: true,
+              },
+              polarCustomerId: {
+                type: "string",
+                required: false,
+              },
+              subscriptionTier: {
+                type: "string",
+                required: true,
+                defaultValue: "free",
+              },
+              subscriptionStatus: {
+                type: "string",
+                required: true,
+                defaultValue: "active",
+              },
+              subscriptionId: {
+                type: "string",
+                required: false,
+              },
+              storageLimit: {
+                type: "number",
+                required: true,
+                defaultValue: 104_857_600, // 100MB
+              },
+              modelCountLimit: {
+                type: "number",
+                required: true,
+                defaultValue: 20,
+              },
+              memberLimit: {
+                type: "number",
+                required: true,
+                defaultValue: 1,
+              },
+              currentStorage: {
+                type: "number",
+                required: true,
+                defaultValue: 0,
+              },
+              currentModelCount: {
+                type: "number",
+                required: true,
+                defaultValue: 0,
+              },
+              currentMemberCount: {
+                type: "number",
+                required: true,
+                defaultValue: 1,
+              },
+            },
+          },
+        },
         organizationHooks: {
           // Set ownerId to the user who created the organization
           beforeCreateOrganization: async ({ organization, user }) => {
