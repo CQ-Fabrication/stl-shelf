@@ -8,6 +8,11 @@ import { storageService } from "@/services/storage";
 const FALLBACK_FILENAME = "model-file";
 const DEFAULT_CONTENT_TYPE = "application/octet-stream";
 const VERSION_REGEX = /^v(\d+)$/;
+const SLICER_EXTENSIONS = new Set(["3mf"]);
+
+function getStorageKind(extension: string): "source" | "slicer" {
+  return SLICER_EXTENSIONS.has(extension.toLowerCase()) ? "slicer" : "source";
+}
 
 type UploadedFileMetadata = {
   storageKey: string;
@@ -28,6 +33,7 @@ export type AddVersionInput = {
   ownerId: string;
   changelog: string;
   files: File[];
+  previewImage?: File;
   ipAddress?: string | null;
 };
 
@@ -65,7 +71,7 @@ export class ModelVersionService {
       throw new Error("Model not found or access denied");
     }
 
-    // Get the current version's thumbnail to preserve it in the new version
+    // Get the current version's thumbnail as fallback
     const currentVersionData = await db.query.modelVersions.findFirst({
       where: and(
         eq(modelVersions.modelId, input.modelId),
@@ -76,7 +82,7 @@ export class ModelVersionService {
       },
     });
 
-    const thumbnailPath = currentVersionData?.thumbnailPath ?? null;
+    const fallbackThumbnailPath = currentVersionData?.thumbnailPath ?? null;
 
     // Get the latest version number and increment
     const currentVersion = model.currentVersion;
@@ -110,6 +116,34 @@ export class ModelVersionService {
     } catch (error) {
       await this.cleanupUploadedFiles(uploadResults);
       throw error;
+    }
+
+    // Upload preview image if provided, otherwise use fallback
+    let thumbnailPath = fallbackThumbnailPath;
+    if (input.previewImage) {
+      try {
+        const ext =
+          input.previewImage.name.split(".").pop()?.toLowerCase() || "jpg";
+        const previewFilename = `preview.${ext}`;
+        const previewKey = storageService.generateStorageKey({
+          organizationId: input.organizationId,
+          modelId: input.modelId,
+          version: newVersionLabel,
+          filename: previewFilename,
+          kind: "artifact",
+        });
+
+        await storageService.uploadFile({
+          key: previewKey,
+          file: input.previewImage,
+        });
+
+        thumbnailPath = previewKey;
+      } catch (error) {
+        // Clean up uploaded files if preview upload fails
+        await this.cleanupUploadedFiles(uploadResults);
+        throw error;
+      }
     }
 
     try {
@@ -211,12 +245,13 @@ export class ModelVersionService {
     const originalName = file.name || FALLBACK_FILENAME;
     const { storedFilename, extension } =
       this.createStoredFilename(originalName);
+    const kind = getStorageKind(extension);
     const storageKey = storageService.generateStorageKey({
       organizationId,
       modelId,
       version,
       filename: storedFilename,
-      kind: "source",
+      kind,
     });
 
     await storageService.uploadFile({
@@ -227,7 +262,7 @@ export class ModelVersionService {
 
     return {
       storageKey,
-      storageBucket: storageService.defaultModelsBucket,
+      storageBucket: storageService.defaultBucket,
       filename: storedFilename,
       originalName,
       mimeType: file.type || DEFAULT_CONTENT_TYPE,
@@ -267,11 +302,9 @@ export class ModelVersionService {
   ): Promise<void> {
     await Promise.all(
       files.map((file) =>
-        storageService
-          .deleteFile(file.storageKey, file.storageBucket)
-          .catch(() => {
-            // Intentionally ignore cleanup errors
-          })
+        storageService.deleteFile(file.storageKey).catch(() => {
+          // Intentionally ignore cleanup errors
+        })
       )
     );
   }

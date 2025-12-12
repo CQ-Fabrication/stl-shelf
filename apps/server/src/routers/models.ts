@@ -13,7 +13,8 @@ import { modelListService } from "@/services/models/model-list.service";
 import { modelVersionService } from "@/services/models/model-version.service";
 import { tagService } from "@/services/tags/tag.service";
 
-const fileSchema = z.instanceof(File);
+// oRPC parses FormData files as Blob objects (File extends Blob)
+const fileSchema = z.instanceof(Blob) as z.ZodType<File>;
 
 const createModelInputSchema = z.object({
   name: z.string().min(1).max(200),
@@ -160,6 +161,7 @@ const addVersionInputSchema = z.object({
   modelId: z.uuid(),
   changelog: z.string().min(1).max(2000),
   files: z.array(fileSchema).min(1).max(5),
+  previewImage: fileSchema.optional(),
 });
 
 const addVersionResponseSchema = z.object({
@@ -182,6 +184,7 @@ export const addModelVersionProcedure = protectedProcedure
       ownerId: context.session.user.id,
       changelog: input.changelog,
       files: input.files,
+      previewImage: input.previewImage,
       ipAddress: context.ipAddress,
     });
 
