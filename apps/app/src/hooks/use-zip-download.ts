@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { ModelFile } from "@/lib/slicers/utils";
+import type { ModelFile } from "@/lib/model-files";
 import { downloadFromBlob } from "@/utils/download";
 import { orpc } from "@/utils/orpc";
 

@@ -1,5 +1,5 @@
 import { skipToken, useQuery } from "@tanstack/react-query";
-import { filterModelFiles, type ModelFile } from "@/lib/slicers/utils";
+import { filterModelFiles, type ModelFile } from "@/lib/model-files";
 import { orpc } from "@/utils/orpc";
 
 type UseModelFilesParams = {

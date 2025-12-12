@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, MoreVertical, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Download, MoreVertical, Trash2, Upload } from "lucide-react";
 import { Button } from "@stl-shelf/ui/components/button";
 import {
   DropdownMenu,
@@ -9,8 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@stl-shelf/ui/components/dropdown-menu";
 import { Skeleton } from "@stl-shelf/ui/components/skeleton";
+import { useModelFiles } from "@/hooks/use-model-files";
+import { useZipDownload } from "@/hooks/use-zip-download";
 import { orpc } from "@/utils/orpc";
-import { SlicerActionsDropdown } from "./slicer-actions-dropdown";
 
 type ModelDetailHeaderProps = {
   modelId: string;
@@ -28,6 +29,18 @@ export const ModelDetailHeader = ({
   const { data: model, isLoading } = useQuery(
     orpc.models.getModel.queryOptions({ input: { id: modelId } })
   );
+
+  const { modelFiles, activeVersion: version } = useModelFiles({
+    modelId,
+    versionId: activeVersion,
+  });
+
+  const { handleDownloadZip, isDownloading } = useZipDownload({
+    modelId,
+    modelName: model?.name ?? "model",
+    activeVersion: version,
+    modelFiles,
+  });
 
   if (isLoading) {
     return (
@@ -84,11 +97,14 @@ export const ModelDetailHeader = ({
           )}
         </div>
         <div className="flex gap-2">
-          <SlicerActionsDropdown
-            modelId={modelId}
-            modelName={model.name}
-            versionId={activeVersion}
-          />
+          <Button
+            disabled={isDownloading || !modelFiles?.length}
+            onClick={handleDownloadZip}
+            size="sm"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {isDownloading ? "Downloading..." : "Download"}
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="outline">
