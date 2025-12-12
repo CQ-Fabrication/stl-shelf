@@ -13,17 +13,13 @@
 		"EMAIL_LOGO_URL": "https://cdn.stl-shelf.com/logo-dark.svg",
 		"STORAGE_REGION": "auto",
 		"STORAGE_BUCKET_NAME": "stl-models",
-		"STORAGE_BUCKET_THUMBNAILS": "stl-thumbnails",
-		"STORAGE_BUCKET_TEMP": "stl-temp",
 		"STORAGE_USE_SSL": "true",
 		"POLAR_SERVER": "production"
 	},
 
 	// R2 Storage bindings
 	"r2_buckets": [
-		{ "binding": "R2_MODELS", "bucket_name": "stl-models" },
-		{ "binding": "R2_THUMBNAILS", "bucket_name": "stl-thumbnails" },
-		{ "binding": "R2_TEMP", "bucket_name": "stl-temp" }
+		{ "binding": "R2_MODELS", "bucket_name": "stl-models" }
 	],
 
 	// Hyperdrive database connection pooling

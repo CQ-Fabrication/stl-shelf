@@ -17,8 +17,6 @@ export const env = createEnv({
     STORAGE_ACCESS_KEY: z.string().min(1),
     STORAGE_SECRET_KEY: z.string().min(1),
     STORAGE_BUCKET_NAME: z.string().min(1).default("stl-models"),
-    STORAGE_BUCKET_THUMBNAILS: z.string().min(1).default("stl-thumbnails"),
-    STORAGE_BUCKET_TEMP: z.string().min(1).default("stl-temp"),
     STORAGE_USE_SSL: z.enum(["true", "false"]).default("true"),
 
     // BetterAuth / Auth

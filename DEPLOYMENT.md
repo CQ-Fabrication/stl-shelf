@@ -40,13 +40,11 @@ This guide covers deploying STL Shelf to Cloudflare with the following architect
 ### 1.2 Cloudflare R2 Buckets
 
 1. Go to Cloudflare Dashboard → R2
-2. Create 3 buckets:
-   - `stl-models` - Primary model storage
-   - `stl-thumbnails` - Generated thumbnails
-   - `stl-temp` - Temporary uploads
+2. Create bucket:
+   - `stl-models` - All model storage (models, thumbnails, temp files)
 3. Generate R2 API credentials:
    - Go to R2 → Manage R2 API Tokens
-   - Create token with read/write access to all buckets
+   - Create token with read/write access to the bucket
    - Save Access Key ID and Secret Access Key
 
 ### 1.3 Hyperdrive Configuration
@@ -216,9 +214,7 @@ To restrict access during testing:
 | `STORAGE_ENDPOINT` | R2 endpoint | `<account>.r2.cloudflarestorage.com` |
 | `STORAGE_ACCESS_KEY` | R2 access key | From R2 API tokens |
 | `STORAGE_SECRET_KEY` | R2 secret key | From R2 API tokens |
-| `STORAGE_BUCKET_NAME` | Models bucket | `stl-models` |
-| `STORAGE_BUCKET_THUMBNAILS` | Thumbnails bucket | `stl-thumbnails` |
-| `STORAGE_BUCKET_TEMP` | Temp bucket | `stl-temp` |
+| `STORAGE_BUCKET_NAME` | Storage bucket | `stl-models` |
 | `RESEND_API_KEY` | Resend API key | `re_...` |
 | `EMAIL_FROM` | Sender address | `STL Shelf <noreply@mail.stl-shelf.com>` |
 | `TURNSTILE_SECRET_KEY` | Turnstile secret | From Turnstile dashboard |

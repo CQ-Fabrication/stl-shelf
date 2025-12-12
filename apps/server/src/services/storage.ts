@@ -23,9 +23,7 @@ const DEFAULT_EXPIRES_IN_MINUTES = 60;
  */
 export class StorageService {
   private readonly client: S3Client;
-  private readonly modelsBucket: string;
-  private readonly thumbnailsBucket: string;
-  private readonly tempBucket: string;
+  private readonly bucket: string;
   private readonly endpoint: string;
 
   constructor() {
@@ -42,9 +40,7 @@ export class StorageService {
       forcePathStyle: true, // Required for MinIO and R2 compatibility
     });
 
-    this.modelsBucket = env.STORAGE_BUCKET_NAME;
-    this.thumbnailsBucket = env.STORAGE_BUCKET_THUMBNAILS;
-    this.tempBucket = env.STORAGE_BUCKET_TEMP;
+    this.bucket = env.STORAGE_BUCKET_NAME;
   }
 
   async initialize() {
@@ -52,31 +48,16 @@ export class StorageService {
   }
 
   private async ensureBucketsExist() {
-    const buckets = [
-      { name: this.modelsBucket, type: "models" },
-      { name: this.thumbnailsBucket, type: "thumbnails" },
-      { name: this.tempBucket, type: "temp" },
-    ];
-
-    const missingBuckets: string[] = [];
-
-    for (const { name } of buckets) {
-      try {
-        await this.client.send(
-          new ListObjectsV2Command({
-            Bucket: name,
-            MaxKeys: 1,
-          })
-        );
-      } catch {
-        missingBuckets.push(name);
-      }
-    }
-
-    if (missingBuckets.length > 0) {
-      const bucketList = missingBuckets.join(", ");
+    try {
+      await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          MaxKeys: 1,
+        })
+      );
+    } catch {
       throw new Error(
-        `Missing S3 buckets: ${bucketList}. Please create these buckets before starting the application.`
+        `Missing S3 bucket: ${this.bucket}. Please create this bucket before starting the application.`
       );
     }
   }
@@ -84,7 +65,6 @@ export class StorageService {
   async uploadFile(options: {
     key: string;
     file: File | Buffer | Uint8Array;
-    bucket?: string;
     contentType?: string;
     metadata?: Record<string, string>;
   }): Promise<{
@@ -93,7 +73,7 @@ export class StorageService {
     size: number;
     etag: string;
   }> {
-    const bucket = options.bucket || this.modelsBucket;
+    const bucket = this.bucket;
 
     let body: Buffer | Uint8Array;
     let size: number;
@@ -122,7 +102,7 @@ export class StorageService {
 
       return {
         key: options.key,
-        url: this.getFileUrl(options.key, bucket),
+        url: this.getFileUrl(options.key),
         size,
         etag: response.ETag?.replace(/"/g, "") || "",
       };
@@ -135,7 +115,6 @@ export class StorageService {
 
   async generateUploadUrl(options: {
     key: string;
-    bucket?: string;
     contentType?: string;
     expiresInMinutes?: number;
     sizeLimit?: number;
@@ -144,7 +123,7 @@ export class StorageService {
     fields: Record<string, string>;
     url: string;
   }> {
-    const bucket = options.bucket || this.modelsBucket;
+    const bucket = this.bucket;
     const expiresIn = (options.expiresInMinutes || DEFAULT_EXPIRES_IN_MINUTES) * 60;
 
     try {
@@ -159,7 +138,7 @@ export class StorageService {
       return {
         uploadUrl,
         fields: {},
-        url: this.getFileUrl(options.key, bucket),
+        url: this.getFileUrl(options.key),
       };
     } catch (error) {
       throw new Error(
@@ -170,10 +149,9 @@ export class StorageService {
 
   async generateDownloadUrl(
     key: string,
-    bucket?: string,
     expiresInMinutes = 60
   ): Promise<string> {
-    const bucketName = bucket || this.modelsBucket;
+    const bucketName = this.bucket;
 
     try {
       const command = new GetObjectCommand({
@@ -192,8 +170,7 @@ export class StorageService {
   }
 
   async getFile(
-    key: string,
-    bucket?: string
+    key: string
   ): Promise<{
     body: Uint8Array;
     contentType: string;
@@ -201,7 +178,7 @@ export class StorageService {
     lastModified: Date;
     metadata: Record<string, string>;
   }> {
-    const bucketName = bucket || this.modelsBucket;
+    const bucketName = this.bucket;
 
     try {
       const response = await this.client.send(
@@ -231,8 +208,8 @@ export class StorageService {
     }
   }
 
-  async fileExists(key: string, bucket?: string): Promise<boolean> {
-    const bucketName = bucket || this.modelsBucket;
+  async fileExists(key: string): Promise<boolean> {
+    const bucketName = this.bucket;
 
     try {
       await this.client.send(
@@ -248,8 +225,7 @@ export class StorageService {
   }
 
   async getFileMetadata(
-    key: string,
-    bucket?: string
+    key: string
   ): Promise<{
     size: number;
     lastModified: Date;
@@ -257,7 +233,7 @@ export class StorageService {
     etag: string;
     metadata: Record<string, string>;
   }> {
-    const bucketName = bucket || this.modelsBucket;
+    const bucketName = this.bucket;
 
     try {
       const response = await this.client.send(
@@ -281,8 +257,8 @@ export class StorageService {
     }
   }
 
-  async deleteFile(key: string, bucket?: string): Promise<void> {
-    const bucketName = bucket || this.modelsBucket;
+  async deleteFile(key: string): Promise<void> {
+    const bucketName = this.bucket;
 
     try {
       await this.client.send(
@@ -299,13 +275,12 @@ export class StorageService {
   }
 
   async deleteFiles(
-    keys: string[],
-    bucket?: string
+    keys: string[]
   ): Promise<{
     deleted: string[];
     failed: Array<{ key: string; error: string }>;
   }> {
-    const bucketName = bucket || this.modelsBucket;
+    const bucketName = this.bucket;
 
     if (keys.length === 0) {
       return { deleted: [], failed: [] };
@@ -344,8 +319,7 @@ export class StorageService {
   async listFiles(
     options: {
       prefix?: string;
-      bucket?: string;
-      limit?: number;
+        limit?: number;
       continuationToken?: string;
     } = {}
   ): Promise<{
@@ -358,7 +332,7 @@ export class StorageService {
     continuationToken?: string;
     isTruncated: boolean;
   }> {
-    const bucket = options.bucket || this.modelsBucket;
+    const bucket = this.bucket;
 
     try {
       const response = await this.client.send(
@@ -390,21 +364,12 @@ export class StorageService {
     }
   }
 
-  get defaultModelsBucket(): string {
-    return this.modelsBucket;
+  get defaultBucket(): string {
+    return this.bucket;
   }
 
-  get defaultThumbnailsBucket(): string {
-    return this.thumbnailsBucket;
-  }
-
-  get defaultTempBucket(): string {
-    return this.tempBucket;
-  }
-
-  getFileUrl(key: string, bucket?: string): string {
-    const bucketName = bucket || this.modelsBucket;
-    return `${this.endpoint}/${bucketName}/${key}`;
+  getFileUrl(key: string): string {
+    return `${this.endpoint}/${this.bucket}/${key}`;
   }
 
   generateStorageKey(options: {
@@ -451,19 +416,19 @@ export class StorageService {
 
   async health(): Promise<{
     status: "healthy" | "unhealthy";
-    buckets?: string[];
+    bucket?: string;
   }> {
     try {
       await this.client.send(
         new ListObjectsV2Command({
-          Bucket: this.modelsBucket,
+          Bucket: this.bucket,
           MaxKeys: 1,
         })
       );
 
       return {
         status: "healthy",
-        buckets: [this.modelsBucket, this.thumbnailsBucket, this.tempBucket],
+        bucket: this.bucket,
       };
     } catch {
       return { status: "unhealthy" };

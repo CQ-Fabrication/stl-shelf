@@ -20,10 +20,8 @@ export interface Env {
   HYPERDRIVE: {
     connectionString: string;
   };
-  // R2 bucket bindings
+  // R2 bucket binding (single bucket for all storage)
   R2_MODELS: R2Bucket;
-  R2_THUMBNAILS: R2Bucket;
-  R2_TEMP: R2Bucket;
   // Environment variables (from wrangler.jsonc vars + secrets)
   [key: string]: unknown;
 }
