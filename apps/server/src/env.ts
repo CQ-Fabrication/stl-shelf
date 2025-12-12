@@ -21,9 +21,6 @@ export const env = createEnv({
     STORAGE_BUCKET_TEMP: z.string().min(1).default("stl-temp"),
     STORAGE_USE_SSL: z.enum(["true", "false"]).default("true"),
 
-    // CORS
-    CORS_ORIGIN: z.string().url(),
-
     // BetterAuth / Auth
     AUTH_URL: z.string().url(),
     WEB_URL: z.string().url(),

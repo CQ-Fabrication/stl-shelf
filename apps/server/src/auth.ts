@@ -70,7 +70,8 @@ export function createAuth(db: Database) {
     baseURL: env.AUTH_URL ?? `http://localhost:${env.PORT}`,
     basePath: "/api/auth",
     // Allow the web app origin to call auth API (origin check)
-    trustedOrigins: [env.WEB_URL ?? "http://localhost:3001"],
+    // Hardcoded to avoid CPU overhead from env lookups on Workers
+    trustedOrigins: ["https://app.stl-shelf.com", "http://localhost:3001"],
     // Built-in rate limit configuration (per docs)
     rateLimit: {
       // Default limiter applied to routes without explicit settings

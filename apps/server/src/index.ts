@@ -36,11 +36,12 @@ const handler = new RPCHandler(appRouter);
 // Apply middleware in correct order
 app.use(logger());
 
-// Configure CORS - env values are validated by Zod, always defined
+// Configure CORS - hardcoded origins to avoid CPU overhead from env lookups
+// See: https://www.answeroverflow.com/m/1357795265108512808
 app.use(
   "*",
   cors({
-    origin: [env.CORS_ORIGIN, "http://localhost:3001"],
+    origin: ["https://app.stl-shelf.com", "http://localhost:3001"],
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowHeaders: ["Content-Type", "Authorization"],
