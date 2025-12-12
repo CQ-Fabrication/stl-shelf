@@ -6,11 +6,11 @@ import {
   HardDrive,
   ImageIcon,
   PenLine,
-  Tag,
 } from "lucide-react";
 import { Badge } from "@stl-shelf/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@stl-shelf/ui/components/card";
 import { Skeleton } from "@stl-shelf/ui/components/skeleton";
+import { TagEditor } from "@/components/model-detail/tag-editor";
 import { formatDate, formatFileSize } from "@/utils/formatters";
 import { orpc } from "@/utils/orpc";
 
@@ -211,21 +211,7 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
         )}
 
         {/* Tags */}
-        {tags && tags.length > 0 && (
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <Tag className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Tags</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <Badge key={tag.id} variant="secondary">
-                  {tag.name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
+        <TagEditor currentTags={tags ?? []} modelId={modelId} />
       </CardContent>
     </Card>
   );

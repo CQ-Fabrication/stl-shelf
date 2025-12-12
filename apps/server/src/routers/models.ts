@@ -301,6 +301,29 @@ export const getModelTagsProcedure = protectedProcedure
     );
   });
 
+const updateModelTagsInputSchema = z.object({
+  modelId: z.uuid(),
+  tags: z.array(z.string().min(1).max(64)).max(20),
+});
+
+export const updateModelTagsProcedure = protectedProcedure
+  .input(updateModelTagsInputSchema)
+  .output(z.object({ success: z.boolean() }))
+  .handler(async ({ input, context }) => {
+    // Verify model exists and belongs to user's organization
+    await modelDetailService.getModel(input.modelId, context.organizationId);
+
+    // Update tags
+    const uniqueTags = Array.from(new Set(input.tags));
+    await tagService.updateModelTags(
+      input.modelId,
+      uniqueTags,
+      context.organizationId
+    );
+
+    return { success: true };
+  });
+
 // Download procedures
 const downloadFileInputSchema = z.object({
   storageKey: z.string(),
@@ -428,6 +451,7 @@ export const modelsRouter = {
   getModelFiles: getModelFilesProcedure,
   getModelStatistics: getModelStatisticsProcedure,
   getModelTags: getModelTagsProcedure,
+  updateModelTags: updateModelTagsProcedure,
   downloadFile: downloadFileProcedure,
   downloadModelZip: downloadModelZipProcedure,
   downloadVersionZip: downloadVersionZipProcedure,

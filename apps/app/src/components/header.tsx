@@ -86,7 +86,6 @@ export default function Header() {
           {/* Upload button - Only show if user has organizations */}
           {hasOrganizations && (
             <Button
-              className="bg-brand text-brand-foreground hover:bg-brand/90"
               onClick={() => uploadModalActions.openModal()}
               size="sm"
             >

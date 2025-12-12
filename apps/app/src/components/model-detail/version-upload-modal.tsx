@@ -165,23 +165,23 @@ export function VersionUploadModal({
           <div className="space-y-4">
             <div
               {...getRootProps()}
-              className={`flex aspect-video cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed py-6 text-center transition-colors ${
                 isDragActive
                   ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
                   : "border-muted-foreground/25 hover:border-muted-foreground/50"
               } ${isSubmitting ? "pointer-events-none opacity-50" : ""}`}
             >
               <input {...getInputProps()} />
-              <Upload className="mb-4 h-10 w-10 text-muted-foreground" />
+              <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
               {isDragActive ? (
-                <p className="text-blue-600">Drop files here...</p>
+                <p className="text-blue-600 text-sm">Drop files here...</p>
               ) : (
-                <div className="space-y-2">
-                  <p className="text-lg">
+                <div className="space-y-1">
+                  <p className="font-medium text-sm">
                     Drag & drop files here, or click to browse
                   </p>
-                  <p className="text-muted-foreground text-sm">
-                    Supports: {ACCEPTED_EXTENSIONS.join(", ")} (max 100MB each)
+                  <p className="text-muted-foreground text-xs">
+                    Supports: {ACCEPTED_EXTENSIONS.join(", ")} (max 100MB)
                   </p>
                 </div>
               )}
