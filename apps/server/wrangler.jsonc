@@ -7,7 +7,6 @@
 	// Public environment variables
 	"vars": {
 		"NODE_ENV": "production",
-		"CORS_ORIGIN": "https://app.stl-shelf.com",
 		"AUTH_URL": "https://api.stl-shelf.com",
 		"WEB_URL": "https://app.stl-shelf.com",
 		"AUTH_COOKIE_DOMAIN": ".stl-shelf.com",
