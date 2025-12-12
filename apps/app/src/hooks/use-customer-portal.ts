@@ -10,7 +10,8 @@ export const useCustomerPortal = () => {
         window.location.href = data.portalUrl;
       },
       onError: (error) => {
-        toast.error(`Failed to open portal: ${error.message}`);
+        console.error("Portal error:", error);
+        toast.error("Failed to open billing portal. Please try again.");
       },
     })
   );

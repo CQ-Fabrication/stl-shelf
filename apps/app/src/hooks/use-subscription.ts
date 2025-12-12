@@ -1,12 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
+import type { RouterAppContext } from "@/routes/__root";
 import { orpc } from "@/utils/orpc";
 
 export const useSubscription = () => {
-  const query = useQuery(orpc.billing.getSubscription.queryOptions({}));
+  const router = useRouter();
+  const { auth } = router.options.context as RouterAppContext;
+  const { data: session } = auth.useSession();
+
+  const query = useQuery({
+    ...orpc.billing.getSubscription.queryOptions({}),
+    enabled: Boolean(session?.user),
+  });
 
   return {
     subscription: query.data,
-    isLoading: query.isLoading,
+    isLoading: !session?.user || query.isLoading,
     error: query.error,
     refetch: query.refetch,
   };

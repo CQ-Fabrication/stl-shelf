@@ -117,11 +117,15 @@ function LoadingFallback() {
 }
 
 function ErrorFallback({ error }: { error: Error }) {
+  // Log full error for debugging, show generic message to users
+  console.error("STL Viewer error:", error);
   return (
     <div className="flex h-full w-full items-center justify-center bg-muted">
       <div className="space-y-2 text-center">
         <div className="text-destructive">Failed to load model</div>
-        <div className="text-muted-foreground text-sm">{error.message}</div>
+        <div className="text-muted-foreground text-sm">
+          Please try refreshing the page or select a different file.
+        </div>
       </div>
     </div>
   );

@@ -55,9 +55,8 @@ function ModelDetailComponent() {
         setSelectedVersionId(data.versionId);
       },
       onError: (error) => {
-        const message =
-          error instanceof Error ? error.message : "Failed to upload version";
-        toast.error(message);
+        console.error("Version upload error:", error);
+        toast.error("Failed to upload version. Please try again.");
       },
     })
   );

@@ -92,9 +92,8 @@ export function ModelUpload() {
         });
       },
       onError: (error) => {
-        const message =
-          error instanceof Error ? error.message : "Upload failed";
-        toast.error(message);
+        console.error("Model upload error:", error);
+        toast.error("Failed to upload model. Please try again.");
         // Update file states to error
         setUploadFiles((prev) =>
           prev.map((f) => ({ ...f, status: "error" as const }))

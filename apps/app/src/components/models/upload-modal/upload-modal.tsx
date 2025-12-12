@@ -78,9 +78,8 @@ export function UploadModal() {
         });
       },
       onError: (error) => {
-        const message =
-          error instanceof Error ? error.message : "Upload failed";
-        toast.error(message);
+        console.error("Model creation error:", error);
+        toast.error("Failed to create model. Please try again.");
       },
     })
   );

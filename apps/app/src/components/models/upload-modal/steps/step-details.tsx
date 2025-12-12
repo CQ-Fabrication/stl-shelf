@@ -75,10 +75,7 @@ export function StepDetails({ form, availableTags, onNext }: StepDetailsProps) {
               id={field.name}
               name={field.name}
               onBlur={field.handleBlur}
-              onChange={(e) => {
-                field.handleChange(e.target.value);
-                uploadModalActions.updateFormData("name", e.target.value);
-              }}
+              onChange={(e) => field.handleChange(e.target.value)}
               placeholder="Enter model name"
               value={field.state.value}
             />
@@ -99,13 +96,7 @@ export function StepDetails({ form, availableTags, onNext }: StepDetailsProps) {
               id={field.name}
               name={field.name}
               onBlur={field.handleBlur}
-              onChange={(e) => {
-                field.handleChange(e.target.value);
-                uploadModalActions.updateFormData(
-                  "description",
-                  e.target.value
-                );
-              }}
+              onChange={(e) => field.handleChange(e.target.value)}
               placeholder="Optional description"
               value={field.state.value || ""}
             />
@@ -125,10 +116,7 @@ export function StepDetails({ form, availableTags, onNext }: StepDetailsProps) {
             <TagCombobox
               allowCreate={true}
               availableTags={availableTags}
-              onTagsChange={(tags) => {
-                field.handleChange(tags);
-                uploadModalActions.updateFormData("tags", tags);
-              }}
+              onTagsChange={(tags) => field.handleChange(tags)}
               placeholder="Select or create tags..."
               selectedTags={field.state.value}
             />

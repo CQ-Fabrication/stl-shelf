@@ -1,4 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
+import type { RouterAppContext } from "@/routes/__root";
 import { orpc } from "@/utils/orpc";
 
 type UseInfiniteModelsParams = {
@@ -12,6 +14,13 @@ export const useInfiniteModels = ({
   tags,
   limit = 12,
 }: UseInfiniteModelsParams) => {
+  const router = useRouter();
+  const { auth } = router.options.context as RouterAppContext;
+  const { data: session } = auth.useSession();
+  const { data: activeOrg } = auth.useActiveOrganization();
+
+  const isAuthenticated = Boolean(session?.user && activeOrg?.id);
+
   const {
     data,
     fetchNextPage,
@@ -20,8 +29,8 @@ export const useInfiniteModels = ({
     isLoading,
     isFetching,
     error,
-  } = useInfiniteQuery(
-    orpc.models.listModels.infiniteOptions({
+  } = useInfiniteQuery({
+    ...orpc.models.listModels.infiniteOptions({
       input: (cursor: number | undefined) => ({
         cursor,
         limit,
@@ -30,8 +39,9 @@ export const useInfiniteModels = ({
       }),
       initialPageParam: undefined,
       getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    })
-  );
+    }),
+    enabled: isAuthenticated,
+  });
 
   const allModels = data?.pages.flatMap((page) => page.models) ?? [];
 
@@ -40,7 +50,7 @@ export const useInfiniteModels = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading,
+    isLoading: !isAuthenticated || isLoading,
     isFetching,
     error,
   };

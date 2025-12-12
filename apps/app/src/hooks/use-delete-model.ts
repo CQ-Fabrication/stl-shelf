@@ -52,7 +52,8 @@ export const useDeleteModel = () => {
             queryClient.setQueryData(queryKey, data);
           }
         }
-        toast.error(`Failed to delete model: ${error.message}`);
+        console.error("Delete model error:", error);
+        toast.error("Failed to delete model. Please try again.");
       },
 
       onSuccess: () => {
