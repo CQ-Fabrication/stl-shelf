@@ -92,9 +92,8 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
         <CardTitle className="flex items-center justify-between">
           <span>Model Information</span>
           {activeVersion && (
-            <Badge className="font-normal" variant="outline">
-              Version{" "}
-              <span className="text-brand">{activeVersion.version}</span>
+            <Badge className="font-normal text-brand" variant="outline">
+              {activeVersion.version}
             </Badge>
           )}
         </CardTitle>
