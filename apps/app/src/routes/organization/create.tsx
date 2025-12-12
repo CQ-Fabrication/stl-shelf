@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertCircle, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -23,14 +24,22 @@ function CreateOrganizationPage() {
   const navigate = useNavigate();
   const { auth } = Route.useRouteContext() as RouterAppContext;
 
-  const [name, setName] = useState("");
-  const [website, setWebsite] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [hasExistingOrg, setHasExistingOrg] = useState(false);
   const [isCheckingOrgs, setIsCheckingOrgs] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      website: "",
+    },
+    onSubmit: async ({ value }) => {
+      await handleCreateOrganization(value.name, value.website);
+    },
+  });
 
   useEffect(() => {
     checkExistingOrganizations();
@@ -81,9 +90,7 @@ function CreateOrganizationPage() {
     }
   }
 
-  async function handleCreateOrganization(e: React.FormEvent) {
-    e.preventDefault();
-
+  async function handleCreateOrganization(name: string, website: string) {
     if (!name.trim()) {
       toast.error("Organization name is required");
       return;
@@ -178,39 +185,61 @@ function CreateOrganizationPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4" onSubmit={handleCreateOrganization}>
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Organization Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  autoFocus
-                  disabled={isCreating || hasExistingOrg}
-                  id="name"
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="My Organization"
-                  required
-                  type="text"
-                  value={name}
-                />
-              </div>
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
+              }}
+            >
+              <form.Field name="name">
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor="name">
+                      Organization Name{" "}
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      autoFocus
+                      disabled={isCreating || hasExistingOrg}
+                      id="name"
+                      onBlur={field.handleBlur}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        field.handleChange(e.target.value)
+                      }
+                      placeholder="My Organization"
+                      required
+                      type="text"
+                      value={field.state.value}
+                    />
+                  </div>
+                )}
+              </form.Field>
 
-              <div className="space-y-2">
-                <Label htmlFor="website">
-                  Website{" "}
-                  <span className="text-muted-foreground text-sm">
-                    (optional)
-                  </span>
-                </Label>
-                <Input
-                  disabled={isCreating || hasExistingOrg}
-                  id="website"
-                  onChange={(e) => setWebsite(e.target.value)}
-                  placeholder="https://example.com"
-                  type="url"
-                  value={website}
-                />
-              </div>
+              <form.Field name="website">
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor="website">
+                      Website{" "}
+                      <span className="text-muted-foreground text-sm">
+                        (optional)
+                      </span>
+                    </Label>
+                    <Input
+                      disabled={isCreating || hasExistingOrg}
+                      id="website"
+                      onBlur={field.handleBlur}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        field.handleChange(e.target.value)
+                      }
+                      placeholder="https://example.com"
+                      type="url"
+                      value={field.state.value}
+                    />
+                  </div>
+                )}
+              </form.Field>
 
               <div className="space-y-2">
                 <Label htmlFor="logo">
@@ -270,17 +299,21 @@ function CreateOrganizationPage() {
                 )}
               </div>
 
-              <Button
-                className="w-full"
-                disabled={isCreating || !name.trim() || hasExistingOrg}
-                type="submit"
-              >
-                {(() => {
-                  if (hasExistingOrg) return "Limit Reached";
-                  if (isCreating) return "Creating...";
-                  return "Create Organization";
-                })()}
-              </Button>
+              <form.Subscribe selector={(state) => state.values.name}>
+                {(name) => (
+                  <Button
+                    className="w-full"
+                    disabled={isCreating || !name.trim() || hasExistingOrg}
+                    type="submit"
+                  >
+                    {(() => {
+                      if (hasExistingOrg) return "Limit Reached";
+                      if (isCreating) return "Creating...";
+                      return "Create Organization";
+                    })()}
+                  </Button>
+                )}
+              </form.Subscribe>
             </form>
           </CardContent>
         </Card>

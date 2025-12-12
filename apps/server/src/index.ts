@@ -44,7 +44,7 @@ app.use(
     origin: ["https://app.stl-shelf.com", "http://localhost:3001"],
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "x-captcha-response"],
   })
 );
 

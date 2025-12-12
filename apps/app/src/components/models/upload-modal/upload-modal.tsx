@@ -58,9 +58,11 @@ export function UploadModal() {
   const modalState = useStore(uploadModalStore, (state) => state);
   const { isOpen, currentStep, formData } = modalState;
 
-  const { data: availableTags = [] } = useQuery(
-    orpc.models.getAllTags.queryOptions()
-  );
+  const { data: availableTags = [] } = useQuery({
+    ...orpc.models.getAllTags.queryOptions(),
+    // Only fetch tags when modal is open
+    enabled: isOpen,
+  });
 
   const createModelMutation = useMutation(
     orpc.models.create.mutationOptions({

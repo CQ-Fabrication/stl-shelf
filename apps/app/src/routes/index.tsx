@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ModelGrid } from "@/components/models/model-grid";
 import { SearchFilterBar } from "@/components/models/search-filter-bar";
+import { useHasModels } from "@/hooks/use-has-models";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
 });
 
 function HomeComponent() {
+  const { hasModels, isLoading } = useHasModels();
+
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
       <div className="mb-6">
@@ -17,7 +20,8 @@ function HomeComponent() {
       </div>
 
       <div className="space-y-6">
-        <SearchFilterBar />
+        {/* Only show search bar if user has models */}
+        {!isLoading && hasModels && <SearchFilterBar />}
         <ModelGrid />
       </div>
     </div>

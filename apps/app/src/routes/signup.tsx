@@ -49,6 +49,11 @@ function SignUpPage() {
       name: value.name,
       email: value.email,
       password: value.password,
+      fetchOptions: {
+        headers: {
+          "x-captcha-response": value.captcha,
+        },
+      },
     });
 
     await navigate({ to: "/" });

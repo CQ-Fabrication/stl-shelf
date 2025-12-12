@@ -27,7 +27,11 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
         await auth.signIn.email({
           email: value.email,
           password: value.password,
-          captcha: value.captcha,
+          fetchOptions: {
+            headers: {
+              "x-captcha-response": value.captcha,
+            },
+          },
         });
         toast.success("Welcome back!");
         await navigate({ to: "/" });

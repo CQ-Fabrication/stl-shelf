@@ -1,8 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronDown, Search, Tag, Trash2, X } from "lucide-react";
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
+import { useAllTags } from "@/hooks/use-all-tags";
 import { cn } from "@stl-shelf/ui/lib/utils";
-import { orpc } from "@/utils/orpc";
 import { Badge } from "@stl-shelf/ui/components/badge";
 import { Button } from "@stl-shelf/ui/components/button";
 import {
@@ -31,9 +30,7 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
     parseAsArrayOf(parseAsString, ",").withDefault([])
   );
 
-  const { data: allTags = [] } = useQuery(
-    orpc.models.getAllTags.queryOptions()
-  );
+  const { tags: allTags } = useAllTags();
 
   const handleTagToggle = (tagName: string) => {
     const newTags = selectedTags.includes(tagName)

@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
 import { Search, Tag, X } from "lucide-react";
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
-import { orpc } from "@/utils/orpc";
+import { useAllTags } from "@/hooks/use-all-tags";
 import { Badge } from "@stl-shelf/ui/components/badge";
 import { Button } from "@stl-shelf/ui/components/button";
 import {
@@ -22,9 +21,7 @@ function ModelSearch() {
     parseAsArrayOf(parseAsString, ",").withDefault([])
   );
 
-  const { data: allTags = [] } = useQuery(
-    orpc.models.getAllTags.queryOptions()
-  );
+  const { tags: allTags } = useAllTags();
 
   const handleTagToggle = (tag: string) => {
     const newTags = tags.includes(tag)
