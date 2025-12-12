@@ -5,6 +5,7 @@ import {
   FileText,
   HardDrive,
   ImageIcon,
+  PenLine,
   Tag,
 } from "lucide-react";
 import { Badge } from "@stl-shelf/ui/components/badge";
@@ -148,6 +149,24 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
             </div>
           </div>
         </div>
+
+        {/* Changelog */}
+        {activeVersion?.description && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <PenLine className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-sm">What's New</span>
+              <Badge className="text-xs" variant="outline">
+                {activeVersion.version}
+              </Badge>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="max-h-24 overflow-y-auto whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
+                {activeVersion.description}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Available Files */}
         {files && files.length > 0 && (
