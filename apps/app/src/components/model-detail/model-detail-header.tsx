@@ -1,6 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Download, MoreVertical, Trash2, Upload } from "lucide-react";
 import { Button } from "@stl-shelf/ui/components/button";
 import {
   DropdownMenu,
@@ -9,6 +6,16 @@ import {
   DropdownMenuTrigger,
 } from "@stl-shelf/ui/components/dropdown-menu";
 import { Skeleton } from "@stl-shelf/ui/components/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import {
+  ArrowLeft,
+  Download,
+  History,
+  MoreVertical,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useModelFiles } from "@/hooks/use-model-files";
 import { useZipDownload } from "@/hooks/use-zip-download";
 import { orpc } from "@/utils/orpc";
@@ -18,6 +25,7 @@ type ModelDetailHeaderProps = {
   activeVersion?: string;
   onDeleteClick: () => void;
   onUploadVersionClick: () => void;
+  onChangelogClick: () => void;
 };
 
 export const ModelDetailHeader = ({
@@ -25,6 +33,7 @@ export const ModelDetailHeader = ({
   activeVersion,
   onDeleteClick,
   onUploadVersionClick,
+  onChangelogClick,
 }: ModelDetailHeaderProps) => {
   const { data: model, isLoading } = useQuery(
     orpc.models.getModel.queryOptions({ input: { id: modelId } })
@@ -115,6 +124,10 @@ export const ModelDetailHeader = ({
               <DropdownMenuItem onClick={onUploadVersionClick}>
                 <Upload className="mr-2 h-4 w-4" />
                 Upload New Version
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onChangelogClick}>
+                <History className="mr-2 h-4 w-4" />
+                Version History
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive"
