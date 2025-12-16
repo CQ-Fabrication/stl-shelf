@@ -32,7 +32,7 @@
     "@types/bun": "1.2.22",
     "@types/multer": "2.0.0",
     "archiver": "^7.0.1",
-    "better-auth": "1.4.2",
+    "better-auth": "1.4.5",
     "dotenv": "17.2.2",
     "drizzle-kit": "0.31.4",
     "drizzle-orm": "0.44.5",
