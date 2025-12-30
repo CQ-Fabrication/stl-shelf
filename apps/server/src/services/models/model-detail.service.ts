@@ -38,7 +38,6 @@ class ModelDetailService {
           try {
             fileUrl = await storageService.generateDownloadUrl(
               file.storageKey,
-              file.storageBucket,
               60 // 60 minutes expiry
             );
           } catch (error) {

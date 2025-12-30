@@ -39,10 +39,7 @@ class ModelDownloadService {
     }
 
     // Get file from storage
-    const fileData = await storageService.getFile(
-      storageKey,
-      file.storageBucket
-    );
+    const fileData = await storageService.getFile(storageKey);
 
     return new Blob([fileData.body], {
       type: file.mimeType || "application/octet-stream",
@@ -260,10 +257,7 @@ class ModelDownloadService {
     for (const file of files) {
       try {
         // Get file from storage
-        const fileData = await storageService.getFile(
-          file.storageKey,
-          file.storageBucket
-        );
+        const fileData = await storageService.getFile(file.storageKey);
 
         // Add to archive with original filename in a folder
         archive.append(Buffer.from(fileData.body), {
@@ -318,7 +312,6 @@ class ModelDownloadService {
     // Generate presigned URL for direct download
     const downloadUrl = await storageService.generateDownloadUrl(
       storageKey,
-      file.storageBucket,
       60 // 60 minutes expiry
     );
 

@@ -9,6 +9,11 @@ import { tagService } from "@/services/tags/tag.service";
 const INITIAL_VERSION = "v1";
 const FALLBACK_FILENAME = "model-file";
 const DEFAULT_CONTENT_TYPE = "application/octet-stream";
+const SLICER_EXTENSIONS = new Set(["3mf"]);
+
+function getStorageKind(extension: string): "source" | "slicer" {
+  return SLICER_EXTENSIONS.has(extension.toLowerCase()) ? "slicer" : "source";
+}
 
 type UploadedFileMetadata = {
   storageKey: string;
@@ -269,12 +274,13 @@ export class ModelCreationService {
     const originalName = file.name || FALLBACK_FILENAME;
     const { storedFilename, extension } =
       this.createStoredFilename(originalName);
+    const kind = getStorageKind(extension);
     const storageKey = storageService.generateStorageKey({
       organizationId,
       modelId,
       version,
       filename: storedFilename,
-      kind: "source",
+      kind,
     });
 
     await storageService.uploadFile({
@@ -285,7 +291,7 @@ export class ModelCreationService {
 
     return {
       storageKey,
-      storageBucket: storageService.defaultModelsBucket,
+      storageBucket: storageService.defaultBucket,
       filename: storedFilename,
       originalName,
       mimeType: file.type || DEFAULT_CONTENT_TYPE,
@@ -325,9 +331,7 @@ export class ModelCreationService {
   ): Promise<void> {
     await Promise.all(
       files.map((file) =>
-        storageService
-          .deleteFile(file.storageKey, file.storageBucket)
-          .catch(() => {})
+        storageService.deleteFile(file.storageKey).catch(() => {})
       )
     );
   }

@@ -1,21 +1,12 @@
-import type { FormApi } from "@tanstack/react-form";
 import { Button } from "@stl-shelf/ui/components/button";
 import { Input } from "@stl-shelf/ui/components/input";
 import { Label } from "@stl-shelf/ui/components/label";
 import { TagCombobox } from "@stl-shelf/ui/components/tag-combobox";
 import { uploadModalActions } from "@/stores/upload-modal.store";
-
-type FormData = {
-  name: string;
-  description: string;
-  tags: string[];
-  files: File[];
-  previewImage?: File;
-  previewImageUrl?: string;
-};
+import type { UploadFormType } from "../use-upload-form";
 
 type StepDetailsProps = {
-  form: FormApi<FormData>;
+  form: UploadFormType;
   availableTags: Array<{
     name: string;
     color: string | null;

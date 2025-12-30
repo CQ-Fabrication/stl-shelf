@@ -377,7 +377,7 @@ export class StorageService {
     modelId: string;
     version: string;
     filename: string;
-    kind?: "source" | "artifact" | "temp";
+    kind?: "source" | "artifact" | "temp" | "slicer";
   }): string {
     const {
       organizationId,
@@ -400,6 +400,10 @@ export class StorageService {
 
     if (kind === "artifact") {
       return `${root}/artifacts/${filename}`;
+    }
+
+    if (kind === "slicer") {
+      return `${root}/slicer/${filename}`;
     }
 
     return `${root}/sources/${filename}`;

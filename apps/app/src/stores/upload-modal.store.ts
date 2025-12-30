@@ -1,6 +1,6 @@
 import { Store } from "@tanstack/react-store";
 
-export type UploadStep = 1 | 2 | 3;
+export type UploadStep = 1 | 2;
 
 export type UploadModalState = {
   isOpen: boolean;
@@ -78,8 +78,6 @@ export const uploadModalActions = {
   canNavigateToStep: (step: number, state: UploadModalState): boolean => {
     if (step === 1) return true;
     if (step === 2) return state.completedSteps.has(1);
-    if (step === 3)
-      return state.completedSteps.has(1) && state.completedSteps.has(2);
     return false;
   },
 };

@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { z } from "zod/v4";
 import {
   Dialog,
   DialogContent,
@@ -27,29 +26,11 @@ import {
 import { orpc } from "@/utils/orpc";
 import { StepDetails } from "./steps/step-details";
 import { StepFiles } from "./steps/step-files";
-import { StepPreview } from "./steps/step-preview";
-
-const modelUploadSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Model name is required")
-    .max(200, "Name must be less than 200 characters"),
-  description: z
-    .string()
-    .max(2000, "Description must be less than 2000 characters")
-    .transform((val) => (val === "" ? undefined : val)),
-  tags: z.array(z.string().min(1).max(64)).max(20, "Maximum 20 tags allowed"),
-  files: z
-    .array(z.instanceof(File))
-    .min(1, "At least one file is required")
-    .max(5, "Maximum 5 files allowed"),
-  previewImage: z.union([z.instanceof(File), z.undefined()]),
-});
+import { modelUploadSchema } from "./use-upload-form";
 
 const UPLOAD_STEPS = [
   { id: "details", label: "Details", description: "Name & tags" },
-  { id: "files", label: "Files", description: "3D models" },
-  { id: "preview", label: "Preview", description: "Cover image" },
+  { id: "files", label: "Files", description: "Models & preview" },
 ];
 
 export function UploadModal() {
@@ -104,7 +85,7 @@ export function UploadModal() {
 
   const handleStepClick = (stepIndex: number) => {
     if (uploadModalActions.canNavigateToStep(stepIndex, modalState)) {
-      uploadModalActions.setStep(stepIndex as 1 | 2 | 3);
+      uploadModalActions.setStep(stepIndex as 1 | 2);
     }
   };
 
@@ -115,7 +96,7 @@ export function UploadModal() {
   return (
     <Dialog onOpenChange={(open) => !open && handleClose()} open={isOpen}>
       <DialogContent
-        className="sm:max-w-3xl"
+        className="sm:max-w-3xl max-h-[90vh] overflow-y-auto"
         showCloseButton={!createModelMutation.isPending}
       >
         <DialogHeader>
@@ -176,19 +157,8 @@ export function UploadModal() {
           {currentStep === 2 && (
             <StepFiles
               form={form}
-              onNext={() => {
-                uploadModalActions.markStepCompleted(2);
-                uploadModalActions.setStep(3);
-              }}
-              onPrev={() => uploadModalActions.setStep(1)}
-            />
-          )}
-
-          {currentStep === 3 && (
-            <StepPreview
-              form={form}
               isSubmitting={createModelMutation.isPending}
-              onPrev={() => uploadModalActions.setStep(2)}
+              onPrev={() => uploadModalActions.setStep(1)}
               onSubmit={() => form.handleSubmit()}
             />
           )}

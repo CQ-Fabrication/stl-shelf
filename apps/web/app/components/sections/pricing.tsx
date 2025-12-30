@@ -17,6 +17,10 @@ type PricingTier = {
   highlighted?: boolean
 }
 
+/**
+ * Pricing tiers - keep in sync with /apps/server/src/lib/billing/config.ts
+ * Full analysis: /docs/PRICING_COST_ANALYSIS.md
+ */
 const tiers: PricingTier[] = [
   {
     name: "Free",
@@ -26,8 +30,8 @@ const tiers: PricingTier[] = [
     badge: "Free Forever",
     features: [
       "1 user",
-      "100 MB storage",
-      "20 models",
+      "200 MB storage",
+      "10 models",
       "3D model preview",
       "Basic organization",
       "Community support",
@@ -43,10 +47,10 @@ const tiers: PricingTier[] = [
     badgeVariant: "popular",
     highlighted: true,
     features: [
-      "Up to 5 team members",
-      "5 GB storage",
-      "100 models",
-      "Version control",
+      "Up to 3 team members",
+      "10 GB storage",
+      "200 models",
+      "Version history",
       "Advanced organization",
       "Priority email support",
     ],
@@ -59,8 +63,8 @@ const tiers: PricingTier[] = [
     description: "For power users & teams",
     features: [
       "Up to 10 team members",
-      "20 GB storage",
-      "1,000 models",
+      "50 GB storage",
+      "Unlimited models",
       "Full API access",
       "Custom integrations",
       "Premium support",

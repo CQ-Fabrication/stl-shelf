@@ -3,6 +3,9 @@ import { env } from "@/env";
 /**
  * Subscription tier configuration - single source of truth
  * All limits defined here for easy adjustment
+ *
+ * Pricing Analysis: /docs/PRICING_COST_ANALYSIS.md
+ * Last updated: December 2025
  */
 export const SUBSCRIPTION_TIERS = {
   free: {
@@ -13,14 +16,15 @@ export const SUBSCRIPTION_TIERS = {
 
     // Limits
     maxMembers: 1, // Owner only
-    storageLimit: 104_857_600, // 100 MB in bytes
-    modelCountLimit: 20, // 20 models
+    storageLimit: 209_715_200, // 200 MB in bytes
+    modelCountLimit: 10, // 10 models - tight to encourage upgrade
 
     // Features for display
     features: [
       "1 user (you)",
-      "100 MB storage",
-      "20 models",
+      "200 MB storage",
+      "10 models",
+      "3D preview",
       "Community support",
     ],
   },
@@ -31,17 +35,17 @@ export const SUBSCRIPTION_TIERS = {
     price: 4.99,
 
     // Limits
-    maxMembers: 5, // Owner + 4 invited
-    storageLimit: 5_368_709_120, // 5 GB in bytes
-    modelCountLimit: 100, // 100 models
+    maxMembers: 3, // Owner + 2 invited
+    storageLimit: 10_737_418_240, // 10 GB in bytes
+    modelCountLimit: 200, // 200 models
 
     // Features for display
     features: [
-      "Up to 5 team members",
-      "5 GB storage",
-      "100 models",
+      "Up to 3 team members",
+      "10 GB storage",
+      "200 models",
+      "Version history",
       "Priority email support",
-      "Advanced features",
     ],
   },
   pro: {
@@ -52,17 +56,17 @@ export const SUBSCRIPTION_TIERS = {
 
     // Limits
     maxMembers: 10, // Owner + 9 invited
-    storageLimit: 21_474_836_480, // 20 GB in bytes
-    modelCountLimit: 1000, // 1000 models
+    storageLimit: 53_687_091_200, // 50 GB in bytes
+    modelCountLimit: -1, // Unlimited (-1 = no limit)
 
     // Features for display
     features: [
       "Up to 10 team members",
-      "20 GB storage",
-      "1,000 models",
+      "50 GB storage",
+      "Unlimited models",
+      "API access",
       "Premium support",
       "All features",
-      "API access",
     ],
   },
 } as const satisfies Record<
@@ -87,6 +91,11 @@ export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS;
 export const getTierConfig = (tier: SubscriptionTier) => {
   return SUBSCRIPTION_TIERS[tier];
 };
+
+/**
+ * Check if a limit is unlimited
+ */
+export const isUnlimited = (limit: number) => limit === -1;
 
 /**
  * Products array for Polar checkout configuration
