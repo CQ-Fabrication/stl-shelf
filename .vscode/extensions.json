@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "oxc.oxc-vscode",
+    "anthropic.claude-code",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode"
+  ],
+  "unwantedRecommendations": [
+    "biomejs.biome",
+    "dbaeumer.vscode-eslint"
+  ]
+}

@@ -1,55 +1,55 @@
 {
-  "editor.defaultFormatter": "biomejs.biome",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode",
   },
   "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode",
   },
   "[javascriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode",
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode",
   },
   "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
   "[jsonc]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
   "[css]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
   },
-  "[graphql]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.tsdk": "node_modules/@typescript/native-preview/lib",
+  "typescript.experimental.useTsgo": true,
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "emmet.showExpandedAbbreviation": "never",
   "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "explicit",
-    "source.organizeImports.biome": "explicit"
+    "source.fixAll.oxc": "explicit",
   },
+  "oxc.lint.enable": true,
+  "oxc.fmt.enable": true,
   "files.associations": {
-    "*.css": "tailwindcss"
+    "*.css": "tailwindcss",
   },
   "tailwindCSS.experimental.classRegex": [
     [
       "(?:twMerge|twJoin|cva|cn|clsx)\\(([^\\);]*)[\\);]",
-      "[`'\"]([^'\"`,;]*)[`'\"]"
-    ]
+      "[`'\"]([^'\"`,;]*)[`'\"]",
+    ],
   ],
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     "*.ts": "${capture}.js,${capture}.test.ts",
-    "*.tsx": "${capture}.ts, ${capture}.test.tsx"
+    "*.tsx": "${capture}.ts, ${capture}.test.tsx",
   },
   "terminal.integrated.suggest.enabled": true,
   "terminal.integrated.localEchoStyle": "dim",
   "search.exclude": {
-    "**/node_modules": true
+    "**/node_modules": true,
+    "**/old": true,
   },
-  "typescript.referencesCodeLens.enabled": true
+  "typescript.referencesCodeLens.enabled": true,
 }

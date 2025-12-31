@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    ".output",
+    ".turbo",
+    "routeTree.gen.ts",
+    "old"
+  ],
+  "rules": {
+    "no-console": "off",
+    "no-magic-numbers": "off"
+  },
+  "plugins": ["react", "typescript", "jsx-a11y"]
+}

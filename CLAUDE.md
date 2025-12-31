@@ -4,85 +4,102 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-STL Shelf is a self-hosted application for managing a personal library of 3D printable models (STL, 3MF, OBJ). It's built as a modern TypeScript monorepo using the Better-T-Stack.
+STL Shelf is an application for managing a personal library of 3D printable models (STL, 3MF, OBJ). It's built as a unified full-stack TypeScript application using TanStack Start.
 
 ## Architecture
 
-This is a Turborepo monorepo with three main applications:
+This is a **TanStack Start** unified application:
 
-- **Server** (`apps/server/`): Hono-based API with oRPC for type-safe endpoints, designed to run on Cloudflare Workers
-- **App** (`apps/app/`): Authenticated React application using TanStack Router, TanStack Query, and Vite, with shadcn/ui components
-- **Web** (`apps/web/`): Public-facing marketing website (to be created)
+```
+src/
+├── routes/                    # File-based routing (TanStack Router)
+│   ├── __root.tsx             # Root layout
+│   ├── api/                   # API routes
+│   │   └── auth/$.ts          # Better Auth handler
+│   ├── organization/          # Organization routes
+│   ├── checkout/              # Checkout routes
+│   └── *.tsx                  # Page routes
+├── server/                    # Server-side code
+│   ├── functions/             # Server functions (createServerFn)
+│   │   ├── models.ts          # Model CRUD operations
+│   │   └── billing.ts         # Billing operations
+│   ├── services/              # Business logic services
+│   │   ├── models/            # Model-related services
+│   │   ├── tags/              # Tag services
+│   │   ├── billing/           # Polar/billing services
+│   │   └── storage.ts         # R2 storage service
+│   └── middleware/
+│       └── auth.ts            # Auth middleware
+├── components/                # React components
+│   ├── ui/                    # shadcn/ui components
+│   ├── models/                # Model-related components
+│   ├── model-detail/          # Model detail page components
+│   ├── billing/               # Billing components
+│   └── *.tsx                  # Shared components
+├── hooks/                     # Custom React hooks
+├── lib/                       # Core libraries
+│   ├── db/                    # Drizzle ORM
+│   │   ├── index.ts           # Database client
+│   │   └── schema/            # Database schema
+│   │       ├── auth.ts        # Better Auth tables
+│   │       ├── models.ts      # Model/file/tag tables
+│   │       └── api-keys.ts    # API key tables
+│   ├── auth.ts                # Better Auth configuration
+│   ├── email/                 # Email templates (React Email)
+│   ├── billing/               # Billing config and utilities
+│   └── *.ts                   # Utility modules
+├── stores/                    # State management (TanStack Store)
+└── utils/                     # Utility functions
+```
 
 ## Development Commands
 
 ### Primary Commands (run from root)
 
-- `bun install` - Install all dependencies
-- `bun dev` - Start all applications in development (server: 3000, app: 3001, web: 3002)
-- `bun build` - Build all applications
-- `bun check-types` - Type check across all apps
-- `bun check` - Run Biome linting and formatting
-
-### Individual App Commands
-
-- `bun dev:server` - Start only server application (port 3000)
-- `bun dev:app` - Start only authenticated app (port 3001)
-- `bun dev:web` - Start only public website (port 3002)
-
-### App-Specific Commands
-
-**Server** (`cd apps/server`):
-
-- `bun dev` - Start server (port 3000)
-- `bun dev:webhooks` - Start server with ngrok tunnel for webhook testing (see WEBHOOK_TESTING.md)
-- `bun ngrok` - Start only ngrok tunnel
-- `bun build` - Dry-run deployment build
-- `bun deploy` - Deploy to Cloudflare Workers
-- `bun compile` - Build standalone binary
-
-**App** (`cd apps/app`):
-
-- `bun dev` - Start authenticated app Vite dev server (port 3001)
+- `bun install` - Install dependencies
+- `bun dev` - Start development server (port 3000)
 - `bun build` - Build for production
-- `bun deploy` - Build and deploy via Wrangler
+- `bun preview` - Preview production build
+- `bun start` - Start production server
 
-**Web** (`cd apps/web`):
+### Database Commands
 
-- `bun dev` - Start public website Vite dev server (port 3002)
-- `bun build` - Build for production
-- `bun deploy` - Build and deploy via Wrangler
+- `bun db:generate` - Generate Drizzle migrations
+- `bun db:migrate` - Run migrations
+- `bun db:push` - Push schema changes (dev)
+- `bun db:studio` - Open Drizzle Studio
 
 ### Code Quality
 
-- `bun x ultracite format` - Format code (used by lint-staged)
-- Code follows strict Ultracite rules (see AGENTS.md for detailed guidelines)
-- **CRITICAL: NEVER run formatters or linters on the entire repository** - Only format/lint files you've actually modified
-- **When using `bun check`, only focus on errors in files YOU changed** - Ignore existing issues in other files
+- `bun lint` - Run oxlint with auto-fix
+- `bun format` - Format code with oxfmt
+- `bun check` - Lint + format check
+- `bun check-types` - Type check with tsgo (10x faster than tsc)
+- `bun test` - Run tests with Vitest
+- **CRITICAL: NEVER run formatters on the entire repository** - Only format files you've modified
+- **When using `bun check`, only focus on errors in files YOU changed** - Ignore existing issues
 
 ## Technology Stack
 
 ### Core Technologies
 
 - **Runtime**: Bun (package manager and runtime)
-- **Backend**: Hono + oRPC for type-safe APIs
-- **Frontend**: React 19 + TanStack Router + TanStack Query
-- **Styling**: TailwindCSS v4 + shadcn/ui components
-- **Deployment**: Cloudflare Workers (both apps can deploy)
-
-### Type Safety & API
-
-- **oRPC**: Provides end-to-end type safety between server and client
-- **Client setup**: Uses `@orpc/tanstack-query` for React Query integration
-- **Server context**: Minimal context setup (no auth configured yet)
-- **API types**: Exported from server to web app for type safety
+- **Framework**: TanStack Start (full-stack React)
+- **Routing**: TanStack Router (file-based)
+- **Data Fetching**: TanStack Query + Server Functions
+- **Database**: PostgreSQL + Drizzle ORM
+- **Auth**: Better Auth with `tanstackStartCookies` plugin
+- **Styling**: TailwindCSS v4 + shadcn/ui
+- **Storage**: Cloudflare R2
+- **Billing**: Polar.sh
 
 ### Development Tools
 
-- **Monorepo**: Turborepo for build orchestration
-- **Linting/Formatting**: Biome + Ultracite (extremely strict rules)
-- **Git Hooks**: Husky + lint-staged for pre-commit formatting
-- **TypeScript**: Strict configuration across all apps
+- **Type Checking**: tsgo (TypeScript 7 native - 10x faster)
+- **Linting**: oxlint (50-100x faster than ESLint)
+- **Formatting**: oxfmt (30x faster than Prettier)
+- **Git Hooks**: Husky + lint-staged
+- **Testing**: Vitest + Testing Library
 
 ## CRITICAL ENGINEERING PRINCIPLES - NEVER VIOLATE THESE
 
@@ -106,13 +123,12 @@ This is a Turborepo monorepo with three main applications:
 6. **Admit uncertainty** - If you don't know, say so. Don't deliver broken shit with confidence
 7. **SIMPLE > CLEVER** - Start with something that actually works, not something that looks smart
 
-### LESSON FROM STL PREVIEW FAILURE
+### FOLLOW THE DOCUMENTATION
 
-- **Never implement rendering/processing without considering data scale**
-- STL files have thousands/millions of triangles, not dozens
-- Server-side 3D rendering without GPU is COMPLEX - use proven solutions or skip it
-- Test IMMEDIATELY with real files, not theoretical assumptions
-- A broken "solution" is worse than no solution
+- **ALWAYS check library documentation FIRST** before implementing anything
+- **Use libraries as intended** - No hacky workarounds
+- **If it doesn't work out-of-the-box, YOU are doing it wrong**
+- Context7 MCP is available for up-to-date documentation
 
 ### BEFORE WRITING ANY CODE, ASK
 
@@ -126,19 +142,41 @@ This is a Turborepo monorepo with three main applications:
 
 ## Key Patterns
 
-### API Development
+### Server Functions
 
-- All API routes use oRPC procedures defined in `apps/server/src/routers/`
-- Use `publicProcedure` from `apps/server/src/lib/orpc.ts` for new public endpoints.
-- Use `protectedProcedure` from `apps/server/src/lib/orpc.ts` for new private endpoints.
-- Context is available but minimal
-- Server exports types that are imported by web app for type safety
+```typescript
+// src/server/functions/models.ts
+import { createServerFn } from '@tanstack/react-start'
+import { getRequestHeaders } from '@tanstack/react-start/server'
+import { auth } from '@/lib/auth'
+
+export const listModels = createServerFn({ method: 'GET' })
+  .validator(schema)
+  .handler(async ({ data }) => {
+    const session = await auth.api.getSession({ headers: getRequestHeaders() })
+    // ... business logic
+  })
+```
+
+### API Routes (for auth, webhooks)
+
+```typescript
+// src/routes/api/auth/$.ts
+import { createAPIFileRoute } from '@tanstack/react-start/api'
+import { auth } from '@/lib/auth'
+
+export const APIRoute = createAPIFileRoute('/api/auth/$')({
+  GET: ({ request }) => auth.handler(request),
+  POST: ({ request }) => auth.handler(request),
+})
+```
 
 ### Frontend Development
 
-- Use TanStack Router for routing (file-based in `apps/app/src/routes/`)
-- Use TanStack Query via oRPC utils for data fetching (`orpc` from `apps/app/src/utils/orpc.ts`)
-- UI components from shadcn/ui in `apps/app/src/components/ui/`
+- Use TanStack Router for routing (file-based in `src/routes/`)
+- Use TanStack Query for data fetching
+- Use server functions via `createServerFn`
+- UI components from shadcn/ui in `src/components/ui/`
 - Global error handling via Sonner toast notifications
 
 ### Frontend Architecture & Component Design
@@ -167,12 +205,10 @@ This is a Turborepo monorepo with three main applications:
 4. **Pure Functions for Business Logic**
    - ALL business logic should be testable pure functions
    - Create `lib/` directories for domain-specific utilities
-   - Example: `lib/slicers/utils.ts` for slicer-related logic
    - NO mixing of logic and UI concerns
 
 5. **Configuration Over Code**
    - Use configuration objects for extensibility
-   - Example: `SLICER_CONFIG` object instead of switch statements
    - Type-safe configs with `as const satisfies Record<K, V>`
    - Easy to add new features by adding config entries
 
@@ -185,19 +221,6 @@ This is a Turborepo monorepo with three main applications:
 - ❌ **NO magic strings/numbers** - Use constants
 - ❌ **NO nested ternaries** - Use if/else or helper functions
 - ❌ **NO mixing concerns** - Data/logic/UI should be separate layers
-
-#### Refactoring Checklist
-
-Before marking any component complete, verify:
-
-1. ✅ Component only contains UI rendering logic
-2. ✅ All data fetching is in custom hooks
-3. ✅ All business logic is in pure functions
-4. ✅ Configuration is in separate config files
-5. ✅ Component is < 150 lines
-6. ✅ Each piece is testable in isolation
-7. ✅ NO duplicate code exists
-8. ✅ Follows Single Responsibility Principle
 
 #### Example: Good Component Structure
 
@@ -219,15 +242,13 @@ Before marking any component complete, verify:
 
 ### Code Quality Standards
 
-- Extremely strict code quality via Ultracite rules (see RULES.md)
+- Strict linting via oxlint (React, TypeScript, jsx-a11y plugins)
 - No TypeScript enums, use const objects instead
 - Use `export type` for types, `import type` for type imports
 - Arrow functions preferred over function declarations
 - Accessibility-first approach with strict a11y rules
 - **NEVER use `any` type** - No exceptions. Always use proper types
-- **NO unnecessary comments** - Code must be self-explanatory. Only add comments when they provide additional value
-- **NO custom state when libraries provide it** - ALWAYS check if the library (especially TanStack Form) already handles the functionality before adding custom state
-- **ALWAYS use library features properly** - Check documentation via Context7 FIRST before implementing custom solutions
-- **NO shortcuts or workarounds** - Use libraries the proper way as intended by their documentation
-- **Use derived state over useEffect** - Prefer deriving state directly from props/params rather than using useEffect for synchronization. This reduces errors and makes code more predictable
-- **NEVER commit without user approval** - ALWAYS wait for the user's explicit approval before committing any changes. The user must review and approve the work first
+- **NO unnecessary comments** - Code must be self-explanatory
+- **NO custom state when libraries provide it** - Check TanStack Form, Query, Router first
+- **Use derived state over useEffect** - Prefer deriving state directly from props/params
+- **NEVER commit without user approval** - ALWAYS wait for explicit approval

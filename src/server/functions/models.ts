@@ -1,0 +1,443 @@
+import { createServerFn } from '@tanstack/react-start'
+import { eq } from 'drizzle-orm'
+import { z } from 'zod'
+import { db } from '@/lib/db'
+import { organization } from '@/lib/db/schema/auth'
+import type { SubscriptionTier } from '@/lib/billing/config'
+import { enforceLimits } from '@/lib/billing/limits'
+import type { AuthenticatedContext } from '@/server/middleware/auth'
+import { authMiddleware } from '@/server/middleware/auth'
+import { modelCreationService } from '@/server/services/models/model-create.service'
+import { modelDeleteService } from '@/server/services/models/model-delete.service'
+import { modelDetailService } from '@/server/services/models/model-detail.service'
+import { modelDownloadService } from '@/server/services/models/model-download.service'
+import { modelListService } from '@/server/services/models/model-list.service'
+import { modelVersionService } from '@/server/services/models/model-version.service'
+import { tagService } from '@/server/services/tags/tag.service'
+
+// Zod validators
+const listModelsSchema = z.object({
+  cursor: z.number().min(0).optional(),
+  limit: z.number().min(1).max(100).default(12),
+  search: z.string().max(100).optional(),
+  tags: z.array(z.string()).optional(),
+})
+
+const getModelSchema = z.object({
+  id: z.string().uuid(),
+})
+
+const getModelVersionsSchema = z.object({
+  modelId: z.string().uuid(),
+})
+
+const getModelFilesSchema = z.object({
+  modelId: z.string().uuid(),
+  versionId: z.string().uuid(),
+})
+
+const updateModelTagsSchema = z.object({
+  modelId: z.string().uuid(),
+  tags: z.array(z.string().min(1).max(64)).max(20),
+})
+
+const downloadFileSchema = z.object({
+  storageKey: z.string(),
+})
+
+const downloadModelZipSchema = z.object({
+  modelId: z.string().uuid(),
+})
+
+const downloadVersionZipSchema = z.object({
+  modelId: z.string().uuid(),
+  versionId: z.string().uuid(),
+})
+
+const deleteModelSchema = z.object({
+  id: z.string().uuid(),
+})
+
+// List models with pagination
+export const listModels = createServerFn({ method: 'GET' })
+  .inputValidator(listModelsSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof listModelsSchema>
+      context: AuthenticatedContext
+    }) => {
+      return await modelListService.listModels({
+        organizationId: context.organizationId,
+        cursor: data.cursor,
+        limit: data.limit,
+        search: data.search,
+        tags: data.tags,
+      })
+    }
+  )
+
+// Get all tags for organization
+export const getAllTags = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .handler(async ({ context }: { context: AuthenticatedContext }) => {
+    return await tagService.getAllTagsForOrganization(context.organizationId)
+  })
+
+// Get single model
+export const getModel = createServerFn({ method: 'GET' })
+  .inputValidator(getModelSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof getModelSchema>
+      context: AuthenticatedContext
+    }) => {
+      return await modelDetailService.getModel(data.id, context.organizationId)
+    }
+  )
+
+// Get model versions
+export const getModelVersions = createServerFn({ method: 'GET' })
+  .inputValidator(getModelVersionsSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof getModelVersionsSchema>
+      context: AuthenticatedContext
+    }) => {
+      return await modelDetailService.getModelVersions(
+        data.modelId,
+        context.organizationId
+      )
+    }
+  )
+
+// Get model files for a version
+export const getModelFiles = createServerFn({ method: 'GET' })
+  .inputValidator(getModelFilesSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof getModelFilesSchema>
+      context: AuthenticatedContext
+    }) => {
+      return await modelDetailService.getModelFiles(
+        data.modelId,
+        data.versionId,
+        context.organizationId
+      )
+    }
+  )
+
+// Get model statistics
+export const getModelStatistics = createServerFn({ method: 'GET' })
+  .inputValidator(getModelSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof getModelSchema>
+      context: AuthenticatedContext
+    }) => {
+      return await modelDetailService.getModelStatistics(
+        data.id,
+        context.organizationId
+      )
+    }
+  )
+
+// Get model tags
+export const getModelTags = createServerFn({ method: 'GET' })
+  .inputValidator(getModelSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof getModelSchema>
+      context: AuthenticatedContext
+    }) => {
+      return await modelDetailService.getModelTags(
+        data.id,
+        context.organizationId
+      )
+    }
+  )
+
+// Update model tags
+export const updateModelTags = createServerFn({ method: 'POST' })
+  .inputValidator(updateModelTagsSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof updateModelTagsSchema>
+      context: AuthenticatedContext
+    }) => {
+      await modelDetailService.getModel(data.modelId, context.organizationId)
+
+      const uniqueTags = Array.from(new Set(data.tags))
+      await tagService.updateModelTags(
+        data.modelId,
+        uniqueTags,
+        context.organizationId
+      )
+
+      return { success: true }
+    }
+  )
+
+// Create model (with file upload via FormData)
+export const createModel = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => {
+    if (!(input instanceof FormData)) {
+      throw new Error('Expected FormData')
+    }
+    const name = input.get('name') as string
+    const description = (input.get('description') as string) || undefined
+    const tagsJson = input.get('tags') as string
+    const tags: string[] = tagsJson ? JSON.parse(tagsJson) : []
+    const files = input.getAll('files') as File[]
+    const previewImage = input.get('previewImage') as File | null
+
+    if (!name || files.length === 0) {
+      throw new Error('Name and at least one file are required')
+    }
+
+    return { name, description, tags, files, previewImage }
+  })
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: {
+        name: string
+        description: string | undefined
+        tags: string[]
+        files: File[]
+        previewImage: File | null
+      }
+      context: AuthenticatedContext
+    }) => {
+      const org = await db.query.organization.findFirst({
+        where: eq(organization.id, context.organizationId),
+      })
+
+      if (!org) {
+        throw new Error('Organization not found')
+      }
+
+      enforceLimits.checkModelLimit(
+        org.currentModelCount,
+        org.subscriptionTier as SubscriptionTier
+      )
+
+      const totalFileSize = data.files.reduce((sum, file) => sum + file.size, 0)
+
+      enforceLimits.checkStorageLimit(
+        org.currentStorage,
+        totalFileSize,
+        org.subscriptionTier as SubscriptionTier
+      )
+
+      const uniqueTags = Array.from(new Set(data.tags))
+
+      const result = await modelCreationService.createModel({
+        organizationId: context.organizationId,
+        ownerId: context.userId,
+        name: data.name,
+        description: data.description ?? null,
+        tags: uniqueTags,
+        files: data.files,
+        previewImage: data.previewImage ?? undefined,
+        ipAddress: context.ipAddress,
+      })
+
+      return {
+        modelId: result.modelId,
+        versionId: result.versionId,
+        version: result.version,
+        slug: result.slug,
+        storageRoot: result.storageRoot,
+        createdAt: result.createdAt.toISOString(),
+        tags: uniqueTags,
+        files: result.files,
+      }
+    }
+  )
+
+// Add version to model (with file upload via FormData)
+export const addVersion = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => {
+    if (!(input instanceof FormData)) {
+      throw new Error('Expected FormData')
+    }
+    const modelId = input.get('modelId') as string
+    const changelog = input.get('changelog') as string
+    const files = input.getAll('files') as File[]
+    const previewImage = input.get('previewImage') as File | null
+
+    if (!modelId || !changelog || files.length === 0) {
+      throw new Error('Model ID, changelog, and at least one file are required')
+    }
+
+    return { modelId, changelog, files, previewImage }
+  })
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: {
+        modelId: string
+        changelog: string
+        files: File[]
+        previewImage: File | null
+      }
+      context: AuthenticatedContext
+    }) => {
+      const result = await modelVersionService.addVersion({
+        modelId: data.modelId,
+        organizationId: context.organizationId,
+        ownerId: context.userId,
+        changelog: data.changelog,
+        files: data.files,
+        previewImage: data.previewImage ?? undefined,
+        ipAddress: context.ipAddress,
+      })
+
+      return {
+        versionId: result.versionId,
+        version: result.version,
+        files: result.files,
+      }
+    }
+  )
+
+// Download single file - returns signed URL for direct download
+export const downloadFile = createServerFn({ method: 'POST' })
+  .inputValidator(downloadFileSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof downloadFileSchema>
+      context: AuthenticatedContext
+    }) => {
+      // Return signed URL instead of Blob (Blob not serializable in server functions)
+      return await modelDownloadService.getFileDownloadInfo(
+        data.storageKey,
+        context.organizationId
+      )
+    }
+  )
+
+// Download model as ZIP - returns signed URL for ZIP download
+export const downloadModelZip = createServerFn({ method: 'POST' })
+  .inputValidator(downloadModelZipSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof downloadModelZipSchema>
+      context: AuthenticatedContext
+    }) => {
+      // For ZIP downloads, we need a different approach - create ZIP on server and return URL
+      // For now, return the model info so client can download files individually
+      const versions = await modelDetailService.getModelVersions(
+        data.modelId,
+        context.organizationId
+      )
+      return { versions, modelId: data.modelId }
+    }
+  )
+
+// Download version as ZIP - returns files for version
+export const downloadVersionZip = createServerFn({ method: 'POST' })
+  .inputValidator(downloadVersionZipSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof downloadVersionZipSchema>
+      context: AuthenticatedContext
+    }) => {
+      // Return files list so client can generate download URLs
+      const files = await modelDetailService.getModelFiles(
+        data.modelId,
+        data.versionId,
+        context.organizationId
+      )
+      return { files, modelId: data.modelId, versionId: data.versionId }
+    }
+  )
+
+// Get file download info
+export const getFileDownloadInfo = createServerFn({ method: 'GET' })
+  .inputValidator(downloadFileSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof downloadFileSchema>
+      context: AuthenticatedContext
+    }) => {
+      return await modelDownloadService.getFileDownloadInfo(
+        data.storageKey,
+        context.organizationId
+      )
+    }
+  )
+
+// Delete model
+export const deleteModel = createServerFn({ method: 'POST' })
+  .inputValidator(deleteModelSchema)
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof deleteModelSchema>
+      context: AuthenticatedContext
+    }) => {
+      const result = await modelDeleteService.deleteModel({
+        modelId: data.id,
+        organizationId: context.organizationId,
+      })
+
+      return {
+        success: true,
+        deletedId: result.deletedId,
+      }
+    }
+  )
