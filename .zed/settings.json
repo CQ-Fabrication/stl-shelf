@@ -1,0 +1,81 @@
+{
+  "project_name": "STL Shelf",
+  "context_servers": {
+    "postgres-context-server": {
+      "enabled": true,
+      "settings": {
+        "database_url": "postgresql://stlshelf:stlshelf_dev_password@localhost:5432/stlshelf",
+      },
+    },
+  },
+  "lsp": {
+    "oxlint": {
+      "initialization_options": {
+        "settings": {
+          "disableNestedConfig": false,
+          "fixKind": "safe_fix",
+          "run": "onType",
+          "typeAware": true,
+          "unusedDisableDirectives": "deny",
+        },
+      },
+    },
+    "oxfmt": {
+      "initialization_options": {
+        "settings": {
+          "configPath": null,
+          "flags": {},
+          "fmt.configPath": null,
+          "fmt.experimental": true,
+          "run": "onSave",
+          "typeAware": false,
+          "unusedDisableDirectives": false,
+        },
+      },
+    },
+  },
+  "languages": {
+    "JavaScript": {
+      "language_servers": ["!biome"],
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt",
+          },
+        },
+        {
+          "code_action": "source.fixAll.oxc",
+        },
+      ],
+    },
+    "TypeScript": {
+      "language_servers": ["tsgo", "!biome"],
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt",
+          },
+        },
+        {
+          "code_action": "source.fixAll.oxc",
+        },
+      ],
+    },
+    "TSX": {
+      "language_servers": ["tsgo", "!biome"],
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "oxfmt",
+          },
+        },
+        {
+          "code_action": "source.fixAll.oxc",
+        },
+      ],
+    },
+  },
+}
