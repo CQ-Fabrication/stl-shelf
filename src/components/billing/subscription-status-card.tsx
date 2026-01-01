@@ -69,8 +69,8 @@ export const SubscriptionStatusCard = () => {
               <p className="text-muted-foreground text-xs">Storage</p>
               <p className="font-semibold">
                 {subscription.tier === "free"
-                  ? `${(subscription.storageLimit / 1_048_576).toFixed(0)} MB`
-                  : `${(subscription.storageLimit / 1_073_741_824).toFixed(0)} GB`}
+                  ? `${((subscription.storageLimit ?? 0) / 1_048_576).toFixed(0)} MB`
+                  : `${((subscription.storageLimit ?? 0) / 1_073_741_824).toFixed(0)} GB`}
               </p>
             </div>
           </div>

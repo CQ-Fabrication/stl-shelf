@@ -248,14 +248,14 @@ export const createModel = createServerFn({ method: 'POST' })
       }
 
       enforceLimits.checkModelLimit(
-        org.currentModelCount,
+        org.currentModelCount ?? 0,
         org.subscriptionTier as SubscriptionTier
       )
 
       const totalFileSize = data.files.reduce((sum, file) => sum + file.size, 0)
 
       enforceLimits.checkStorageLimit(
-        org.currentStorage,
+        org.currentStorage ?? 0,
         totalFileSize,
         org.subscriptionTier as SubscriptionTier
       )

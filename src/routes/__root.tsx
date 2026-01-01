@@ -7,7 +7,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import {
   HeadContent,
   Link,
-  Outlet,
   Scripts,
   createRootRouteWithContext,
   redirect,
@@ -17,6 +16,7 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import Header from '@/components/header'
+import { NotFound } from '@/components/not-found'
 import {
   getSessionFn,
   listOrganizationsFn,
@@ -118,10 +118,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     }
 
     // Set active organization if not set
-    if (!session.session?.activeOrganizationId && organizations.length > 0) {
+    const firstOrg = organizations[0]
+    if (!session.session?.activeOrganizationId && firstOrg) {
       try {
         await setActiveOrganizationFn({
-          data: { organizationId: organizations[0].id },
+          data: { organizationId: firstOrg.id },
         })
       } catch (error) {
         console.error('Failed to set active organization:', error)
@@ -131,6 +132,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     return { session }
   },
   shellComponent: RootDocument,
+  notFoundComponent: NotFound,
 })
 
 function RootDocument({ children }: { children: ReactNode }) {

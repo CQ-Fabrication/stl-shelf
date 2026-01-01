@@ -77,7 +77,8 @@ function ModelMesh({ url, filename, autoRotate, color }: ModelMeshProps) {
   const scale = maxDimension > 0 ? 2 / maxDimension : 1; // Scale to fit in a 2-unit cube
 
   return (
-    <mesh geometry={geometry} ref={meshRef} scale={[scale, scale, scale]}>
+    <mesh ref={meshRef} scale={[scale, scale, scale]}>
+      <primitive attach="geometry" object={geometry} />
       <meshPhongMaterial
         color={color}
         opacity={0.9}

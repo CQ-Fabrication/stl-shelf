@@ -47,8 +47,8 @@ export const UsageCard = () => {
               <span className="font-medium">Storage</span>
             </div>
             <span className={getUsageColor(usage.storage.percentage)}>
-              {formatStorage(usage.storage.used)} /{" "}
-              {formatStorage(usage.storage.limit)}
+              {formatStorage(usage.storage.used ?? 0)} /{" "}
+              {formatStorage(usage.storage.limit ?? 0)}
             </span>
           </div>
           <Progress

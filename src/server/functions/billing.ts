@@ -60,30 +60,28 @@ export const getUsageStats = createServerFn({ method: 'GET' })
       throw new Error('Organization not found')
     }
 
+    const currentStorage = org.currentStorage ?? 0
+    const storageLimit = org.storageLimit ?? 1
+    const currentModelCount = org.currentModelCount ?? 0
+    const modelCountLimit = org.modelCountLimit ?? 1
+    const currentMemberCount = org.currentMemberCount ?? 0
+    const memberLimit = org.memberLimit ?? 1
+
     return {
       storage: {
-        used: org.currentStorage,
-        limit: org.storageLimit,
-        percentage: Math.min(
-          (org.currentStorage / org.storageLimit) * 100,
-          100
-        ),
+        used: currentStorage,
+        limit: storageLimit,
+        percentage: Math.min((currentStorage / storageLimit) * 100, 100),
       },
       models: {
-        used: org.currentModelCount,
-        limit: org.modelCountLimit,
-        percentage: Math.min(
-          (org.currentModelCount / org.modelCountLimit) * 100,
-          100
-        ),
+        used: currentModelCount,
+        limit: modelCountLimit,
+        percentage: Math.min((currentModelCount / modelCountLimit) * 100, 100),
       },
       members: {
-        used: org.currentMemberCount,
-        limit: org.memberLimit,
-        percentage: Math.min(
-          (org.currentMemberCount / org.memberLimit) * 100,
-          100
-        ),
+        used: currentMemberCount,
+        limit: memberLimit,
+        percentage: Math.min((currentMemberCount / memberLimit) * 100, 100),
       },
     }
   })
