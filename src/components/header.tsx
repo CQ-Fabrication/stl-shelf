@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
-import type { RouterAppContext } from "@/routes/__root";
+import { authClient } from "@/lib/auth-client";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 import { Logo } from "@/components/ui/logo";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
@@ -46,18 +46,17 @@ import {
 
 export default function Header() {
   const router = useRouter();
-  const { auth } = router.options.context as RouterAppContext;
 
   const [showLimitAlert, setShowLimitAlert] = useState(false);
 
-  const { data: session } = auth.useSession();
+  const { data: session } = authClient.useSession();
   const { data: organizations, isPending: isLoadingOrgs } =
-    auth.useListOrganizations();
-  const { data: activeOrg } = auth.useActiveOrganization();
+    authClient.useListOrganizations();
+  const { data: activeOrg } = authClient.useActiveOrganization();
 
   async function switchOrganization(orgId: string) {
     try {
-      await auth.organization.setActive({ organizationId: orgId });
+      await authClient.organization.setActive({ organizationId: orgId });
       const org = organizations?.find((o) => o.id === orgId);
       if (org) {
         toast.success(`Switched to ${org.name}`);
@@ -207,7 +206,7 @@ export default function Header() {
               <DropdownMenuItem
                 onClick={async () => {
                   try {
-                    await auth.signOut();
+                    await authClient.signOut();
                     await router.invalidate();
                   } catch {
                     // ignore

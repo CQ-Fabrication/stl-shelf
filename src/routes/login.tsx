@@ -5,7 +5,7 @@ import { MagicLinkForm } from '@/components/auth/magic-link-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Logo } from '@/components/ui/logo'
-import type { RouterAppContext } from './__root'
+import { authClient } from '@/lib/auth-client'
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -14,7 +14,6 @@ export const Route = createFileRoute('/login')({
 type LoginView = 'magic-link' | 'credentials'
 
 function LoginPage() {
-  const { auth } = Route.useRouteContext() as RouterAppContext
   const [view, setView] = useState<LoginView>('magic-link')
   const [magicLinkSent, setMagicLinkSent] = useState(false)
 
@@ -33,12 +32,12 @@ function LoginPage() {
 
           {view === 'magic-link' ? (
             <MagicLinkForm
-              auth={auth}
+              auth={authClient}
               magicLinkSent={magicLinkSent}
               onSuccess={() => setMagicLinkSent(true)}
             />
           ) : (
-            <CredentialsForm auth={auth} />
+            <CredentialsForm auth={authClient} />
           )}
 
           <div className="relative">

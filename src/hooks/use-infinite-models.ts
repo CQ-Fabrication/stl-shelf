@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useRouter } from '@tanstack/react-router'
-import type { RouterAppContext } from '@/routes/__root'
+import { authClient } from '@/lib/auth-client'
 import { listModels } from '@/server/functions/models'
 import { MODELS_QUERY_KEY } from './use-delete-model'
 
@@ -15,10 +14,8 @@ export const useInfiniteModels = ({
   tags,
   limit = 12,
 }: UseInfiniteModelsParams) => {
-  const router = useRouter()
-  const { auth } = router.options.context as RouterAppContext
-  const { data: session } = auth.useSession()
-  const { data: activeOrg } = auth.useActiveOrganization()
+  const { data: session } = authClient.useSession()
+  const { data: activeOrg } = authClient.useActiveOrganization()
 
   const isAuthenticated = Boolean(session?.user && activeOrg?.id)
 

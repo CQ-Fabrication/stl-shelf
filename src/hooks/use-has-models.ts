@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useRouter } from '@tanstack/react-router'
-import type { RouterAppContext } from '@/routes/__root'
+import { authClient } from '@/lib/auth-client'
 import { listModels } from '@/server/functions/models'
 
 /**
@@ -9,9 +8,7 @@ import { listModels } from '@/server/functions/models'
  * Only runs when user is authenticated.
  */
 export function useHasModels() {
-  const router = useRouter()
-  const { auth } = router.options.context as RouterAppContext
-  const { data: session } = auth.useSession()
+  const { data: session } = authClient.useSession()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['models', 'hasModels'],

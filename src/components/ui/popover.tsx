@@ -1,7 +1,6 @@
-"use client";
+'use client'
 
-// biome-ignore lint/performance/noNamespaceImport: shadcn stuff
-import * as PopoverPrimitive from "@radix-ui/react-popover";
+import * as PopoverPrimitive from '@radix-ui/react-popover'
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";

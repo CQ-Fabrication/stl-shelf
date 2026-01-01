@@ -1,31 +1,9 @@
 {
   "editor.defaultFormatter": "oxc.oxc-vscode",
-  "[javascript]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode",
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode",
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode",
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "oxc.oxc-vscode",
-  },
-  "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-  },
-  "[css]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-  },
   "typescript.tsdk": "node_modules/@typescript/native-preview/lib",
   "typescript.experimental.useTsgo": true,
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
-  "emmet.showExpandedAbbreviation": "never",
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "explicit",
   },

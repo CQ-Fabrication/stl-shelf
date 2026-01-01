@@ -7,8 +7,7 @@ type InsertTag = InferInsertModel<typeof tags>
 type SelectTag = InferSelectModel<typeof tags>
 type InsertModelTag = InferInsertModel<typeof modelTags>
 
-// biome-ignore lint/suspicious/noExplicitAny: Transaction typing is complex
-type DatabaseInstance = typeof db | any
+type DatabaseInstance = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 type CreateTagInput = Omit<
   InsertTag,

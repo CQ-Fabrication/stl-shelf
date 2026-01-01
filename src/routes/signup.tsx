@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Logo } from '@/components/ui/logo'
-import type { RouterAppContext } from './__root'
+import { authClient } from '@/lib/auth-client'
 
 export const Route = createFileRoute('/signup')({
   component: SignUpPage,
@@ -42,10 +42,9 @@ const defaultValues: SignUpForm = {
 
 function SignUpPage() {
   const navigate = useNavigate()
-  const { auth } = Route.useRouteContext() as RouterAppContext
 
   const handleSignUp = async (value: SignUpForm) => {
-    await auth.signUp.email({
+    await authClient.signUp.email({
       name: value.name,
       email: value.email,
       password: value.password,
@@ -56,7 +55,10 @@ function SignUpPage() {
       },
     })
 
-    await navigate({ to: '/library' })
+    await navigate({
+      to: '/verify-email-pending',
+      search: { email: value.email },
+    })
   }
 
   const form = useForm({

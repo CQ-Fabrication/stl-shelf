@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { RouterAppContext } from '../__root'
+import { authClient } from '@/lib/auth-client'
 
 export const Route = createFileRoute('/organization/create')({
   component: CreateOrganizationPage,
@@ -22,7 +22,6 @@ export const Route = createFileRoute('/organization/create')({
 
 function CreateOrganizationPage() {
   const navigate = useNavigate()
-  const { auth } = Route.useRouteContext() as RouterAppContext
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -47,7 +46,7 @@ function CreateOrganizationPage() {
 
   async function checkExistingOrganizations() {
     try {
-      const { data: organizations } = await auth.organization.list()
+      const { data: organizations } = await authClient.organization.list()
       if (organizations && organizations.length > 0) {
         setHasExistingOrg(true)
       }
@@ -108,7 +107,7 @@ function CreateOrganizationPage() {
       logoDataUrl = logoPreview || undefined
     }
 
-    const { error } = await auth.organization.create({
+    const { error } = await authClient.organization.create({
       name: name.trim(),
       slug,
       logo: logoDataUrl,
@@ -194,7 +193,6 @@ function CreateOrganizationPage() {
                       <span className="text-destructive">*</span>
                     </Label>
                     <Input
-                      
                       disabled={isCreating || hasExistingOrg}
                       id="name"
                       onBlur={field.handleBlur}

@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Logo } from '@/components/ui/logo'
-import type { RouterAppContext } from './__root'
+import { authClient } from '@/lib/auth-client'
 
 export const Route = createFileRoute('/verify-email')({
   component: VerifyEmailPage,
@@ -20,7 +20,6 @@ type VerificationState = 'pending' | 'verifying' | 'success' | 'error'
 const SUCCESS_REDIRECT_DELAY_MS = 2000
 
 function VerifyEmailPage() {
-  const { auth } = Route.useRouteContext() as RouterAppContext
   const { token } = Route.useSearch()
   const [state, setState] = useState<VerificationState>(
     token ? 'verifying' : 'pending'
@@ -31,7 +30,7 @@ function VerifyEmailPage() {
   const verifyEmail = useCallback(
     async (verificationToken: string) => {
       try {
-        await auth.verifyEmail({
+        await authClient.verifyEmail({
           query: { token: verificationToken },
         })
         setState('success')
@@ -45,7 +44,7 @@ function VerifyEmailPage() {
         toast.error('Failed to verify email')
       }
     },
-    [auth, navigate]
+    [navigate]
   )
 
   useEffect(() => {
@@ -57,9 +56,9 @@ function VerifyEmailPage() {
   const handleResend = async () => {
     setIsResending(true)
     try {
-      const { data: session } = await auth.getSession()
+      const { data: session } = await authClient.getSession()
       if (session?.user?.email) {
-        await auth.sendVerificationEmail({
+        await authClient.sendVerificationEmail({
           email: session.user.email,
           callbackURL: `${window.location.origin}/verify-email`,
         })

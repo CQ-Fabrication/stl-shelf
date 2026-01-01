@@ -17,6 +17,11 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import Header from '@/components/header'
+import {
+  getSessionFn,
+  listOrganizationsFn,
+  setActiveOrganizationFn,
+} from '@/server/functions/auth'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { authClient } from '@/lib/auth-client'
@@ -32,7 +37,6 @@ const queryClient = new QueryClient({
 
 export type RouterAppContext = {
   queryClient: QueryClient
-  auth: typeof authClient
 }
 
 // Routes that don't require authentication
@@ -43,6 +47,7 @@ const PUBLIC_ROUTES = [
   '/forgot-password',
   '/reset-password',
   '/verify-email',
+  '/verify-email-pending',
   '/about',
   '/pricing',
   '/privacy',
@@ -72,59 +77,58 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { rel: 'icon', href: '/favicon.ico' },
     ],
   }),
-  beforeLoad: async ({ context, location }) => {
-    // Do not guard public routes
+  beforeLoad: async ({ location }) => {
+    // Skip auth check for public routes
     if (PUBLIC_ROUTES.includes(location.pathname)) {
       return
     }
 
-    // Check session first
-    let session: Awaited<ReturnType<typeof context.auth.getSession>>['data']
+    // Get session using server function (has cookie access during SSR)
+    let session: Awaited<ReturnType<typeof getSessionFn>> | null = null
     try {
-      const { data } = await context.auth.getSession()
-      session = data
+      session = await getSessionFn()
     } catch (error) {
       console.error('Session check failed:', error)
       throw redirect({ to: '/login', replace: true })
     }
 
     // If no session, redirect to login
-    if (!session) {
+    if (!session?.user) {
       throw redirect({ to: '/login', replace: true })
     }
 
     // Allow organization creation page for authenticated users
     if (location.pathname === '/organization/create') {
-      return
+      return { session }
     }
 
-    // Check organizations for all other routes
-    let organizations: Awaited<
-      ReturnType<typeof context.auth.organization.list>
-    >['data'] = []
+    // Check organizations using server function
+    let organizations: Array<{ id: string }> = []
     try {
-      const { data } = await context.auth.organization.list()
-      organizations = data
+      const result = await listOrganizationsFn()
+      organizations = result.organizations
     } catch (error) {
       console.error('Failed to fetch organizations:', error)
       throw redirect({ to: '/organization/create', replace: true })
     }
 
     // If no organizations, redirect to create one
-    if (!organizations || organizations.length === 0) {
+    if (organizations.length === 0) {
       throw redirect({ to: '/organization/create', replace: true })
     }
 
-    // Check if there's an active organization in the session
+    // Set active organization if not set
     if (!session.session?.activeOrganizationId && organizations.length > 0) {
       try {
-        await context.auth.organization.setActive({
-          organizationId: organizations[0].id,
+        await setActiveOrganizationFn({
+          data: { organizationId: organizations[0].id },
         })
       } catch (error) {
         console.error('Failed to set active organization:', error)
       }
     }
+
+    return { session }
   },
   shellComponent: RootDocument,
 })
@@ -142,26 +146,9 @@ function RootDocument({ children }: { children: ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <NuqsAdapter>
             <AuthQueryProvider>
-            <AuthUIProviderTanstack
-              authClient={authClient}
-              avatar={{
-                upload: (file: File) => {
-                  return new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader()
-                    reader.onloadend = () => {
-                      resolve(reader.result as string)
-                    }
-                    reader.onerror = reject
-                    reader.readAsDataURL(file)
-                  })
-                },
-                size: 256,
-                extension: 'png',
-              }}
-              Link={({ href, ...props }) => <Link to={href} {...props} />}
-              navigate={(href: string) => router.navigate({ to: href })}
-              organization={{
-                logo: {
+              <AuthUIProviderTanstack
+                authClient={authClient}
+                avatar={{
                   upload: (file: File) => {
                     return new Promise<string>((resolve, reject) => {
                       const reader = new FileReader()
@@ -174,26 +161,43 @@ function RootDocument({ children }: { children: ReactNode }) {
                   },
                   size: 256,
                   extension: 'png',
-                },
-              }}
-              replace={(href: string) =>
-                router.navigate({ to: href, replace: true })
-              }
-            >
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                disableTransitionOnChange
-                storageKey="stl-shelf-theme"
+                }}
+                Link={({ href, ...props }) => <Link to={href} {...props} />}
+                navigate={(href: string) => router.navigate({ to: href })}
+                organization={{
+                  logo: {
+                    upload: (file: File) => {
+                      return new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader()
+                        reader.onloadend = () => {
+                          resolve(reader.result as string)
+                        }
+                        reader.onerror = reject
+                        reader.readAsDataURL(file)
+                      })
+                    },
+                    size: 256,
+                    extension: 'png',
+                  },
+                }}
+                replace={(href: string) =>
+                  router.navigate({ to: href, replace: true })
+                }
               >
-                <div className="grid h-svh grid-rows-[auto_1fr]">
-                  {PUBLIC_ROUTES.includes(pathname) ? null : <Header />}
-                  {children}
-                </div>
-                <Toaster richColors />
-              </ThemeProvider>
-            </AuthUIProviderTanstack>
-          </AuthQueryProvider>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="system"
+                  disableTransitionOnChange
+                  storageKey="stl-shelf-theme"
+                >
+                  <div className="grid h-svh grid-rows-[auto_1fr]">
+                    {PUBLIC_ROUTES.includes(pathname) ? null : <Header />}
+                    {children}
+                  </div>
+                  <Toaster richColors />
+                </ThemeProvider>
+              </AuthUIProviderTanstack>
+            </AuthQueryProvider>
           </NuqsAdapter>
           <TanStackRouterDevtools position="bottom-left" />
           <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />

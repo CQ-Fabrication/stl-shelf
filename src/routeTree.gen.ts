@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailPendingRouteImport } from './routes/verify-email-pending'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -31,10 +32,14 @@ import { Route as ApiV1UploadRouteImport } from './routes/api/v1/upload'
 import { Route as ApiV1ModelsRouteImport } from './routes/api/v1/models'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiV1ModelsModelIdRouteImport } from './routes/api/v1/models.$modelId'
-import { Route as ApiAuthMagicLinkVerifyRouteImport } from './routes/api/auth/magic-link/verify'
 import { Route as ApiV1ModelsModelIdVersionsRouteImport } from './routes/api/v1/models.$modelId.versions'
 import { Route as ApiV1ModelsModelIdFilesFileIdDownloadRouteImport } from './routes/api/v1/models.$modelId.files.$fileId.download'
 
+const VerifyEmailPendingRoute = VerifyEmailPendingRouteImport.update({
+  id: '/verify-email-pending',
+  path: '/verify-email-pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
@@ -145,11 +150,6 @@ const ApiV1ModelsModelIdRoute = ApiV1ModelsModelIdRouteImport.update({
   path: '/$modelId',
   getParentRoute: () => ApiV1ModelsRoute,
 } as any)
-const ApiAuthMagicLinkVerifyRoute = ApiAuthMagicLinkVerifyRouteImport.update({
-  id: '/api/auth/magic-link/verify',
-  path: '/api/auth/magic-link/verify',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiV1ModelsModelIdVersionsRoute =
   ApiV1ModelsModelIdVersionsRouteImport.update({
     id: '/versions',
@@ -177,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/verify-email-pending': typeof VerifyEmailPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
@@ -185,7 +186,6 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
-  '/api/auth/magic-link/verify': typeof ApiAuthMagicLinkVerifyRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
   '/api/v1/models/$modelId/files/$fileId/download': typeof ApiV1ModelsModelIdFilesFileIdDownloadRoute
@@ -204,6 +204,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/verify-email-pending': typeof VerifyEmailPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
@@ -212,7 +213,6 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
-  '/api/auth/magic-link/verify': typeof ApiAuthMagicLinkVerifyRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
   '/api/v1/models/$modelId/files/$fileId/download': typeof ApiV1ModelsModelIdFilesFileIdDownloadRoute
@@ -232,6 +232,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/verify-email-pending': typeof VerifyEmailPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
@@ -240,7 +241,6 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
-  '/api/auth/magic-link/verify': typeof ApiAuthMagicLinkVerifyRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
   '/api/v1/models/$modelId/files/$fileId/download': typeof ApiV1ModelsModelIdFilesFileIdDownloadRoute
@@ -261,6 +261,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/verify-email'
+    | '/verify-email-pending'
     | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
@@ -269,7 +270,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/v1/models'
     | '/api/v1/upload'
-    | '/api/auth/magic-link/verify'
     | '/api/v1/models/$modelId'
     | '/api/v1/models/$modelId/versions'
     | '/api/v1/models/$modelId/files/$fileId/download'
@@ -288,6 +288,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/verify-email'
+    | '/verify-email-pending'
     | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
@@ -296,7 +297,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/v1/models'
     | '/api/v1/upload'
-    | '/api/auth/magic-link/verify'
     | '/api/v1/models/$modelId'
     | '/api/v1/models/$modelId/versions'
     | '/api/v1/models/$modelId/files/$fileId/download'
@@ -315,6 +315,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/terms'
     | '/verify-email'
+    | '/verify-email-pending'
     | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
@@ -323,7 +324,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/v1/models'
     | '/api/v1/upload'
-    | '/api/auth/magic-link/verify'
     | '/api/v1/models/$modelId'
     | '/api/v1/models/$modelId/versions'
     | '/api/v1/models/$modelId/files/$fileId/download'
@@ -343,6 +343,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  VerifyEmailPendingRoute: typeof VerifyEmailPendingRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   ModelsModelIdRoute: typeof ModelsModelIdRoute
   OrganizationCreateRoute: typeof OrganizationCreateRoute
@@ -351,11 +352,17 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1ModelsRoute: typeof ApiV1ModelsRouteWithChildren
   ApiV1UploadRoute: typeof ApiV1UploadRoute
-  ApiAuthMagicLinkVerifyRoute: typeof ApiAuthMagicLinkVerifyRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email-pending': {
+      id: '/verify-email-pending'
+      path: '/verify-email-pending'
+      fullPath: '/verify-email-pending'
+      preLoaderRoute: typeof VerifyEmailPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify-email': {
       id: '/verify-email'
       path: '/verify-email'
@@ -510,13 +517,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ModelsModelIdRouteImport
       parentRoute: typeof ApiV1ModelsRoute
     }
-    '/api/auth/magic-link/verify': {
-      id: '/api/auth/magic-link/verify'
-      path: '/api/auth/magic-link/verify'
-      fullPath: '/api/auth/magic-link/verify'
-      preLoaderRoute: typeof ApiAuthMagicLinkVerifyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/v1/models/$modelId/versions': {
       id: '/api/v1/models/$modelId/versions'
       path: '/versions'
@@ -574,6 +574,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  VerifyEmailPendingRoute: VerifyEmailPendingRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   ModelsModelIdRoute: ModelsModelIdRoute,
   OrganizationCreateRoute: OrganizationCreateRoute,
@@ -582,7 +583,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1ModelsRoute: ApiV1ModelsRouteWithChildren,
   ApiV1UploadRoute: ApiV1UploadRoute,
-  ApiAuthMagicLinkVerifyRoute: ApiAuthMagicLinkVerifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

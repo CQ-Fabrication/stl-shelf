@@ -1,6 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
 import { createRouter } from '@tanstack/react-router'
-import { authClient } from '@/lib/auth-client'
 import { routeTree } from './routeTree.gen'
 
 const queryClient = new QueryClient({
@@ -16,7 +15,6 @@ export function getRouter() {
     routeTree,
     context: {
       queryClient,
-      auth: authClient,
     },
     defaultPreload: 'intent',
     scrollRestoration: true,

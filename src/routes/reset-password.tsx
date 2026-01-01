@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Logo } from '@/components/ui/logo'
-import type { RouterAppContext } from './__root'
+import { authClient } from '@/lib/auth-client'
 
 export const Route = createFileRoute('/reset-password')({
   component: ResetPasswordPage,
@@ -40,7 +40,6 @@ const defaultValues: ResetPasswordForm = {
 
 function ResetPasswordPage() {
   const navigate = useNavigate()
-  const { auth } = Route.useRouteContext() as RouterAppContext
 
   const urlParams = new URLSearchParams(window.location.search)
   const tokenParam = urlParams.get('token')
@@ -50,7 +49,7 @@ function ResetPasswordPage() {
   const token = tokenParam || ''
 
   const handleResetPassword = async (value: ResetPasswordForm) => {
-    await auth.resetPassword({
+    await authClient.resetPassword({
       newPassword: value.newPassword,
       token: value.token,
     })
@@ -162,7 +161,6 @@ function ResetPasswordPage() {
                     </Label>
                     <Input
                       autoComplete="new-password"
-                      
                       id={field.name}
                       name={field.name}
                       onBlur={field.handleBlur}

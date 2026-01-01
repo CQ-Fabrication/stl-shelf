@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Logo } from '@/components/ui/logo'
-import type { RouterAppContext } from './__root'
+import { authClient } from '@/lib/auth-client'
 
 export const Route = createFileRoute('/forgot-password')({
   component: ForgotPasswordPage,
@@ -24,11 +24,10 @@ const defaultValues: ForgotPasswordForm = {
 }
 
 function ForgotPasswordPage() {
-  const { auth } = Route.useRouteContext() as RouterAppContext
   const [isSubmitted, setIsSubmitted] = useState(false)
 
   const handleRequestReset = async (value: ForgotPasswordForm) => {
-    await auth.requestPasswordReset({
+    await authClient.requestPasswordReset({
       email: value.email,
       redirectTo: `${window.location.origin}/reset-password`,
     })
@@ -45,7 +44,8 @@ function ForgotPasswordPage() {
         await handleRequestReset(value)
         setIsSubmitted(true)
       } catch (err) {
-        if (import.meta.env.DEV) console.debug('requestPasswordReset error', err)
+        if (import.meta.env.DEV)
+          console.debug('requestPasswordReset error', err)
         setIsSubmitted(true)
       }
     },
@@ -117,7 +117,6 @@ function ForgotPasswordPage() {
                   </Label>
                   <Input
                     autoComplete="email"
-                    
                     id={field.name}
                     name={field.name}
                     onBlur={field.handleBlur}
