@@ -10,3 +10,6 @@ assets/*.stl
 
 # Ngrok
 .ngrok-url
+
+# Playwright MCP
+.playwright-mcp/
