@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { zodValidator } from '@tanstack/zod-adapter'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/lib/db'
@@ -60,7 +61,7 @@ const deleteModelSchema = z.object({
 
 // List models with pagination
 export const listModels = createServerFn({ method: 'GET' })
-  .inputValidator(listModelsSchema)
+  .inputValidator(zodValidator(listModelsSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -89,7 +90,7 @@ export const getAllTags = createServerFn({ method: 'GET' })
 
 // Get single model
 export const getModel = createServerFn({ method: 'GET' })
-  .inputValidator(getModelSchema)
+  .inputValidator(zodValidator(getModelSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -105,7 +106,7 @@ export const getModel = createServerFn({ method: 'GET' })
 
 // Get model versions
 export const getModelVersions = createServerFn({ method: 'GET' })
-  .inputValidator(getModelVersionsSchema)
+  .inputValidator(zodValidator(getModelVersionsSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -124,7 +125,7 @@ export const getModelVersions = createServerFn({ method: 'GET' })
 
 // Get model files for a version
 export const getModelFiles = createServerFn({ method: 'GET' })
-  .inputValidator(getModelFilesSchema)
+  .inputValidator(zodValidator(getModelFilesSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -144,7 +145,7 @@ export const getModelFiles = createServerFn({ method: 'GET' })
 
 // Get model statistics
 export const getModelStatistics = createServerFn({ method: 'GET' })
-  .inputValidator(getModelSchema)
+  .inputValidator(zodValidator(getModelSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -163,7 +164,7 @@ export const getModelStatistics = createServerFn({ method: 'GET' })
 
 // Get model tags
 export const getModelTags = createServerFn({ method: 'GET' })
-  .inputValidator(getModelSchema)
+  .inputValidator(zodValidator(getModelSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -182,7 +183,7 @@ export const getModelTags = createServerFn({ method: 'GET' })
 
 // Update model tags
 export const updateModelTags = createServerFn({ method: 'POST' })
-  .inputValidator(updateModelTagsSchema)
+  .inputValidator(zodValidator(updateModelTagsSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -337,7 +338,7 @@ export const addVersion = createServerFn({ method: 'POST' })
 
 // Download single file - returns signed URL for direct download
 export const downloadFile = createServerFn({ method: 'POST' })
-  .inputValidator(downloadFileSchema)
+  .inputValidator(zodValidator(downloadFileSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -357,7 +358,7 @@ export const downloadFile = createServerFn({ method: 'POST' })
 
 // Download model as ZIP - returns signed URL for ZIP download
 export const downloadModelZip = createServerFn({ method: 'POST' })
-  .inputValidator(downloadModelZipSchema)
+  .inputValidator(zodValidator(downloadModelZipSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -379,7 +380,7 @@ export const downloadModelZip = createServerFn({ method: 'POST' })
 
 // Download version as ZIP - returns files for version
 export const downloadVersionZip = createServerFn({ method: 'POST' })
-  .inputValidator(downloadVersionZipSchema)
+  .inputValidator(zodValidator(downloadVersionZipSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -401,7 +402,7 @@ export const downloadVersionZip = createServerFn({ method: 'POST' })
 
 // Get file download info
 export const getFileDownloadInfo = createServerFn({ method: 'GET' })
-  .inputValidator(downloadFileSchema)
+  .inputValidator(zodValidator(downloadFileSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
@@ -420,7 +421,7 @@ export const getFileDownloadInfo = createServerFn({ method: 'GET' })
 
 // Delete model
 export const deleteModel = createServerFn({ method: 'POST' })
-  .inputValidator(deleteModelSchema)
+  .inputValidator(zodValidator(deleteModelSchema))
   .middleware([authMiddleware])
   .handler(
     async ({

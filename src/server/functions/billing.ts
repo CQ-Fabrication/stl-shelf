@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { zodValidator } from '@tanstack/zod-adapter'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/lib/db'
@@ -88,7 +89,7 @@ export const getUsageStats = createServerFn({ method: 'GET' })
 
 // Create checkout session (owner only)
 export const createCheckout = createServerFn({ method: 'POST' })
-  .inputValidator(createCheckoutSchema)
+  .inputValidator(zodValidator(createCheckoutSchema))
   .middleware([authMiddleware])
   .handler(
     async ({
