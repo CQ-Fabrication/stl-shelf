@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
+import { user } from '@/lib/db/schema/auth'
 import {
   modelFiles,
   models,
@@ -21,6 +22,12 @@ export type ModelFile = {
   storageBucket: string
 }
 
+export type ModelOwner = {
+  id: string
+  name: string
+  image: string | null
+}
+
 export type ModelMetadata = {
   id: string
   name: string
@@ -29,6 +36,7 @@ export type ModelMetadata = {
   currentVersion: string
   totalVersions: number
   tags: string[]
+  owner: ModelOwner
   createdAt: string
   updatedAt: string
 }
@@ -117,6 +125,9 @@ class ModelDetailService {
         totalVersions: models.totalVersions,
         createdAt: models.createdAt,
         updatedAt: models.updatedAt,
+        ownerId: user.id,
+        ownerName: user.name,
+        ownerImage: user.image,
         tags: sql<string[]>`(
           SELECT COALESCE(ARRAY_AGG(t.name ORDER BY t.name), '{}')
           FROM ${modelTags} mt
@@ -125,6 +136,7 @@ class ModelDetailService {
         )`,
       })
       .from(models)
+      .innerJoin(user, eq(models.ownerId, user.id))
       .where(
         and(
           eq(models.id, modelId),
@@ -145,6 +157,11 @@ class ModelDetailService {
       currentVersion: model.currentVersion,
       totalVersions: model.totalVersions,
       tags: model.tags ?? [],
+      owner: {
+        id: model.ownerId,
+        name: model.ownerName,
+        image: model.ownerImage,
+      },
       createdAt: model.createdAt.toISOString(),
       updatedAt: model.updatedAt.toISOString(),
     }

@@ -102,6 +102,7 @@ export const organization = pgTable(
     currentStorage: integer("current_storage"),
     currentModelCount: integer("current_model_count"),
     currentMemberCount: integer("current_member_count"),
+    graceDeadline: timestamp("grace_deadline"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );

@@ -1,11 +1,11 @@
-import { OrganizationSettingsCards } from '@daveyplate/better-auth-ui'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { OrganizationSettingsForm } from "@/components/organization/settings-form";
 
-export const Route = createFileRoute('/organization/settings')({
+export const Route = createFileRoute("/organization/settings")({
   component: OrganizationSettingsPage,
-})
+});
 
 function OrganizationSettingsPage() {
   return (
@@ -24,9 +24,7 @@ function OrganizationSettingsPage() {
         </Button>
       </div>
       <h1 className="mb-8 font-bold text-3xl">Organization Settings</h1>
-      <div className="flex flex-col gap-6">
-        <OrganizationSettingsCards />
-      </div>
+      <OrganizationSettingsForm />
     </div>
-  )
+  );
 }

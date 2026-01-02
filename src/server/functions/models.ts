@@ -1,15 +1,17 @@
 import { createServerFn } from '@tanstack/react-start'
 import { zodValidator } from '@tanstack/zod-adapter'
-import { eq } from 'drizzle-orm'
+import { and, count, eq, isNull, sum } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { organization } from '@/lib/db/schema/auth'
+import { models, modelFiles, modelVersions } from '@/lib/db/schema/models'
 import type { SubscriptionTier } from '@/lib/billing/config'
-import { enforceLimits } from '@/lib/billing/limits'
+import { getTierConfig, isUnlimited } from '@/lib/billing/config'
 import type { AuthenticatedContext } from '@/server/middleware/auth'
 import { authMiddleware } from '@/server/middleware/auth'
 import { modelCreationService } from '@/server/services/models/model-create.service'
 import { modelDeleteService } from '@/server/services/models/model-delete.service'
+import { modelUpdateService } from '@/server/services/models/model-update.service'
 import { modelDetailService } from '@/server/services/models/model-detail.service'
 import { modelDownloadService } from '@/server/services/models/model-download.service'
 import { modelListService } from '@/server/services/models/model-list.service'
@@ -57,6 +59,11 @@ const downloadVersionZipSchema = z.object({
 
 const deleteModelSchema = z.object({
   id: z.string().uuid(),
+})
+
+const renameModelSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
 })
 
 // List models with pagination
@@ -250,12 +257,55 @@ export const createModel = createServerFn({ method: 'POST' })
 
       // Default to 'free' tier if subscriptionTier is null (new organizations)
       const tier = (org.subscriptionTier as SubscriptionTier) || 'free'
+      const tierConfig = getTierConfig(tier)
 
-      enforceLimits.checkModelLimit(org.currentModelCount ?? 0, tier)
+      // CRITICAL: Always query actual counts from DB - never trust counters
+      // IMPORTANT: Exclude soft-deleted models (deletedAt IS NULL)
+      const [modelCountResult] = await db
+        .select({ count: count() })
+        .from(models)
+        .where(
+          and(
+            eq(models.organizationId, context.organizationId),
+            isNull(models.deletedAt)
+          )
+        )
 
-      const totalFileSize = data.files.reduce((sum, file) => sum + file.size, 0)
+      const currentModelCount = modelCountResult?.count ?? 0
+      const modelLimit = org.modelCountLimit ?? tierConfig.modelCountLimit
 
-      enforceLimits.checkStorageLimit(org.currentStorage ?? 0, totalFileSize, tier)
+      // Check model limit (skip for unlimited -1)
+      if (!isUnlimited(modelLimit) && currentModelCount >= modelLimit) {
+        throw new Error(
+          `Model limit reached. Your ${tierConfig.name} plan allows ${modelLimit} model(s). Upgrade to add more models.`
+        )
+      }
+
+      // Query actual storage usage from DB
+      // IMPORTANT: Exclude soft-deleted models
+      const [storageResult] = await db
+        .select({ total: sum(modelFiles.size) })
+        .from(modelFiles)
+        .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
+        .innerJoin(models, eq(modelVersions.modelId, models.id))
+        .where(
+          and(
+            eq(models.organizationId, context.organizationId),
+            isNull(models.deletedAt)
+          )
+        )
+
+      const currentStorage = Number(storageResult?.total ?? 0)
+      const totalFileSize = data.files.reduce((acc, file) => acc + file.size, 0)
+      const storageLimit = org.storageLimit ?? tierConfig.storageLimit
+
+      // Check storage limit
+      if (currentStorage + totalFileSize > storageLimit) {
+        const limitMB = (storageLimit / 1_048_576).toFixed(0)
+        throw new Error(
+          `Storage limit exceeded. Your ${tierConfig.name} plan allows ${limitMB} MB. Upgrade for more storage.`
+        )
+      }
 
       const uniqueTags = Array.from(new Set(data.tags))
 
@@ -314,6 +364,44 @@ export const addVersion = createServerFn({ method: 'POST' })
       }
       context: AuthenticatedContext
     }) => {
+      // Get organization and tier for limit checking
+      const org = await db.query.organization.findFirst({
+        where: eq(organization.id, context.organizationId),
+      })
+
+      if (!org) {
+        throw new Error('Organization not found')
+      }
+
+      const tier = (org.subscriptionTier as SubscriptionTier) || 'free'
+      const tierConfig = getTierConfig(tier)
+
+      // Query actual storage usage from DB (don't trust counters)
+      // IMPORTANT: Exclude soft-deleted models
+      const [storageResult] = await db
+        .select({ total: sum(modelFiles.size) })
+        .from(modelFiles)
+        .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
+        .innerJoin(models, eq(modelVersions.modelId, models.id))
+        .where(
+          and(
+            eq(models.organizationId, context.organizationId),
+            isNull(models.deletedAt)
+          )
+        )
+
+      const currentStorage = Number(storageResult?.total ?? 0)
+      const totalFileSize = data.files.reduce((acc, file) => acc + file.size, 0)
+      const storageLimit = org.storageLimit ?? tierConfig.storageLimit
+
+      // Check storage limit before adding version
+      if (currentStorage + totalFileSize > storageLimit) {
+        const limitMB = (storageLimit / 1_048_576).toFixed(0)
+        throw new Error(
+          `Storage limit exceeded. Your ${tierConfig.name} plan allows ${limitMB} MB. Upgrade for more storage.`
+        )
+      }
+
       const result = await modelVersionService.addVersion({
         modelId: data.modelId,
         organizationId: context.organizationId,
@@ -436,5 +524,25 @@ export const deleteModel = createServerFn({ method: 'POST' })
         success: true,
         deletedId: result.deletedId,
       }
+    }
+  )
+
+// Rename model
+export const renameModel = createServerFn({ method: 'POST' })
+  .inputValidator(zodValidator(renameModelSchema))
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof renameModelSchema>
+      context: AuthenticatedContext
+    }) => {
+      return await modelUpdateService.renameModel({
+        modelId: data.id,
+        organizationId: context.organizationId,
+        name: data.name,
+      })
     }
   )

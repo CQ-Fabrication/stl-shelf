@@ -1,13 +1,27 @@
-import { OrganizationMembersCard } from '@daveyplate/better-auth-ui'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { InvitationsTable } from "@/components/organization/invitations-table";
+import { MembersTable } from "@/components/organization/members-table";
+import { Button } from "@/components/ui/button";
+import { useSubscription } from "@/hooks/use-subscription";
 
-export const Route = createFileRoute('/organization/members')({
+export const Route = createFileRoute("/organization/members")({
   component: OrganizationMembersPage,
-})
+});
 
 function OrganizationMembersPage() {
+  const { subscription, isLoading } = useSubscription();
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto flex max-w-4xl items-center justify-center px-4 py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const memberLimit = subscription?.memberLimit ?? 1;
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6">
@@ -23,10 +37,11 @@ function OrganizationMembersPage() {
           </Link>
         </Button>
       </div>
-      <h1 className="mb-8 font-bold text-3xl">Organization Members</h1>
+      <h1 className="mb-8 font-bold text-3xl">Team Members</h1>
       <div className="flex flex-col gap-6">
-        <OrganizationMembersCard />
+        <MembersTable memberLimit={memberLimit} />
+        <InvitationsTable memberLimit={memberLimit} />
       </div>
     </div>
-  )
+  );
 }

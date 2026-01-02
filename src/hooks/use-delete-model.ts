@@ -56,15 +56,25 @@ export const useDeleteModel = () => {
     onSuccess: () => {
       toast.success('Model deleted successfully')
 
+      // Only navigate away if on a model detail page (which no longer exists)
       const currentPath = window.location.pathname
-      if (currentPath !== '/') {
-        navigate({ to: '/' })
+      if (currentPath.startsWith('/models/')) {
+        navigate({ to: '/library' })
       }
     },
 
     onSettled: () => {
+      // Invalidate models list
       queryClient.invalidateQueries({
         queryKey: MODELS_QUERY_KEY,
+      })
+      // Invalidate upload limits so modal shows correct count
+      queryClient.invalidateQueries({
+        queryKey: ['upload-limits'],
+      })
+      // Invalidate grace period check
+      queryClient.invalidateQueries({
+        queryKey: ['grace-period'],
       })
     },
   })

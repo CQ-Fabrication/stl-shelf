@@ -9,6 +9,7 @@ import {
   sql,
 } from 'drizzle-orm'
 import { db } from '@/lib/db'
+import { user } from '@/lib/db/schema/auth'
 import {
   modelFiles,
   models,
@@ -26,6 +27,12 @@ export type ListModelsInput = {
   tags?: string[]
 }
 
+export type ModelOwner = {
+  id: string
+  name: string
+  image: string | null
+}
+
 export type ModelListItem = {
   id: string
   slug: string
@@ -36,6 +43,7 @@ export type ModelListItem = {
   totalSize: number
   tags: string[]
   thumbnailUrl: string | null
+  owner: ModelOwner
   createdAt: string
   updatedAt: string
 }
@@ -99,6 +107,9 @@ export async function listModels({
       currentVersion: models.currentVersion,
       createdAt: models.createdAt,
       updatedAt: models.updatedAt,
+      ownerId: user.id,
+      ownerName: user.name,
+      ownerImage: user.image,
       fileCount: sql<number>`(
         SELECT COUNT(DISTINCT mf.id)::int
         FROM ${modelVersions} mv
@@ -126,6 +137,7 @@ export async function listModels({
       )`,
     })
     .from(models)
+    .innerJoin(user, eq(models.ownerId, user.id))
     .where(and(...conditions))
     .orderBy(desc(models.updatedAt))
     .limit(safeLimit + 1)
@@ -157,6 +169,11 @@ export async function listModels({
         totalSize: Number(row.totalSize ?? 0),
         tags: row.tags ?? [],
         thumbnailUrl,
+        owner: {
+          id: row.ownerId,
+          name: row.ownerName,
+          image: row.ownerImage,
+        },
         createdAt: row.createdAt.toISOString(),
         updatedAt: row.updatedAt.toISOString(),
       }

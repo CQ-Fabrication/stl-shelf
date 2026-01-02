@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
+import { organization } from '@/lib/db/schema/auth'
 import { modelFiles, models, modelVersions } from '@/lib/db/schema/models'
 import { slugify } from '@/lib/slug'
 import { storageService } from '@/server/services/storage'
@@ -197,6 +198,16 @@ export class ModelCreationService {
             tx
           )
         }
+
+        // Update organization usage counters
+        const totalFileSize = uploadResults.reduce((sum, f) => sum + f.size, 0)
+        await tx
+          .update(organization)
+          .set({
+            currentModelCount: sql`COALESCE(${organization.currentModelCount}, 0) + 1`,
+            currentStorage: sql`COALESCE(${organization.currentStorage}, 0) + ${totalFileSize}`,
+          })
+          .where(eq(organization.id, organizationId))
 
         return {
           model,

@@ -5,9 +5,9 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { captcha, magicLink, openAPI, organization } from 'better-auth/plugins'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
+import { and, eq } from 'drizzle-orm'
 import { Resend } from 'resend'
 import { z } from 'zod'
-import { POLAR_PRODUCTS_CONFIG } from '@/lib/billing/config'
 import {
   handleCustomerStateChanged,
   handleOrderPaid,
@@ -149,6 +149,35 @@ export const auth = betterAuth({
             },
           }
         },
+        beforeCreateInvitation: async ({ organization }) => {
+          // Get current member count from DB
+          const memberCount = await db
+            .select({ count: memberTable.id })
+            .from(memberTable)
+            .where(eq(memberTable.organizationId, organization.id))
+            .then((rows) => rows.length)
+
+          // Get pending invitation count
+          const pendingInvitationCount = await db
+            .select({ count: invitationTable.id })
+            .from(invitationTable)
+            .where(
+              and(
+                eq(invitationTable.organizationId, organization.id),
+                eq(invitationTable.status, 'pending')
+              )
+            )
+            .then((rows) => rows.length)
+
+          const totalSlotsTaken = memberCount + pendingInvitationCount
+          const memberLimit = (organization as { memberLimit?: number }).memberLimit ?? 1
+
+          if (totalSlotsTaken >= memberLimit) {
+            throw new Error(
+              `Member limit reached. Your plan allows ${memberLimit} member${memberLimit > 1 ? 's' : ''}. Upgrade to invite more.`
+            )
+          }
+        },
       },
     }),
     captcha({
@@ -183,7 +212,11 @@ export const auth = betterAuth({
       createCustomerOnSignUp: false,
       use: [
         checkout({
-          products: POLAR_PRODUCTS_CONFIG,
+          products: [
+            env.POLAR_PRODUCT_FREE && { productId: env.POLAR_PRODUCT_FREE, slug: 'free' },
+            env.POLAR_PRODUCT_BASIC && { productId: env.POLAR_PRODUCT_BASIC, slug: 'basic' },
+            env.POLAR_PRODUCT_PRO && { productId: env.POLAR_PRODUCT_PRO, slug: 'pro' },
+          ].filter(Boolean) as { productId: string; slug: string }[],
           successUrl: `${env.WEB_URL}/checkout/success?checkout_id={CHECKOUT_ID}`,
           authenticatedUsersOnly: true,
         }),
@@ -294,6 +327,29 @@ export const auth = betterAuth({
       domain: env.AUTH_COOKIE_DOMAIN || undefined,
       httpOnly: true,
       path: '/',
+    },
+  },
+
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          // Auto-set activeOrganizationId when session is created (at login)
+          // This is the documented approach from Better Auth
+          const [membership] = await db
+            .select({ organizationId: memberTable.organizationId })
+            .from(memberTable)
+            .where(eq(memberTable.userId, session.userId))
+            .limit(1)
+
+          return {
+            data: {
+              ...session,
+              activeOrganizationId: membership?.organizationId ?? null,
+            },
+          }
+        },
+      },
     },
   },
 })

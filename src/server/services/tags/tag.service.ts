@@ -114,6 +114,12 @@ export class TagService {
       if (newTagNames.length > 0) {
         await this.addTagsToModel(modelId, newTagNames, organizationId, tx)
       }
+
+      // Update model's updatedAt to reflect the modification
+      await tx
+        .update(models)
+        .set({ updatedAt: new Date() })
+        .where(eq(models.id, modelId))
     })
   }
 

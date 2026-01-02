@@ -1,8 +1,10 @@
 import { useForm } from "@tanstack/react-form";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -15,6 +17,9 @@ import {
   StepperTitle,
   StepperTrigger,
 } from "@/components/ui/stepper";
+import { UploadBlockedState } from "@/components/models/upload-modal/upload-blocked-state";
+import { UploadUsageIndicator } from "@/components/models/upload-modal/upload-usage-indicator";
+import { useUploadLimits } from "@/hooks/use-upload-limits";
 import {
   type VersionUploadFormData,
   versionUploadFormDefaultValues,
@@ -43,6 +48,15 @@ export function VersionUploadModal({
 }: VersionUploadModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+  // Fetch fresh limits when modal opens (only care about storage for versions)
+  const {
+    limits,
+    isLoading: isLoadingLimits,
+  } = useUploadLimits({ enabled: isOpen });
+
+  // For version uploads, only storage limits matter (not model count)
+  const isStorageBlocked = limits?.storage.blocked ?? false;
 
   const form = useForm({
     defaultValues: versionUploadFormDefaultValues,
@@ -87,62 +101,89 @@ export function VersionUploadModal({
         showCloseButton={!isSubmitting}
       >
         <DialogHeader>
-          <DialogTitle>Upload New Version</DialogTitle>
+          <DialogTitle>
+            {isStorageBlocked ? "Storage Limit Reached" : "Upload New Version"}
+          </DialogTitle>
+          {!isLoadingLimits && !isStorageBlocked && limits && (
+            <DialogDescription asChild>
+              <UploadUsageIndicator limits={limits} />
+            </DialogDescription>
+          )}
         </DialogHeader>
 
-        <div className="mb-6">
-          <Stepper onValueChange={handleStepClick} value={currentStep}>
-            {VERSION_UPLOAD_STEPS.map((step, index) => {
-              const stepNumber = index + 1;
-              const isCompleted = completedSteps.has(stepNumber);
-              const canNavigate =
-                isCompleted || stepNumber <= currentStep;
+        {/* Loading state while fetching limits */}
+        {isLoadingLimits && (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Checking your storage limits...
+            </p>
+          </div>
+        )}
 
-              return (
-                <StepperItem
-                  className="not-last:flex-1"
-                  completed={isCompleted}
-                  disabled={!canNavigate}
-                  key={step.id}
-                  step={stepNumber}
-                >
-                  <StepperTrigger className="flex flex-col gap-1">
-                    <StepperIndicator />
-                    <div className="mt-2 text-center">
-                      <StepperTitle>{step.label}</StepperTitle>
-                      <StepperDescription className="hidden sm:block">
-                        {step.description}
-                      </StepperDescription>
-                    </div>
-                  </StepperTrigger>
-                  {stepNumber < VERSION_UPLOAD_STEPS.length && (
-                    <StepperSeparator />
-                  )}
-                </StepperItem>
-              );
-            })}
-          </Stepper>
-        </div>
+        {/* Blocked state - show upgrade options */}
+        {!isLoadingLimits && isStorageBlocked && limits && (
+          <UploadBlockedState limits={limits} onClose={handleClose} />
+        )}
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          {currentStep === 1 && (
-            <StepFiles form={form} onNext={handleFilesNext} />
-          )}
+        {/* Normal upload flow when not blocked */}
+        {!isLoadingLimits && !isStorageBlocked && (
+          <>
+            <div className="mb-6">
+              <Stepper onValueChange={handleStepClick} value={currentStep}>
+                {VERSION_UPLOAD_STEPS.map((step, index) => {
+                  const stepNumber = index + 1;
+                  const isCompleted = completedSteps.has(stepNumber);
+                  const canNavigate =
+                    isCompleted || stepNumber <= currentStep;
 
-          {currentStep === 2 && (
-            <StepChangelog
-              form={form}
-              isSubmitting={isSubmitting}
-              onPrev={handleChangelogPrev}
-              onSubmit={handleSubmit}
-            />
-          )}
-        </form>
+                  return (
+                    <StepperItem
+                      className="not-last:flex-1"
+                      completed={isCompleted}
+                      disabled={!canNavigate}
+                      key={step.id}
+                      step={stepNumber}
+                    >
+                      <StepperTrigger className="flex flex-col gap-1">
+                        <StepperIndicator />
+                        <div className="mt-2 text-center">
+                          <StepperTitle>{step.label}</StepperTitle>
+                          <StepperDescription className="hidden sm:block">
+                            {step.description}
+                          </StepperDescription>
+                        </div>
+                      </StepperTrigger>
+                      {stepNumber < VERSION_UPLOAD_STEPS.length && (
+                        <StepperSeparator />
+                      )}
+                    </StepperItem>
+                  );
+                })}
+              </Stepper>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              {currentStep === 1 && (
+                <StepFiles form={form} onNext={handleFilesNext} />
+              )}
+
+              {currentStep === 2 && (
+                <StepChangelog
+                  form={form}
+                  isSubmitting={isSubmitting}
+                  onPrev={handleChangelogPrev}
+                  onSubmit={handleSubmit}
+                />
+              )}
+            </form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

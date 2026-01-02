@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TagCombobox } from "@/components/ui/tag-combobox";
+import { MODELS_QUERY_KEY } from "@/hooks/use-delete-model";
 import { getAllTags, updateModelTags } from "@/server/functions/models";
 
 type ModelTag = {
@@ -33,17 +34,87 @@ export function TagEditor({ modelId, currentTags }: TagEditorProps) {
   const updateTagsMutation = useMutation({
     mutationFn: (input: { modelId: string; tags: string[] }) =>
       updateModelTags({ data: input }),
+    onMutate: async (input) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["model", modelId] });
+      await queryClient.cancelQueries({ queryKey: ["model", modelId, "tags"] });
+      await queryClient.cancelQueries({ queryKey: MODELS_QUERY_KEY });
+
+      // Snapshot previous values
+      const previousModel = queryClient.getQueryData<{ tags?: ModelTag[] }>(["model", modelId]);
+      const previousTags = queryClient.getQueryData<ModelTag[]>(["model", modelId, "tags"]);
+      const previousModels = queryClient.getQueriesData({ queryKey: MODELS_QUERY_KEY });
+
+      // Build optimistic tags from selected tag names
+      // Use existing tag info for color, generate temp IDs (real IDs come on invalidation)
+      const optimisticTags: ModelTag[] = input.tags.map((tagName) => {
+        const existing = availableTags.find(
+          (t) => t.name.toLowerCase() === tagName.toLowerCase()
+        );
+        return {
+          id: `temp-${tagName}`,
+          name: tagName,
+          color: existing?.color ?? null,
+        };
+      });
+
+      // Optimistically update model detail
+      if (previousModel) {
+        queryClient.setQueryData(["model", modelId], {
+          ...previousModel,
+          tags: optimisticTags,
+        });
+      }
+
+      // Optimistically update tags query
+      queryClient.setQueryData(["model", modelId, "tags"], optimisticTags);
+
+      // Optimistically update model in ALL list queries
+      // Note: List uses string[] for tags, not objects
+      const tagNames = input.tags;
+      queryClient.setQueriesData({ queryKey: MODELS_QUERY_KEY }, (old) => {
+        if (!old || typeof old !== "object" || !("pages" in old)) {
+          return old;
+        }
+
+        const infiniteData = old as {
+          pages: Array<{ models: Array<{ id: string; tags?: string[] }> }>;
+        };
+
+        return {
+          ...old,
+          pages: infiniteData.pages.map((page) => ({
+            ...page,
+            models: page.models.map((model) =>
+              model.id === modelId ? { ...model, tags: tagNames } : model
+            ),
+          })),
+        };
+      });
+
+      return { previousModel, previousTags, previousModels };
+    },
     onSuccess: () => {
       toast.success("Tags updated");
-      queryClient.invalidateQueries({
-        queryKey: ["model", modelId, "tags"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["model", modelId],
-      });
+      // Only invalidate to sync with server (get real tag IDs)
+      queryClient.invalidateQueries({ queryKey: ["model", modelId, "tags"] });
+      queryClient.invalidateQueries({ queryKey: ["model", modelId] });
+      queryClient.invalidateQueries({ queryKey: ["tags", "all"] });
       setIsEditing(false);
     },
-    onError: () => {
+    onError: (_error, _input, context) => {
+      // Revert on error
+      if (context?.previousModel) {
+        queryClient.setQueryData(["model", modelId], context.previousModel);
+      }
+      if (context?.previousTags) {
+        queryClient.setQueryData(["model", modelId, "tags"], context.previousTags);
+      }
+      if (context?.previousModels) {
+        for (const [queryKey, data] of context.previousModels) {
+          queryClient.setQueryData(queryKey, data);
+        }
+      }
       toast.error("Failed to update tags");
     },
   });

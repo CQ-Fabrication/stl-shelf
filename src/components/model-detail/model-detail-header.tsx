@@ -5,7 +5,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { GradientAvatar } from "@/components/ui/gradient-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
@@ -16,6 +23,8 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import { useState } from "react";
+import { InlineNameEditor } from "@/components/model-detail/inline-name-editor";
 import { useModelFiles } from "@/hooks/use-model-files";
 import { useZipDownload } from "@/hooks/use-zip-download";
 import { getModel } from "@/server/functions/models";
@@ -35,6 +44,8 @@ export const ModelDetailHeader = ({
   onUploadVersionClick,
   onChangelogClick,
 }: ModelDetailHeaderProps) => {
+  const [isEditingName, setIsEditingName] = useState(false);
+
   const { data: model, isLoading } = useQuery({
     queryKey: ["model", modelId],
     queryFn: () => getModel({ data: { id: modelId } }),
@@ -57,7 +68,7 @@ export const ModelDetailHeader = ({
       <div className="mb-6">
         <div className="mb-4 flex items-center gap-4">
           <Button asChild size="sm" variant="ghost">
-            <Link to="/">
+            <Link to="/library">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Library
             </Link>
@@ -92,7 +103,7 @@ export const ModelDetailHeader = ({
           size="sm"
           variant="ghost"
         >
-          <Link to="/">
+          <Link to="/library">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Library
           </Link>
@@ -100,46 +111,77 @@ export const ModelDetailHeader = ({
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-bold text-4xl tracking-tight">{model.name}</h1>
+        <div className="min-w-0 flex-1">
+          <InlineNameEditor
+            modelId={modelId}
+            name={model.name}
+            onEditEnd={() => setIsEditingName(false)}
+            onEditStart={() => setIsEditingName(true)}
+          />
           {model.description && (
             <p className="mt-3 text-muted-foreground">{model.description}</p>
           )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="mt-3 flex items-center gap-2 text-muted-foreground text-sm">
+                  <GradientAvatar
+                    className="ring-1 ring-border/50"
+                    id={model.owner.id}
+                    name={model.owner.name}
+                    size="xs"
+                    src={model.owner.image}
+                  />
+                  <span>
+                    Uploaded by{" "}
+                    <span className="font-medium text-foreground">
+                      {model.owner.name}
+                    </span>
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">Model owner</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-        <div className="flex gap-2">
-          <Button
-            disabled={isDownloading || !modelFiles?.length}
-            onClick={handleDownloadZip}
-            size="sm"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {isDownloading ? "Downloading..." : "Download"}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="outline">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onUploadVersionClick}>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload New Version
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onChangelogClick}>
-                <History className="mr-2 h-4 w-4" />
-                Version History
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={onDeleteClick}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Model
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {!isEditingName && (
+          <div className="flex shrink-0 gap-2">
+            <Button
+              disabled={isDownloading || !modelFiles?.length}
+              onClick={handleDownloadZip}
+              size="sm"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {isDownloading ? "Downloading..." : "Download"}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="outline">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onUploadVersionClick}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload New Version
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onChangelogClick}>
+                  <History className="mr-2 h-4 w-4" />
+                  Version History
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={onDeleteClick}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Model
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
     </div>
   );

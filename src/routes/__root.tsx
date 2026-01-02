@@ -1,7 +1,5 @@
 /// <reference types="vite/client" />
 import type { ReactNode } from 'react'
-import { AuthQueryProvider } from '@daveyplate/better-auth-tanstack'
-import { AuthUIProviderTanstack } from '@daveyplate/better-auth-ui/tanstack'
 import type { QueryClient } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import {
@@ -10,21 +8,69 @@ import {
   Scripts,
   createRootRouteWithContext,
   redirect,
-  useRouter,
   useRouterState,
 } from '@tanstack/react-router'
+import type { ErrorComponentProps } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
+import { AlertTriangle, Home, RotateCw } from 'lucide-react'
+import { GracePeriodBanner } from '@/components/billing/grace-period-banner'
 import Header from '@/components/header'
 import { NotFound } from '@/components/not-found'
-import {
-  getSessionFn,
-  listOrganizationsFn,
-  setActiveOrganizationFn,
-} from '@/server/functions/auth'
+import { Button } from '@/components/ui/button'
+import { getSessionFn, listOrganizationsFn } from '@/server/functions/auth'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
-import { authClient } from '@/lib/auth-client'
 import appCss from '@/styles.css?url'
+
+function RootErrorFallback({ error, reset }: ErrorComponentProps) {
+  const isDev = import.meta.env.DEV
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+      <div className="w-full max-w-md space-y-6 text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
+        </div>
+
+        <div className="space-y-2">
+          <h1 className="font-bold text-2xl tracking-tight">
+            Something went wrong
+          </h1>
+          <p className="text-muted-foreground">
+            We encountered an unexpected error. Please try again or go back to
+            the home page.
+          </p>
+        </div>
+
+        {isDev && error instanceof Error && (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-left">
+            <p className="mb-2 font-mono font-semibold text-destructive text-sm">
+              {error.name}: {error.message}
+            </p>
+            {error.stack && (
+              <pre className="max-h-32 overflow-auto font-mono text-muted-foreground text-xs">
+                {error.stack}
+              </pre>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button onClick={reset} variant="default">
+            <RotateCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/">
+              <Home className="mr-2 h-4 w-4" />
+              Go Home
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export type RouterAppContext = {
   queryClient: QueryClient
@@ -108,27 +154,18 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       throw redirect({ to: '/organization/create', replace: true })
     }
 
-    // Set active organization if not set
-    const firstOrg = organizations[0]
-    if (!session.session?.activeOrganizationId && firstOrg) {
-      try {
-        await setActiveOrganizationFn({
-          data: { organizationId: firstOrg.id },
-        })
-      } catch (error) {
-        console.error('Failed to set active organization:', error)
-      }
-    }
+    // activeOrganizationId is automatically set at session creation via databaseHooks
+    // See src/lib/auth.ts databaseHooks.session.create.before
 
     return { session }
   },
   shellComponent: RootDocument,
   notFoundComponent: NotFound,
+  errorComponent: RootErrorFallback,
 })
 
 function RootDocument({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const router = useRouter()
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -136,59 +173,23 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <AuthQueryProvider>
-          <AuthUIProviderTanstack
-                authClient={authClient}
-                avatar={{
-                  upload: (file: File) => {
-                    return new Promise<string>((resolve, reject) => {
-                      const reader = new FileReader()
-                      reader.onloadend = () => {
-                        resolve(reader.result as string)
-                      }
-                      reader.onerror = reject
-                      reader.readAsDataURL(file)
-                    })
-                  },
-                  size: 256,
-                  extension: 'png',
-                }}
-                Link={({ href, ...props }) => <Link to={href} {...props} />}
-                navigate={(href: string) => router.navigate({ to: href })}
-                organization={{
-                  logo: {
-                    upload: (file: File) => {
-                      return new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader()
-                        reader.onloadend = () => {
-                          resolve(reader.result as string)
-                        }
-                        reader.onerror = reject
-                        reader.readAsDataURL(file)
-                      })
-                    },
-                    size: 256,
-                    extension: 'png',
-                  },
-                }}
-                replace={(href: string) =>
-                  router.navigate({ to: href, replace: true })
-                }
-              >
-                <ThemeProvider
-                  attribute="class"
-                  defaultTheme="system"
-                  disableTransitionOnChange
-                  storageKey="stl-shelf-theme"
-                >
-                  <div className="grid h-svh grid-rows-[auto_1fr]">
-                    {PUBLIC_ROUTES.includes(pathname) ? null : <Header />}
-                    {children}
-                  </div>
-                  <Toaster richColors />
-                </ThemeProvider>
-              </AuthUIProviderTanstack>
-        </AuthQueryProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          disableTransitionOnChange
+          storageKey="stl-shelf-theme"
+        >
+          <div className="grid h-svh grid-rows-[auto_1fr]">
+            {PUBLIC_ROUTES.includes(pathname) ? null : (
+              <>
+                <Header />
+                <GracePeriodBanner />
+              </>
+            )}
+            {children}
+          </div>
+          <Toaster richColors />
+        </ThemeProvider>
         <TanStackRouterDevtools position="bottom-left" />
         <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
         <Scripts />

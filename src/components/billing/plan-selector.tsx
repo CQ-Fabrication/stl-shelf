@@ -25,7 +25,7 @@ const formatStorage = (bytes: number): string => {
 };
 
 export const PlanSelector = () => {
-  const { startCheckout, isLoading: isCheckoutLoading } = useCheckout();
+  const { startCheckout, loadingTier, isLoading: isCheckoutLoading } = useCheckout();
   const { subscription } = useSubscription();
 
   const handleSelectPlan = (tier: SubscriptionTier) => {
@@ -111,7 +111,7 @@ export const PlanSelector = () => {
                   onClick={() => handleSelectPlan(tier as SubscriptionTier)}
                   variant={isCurrentPlan ? "outline" : "default"}
                 >
-                  {isCheckoutLoading && (
+                  {loadingTier === tier && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   {isCurrentPlan

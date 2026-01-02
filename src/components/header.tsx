@@ -1,7 +1,6 @@
-import { UserAvatar } from "@daveyplate/better-auth-ui";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import {
-  Building2,
   Check,
   CreditCard,
   LogOut,
@@ -13,9 +12,14 @@ import {
 import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import {
+  useActiveOrganization,
+  useOrganizations,
+} from "@/hooks/use-organizations";
 import { uploadModalActions } from "@/stores/upload-modal.store";
-import { Logo } from "@/components/ui/logo";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { GradientAvatar } from "@/components/ui/gradient-avatar";
+import { Logo } from "@/components/ui/logo";
 
 const UploadModal = lazy(() =>
   import("./models/upload-modal/upload-modal").then((mod) => ({
@@ -46,13 +50,13 @@ import {
 
 export default function Header() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [showLimitAlert, setShowLimitAlert] = useState(false);
 
   const { data: session } = authClient.useSession();
-  const { data: organizations, isPending: isLoadingOrgs } =
-    authClient.useListOrganizations();
-  const { data: activeOrg } = authClient.useActiveOrganization();
+  const { data: organizations, isPending: isLoadingOrgs } = useOrganizations();
+  const { data: activeOrg } = useActiveOrganization();
 
   async function switchOrganization(orgId: string) {
     try {
@@ -60,6 +64,7 @@ export default function Header() {
       const org = organizations?.find((o) => o.id === orgId);
       if (org) {
         toast.success(`Switched to ${org.name}`);
+        await queryClient.invalidateQueries({ queryKey: ["organizations"] });
         await router.invalidate();
       }
     } catch (error) {
@@ -96,9 +101,12 @@ export default function Header() {
             <DropdownMenuTrigger asChild>
               <Button aria-label="User menu" size="icon" variant="outline">
                 {session?.user ? (
-                  <UserAvatar
+                  <GradientAvatar
                     className="h-[1.2rem] w-[1.2rem]"
-                    user={session.user}
+                    id={session.user.id}
+                    name={session.user.name ?? session.user.email}
+                    size="xs"
+                    src={session.user.image ?? undefined}
                   />
                 ) : (
                   <User className="h-[1.2rem] w-[1.2rem]" />
@@ -119,17 +127,13 @@ export default function Header() {
                 <>
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger className="gap-2">
-                      {activeOrg.logo ? (
-                        <img
-                          alt=""
-                          className="h-4 w-4 rounded-full object-cover"
-                          height={16}
-                          src={activeOrg.logo}
-                          width={16}
-                        />
-                      ) : (
-                        <Building2 className="h-4 w-4" />
-                      )}
+                      <GradientAvatar
+                        className="h-4 w-4"
+                        id={activeOrg.id}
+                        name={activeOrg.name}
+                        size="xs"
+                        src={activeOrg.logo ?? undefined}
+                      />
                       <span className="truncate">{activeOrg.name}</span>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
@@ -149,19 +153,13 @@ export default function Header() {
                             }
                           >
                             <div className="flex w-full items-center gap-2">
-                              {org.logo ? (
-                                <img
-                                  alt=""
-                                  className="h-4 w-4 flex-shrink-0 rounded-full object-cover"
-                                  height={16}
-                                  src={org.logo}
-                                  width={16}
-                                />
-                              ) : (
-                                <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-                                  <Building2 className="h-3 w-3 text-muted-foreground" />
-                                </div>
-                              )}
+                              <GradientAvatar
+                                className="h-4 w-4 flex-shrink-0"
+                                id={org.id}
+                                name={org.name}
+                                size="xs"
+                                src={org.logo ?? undefined}
+                              />
                               <span className="flex-1 truncate">
                                 {org.name}
                               </span>
@@ -207,7 +205,8 @@ export default function Header() {
                 onClick={async () => {
                   try {
                     await authClient.signOut();
-                    await router.invalidate();
+                    queryClient.clear();
+                    router.navigate({ to: "/login" });
                   } catch {
                     // ignore
                   }

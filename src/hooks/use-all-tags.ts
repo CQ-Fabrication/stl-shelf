@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { authClient } from '@/lib/auth-client'
+import { useActiveOrganization } from '@/hooks/use-organizations'
 import { getAllTags } from '@/server/functions/models'
 
 /**
@@ -8,7 +9,7 @@ import { getAllTags } from '@/server/functions/models'
  */
 export function useAllTags() {
   const { data: session } = authClient.useSession()
-  const { data: activeOrg } = authClient.useActiveOrganization()
+  const { data: activeOrg } = useActiveOrganization()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['tags', 'all'],

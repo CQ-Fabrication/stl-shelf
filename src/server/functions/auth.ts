@@ -39,6 +39,19 @@ export const listOrganizationsFn = createServerFn({ method: 'GET' }).handler(
 )
 
 /**
+ * Get the active organization for the current session.
+ *
+ * Returns the full organization object including custom fields.
+ */
+export const getActiveOrganizationFn = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const headers = getRequestHeaders()
+    const result = await auth.api.getFullOrganization({ headers })
+    return result
+  }
+)
+
+/**
  * Set active organization for the current session.
  *
  * This updates the session's activeOrganizationId so subsequent

@@ -1,5 +1,5 @@
 import type { SubscriptionTier } from './config'
-import { getTierConfig } from './config'
+import { getTierConfig, isUnlimited } from './config'
 
 /**
  * Limit enforcement utilities
@@ -18,6 +18,9 @@ export const enforceLimits = {
 
   checkModelLimit(currentCount: number, tier: SubscriptionTier) {
     const config = getTierConfig(tier)
+
+    // -1 means unlimited - skip check
+    if (isUnlimited(config.modelCountLimit)) return
 
     if (currentCount >= config.modelCountLimit) {
       throw new Error(
@@ -54,6 +57,8 @@ export const validateLimits = {
 
   canAddModel(currentCount: number, tier: SubscriptionTier): boolean {
     const config = getTierConfig(tier)
+    // -1 means unlimited - always allow
+    if (isUnlimited(config.modelCountLimit)) return true
     return currentCount < config.modelCountLimit
   },
 

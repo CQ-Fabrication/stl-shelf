@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TagCombobox } from "@/components/ui/tag-combobox";
+import { MODELS_QUERY_KEY } from "@/hooks/use-delete-model";
 import { createModel, getAllTags } from "@/server/functions/models";
 import {
   Card,
@@ -100,6 +101,7 @@ export function ModelUpload() {
     },
     onSuccess: (data) => {
       toast.success(`Successfully created model: ${data.slug}`);
+      queryClient.invalidateQueries({ queryKey: MODELS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["tags", "all"] });
       navigate({
         to: "/models/$modelId",

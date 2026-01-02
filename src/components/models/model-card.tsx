@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import {
-  Calendar,
   Download,
   Eye,
   HardDrive,
@@ -36,6 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { GradientAvatar } from "@/components/ui/gradient-avatar";
 import {
   Tooltip,
   TooltipContent,
@@ -54,6 +54,11 @@ type ModelCardProps = {
     totalSize: number;
     tags: string[];
     thumbnailUrl: string | null;
+    owner: {
+      id: string;
+      name: string;
+      image: string | null;
+    };
     createdAt: string;
     updatedAt: string;
   };
@@ -63,10 +68,6 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const deleteModel = useDeleteModel();
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
 
   const formatFileSize = (bytes: number) => {
     const sizes = ["B", "KB", "MB", "GB"];
@@ -94,9 +95,27 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
           <div className="flex-1 space-y-1">
             <CardTitle className="line-clamp-2 text-lg">{model.name}</CardTitle>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Calendar className="h-3 w-3" />
-              {formatDate(model.updatedAt)}
-              <HardDrive className="ml-2 h-3 w-3" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative z-20 flex items-center gap-1.5">
+                      <GradientAvatar
+                        className="ring-1 ring-border/50"
+                        id={model.owner.id}
+                        name={model.owner.name}
+                        size="xs"
+                        src={model.owner.image}
+                      />
+                      <span className="max-w-20 truncate">{model.owner.name.split(' ')[0]}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">Uploaded by {model.owner.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <span className="text-muted-foreground/40">•</span>
+              <HardDrive className="h-3 w-3" />
               {formatFileSize(model.totalSize)}
             </div>
           </div>

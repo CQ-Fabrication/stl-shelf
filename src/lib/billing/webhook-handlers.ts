@@ -6,8 +6,20 @@ import type { WebhookSubscriptionRevokedPayload } from '@polar-sh/sdk/models/com
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { organization } from '@/lib/db/schema/auth'
+import { env } from '@/lib/env'
 import type { SubscriptionTier } from './config'
 import { SUBSCRIPTION_TIERS } from './config'
+
+/**
+ * Server-side product ID to tier mapping
+ * Uses env vars which are only available server-side
+ */
+function getTierFromProductId(productId: string): SubscriptionTier | undefined {
+  if (env.POLAR_PRODUCT_FREE && productId === env.POLAR_PRODUCT_FREE) return 'free'
+  if (env.POLAR_PRODUCT_BASIC && productId === env.POLAR_PRODUCT_BASIC) return 'basic'
+  if (env.POLAR_PRODUCT_PRO && productId === env.POLAR_PRODUCT_PRO) return 'pro'
+  return undefined
+}
 
 /**
  * Webhook handler: Order paid
@@ -18,9 +30,12 @@ export const handleOrderPaid = async (payload: WebhookOrderPaidPayload) => {
   const customerId = order.customerId
   const productId = order.productId
 
-  const tier = Object.entries(SUBSCRIPTION_TIERS).find(
-    ([_, config]) => config.productId === productId
-  )?.[0] as SubscriptionTier | undefined
+  if (!productId) {
+    console.error('[Polar Webhook] Order missing productId')
+    return
+  }
+
+  const tier = getTierFromProductId(productId)
 
   if (!tier) {
     console.error(`[Polar Webhook] Unknown product ID: ${productId}`)
@@ -54,9 +69,7 @@ export const handleSubscriptionCreated = async (
   const customerId = subscription.customerId
   const productId = subscription.productId
 
-  const tier = Object.entries(SUBSCRIPTION_TIERS).find(
-    ([_, config]) => config.productId === productId
-  )?.[0] as SubscriptionTier | undefined
+  const tier = getTierFromProductId(productId)
 
   if (!tier) {
     console.error(`[Polar Webhook] Unknown product ID: ${productId}`)
@@ -144,9 +157,7 @@ export const handleCustomerStateChanged = async (
     const sub = activeSubscriptions[0]
     if (!sub) return
 
-    const tier = Object.entries(SUBSCRIPTION_TIERS).find(
-      ([_, config]) => config.productId === sub.productId
-    )?.[0] as SubscriptionTier | undefined
+    const tier = getTierFromProductId(sub.productId)
 
     if (tier) {
       const tierConfig = SUBSCRIPTION_TIERS[tier]

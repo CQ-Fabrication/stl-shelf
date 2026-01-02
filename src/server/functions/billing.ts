@@ -1,11 +1,12 @@
 import { createServerFn } from '@tanstack/react-start'
 import { zodValidator } from '@tanstack/zod-adapter'
-import { eq } from 'drizzle-orm'
+import { and, count, eq, isNull, sum } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { organization } from '@/lib/db/schema/auth'
+import { member, organization } from '@/lib/db/schema/auth'
+import { modelFiles, models, modelVersions } from '@/lib/db/schema/models'
 import type { SubscriptionTier } from '@/lib/billing/config'
-import { getTierConfig } from '@/lib/billing/config'
+import { getTierConfig, isUnlimited } from '@/lib/billing/config'
 import type { AuthenticatedContext } from '@/server/middleware/auth'
 import { authMiddleware } from '@/server/middleware/auth'
 import { polarService } from '@/server/services/billing/polar.service'
@@ -26,7 +27,7 @@ export const getSubscription = createServerFn({ method: 'GET' })
       throw new Error('Organization not found')
     }
 
-    const tier = org.subscriptionTier as SubscriptionTier
+    const tier = (org.subscriptionTier as SubscriptionTier) ?? 'free'
     const tierConfig = getTierConfig(tier)
 
     return {
@@ -61,12 +62,47 @@ export const getUsageStats = createServerFn({ method: 'GET' })
       throw new Error('Organization not found')
     }
 
-    const currentStorage = org.currentStorage ?? 0
-    const storageLimit = org.storageLimit ?? 1
-    const currentModelCount = org.currentModelCount ?? 0
-    const modelCountLimit = org.modelCountLimit ?? 1
-    const currentMemberCount = org.currentMemberCount ?? 0
-    const memberLimit = org.memberLimit ?? 1
+    // Query actual counts from the database for accuracy
+    // IMPORTANT: Exclude soft-deleted models (deletedAt IS NULL)
+    const [modelCountResult] = await db
+      .select({ count: count() })
+      .from(models)
+      .where(
+        and(
+          eq(models.organizationId, context.organizationId),
+          isNull(models.deletedAt)
+        )
+      )
+
+    const [memberCountResult] = await db
+      .select({ count: count() })
+      .from(member)
+      .where(eq(member.organizationId, context.organizationId))
+
+    // Calculate total storage from all files across all versions of all models
+    // IMPORTANT: Exclude soft-deleted models
+    const [storageResult] = await db
+      .select({ total: sum(modelFiles.size) })
+      .from(modelFiles)
+      .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
+      .innerJoin(models, eq(modelVersions.modelId, models.id))
+      .where(
+        and(
+          eq(models.organizationId, context.organizationId),
+          isNull(models.deletedAt)
+        )
+      )
+
+    // Get tier config for fallback limits
+    const tier = (org.subscriptionTier as SubscriptionTier) ?? 'free'
+    const tierConfig = getTierConfig(tier)
+
+    const currentStorage = Number(storageResult?.total ?? 0)
+    const storageLimit = org.storageLimit ?? tierConfig.storageLimit
+    const currentModelCount = modelCountResult?.count ?? 0
+    const modelCountLimit = org.modelCountLimit ?? tierConfig.modelCountLimit
+    const currentMemberCount = memberCountResult?.count ?? 0
+    const memberLimit = org.memberLimit ?? tierConfig.maxMembers
 
     return {
       storage: {
@@ -84,6 +120,78 @@ export const getUsageStats = createServerFn({ method: 'GET' })
         limit: memberLimit,
         percentage: Math.min((currentMemberCount / memberLimit) * 100, 100),
       },
+    }
+  })
+
+// Check upload limits before allowing upload (fresh data, no caching)
+export const checkUploadLimits = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .handler(async ({ context }: { context: AuthenticatedContext }) => {
+    const org = await db.query.organization.findFirst({
+      where: eq(organization.id, context.organizationId),
+    })
+
+    if (!org) {
+      throw new Error('Organization not found')
+    }
+
+    const tier = (org.subscriptionTier as SubscriptionTier) ?? 'free'
+    const tierConfig = getTierConfig(tier)
+
+    // ALWAYS query actual counts from DB - never trust cached counters
+    // IMPORTANT: Exclude soft-deleted models (deletedAt IS NULL)
+    const [modelCountResult] = await db
+      .select({ count: count() })
+      .from(models)
+      .where(
+        and(
+          eq(models.organizationId, context.organizationId),
+          isNull(models.deletedAt)
+        )
+      )
+
+    const [storageResult] = await db
+      .select({ total: sum(modelFiles.size) })
+      .from(modelFiles)
+      .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
+      .innerJoin(models, eq(modelVersions.modelId, models.id))
+      .where(
+        and(
+          eq(models.organizationId, context.organizationId),
+          isNull(models.deletedAt)
+        )
+      )
+
+    const currentModelCount = modelCountResult?.count ?? 0
+    const currentStorage = Number(storageResult?.total ?? 0)
+    const modelLimit = org.modelCountLimit ?? tierConfig.modelCountLimit
+    const storageLimit = org.storageLimit ?? tierConfig.storageLimit
+
+    const modelLimitIsUnlimited = isUnlimited(modelLimit)
+    const modelBlocked = !modelLimitIsUnlimited && currentModelCount >= modelLimit
+    const storageBlocked = currentStorage >= storageLimit
+
+    return {
+      tier,
+      isOwner: org.ownerId === context.session.user.id,
+      models: {
+        current: currentModelCount,
+        limit: modelLimit,
+        isUnlimited: modelLimitIsUnlimited,
+        blocked: modelBlocked,
+      },
+      storage: {
+        current: currentStorage,
+        limit: storageLimit,
+        blocked: storageBlocked,
+      },
+      graceDeadline: org.graceDeadline?.toISOString() ?? null,
+      blocked: modelBlocked || storageBlocked,
+      blockReason: modelBlocked
+        ? ('model_limit' as const)
+        : storageBlocked
+          ? ('storage_limit' as const)
+          : null,
     }
   })
 

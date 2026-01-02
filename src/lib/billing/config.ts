@@ -1,13 +1,12 @@
-import { env } from '@/lib/env'
-
 /**
  * Subscription tier configuration - single source of truth
  * All limits defined here for easy adjustment
+ *
+ * NOTE: This file is client-safe. Product IDs are resolved server-side only.
  */
 export const SUBSCRIPTION_TIERS = {
   free: {
     slug: 'free',
-    productId: env.POLAR_PRODUCT_FREE || '',
     name: 'Free',
     price: 0,
     maxMembers: 1,
@@ -23,7 +22,6 @@ export const SUBSCRIPTION_TIERS = {
   },
   basic: {
     slug: 'basic',
-    productId: env.POLAR_PRODUCT_BASIC || '',
     name: 'Basic',
     price: 4.99,
     maxMembers: 3,
@@ -39,7 +37,6 @@ export const SUBSCRIPTION_TIERS = {
   },
   pro: {
     slug: 'pro',
-    productId: env.POLAR_PRODUCT_PRO || '',
     name: 'Pro',
     price: 12.99,
     maxMembers: 10,
@@ -58,7 +55,6 @@ export const SUBSCRIPTION_TIERS = {
   string,
   {
     slug: string
-    productId: string
     name: string
     price: number
     maxMembers: number
@@ -75,14 +71,3 @@ export const getTierConfig = (tier: SubscriptionTier) => {
 }
 
 export const isUnlimited = (limit: number) => limit === -1
-
-/**
- * Products array for Polar checkout configuration
- * Filters out products without IDs (not configured yet)
- */
-export const POLAR_PRODUCTS_CONFIG = Object.entries(SUBSCRIPTION_TIERS)
-  .filter(([_, config]) => config.productId)
-  .map(([_, config]) => ({
-    productId: config.productId,
-    slug: config.slug,
-  }))
