@@ -2,7 +2,7 @@
 
 import { Link, useLocation } from '@tanstack/react-router'
 import { ArrowRight, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { authClient } from '@/lib/auth-client'
@@ -15,10 +15,18 @@ const navItems = [
 
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const location = useLocation()
   const { data: session, isPending } = authClient.useSession()
   const isHomePage = location.pathname === '/'
-  const isAuthenticated = !isPending && session?.user
+
+  // Prevent hydration mismatch by only showing auth state after mount
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  const showLoading = !isMounted || isPending
+  const isAuthenticated = isMounted && !isPending && session?.user
 
   const handleNavClick = (item: (typeof navItems)[0]) => {
     setMobileMenuOpen(false)
@@ -69,8 +77,8 @@ export function Navigation() {
 
           {/* Auth Buttons - Right */}
           <div className="hidden md:flex items-center justify-end gap-3">
-            {isPending ? (
-              /* Skeleton placeholder to prevent layout shift */
+            {showLoading ? (
+              /* Skeleton placeholder to prevent layout shift and hydration mismatch */
               <div className="h-9 w-28 animate-pulse rounded-md bg-muted" />
             ) : isAuthenticated ? (
               <Button asChild className="animate-in fade-in duration-200">
@@ -142,7 +150,7 @@ export function Navigation() {
               )}
 
               <div className="pt-4 space-y-3">
-                {isPending ? (
+                {showLoading ? (
                   <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
                 ) : isAuthenticated ? (
                   <Button className="w-full" asChild>

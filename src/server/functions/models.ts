@@ -248,18 +248,14 @@ export const createModel = createServerFn({ method: 'POST' })
         throw new Error('Organization not found')
       }
 
-      enforceLimits.checkModelLimit(
-        org.currentModelCount ?? 0,
-        org.subscriptionTier as SubscriptionTier
-      )
+      // Default to 'free' tier if subscriptionTier is null (new organizations)
+      const tier = (org.subscriptionTier as SubscriptionTier) || 'free'
+
+      enforceLimits.checkModelLimit(org.currentModelCount ?? 0, tier)
 
       const totalFileSize = data.files.reduce((sum, file) => sum + file.size, 0)
 
-      enforceLimits.checkStorageLimit(
-        org.currentStorage ?? 0,
-        totalFileSize,
-        org.subscriptionTier as SubscriptionTier
-      )
+      enforceLimits.checkStorageLimit(org.currentStorage ?? 0, totalFileSize, tier)
 
       const uniqueTags = Array.from(new Set(data.tags))
 

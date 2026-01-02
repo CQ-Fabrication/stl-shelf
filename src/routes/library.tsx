@@ -95,5 +95,3 @@ function LibraryPage() {
   )
 }
 
-// Re-export for type inference in components
-export type { LibrarySearch }

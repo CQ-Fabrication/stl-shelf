@@ -93,7 +93,7 @@ export const ModelPreviewCard = ({
               className="h-full w-full overflow-hidden rounded-b-lg"
               filename={mainModelFile.filename}
               modelId={modelId}
-              url={mainModelFile.storageUrl || ""}
+              url={mainModelFile.storageUrl}
               version={activeVersion.version}
             />
           </div>

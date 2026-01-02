@@ -5,77 +5,126 @@ A self-hosted web application for managing your personal library of 3D printable
 ## Features
 
 - **Model Library Management**: Upload, organize, and browse your 3D models (STL, OBJ, 3MF, PLY)
-- **Version Control**: Versions foreach uploaded model.
-- **3D Preview**: Interactive 3D viewer for all supported model formats
+- **Version Control**: Versions for each uploaded model
+- **3D Preview**: Interactive 3D viewer for STL and OBJ formats
 - **Download Support**: Individual file downloads or ZIP archives for entire models
 - **Self-Hosted**: Complete control over your data with Docker deployment
 
-## Prerequisites
+## Self-Hosting Guide
 
-### Required Software
+### Prerequisites
 
-1. **Node.js & Bun**
-
+1. **Docker & Docker Compose**
    ```bash
-   # Install Bun (includes Node.js)
+   # macOS
+   brew install --cask docker
+
+   # Or install Docker Desktop from https://docker.com
+   ```
+
+2. **Bun** (for development)
+   ```bash
    curl -fsSL https://bun.sh/install | bash
    ```
 
-### Access the Application
+### Quick Start
 
-- **Authenticated App**: [http://localhost:3001](http://localhost:3001) - Main application interface
-- **Public Website**: [http://localhost:3002](http://localhost:3002) - Marketing/landing pages
-- **API Server**: [http://localhost:3000](http://localhost:3000) - Backend API
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-org/stl-shelf.git
+   cd stl-shelf
+   ```
 
-## Available Scripts
+2. **Start the database services**
+   ```bash
+   docker compose up -d
+   ```
 
-- `bun dev`: Start all applications in development mode
-- `bun build`: Build all applications for production
-- `bun dev:server`: Start only the server (port 3000)
-- `bun dev:app`: Start only the authenticated app (port 3001)
-- `bun dev:web`: Start only the public website (port 3002)
-- `bun check-types`: Run TypeScript type checking
-- `bun check`: Run Biome linting and formatting
+   This starts:
+   - **PostgreSQL** on port `5432` - Database
+   - **MinIO** on port `9000` (API) and `9001` (Console) - Object storage
 
-## Deployment
+3. **Configure CORS for MinIO** (required for 3D viewer)
+   ```bash
+   # Run once after first start
+   docker exec stl-shelf-minio mc alias set local http://localhost:9000 stlshelf stlshelf_minio_dev_password
+   docker exec stl-shelf-minio mc admin config set local api cors_allow_origin="http://localhost:3000"
+   docker compose restart minio
+   ```
 
-### Docker (Recommended)
+4. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+5. **Install dependencies and run migrations**
+   ```bash
+   bun install
+   bun db:migrate
+   ```
+
+6. **Start the application**
+   ```bash
+   bun dev
+   ```
+
+7. **Access the application**
+   - **App**: [http://localhost:3000](http://localhost:3000)
+   - **MinIO Console**: [http://localhost:9001](http://localhost:9001) (user: `stlshelf`, password: `stlshelf_minio_dev_password`)
+
+### Docker Services
 
 ```bash
-# Build and run with Docker Compose
-docker-compose up -d
+# Start services
+docker compose up -d
+
+# Stop services
+docker compose down
+
+# View logs
+docker compose logs -f
+
+# Restart a specific service
+docker compose restart minio
 ```
 
-### Cloudflare Workers
+### Data Persistence
 
+All data is stored in Docker volumes:
+- `stl-shelf_postgres_data` - Database
+- `stl-shelf_minio_data` - Uploaded files
+
+To backup your data:
 ```bash
-# Deploy authenticated app
-cd apps/app && bun deploy
+# Backup PostgreSQL
+docker exec stl-shelf-postgres pg_dump -U stlshelf stlshelf > backup.sql
 
-# Deploy public website
-cd apps/web && bun deploy
-
-# Deploy server API
-cd apps/server && bun deploy
+# Backup MinIO (copy the volume)
+docker run --rm -v stl-shelf_minio_data:/data -v $(pwd):/backup alpine tar czf /backup/minio-backup.tar.gz /data
 ```
 
-## Configuration
+## Development
 
-### Environment Variables
+### Available Scripts
 
-TODO.
-
-### Data Storage
-
-TODO.
+- `bun dev` - Start development server (port 3000)
+- `bun build` - Build for production
+- `bun preview` - Preview production build
+- `bun db:generate` - Generate database migrations
+- `bun db:migrate` - Run database migrations
+- `bun db:studio` - Open Drizzle Studio (database GUI)
+- `bun check` - Run linting and formatting
+- `bun check-types` - Run TypeScript type checking
 
 ## Architecture
 
-Built on the Better-T-Stack with:
+Built with TanStack Start (unified full-stack React):
 
-- **Frontend**: React 19 + TanStack Router + TanStack Query + Vite
-- **Backend**: Hono + oRPC for type-safe APIs
-- **UI**: TailwindCSS v4 + shadcn/ui components
-- **Type Safety**: End-to-end TypeScript with strict configuration
-- **Storage**: Filesystem-based with Git versioning (no traditional database)
-- **3D Rendering**: Three.js with React Three Fiber for model preview
+- **Framework**: TanStack Start + TanStack Router + TanStack Query
+- **Backend**: Server Functions with Drizzle ORM
+- **Database**: PostgreSQL
+- **Storage**: S3-compatible (MinIO for development, Cloudflare R2 for production)
+- **Auth**: Better Auth
+- **UI**: TailwindCSS v4 + shadcn/ui
+- **3D Rendering**: Three.js with React Three Fiber

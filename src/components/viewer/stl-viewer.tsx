@@ -1,7 +1,7 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { RotateCcw } from "lucide-react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Component, Suspense, useEffect, useRef, type ReactNode } from "react";
 import { type BufferGeometry, DoubleSide, type Mesh, Vector3 } from "three";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
@@ -9,6 +9,39 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useTheme } from "../theme-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Error boundary to catch Three.js/Canvas errors and prevent page crashes
+type ErrorBoundaryProps = {
+  children: ReactNode;
+  fallback: ReactNode;
+};
+
+type ErrorBoundaryState = {
+  hasError: boolean;
+  error: Error | null;
+};
+
+class ViewerErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("3D Viewer error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
 
 type STLViewerProps = {
   modelId?: string;
@@ -138,7 +171,6 @@ export function STLViewer({
   url,
 }: STLViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const [error, _setError] = useState<Error | null>(null);
   const { theme } = useTheme();
 
   // Use the presigned URL from server
@@ -154,14 +186,6 @@ export function STLViewer({
       controlsRef.current.reset();
     }
   };
-
-  if (error) {
-    return (
-      <div className={`relative ${className}`}>
-        <ErrorFallback error={error} />
-      </div>
-    );
-  }
 
   return (
     <div className={`relative ${className}`}>
@@ -214,11 +238,19 @@ export function STLViewer({
   );
 }
 
-// Wrapper component to handle Suspense at the component level
+// Wrapper component with error boundary and suspense
 export function STLViewerWithSuspense(props: STLViewerProps) {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <STLViewer {...props} />
-    </Suspense>
+    <ViewerErrorBoundary
+      fallback={
+        <ErrorFallback
+          error={new Error("The 3D viewer encountered an error")}
+        />
+      }
+    >
+      <Suspense fallback={<LoadingFallback />}>
+        <STLViewer {...props} />
+      </Suspense>
+    </ViewerErrorBoundary>
   );
 }

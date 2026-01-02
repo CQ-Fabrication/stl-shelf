@@ -112,6 +112,7 @@ export function UploadModal() {
     <Dialog onOpenChange={(open) => !open && handleClose()} open={isOpen}>
       <DialogContent
         className="sm:max-w-3xl max-h-[90vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
         showCloseButton={!createModelMutation.isPending}
       >
         <DialogHeader>
