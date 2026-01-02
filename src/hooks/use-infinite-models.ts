@@ -1,24 +1,29 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { authClient } from '@/lib/auth-client'
 import { listModels } from '@/server/functions/models'
 import { MODELS_QUERY_KEY } from './use-delete-model'
 
 type UseInfiniteModelsParams = {
   search?: string
-  tags?: string[]
+  tagsString?: string
   limit?: number
+}
+
+// Parse tags string to array (same logic as in library route)
+const parseTags = (tagsString?: string): string[] | undefined => {
+  if (!tagsString) return undefined
+  const tags = tagsString.split(',').filter(Boolean)
+  return tags.length > 0 ? tags : undefined
 }
 
 export const useInfiniteModels = ({
   search,
-  tags,
+  tagsString,
   limit = 12,
 }: UseInfiniteModelsParams) => {
-  const { data: session } = authClient.useSession()
-  const { data: activeOrg } = authClient.useActiveOrganization()
+  const tags = parseTags(tagsString)
 
-  const isAuthenticated = Boolean(session?.user && activeOrg?.id)
-
+  // No `enabled` check needed - the route is already protected by beforeLoad auth.
+  // SSR loader prefetches data, client hydrates from cache.
   const {
     data,
     fetchNextPage,
@@ -35,12 +40,11 @@ export const useInfiniteModels = ({
           cursor: pageParam,
           limit,
           search: search || undefined,
-          tags: tags && tags.length > 0 ? tags : undefined,
+          tags,
         },
       }),
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    enabled: isAuthenticated,
   })
 
   const allModels = data?.pages.flatMap((page) => page.models) ?? []
@@ -50,7 +54,7 @@ export const useInfiniteModels = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading: !isAuthenticated || isLoading,
+    isLoading,
     isFetching,
     error,
   }

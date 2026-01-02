@@ -1,20 +1,18 @@
-import { Loader2 } from "lucide-react";
-import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
-import { useEffect } from "react";
-import { useInView } from "react-intersection-observer";
-import { useInfiniteModels } from "@/hooks/use-infinite-models";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { EmptyState } from "./empty-state";
-import { LoadingSkeleton } from "./loading-skeleton";
-import { ModelCard } from "./model-card";
+import { Loader2 } from 'lucide-react'
+import { useEffect } from 'react'
+import { useInView } from 'react-intersection-observer'
+import { Route } from '@/routes/library'
+import { useInfiniteModels } from '@/hooks/use-infinite-models'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { EmptyState } from './empty-state'
+import { LoadingSkeleton } from './loading-skeleton'
+import { ModelCard } from './model-card'
 
 export function ModelGrid() {
-  const [search] = useQueryState("q", parseAsString.withDefault(""));
-  const [tags] = useQueryState(
-    "tags",
-    parseAsArrayOf(parseAsString, ",").withDefault([])
-  );
+  const search = Route.useSearch()
+  const searchQuery = search.q
+  const tagsString = search.tags
 
   const {
     models,
@@ -24,18 +22,18 @@ export function ModelGrid() {
     isLoading,
     isFetching,
     error,
-  } = useInfiniteModels({ search, tags });
+  } = useInfiniteModels({ search: searchQuery, tagsString })
 
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0,
-    rootMargin: "100px",
-  });
+    rootMargin: '100px',
+  })
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+      fetchNextPage()
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   if (error) {
     return (
@@ -43,29 +41,29 @@ export function ModelGrid() {
         <div className="mb-2 text-destructive">Failed to load models</div>
         <div className="text-muted-foreground text-sm">{error.message}</div>
       </div>
-    );
+    )
   }
 
   if (isLoading) {
-    return <LoadingSkeleton />;
+    return <LoadingSkeleton />
   }
 
   if (models.length === 0) {
-    const hasFilters = Boolean(search || tags.length > 0);
-    return <EmptyState hasFilters={hasFilters} />;
+    const hasFilters = Boolean(searchQuery || tagsString)
+    return <EmptyState hasFilters={hasFilters} />
   }
 
   return (
     <div className="space-y-6">
       <div
         className={cn(
-          "text-muted-foreground text-sm transition-opacity duration-200",
-          isFetching && "opacity-50"
+          'text-muted-foreground text-sm transition-opacity duration-200',
+          isFetching && 'opacity-50'
         )}
       >
-        Showing {models.length} model{models.length !== 1 ? "s" : ""}
+        Showing {models.length} model{models.length !== 1 ? 's' : ''}
         {isFetching && (
-          <span className="ml-2 text-muted-foreground">• Updating...</span>
+          <span className="ml-2 text-muted-foreground">Updating...</span>
         )}
       </div>
 
@@ -90,5 +88,5 @@ export function ModelGrid() {
         </div>
       )}
     </div>
-  );
+  )
 }

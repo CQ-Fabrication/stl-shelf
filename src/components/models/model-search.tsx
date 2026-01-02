@@ -1,46 +1,128 @@
-import { Search, Tag, X } from "lucide-react";
-import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
-import { useAllTags } from "@/hooks/use-all-tags";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Loader2, Search, Tag, X } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Route } from '@/routes/library'
+import { useAllTags } from '@/hooks/use-all-tags'
+import { Badge } from '@/components/ui/badge'
+
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+
+// Parse tags string to array
+const parseTags = (tagsString?: string): string[] => {
+  if (!tagsString) return []
+  return tagsString.split(',').filter(Boolean)
+}
 
 function ModelSearch() {
-  const [search, setSearch] = useQueryState(
-    "q",
-    parseAsString.withDefault("").withOptions({ throttleMs: 300 })
-  );
-  const [tags, setTags] = useQueryState(
-    "tags",
-    parseAsArrayOf(parseAsString, ",").withDefault([])
-  );
+  const search = Route.useSearch()
+  const navigate = Route.useNavigate()
 
-  const { tags: allTags } = useAllTags();
+  // Local state for instant input feedback
+  const [localSearch, setLocalSearch] = useState(search.q ?? '')
+  const [isPending, setIsPending] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Sync URL -> local state (for direct URL access, back/forward navigation)
+  useEffect(() => {
+    setLocalSearch(search.q ?? '')
+  }, [search.q])
+
+  const { tags: allTags } = useAllTags()
+  const selectedTags = parseTags(search.tags)
+
+  // Debounced navigation for search input
+  const debouncedNavigate = useCallback(
+    (value: string) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+      setIsPending(true)
+
+      timeoutRef.current = setTimeout(() => {
+        setIsPending(false)
+        navigate({
+          search: {
+            q: value || undefined,
+            tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined,
+          },
+        })
+      }, 300)
+    },
+    [navigate, selectedTags]
+  )
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
+
+  const handleSearchChange = (value: string) => {
+    setLocalSearch(value)
+    debouncedNavigate(value)
+  }
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      // Immediate commit on Enter
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+      setIsPending(false)
+      navigate({
+        search: {
+          q: localSearch || undefined,
+          tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined,
+        },
+      })
+    }
+  }
 
   const handleTagToggle = (tag: string) => {
-    const newTags = tags.includes(tag)
-      ? tags.filter((t) => t !== tag)
-      : [...tags, tag];
-    setTags(newTags);
-  };
+    // Tags update immediately (no debounce) - discrete selection
+    const newTags = selectedTags.includes(tag)
+      ? selectedTags.filter((t) => t !== tag)
+      : [...selectedTags, tag]
+
+    navigate({
+      search: {
+        q: search.q || undefined,
+        tags: newTags.length > 0 ? newTags.join(',') : undefined,
+      },
+    })
+  }
 
   const handleTagRemove = (tag: string) => {
-    const newTags = tags.filter((t) => t !== tag);
-    setTags(newTags);
-  };
+    const newTags = selectedTags.filter((t) => t !== tag)
+    navigate({
+      search: {
+        q: search.q || undefined,
+        tags: newTags.length > 0 ? newTags.join(',') : undefined,
+      },
+    })
+  }
 
   const clearFilters = () => {
-    setSearch("");
-    setTags([]);
-  };
+    setLocalSearch('')
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    setIsPending(false)
+    navigate({
+      search: {},
+    })
+  }
 
-  const hasFilters = search || tags.length > 0;
+  const hasFilters = localSearch || selectedTags.length > 0
 
   return (
     <div className="space-y-3">
@@ -48,15 +130,19 @@ function ModelSearch() {
       <div className="relative">
         <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
         <Input
-          className="pr-10 pl-10"
-          onChange={(e) => setSearch(e.target.value)}
+          className={`pr-10 pl-10 transition-opacity ${isPending ? 'opacity-70' : ''}`}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
           placeholder="Search models..."
-          value={search}
+          value={localSearch}
         />
-        {search && (
+        {isPending && (
+          <Loader2 className="-translate-y-1/2 absolute top-1/2 right-10 h-4 w-4 animate-spin text-muted-foreground" />
+        )}
+        {localSearch && !isPending && (
           <Button
             className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8 transform p-0"
-            onClick={() => setSearch("")}
+            onClick={() => handleSearchChange('')}
             size="sm"
             variant="ghost"
           >
@@ -73,9 +159,9 @@ function ModelSearch() {
             <Button size="sm" variant="outline">
               <Tag className="mr-2 h-4 w-4" />
               Tags
-              {tags.length > 0 && (
+              {selectedTags.length > 0 && (
                 <Badge className="ml-2 h-5 px-1 text-xs" variant="secondary">
-                  {tags.length}
+                  {selectedTags.length}
                 </Badge>
               )}
             </Button>
@@ -86,21 +172,25 @@ function ModelSearch() {
                 No tags available
               </div>
             ) : (
-              allTags.map((tag) => (
-                <DropdownMenuCheckboxItem
-                  checked={tags.includes(tag.name)}
-                  key={tag.name}
-                  onCheckedChange={() => handleTagToggle(tag.name)}
-                >
-                  {tag.name}
-                </DropdownMenuCheckboxItem>
-              ))
+              allTags.map((tag) => {
+                const isSelected = selectedTags.includes(tag.name)
+                return (
+                  <DropdownMenuCheckboxItem
+                    checked={isSelected}
+                    disabled={isSelected}
+                    key={tag.name}
+                    onCheckedChange={() => handleTagToggle(tag.name)}
+                  >
+                    {tag.name}
+                  </DropdownMenuCheckboxItem>
+                )
+              })
             )}
           </DropdownMenuContent>
         </DropdownMenu>
 
         {/* Selected tags */}
-        {tags.map((tag) => (
+        {selectedTags.map((tag) => (
           <Badge className="gap-1" key={tag} variant="secondary">
             {tag}
             <Button
@@ -127,10 +217,10 @@ function ModelSearch() {
         )}
       </div>
     </div>
-  );
+  )
 }
 
-ModelSearch.displayName = "ModelSearch";
+ModelSearch.displayName = 'ModelSearch'
 
-export { ModelSearch };
-export default ModelSearch;
+export { ModelSearch }
+export default ModelSearch
