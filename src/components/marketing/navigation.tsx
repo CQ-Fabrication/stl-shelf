@@ -1,10 +1,11 @@
 'use client'
 
 import { Link, useLocation } from '@tanstack/react-router'
+import { ArrowRight, Menu, X } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
-import { Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { authClient } from '@/lib/auth-client'
 
 const navItems = [
   { label: 'Features', href: '/#features', scrollTo: '#features' },
@@ -15,7 +16,9 @@ const navItems = [
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
+  const { data: session, isPending } = authClient.useSession()
   const isHomePage = location.pathname === '/'
+  const isAuthenticated = !isPending && session?.user
 
   const handleNavClick = (item: (typeof navItems)[0]) => {
     setMobileMenuOpen(false)
@@ -34,12 +37,14 @@ export function Navigation() {
   return (
     <>
       <nav className="fixed top-0 right-0 left-0 z-50 border-b bg-background/80 backdrop-blur-lg">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="container mx-auto grid h-16 grid-cols-3 items-center px-4">
+          {/* Logo - Left */}
           <Link className="flex items-center" to="/">
             <Logo className="h-8" />
           </Link>
 
-          <div className="hidden items-center space-x-8 md:flex">
+          {/* Nav Items - Center */}
+          <div className="hidden items-center justify-center space-x-8 md:flex">
             {navItems.map((item) =>
               isHomePage && item.scrollTo ? (
                 <button
@@ -62,13 +67,28 @@ export function Navigation() {
             )}
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/signup">Get Started</Link>
-            </Button>
+          {/* Auth Buttons - Right */}
+          <div className="hidden md:flex items-center justify-end gap-3">
+            {isPending ? (
+              /* Skeleton placeholder to prevent layout shift */
+              <div className="h-9 w-28 animate-pulse rounded-md bg-muted" />
+            ) : isAuthenticated ? (
+              <Button asChild className="animate-in fade-in duration-200">
+                <Link to="/library">
+                  Go to Library
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <div className="flex items-center gap-3 animate-in fade-in duration-200">
+                <Button variant="ghost" asChild>
+                  <Link to="/login">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/signup">Get Started</Link>
+                </Button>
+              </div>
+            )}
           </div>
 
           <button
@@ -122,12 +142,25 @@ export function Navigation() {
               )}
 
               <div className="pt-4 space-y-3">
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to="/login">Sign In</Link>
-                </Button>
-                <Button className="w-full" asChild>
-                  <Link to="/signup">Get Started</Link>
-                </Button>
+                {isPending ? (
+                  <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+                ) : isAuthenticated ? (
+                  <Button className="w-full" asChild>
+                    <Link to="/library" onClick={() => setMobileMenuOpen(false)}>
+                      Go to Library
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="outline" className="w-full" asChild>
+                      <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+                    </Button>
+                    <Button className="w-full" asChild>
+                      <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

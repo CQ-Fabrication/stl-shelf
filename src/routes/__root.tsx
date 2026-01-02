@@ -2,7 +2,7 @@
 import type { ReactNode } from 'react'
 import { AuthQueryProvider } from '@daveyplate/better-auth-tanstack'
 import { AuthUIProviderTanstack } from '@daveyplate/better-auth-ui/tanstack'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import {
   HeadContent,
@@ -14,7 +14,6 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { NuqsAdapter } from 'nuqs/adapters/tanstack-router'
 import Header from '@/components/header'
 import { NotFound } from '@/components/not-found'
 import {
@@ -26,14 +25,6 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { authClient } from '@/lib/auth-client'
 import appCss from '@/styles.css?url'
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-    },
-  },
-})
 
 export type RouterAppContext = {
   queryClient: QueryClient
@@ -145,10 +136,8 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <QueryClientProvider client={queryClient}>
-          <NuqsAdapter>
-            <AuthQueryProvider>
-              <AuthUIProviderTanstack
+        <AuthQueryProvider>
+          <AuthUIProviderTanstack
                 authClient={authClient}
                 avatar={{
                   upload: (file: File) => {
@@ -199,11 +188,9 @@ function RootDocument({ children }: { children: ReactNode }) {
                   <Toaster richColors />
                 </ThemeProvider>
               </AuthUIProviderTanstack>
-            </AuthQueryProvider>
-          </NuqsAdapter>
-          <TanStackRouterDevtools position="bottom-left" />
-          <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
-        </QueryClientProvider>
+        </AuthQueryProvider>
+        <TanStackRouterDevtools position="bottom-left" />
+        <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
         <Scripts />
       </body>
     </html>

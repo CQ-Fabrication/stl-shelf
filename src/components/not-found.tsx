@@ -190,7 +190,7 @@ export function NotFound() {
             </Link>
           </Button>
           <Button asChild variant="outline" className="gap-2">
-            <Link to="/library" search={{ search: "" }}>
+            <Link to="/library">
               <Search className="h-4 w-4" />
               Search Models
             </Link>

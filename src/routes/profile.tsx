@@ -24,7 +24,7 @@ function ProfilePage() {
           size="sm"
           variant="ghost"
         >
-          <Link to="/">
+          <Link to="/library">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Library
           </Link>
