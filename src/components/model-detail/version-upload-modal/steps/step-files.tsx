@@ -22,6 +22,11 @@ import ReactCrop, {
 import "react-image-crop/dist/ReactCrop.css";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  formatBytes,
+  getFileSizeLimit,
+  getFileSizeLimitLabel,
+} from "@/lib/files/limits";
 import type { VersionUploadFormType } from "../../use-version-upload-form";
 
 type UploadFile = {
@@ -35,30 +40,25 @@ type StepFilesProps = {
   onNext: () => void;
 };
 
+/**
+ * UI categories for file grouping
+ * Size limits are derived from centralized config per extension
+ */
 const FILE_CATEGORIES = {
   model: {
     key: "model",
     label: "Model",
     extensions: ["stl", "obj", "ply"],
-    maxSizeBytes: 4 * 1024 * 1024, // 4MB
-    maxSizeLabel: "4MB",
-    maxFiles: 5,
   },
   slicer: {
     key: "slicer",
-    label: "Slicer",
+    label: "Project",
     extensions: ["3mf"],
-    maxSizeBytes: 4 * 1024 * 1024, // 4MB
-    maxSizeLabel: "4MB",
-    maxFiles: 5,
   },
   image: {
     key: "image",
     label: "Image",
     extensions: ["jpg", "jpeg", "png", "webp"],
-    maxSizeBytes: 500 * 1024, // 500KB
-    maxSizeLabel: "500KB",
-    maxFiles: 1,
   },
 } as const;
 
@@ -114,12 +114,6 @@ function getCategoryStatus(files: UploadFile[], previewImage?: File) {
   };
 }
 
-function formatFileSize(bytes: number): string {
-  const sizes = ["B", "KB", "MB", "GB"];
-  if (bytes === 0) return "0 B";
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${Math.round((bytes / 1024 ** i) * 100) / 100} ${sizes[i]}`;
-}
 
 export function StepFiles({ form, onNext }: StepFilesProps) {
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>(() => {
@@ -157,12 +151,13 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
         const category = getFileCategory(file.name);
         if (!category) continue;
 
-        const categoryConfig = FILE_CATEGORIES[category];
+        const extension = getFileExtension(file.name);
+        const sizeLimit = getFileSizeLimit(extension);
 
-        // Validate file size
-        if (file.size > categoryConfig.maxSizeBytes) {
+        // Validate file size per extension
+        if (file.size > sizeLimit) {
           toast.error(`File too large: ${file.name}`, {
-            description: `${formatFileSize(file.size)} exceeds the ${categoryConfig.maxSizeLabel} limit for ${categoryConfig.label.toLowerCase()} files`,
+            description: `${formatBytes(file.size)} exceeds the ${getFileSizeLimitLabel(extension)} limit for .${extension} files`,
           });
           continue;
         }
@@ -415,7 +410,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
               {ALL_EXTENSIONS.join(", ")}
             </p>
             <p className="text-muted-foreground text-xs">
-              3D files: max 4MB | Images: max 500KB
+              STL/OBJ/PLY: 100-150MB • 3MF: 250MB • Images: 10MB
             </p>
           </div>
         )}
@@ -460,7 +455,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
                       </div>
                       <div className="text-muted-foreground text-xs">
                         {form.state.values.previewImage
-                          ? formatFileSize(form.state.values.previewImage.size)
+                          ? formatBytes(form.state.values.previewImage.size)
                           : ""}
                       </div>
                     </div>
@@ -605,7 +600,7 @@ function FileGroup({
             <div>
               <div className="font-medium text-sm">{uploadFile.file.name}</div>
               <div className="text-muted-foreground text-xs">
-                {formatFileSize(uploadFile.file.size)}
+                {formatBytes(uploadFile.file.size)}
               </div>
             </div>
           </div>

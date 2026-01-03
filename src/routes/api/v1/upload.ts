@@ -1,30 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { db, models, modelVersions, modelFiles } from '@/lib/db'
 import { eq, and, isNull, sql } from 'drizzle-orm'
+import {
+  formatBytes,
+  getFileSizeLimit,
+  MIME_TYPES,
+  MODEL_EXTENSIONS,
+} from '@/lib/files/limits'
 import { validateApiKey, hasScope } from '@/server/middleware/api-key'
 import { storageService } from '@/server/services/storage'
 
-const ALLOWED_EXTENSIONS = new Set([
-  'stl',
-  '3mf',
-  'obj',
-  'ply',
-  'step',
-  'stp',
-  'gcode',
-])
-
-const MIME_TYPES: Record<string, string> = {
-  stl: 'application/sla',
-  '3mf': 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml',
-  obj: 'model/obj',
-  ply: 'application/x-ply',
-  step: 'model/step',
-  stp: 'model/step',
-  gcode: 'text/x.gcode',
-}
-
-const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+const ALLOWED_EXTENSIONS = new Set<string>(MODEL_EXTENSIONS)
 
 export const Route = createFileRoute('/api/v1/upload')({
   server: {
@@ -85,22 +71,23 @@ export const Route = createFileRoute('/api/v1/upload')({
             )
           }
 
-          // Validate file size
-          if (file.size > MAX_FILE_SIZE) {
-            return Response.json(
-              {
-                error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-              },
-              { status: 400 }
-            )
-          }
-
-          // Validate file extension
+          // Validate file extension first
           const extension = file.name.split('.').pop()?.toLowerCase() || ''
           if (!ALLOWED_EXTENSIONS.has(extension)) {
             return Response.json(
               {
                 error: `Invalid file type. Allowed: ${[...ALLOWED_EXTENSIONS].join(', ')}`,
+              },
+              { status: 400 }
+            )
+          }
+
+          // Validate file size per extension
+          const maxSize = getFileSizeLimit(extension)
+          if (file.size > maxSize) {
+            return Response.json(
+              {
+                error: `File too large. ${formatBytes(file.size)} exceeds the ${formatBytes(maxSize)} limit for .${extension} files`,
               },
               { status: 400 }
             )
