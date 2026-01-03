@@ -1,4 +1,5 @@
 import archiver from 'archiver'
+import { Readable } from 'stream'
 import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { modelFiles, models, modelVersions } from '@/lib/db/schema/models'
@@ -247,6 +248,106 @@ class ModelDownloadService {
         // Continue with other files even if one fails
       }
     }
+  }
+
+  // ============================================================
+  // STREAMING ZIP METHODS (Server-side ZIP creation)
+  // ============================================================
+
+  /**
+   * Get version info for streaming ZIP download
+   * Returns model name, version number, and files for ZIP naming
+   */
+  async getVersionInfo(
+    versionId: string,
+    organizationId: string
+  ): Promise<{
+    modelId: string
+    modelName: string
+    modelSlug: string
+    versionId: string
+    versionNumber: string
+    files: ModelFileData[]
+  } | null> {
+    const [version] = await db
+      .select({
+        id: modelVersions.id,
+        version: modelVersions.version,
+        modelId: models.id,
+        modelName: models.name,
+        modelSlug: models.slug,
+      })
+      .from(modelVersions)
+      .innerJoin(models, eq(models.id, modelVersions.modelId))
+      .where(
+        and(
+          eq(modelVersions.id, versionId),
+          eq(models.organizationId, organizationId),
+          isNull(models.deletedAt)
+        )
+      )
+
+    if (!version) {
+      return null
+    }
+
+    const files = await this.getVersionFilesByVersionId(versionId, organizationId)
+
+    return {
+      modelId: version.modelId,
+      modelName: version.modelName,
+      modelSlug: version.modelSlug,
+      versionId: version.id,
+      versionNumber: version.version,
+      files,
+    }
+  }
+
+  /**
+   * Stream files from R2 directly into archiver
+   * Does NOT load entire files into memory - true streaming
+   */
+  async streamFilesToArchive(
+    archive: archiver.Archiver,
+    files: ModelFileData[]
+  ): Promise<void> {
+    for (const file of files) {
+      try {
+        // Get readable stream from R2 (not the entire file in memory)
+        const stream = await storageService.getFileStream(file.storageKey)
+
+        // Convert web ReadableStream to Node.js Readable for archiver
+        const nodeStream = this.webStreamToNodeStream(stream)
+
+        archive.append(nodeStream, { name: file.originalName })
+      } catch (error) {
+        // Log error but continue with other files
+        console.error(`Failed to stream file ${file.originalName}:`, error)
+      }
+    }
+  }
+
+  /**
+   * Convert web ReadableStream to Node.js Readable stream
+   * Needed because archiver expects Node.js streams
+   */
+  private webStreamToNodeStream(webStream: ReadableStream<Uint8Array>): Readable {
+    const reader = webStream.getReader()
+
+    return new Readable({
+      async read() {
+        try {
+          const { done, value } = await reader.read()
+          if (done) {
+            this.push(null)
+          } else {
+            this.push(Buffer.from(value))
+          }
+        } catch (error) {
+          this.destroy(error instanceof Error ? error : new Error(String(error)))
+        }
+      },
+    })
   }
 
   /**

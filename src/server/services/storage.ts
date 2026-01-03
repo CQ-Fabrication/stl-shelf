@@ -206,6 +206,34 @@ export class StorageService {
     }
   }
 
+  /**
+   * Get file as a readable stream for efficient streaming (e.g., ZIP creation)
+   * Does NOT load entire file into memory
+   */
+  async getFileStream(key: string): Promise<ReadableStream<Uint8Array>> {
+    const bucketName = this.bucket
+
+    try {
+      const response = await this.client.send(
+        new GetObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        })
+      )
+
+      if (!response.Body) {
+        throw new Error(`File not found: ${key}`)
+      }
+
+      // AWS SDK v3 returns a web-compatible ReadableStream
+      return response.Body.transformToWebStream()
+    } catch (error) {
+      throw new Error(
+        `Failed to get file stream: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
   async fileExists(key: string): Promise<boolean> {
     const bucketName = this.bucket
 

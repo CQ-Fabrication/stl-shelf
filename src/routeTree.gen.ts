@@ -33,6 +33,7 @@ import { Route as ApiV1ModelsRouteImport } from './routes/api/v1/models'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiV1ModelsModelIdRouteImport } from './routes/api/v1/models.$modelId'
 import { Route as ApiV1ModelsModelIdVersionsRouteImport } from './routes/api/v1/models.$modelId.versions'
+import { Route as ApiDownloadVersionVersionIdZipRouteImport } from './routes/api/download/version/$versionId.zip'
 import { Route as ApiV1ModelsModelIdFilesFileIdDownloadRouteImport } from './routes/api/v1/models.$modelId.files.$fileId.download'
 
 const VerifyEmailPendingRoute = VerifyEmailPendingRouteImport.update({
@@ -156,6 +157,12 @@ const ApiV1ModelsModelIdVersionsRoute =
     path: '/versions',
     getParentRoute: () => ApiV1ModelsModelIdRoute,
   } as any)
+const ApiDownloadVersionVersionIdZipRoute =
+  ApiDownloadVersionVersionIdZipRouteImport.update({
+    id: '/api/download/version/$versionId/zip',
+    path: '/api/download/version/$versionId/zip',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiV1ModelsModelIdFilesFileIdDownloadRoute =
   ApiV1ModelsModelIdFilesFileIdDownloadRouteImport.update({
     id: '/files/$fileId/download',
@@ -187,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
+  '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
   '/api/v1/models/$modelId/files/$fileId/download': typeof ApiV1ModelsModelIdFilesFileIdDownloadRoute
 }
@@ -214,6 +222,7 @@ export interface FileRoutesByTo {
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
+  '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
   '/api/v1/models/$modelId/files/$fileId/download': typeof ApiV1ModelsModelIdFilesFileIdDownloadRoute
 }
@@ -242,6 +251,7 @@ export interface FileRoutesById {
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
+  '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
   '/api/v1/models/$modelId/files/$fileId/download': typeof ApiV1ModelsModelIdFilesFileIdDownloadRoute
 }
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/api/v1/models'
     | '/api/v1/upload'
     | '/api/v1/models/$modelId'
+    | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
     | '/api/v1/models/$modelId/files/$fileId/download'
   fileRoutesByTo: FileRoutesByTo
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/api/v1/models'
     | '/api/v1/upload'
     | '/api/v1/models/$modelId'
+    | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
     | '/api/v1/models/$modelId/files/$fileId/download'
   id:
@@ -325,6 +337,7 @@ export interface FileRouteTypes {
     | '/api/v1/models'
     | '/api/v1/upload'
     | '/api/v1/models/$modelId'
+    | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
     | '/api/v1/models/$modelId/files/$fileId/download'
   fileRoutesById: FileRoutesById
@@ -352,6 +365,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1ModelsRoute: typeof ApiV1ModelsRouteWithChildren
   ApiV1UploadRoute: typeof ApiV1UploadRoute
+  ApiDownloadVersionVersionIdZipRoute: typeof ApiDownloadVersionVersionIdZipRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -524,6 +538,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ModelsModelIdVersionsRouteImport
       parentRoute: typeof ApiV1ModelsModelIdRoute
     }
+    '/api/download/version/$versionId/zip': {
+      id: '/api/download/version/$versionId/zip'
+      path: '/api/download/version/$versionId/zip'
+      fullPath: '/api/download/version/$versionId/zip'
+      preLoaderRoute: typeof ApiDownloadVersionVersionIdZipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/models/$modelId/files/$fileId/download': {
       id: '/api/v1/models/$modelId/files/$fileId/download'
       path: '/files/$fileId/download'
@@ -583,6 +604,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1ModelsRoute: ApiV1ModelsRouteWithChildren,
   ApiV1UploadRoute: ApiV1UploadRoute,
+  ApiDownloadVersionVersionIdZipRoute: ApiDownloadVersionVersionIdZipRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
