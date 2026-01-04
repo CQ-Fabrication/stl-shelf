@@ -75,7 +75,11 @@ const logtail = sourceToken ? new Logtail(sourceToken, logtailOptions) : null;
 const writeLog = (level: LogLevel, message: string, context?: LogContext) => {
   if (!logtail) return;
   const payload = context ? { ...baseContext, ...context } : baseContext;
-  void logtail[level](message, payload);
+  logtail[level](message, payload).catch((err) => {
+    if (env.NODE_ENV === "development") {
+      console.error("Failed to send log to Logtail:", err);
+    }
+  });
 };
 
 const getErrorMessage = (error: unknown): string => {
@@ -107,7 +111,25 @@ export const logErrorEvent = (event: string, context?: LogContext) => {
 };
 
 if (logtail) {
-  const flushLogs = () => void logtail.flush();
-  process.on("beforeExit", flushLogs);
-  process.on("SIGTERM", flushLogs);
+  const flushLogs = async () => {
+    try {
+      await logtail.flush();
+    } catch (err) {
+      if (env.NODE_ENV === "development") {
+        console.error("Failed to flush logs:", err);
+      }
+    }
+  };
+
+  process.on("beforeExit", () => {
+    flushLogs();
+  });
+
+  process.on("SIGTERM", () => {
+    flushLogs().then(() => process.exit(0));
+  });
+
+  process.on("SIGINT", () => {
+    flushLogs().then(() => process.exit(0));
+  });
 }

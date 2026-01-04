@@ -24,9 +24,13 @@ import appCss from "@/styles.css?url";
 import { useErrorReporting } from "@/hooks/use-error-reporting";
 
 if (!import.meta.env.SSR) {
-  void import("@/lib/error-tracking.client").then(({ initClientErrorTracking }) => {
-    initClientErrorTracking();
-  });
+  import("@/lib/error-tracking.client")
+    .then(({ initClientErrorTracking }) => {
+      initClientErrorTracking();
+    })
+    .catch((err) => {
+      console.error("Failed to initialize error tracking:", err);
+    });
 }
 
 function RootErrorFallback({ error, reset }: ErrorComponentProps) {
