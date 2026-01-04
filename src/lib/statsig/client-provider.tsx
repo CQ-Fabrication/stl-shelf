@@ -11,30 +11,37 @@ type StatsigClientProviderProps = {
 /**
  * Syncs auth session with Statsig user.
  * Called inside StatsigProvider to access the client.
+ *
+ * Optimization: Uses stable userKey to prevent unnecessary Statsig updates.
+ * Only updates when user identity or plan changes, not on unrelated session changes.
  */
 function StatsigUserSync({ children }: { children: ReactNode }) {
   const { data: session } = authClient.useSession();
   const { data: activeOrg } = useActiveOrganization();
   const { client } = useStatsigClient();
 
+  // Derive stable key from essential identifiers to reduce re-renders
+  const userKey = useMemo(
+    () =>
+      session?.user
+        ? `${session.user.id}-${session.session.activeOrganizationId ?? "none"}`
+        : null,
+    [session?.user?.id, session?.session?.activeOrganizationId]
+  );
+
   useEffect(() => {
-    if (session?.user) {
-      // User logged in - update Statsig with authenticated user
-      // Note: Email intentionally omitted for GDPR/privacy compliance
-      client.updateUserSync({
-        userID: session.user.id,
-        custom: {
-          organizationId: session.session.activeOrganizationId ?? undefined,
-          plan: activeOrg?.subscriptionTier ?? "free",
-        },
-      });
-    }
-  }, [
-    session?.user?.id,
-    session?.session?.activeOrganizationId,
-    activeOrg?.subscriptionTier,
-    client,
-  ]);
+    if (!userKey || !session?.user) return;
+
+    // User logged in - update Statsig with authenticated user
+    // Note: Email intentionally omitted for GDPR/privacy compliance
+    client.updateUserSync({
+      userID: session.user.id,
+      custom: {
+        organizationId: session.session.activeOrganizationId ?? undefined,
+        plan: activeOrg?.subscriptionTier ?? "free",
+      },
+    });
+  }, [userKey, activeOrg?.subscriptionTier, client, session]);
 
   return <>{children}</>;
 }
