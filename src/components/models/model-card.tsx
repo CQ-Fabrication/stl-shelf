@@ -225,7 +225,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
         <div className="flex-grow" />
 
         {/* Tags footer - always at bottom */}
-        {model.tags && model.tags.length > 0 && (
+        {Array.isArray(model.tags) && model.tags.length > 0 && (
           <div className="mt-auto flex min-h-[24px] items-center gap-1.5 text-xs">
             {/* Desktop: show 2 tags */}
             <div className="hidden items-center gap-1.5 sm:flex">

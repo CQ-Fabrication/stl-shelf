@@ -33,6 +33,7 @@ function StatsigUserSync({ children }: { children: ReactNode }) {
     }
   }, [
     session?.user?.id,
+    session?.user?.email,
     session?.session?.activeOrganizationId,
     activeOrg?.name,
     activeOrg?.subscriptionTier,

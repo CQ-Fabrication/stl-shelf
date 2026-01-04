@@ -64,6 +64,46 @@ export type ExperimentName =
   | "exp_search_ui";
 
 /**
+ * Upload error types - consistent vocabulary for upload-related errors
+ */
+export type UploadErrorType =
+  | "size_limit"
+  | "format"
+  | "network"
+  | "processing"
+  | "unknown";
+
+/**
+ * Preview error types - consistent vocabulary for 3D preview errors
+ */
+export type PreviewErrorType =
+  | "load_error"
+  | "render_error"
+  | "timeout"
+  | "unsupported_format";
+
+/**
+ * Validation error types - consistent vocabulary for file validation
+ */
+export type ValidationErrorType =
+  | "invalid_format"
+  | "file_too_large"
+  | "empty_file"
+  | "corrupt_file";
+
+/**
+ * Generic error category for error_encountered events
+ */
+export type ErrorCategory =
+  | "upload"
+  | "preview"
+  | "download"
+  | "auth"
+  | "network"
+  | "validation"
+  | "unknown";
+
+/**
  * Activation funnel steps (revised per PO feedback)
  *
  * New funnel focuses on real value moments:
@@ -371,7 +411,7 @@ export type EventMetadata = {
     secondsSpent: number;
   };
   upload_error: {
-    errorType: "size_limit" | "format" | "network" | "processing" | "unknown";
+    errorType: UploadErrorType;
     fileSize?: number;
     fileFormat?: string;
   };
@@ -381,7 +421,7 @@ export type EventMetadata = {
   };
   // NEW: Fixable friction - wrong format, too big
   upload_validation_failed: {
-    reason: "invalid_format" | "file_too_large" | "empty_file" | "corrupt_file";
+    reason: ValidationErrorType;
     fileName: string;
     fileSize?: number;
     attemptedFormat?: string;
@@ -392,7 +432,7 @@ export type EventMetadata = {
     modelId: string;
     fileId: string;
     fileFormat: string;
-    errorType: "load_error" | "render_error" | "timeout" | "unsupported_format";
+    errorType: PreviewErrorType;
     loadTimeMs?: number;
   };
 
@@ -474,6 +514,7 @@ export type EventMetadata = {
 
   // Errors
   error_encountered: {
+    errorCategory: ErrorCategory;
     errorType: string;
     errorMessage: string;
     context?: string;

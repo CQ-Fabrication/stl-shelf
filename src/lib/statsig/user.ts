@@ -19,6 +19,11 @@ export type OrganizationData = {
 
 /**
  * Build a Statsig user from authenticated context and organization data
+ *
+ * GDPR/Privacy Note: IP addresses are included for analytics segmentation
+ * (geo, device type). Statsig's data retention and processing comply with
+ * GDPR. For stricter privacy requirements, set ipAddress to undefined.
+ * Email is hashed with HMAC-SHA256 before sending to protect PII.
  */
 export function buildStatsigUser(
   context: AuthenticatedContext,

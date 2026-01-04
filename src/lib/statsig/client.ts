@@ -13,6 +13,7 @@ type InitState = "pending" | "initializing" | "ready" | "disabled" | "error";
 
 let initState: InitState = "pending";
 let initializationPromise: Promise<void> | null = null;
+let shutdownHandlersRegistered = false;
 
 /**
  * Initialize Statsig SDK (lazy singleton)
@@ -54,6 +55,9 @@ export async function initializeStatsig(): Promise<void> {
       });
       initState = "ready";
       console.log("[Statsig] Initialized successfully");
+
+      // Register shutdown handlers once on successful initialization
+      registerShutdownHandlers();
     } catch (error) {
       console.error("[Statsig] Failed to initialize:", error);
       initState = "error";
@@ -188,14 +192,21 @@ export async function logEvent<T extends EventName>(
 
 /**
  * Convert metadata values to strings for Statsig
- * Statsig expects Record<string, string> but we have numbers/booleans
+ * Statsig expects Record<string, string> but we have numbers/booleans/arrays
  */
 function stringifyMetadata(
   metadata: Record<string, unknown>,
 ): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(metadata)) {
-    if (value !== undefined && value !== null) {
+    if (value === undefined || value === null) continue;
+
+    // Handle arrays and objects with JSON.stringify
+    if (Array.isArray(value)) {
+      result[key] = JSON.stringify(value);
+    } else if (typeof value === "object") {
+      result[key] = JSON.stringify(value);
+    } else {
       result[key] = String(value);
     }
   }
@@ -240,4 +251,39 @@ function getGateFallback(gateName: FeatureGateName): boolean {
   }
   // All other gates default to false (conservative)
   return false;
+}
+
+/**
+ * Register process shutdown handlers for graceful event flushing
+ * Ensures analytics events are sent before process exits
+ *
+ * Note: Only works in Node.js/Bun environments, not in edge/serverless runtimes
+ * where these signals are not available.
+ */
+function registerShutdownHandlers(): void {
+  // Prevent duplicate registration
+  if (shutdownHandlersRegistered) return;
+
+  // Check if we're in an environment that supports process signals
+  if (typeof process === "undefined" || !process.on) {
+    return;
+  }
+
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`[Statsig] Received ${signal}, flushing events...`);
+    try {
+      await flushEvents();
+      await shutdownStatsig();
+      console.log("[Statsig] Graceful shutdown complete");
+    } catch (error) {
+      console.warn("[Statsig] Shutdown error:", error);
+    }
+  };
+
+  // Handle common termination signals
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+  process.on("beforeExit", () => gracefulShutdown("beforeExit"));
+
+  shutdownHandlersRegistered = true;
 }

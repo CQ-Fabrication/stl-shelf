@@ -77,7 +77,15 @@ export function getOverride<T extends OverrideValue>(
 }
 
 /**
- * Clear the override cache (useful for testing)
+ * Clear the override cache (useful for testing or after file changes)
+ *
+ * The override cache has a TTL of 5 seconds. Call this function to:
+ * - Force immediate cache refresh
+ * - Reset cache state in tests
+ * - Manually invalidate after external file changes
+ *
+ * Note: In typical development, the TTL handles automatic refresh.
+ * Use this for testing or programmatic cache control.
  */
 export function clearOverrideCache(): void {
   cachedOverrides = null;

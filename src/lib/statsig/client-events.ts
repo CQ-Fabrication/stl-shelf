@@ -15,8 +15,13 @@ function cleanMetadata(
   obj: Record<string, string | undefined> | undefined
 ): Record<string, string> | undefined {
   if (!obj) return undefined;
+
+  // Early return if object has no entries
+  const entries = Object.entries(obj);
+  if (entries.length === 0) return undefined;
+
   const result: Record<string, string> = {};
-  for (const [key, value] of Object.entries(obj)) {
+  for (const [key, value] of entries) {
     if (value !== undefined) {
       result[key] = value;
     }
