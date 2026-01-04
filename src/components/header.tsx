@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useActiveOrganization, useOrganizations } from "@/hooks/use-organizations";
 import { uploadModalActions } from "@/stores/upload-modal.store";
+import { AnnouncementDropdown } from "@/components/announcements/announcement-dropdown";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
 import { Logo } from "@/components/ui/logo";
@@ -78,11 +79,12 @@ export default function Header() {
         <div className="flex items-center gap-2">
           {/* Upload button - Only show if user has organizations */}
           {hasOrganizations && (
-            <Button onClick={() => uploadModalActions.openModal()} size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Upload
+            <Button onClick={() => uploadModalActions.openModal()} size="icon">
+              <Plus className="h-4 w-4" />
             </Button>
           )}
+          {/* Announcements dropdown - Only show for authenticated users */}
+          {session?.user && <AnnouncementDropdown />}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button aria-label="User menu" size="icon" variant="outline">

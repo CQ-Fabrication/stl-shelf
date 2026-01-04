@@ -32,6 +32,12 @@ import {
   versionTagsRelations,
 } from "./schema/models";
 import { apiKeys, apiKeysRelations } from "./schema/api-keys";
+import {
+  announcements,
+  announcementsRelations,
+  userAnnouncementReads,
+  userAnnouncementReadsRelations,
+} from "./schema/announcements";
 
 export const schema = {
   // Models
@@ -44,6 +50,9 @@ export const schema = {
   versionTags,
   // API Keys
   apiKeys,
+  // Announcements
+  announcements,
+  userAnnouncementReads,
   // Relations
   modelsRelations,
   modelVersionsRelations,
@@ -53,6 +62,8 @@ export const schema = {
   modelTagsRelations,
   versionTagsRelations,
   apiKeysRelations,
+  announcementsRelations,
+  userAnnouncementReadsRelations,
   // BetterAuth tables
   user: authUser,
   session: authSession,
@@ -118,3 +129,4 @@ export const db = new Proxy({} as Database, {
 export * from "./schema/auth";
 export * from "./schema/models";
 export * from "./schema/api-keys";
+export * from "./schema/announcements";

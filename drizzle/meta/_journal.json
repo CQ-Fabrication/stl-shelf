@@ -8,6 +8,13 @@
       "when": 1767173087050,
       "tag": "0000_demonic_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1767546915403,
+      "tag": "0001_lethal_jane_foster",
+      "breakpoints": true
     }
   ]
 }
