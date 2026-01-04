@@ -33,9 +33,11 @@ export async function initializeStatsig(): Promise<void> {
   // Check if configured before starting initialization
   const serverSecret = env.STATSIG_SERVER_SECRET;
   if (!serverSecret) {
-    console.warn(
-      "[Statsig] No STATSIG_SERVER_SECRET configured - running in disabled mode",
-    );
+    if (env.NODE_ENV === "development") {
+      logDebugEvent("Statsig disabled (no secret configured)", {
+        component: "statsig",
+      });
+    }
     initState = "disabled";
     return;
   }
@@ -60,7 +62,6 @@ export async function initializeStatsig(): Promise<void> {
       // Register shutdown handlers once on successful initialization
       registerShutdownHandlers();
     } catch (error) {
-      console.error("[Statsig] Failed to initialize:", error);
       logErrorEvent("Statsig initialization failed", {
         error: error instanceof Error ? error.message : String(error),
         component: "statsig",
@@ -116,7 +117,11 @@ export async function checkGate(
     await initializeStatsig();
     return Statsig.checkGateSync(user, gateName);
   } catch (error) {
-    console.warn(`[Statsig] Gate check failed for ${gateName}:`, error);
+    logDebugEvent("Statsig gate check failed", {
+      gateName,
+      error: error instanceof Error ? error.message : String(error),
+      component: "statsig",
+    });
     return getGateFallback(gateName);
   }
 }
@@ -149,10 +154,11 @@ export async function getExperiment(
     const experiment = Statsig.getExperimentSync(user, experimentName);
     return experiment.value;
   } catch (error) {
-    console.warn(
-      `[Statsig] Experiment fetch failed for ${experimentName}:`,
-      error,
-    );
+    logDebugEvent("Statsig experiment fetch failed", {
+      experimentName,
+      error: error instanceof Error ? error.message : String(error),
+      component: "statsig",
+    });
     return {}; // Control variant
   }
 }
@@ -190,7 +196,11 @@ export async function logEvent<T extends EventName>(
         : undefined;
       Statsig.logEvent(user, eventName, value, stringifiedMetadata);
     } catch (error) {
-      console.warn(`[Statsig] Event logging failed for ${eventName}:`, error);
+      logDebugEvent("Statsig event logging failed", {
+        eventName,
+        error: error instanceof Error ? error.message : String(error),
+        component: "statsig",
+      });
     }
     return;
   }
@@ -217,8 +227,11 @@ export async function logEvent<T extends EventName>(
 
     Statsig.logEvent(user, eventName, value, stringifiedMetadata);
   } catch (error) {
-    console.warn(`[Statsig] Event logging failed for ${eventName}:`, error);
-    // Events are dropped silently - acceptable for analytics
+    logDebugEvent("Statsig event logging failed", {
+      eventName,
+      error: error instanceof Error ? error.message : String(error),
+      component: "statsig",
+    });
   }
 }
 
@@ -254,7 +267,10 @@ export async function flushEvents(): Promise<void> {
   try {
     await Statsig.flush();
   } catch (error) {
-    console.warn("[Statsig] Failed to flush events:", error);
+    logDebugEvent("Statsig flush failed", {
+      error: error instanceof Error ? error.message : String(error),
+      component: "statsig",
+    });
   }
 }
 
@@ -269,7 +285,10 @@ export async function shutdownStatsig(): Promise<void> {
     initState = "pending";
     initializationPromise = null;
   } catch (error) {
-    console.warn("[Statsig] Shutdown failed:", error);
+    logDebugEvent("Statsig shutdown failed", {
+      error: error instanceof Error ? error.message : String(error),
+      component: "statsig",
+    });
   }
 }
 
@@ -302,13 +321,19 @@ function registerShutdownHandlers(): void {
   }
 
   const gracefulShutdown = async (signal: string) => {
-    console.log(`[Statsig] Received ${signal}, flushing events...`);
+    logDebugEvent("Statsig graceful shutdown started", {
+      signal,
+      component: "statsig",
+    });
     try {
       await flushEvents();
       await shutdownStatsig();
-      console.log("[Statsig] Graceful shutdown complete");
     } catch (error) {
-      console.warn("[Statsig] Shutdown error:", error);
+      logDebugEvent("Statsig graceful shutdown error", {
+        signal,
+        error: error instanceof Error ? error.message : String(error),
+        component: "statsig",
+      });
     }
   };
 

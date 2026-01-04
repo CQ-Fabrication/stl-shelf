@@ -9,7 +9,7 @@ export const env = createEnv({
   },
   server: {
     // Database
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z.url(),
     POSTGRES_MAX_CONNECTIONS: z.coerce.number().min(1).default(20),
     POSTGRES_IDLE_TIMEOUT: z.coerce.number().min(1).default(30),
     POSTGRES_CONNECTION_TIMEOUT: z.coerce.number().min(1).default(5),
@@ -23,8 +23,8 @@ export const env = createEnv({
     STORAGE_USE_SSL: z.enum(["true", "false"]).default("true"),
 
     // BetterAuth / Auth
-    AUTH_URL: z.string().url(),
-    WEB_URL: z.string().url(),
+    AUTH_URL: z.url(),
+    WEB_URL: z.url(),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
     BETTER_AUTH_SECRET: z.string().min(32),
 
@@ -41,7 +41,7 @@ export const env = createEnv({
     // Resend for transactional emails
     RESEND_API_KEY: z.string(),
     EMAIL_FROM: z.string().optional().default("STL Shelf <noreply@mail.stl-shelf.com>"),
-    EMAIL_LOGO_URL: z.string().url().optional(),
+    EMAIL_LOGO_URL: z.url().optional(),
 
     // Server Configuration
     NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
@@ -57,6 +57,7 @@ export const env = createEnv({
 
     // Statsig Feature Flags & Analytics
     STATSIG_SERVER_SECRET: z.string().optional(),
+
     // Better Stack Logging
     BETTERSTACK_SOURCE_TOKEN: z.string().optional(),
     BETTERSTACK_INGESTING_HOST: z.string().optional(),

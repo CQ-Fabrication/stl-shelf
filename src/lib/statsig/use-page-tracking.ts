@@ -22,7 +22,6 @@ export function usePageTracking() {
     if (pathname !== prevPathname.current) {
       client.logEvent("page_view", pathname, {
         referrer: prevPathname.current ?? "direct",
-        timestamp: new Date().toISOString(),
       });
       prevPathname.current = pathname;
     }
