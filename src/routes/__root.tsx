@@ -23,9 +23,21 @@ import { Toaster } from "@/components/ui/sonner";
 import { StatsigClientProvider } from "@/lib/statsig/client-provider";
 import { PageTracker } from "@/lib/statsig/use-page-tracking";
 import appCss from "@/styles.css?url";
+import { useErrorReporting } from "@/hooks/use-error-reporting";
+
+if (!import.meta.env.SSR) {
+  import("@/lib/error-tracking.client")
+    .then(({ initClientErrorTracking }) => {
+      initClientErrorTracking();
+    })
+    .catch((err) => {
+      console.error("Failed to initialize error tracking:", err);
+    });
+}
 
 function RootErrorFallback({ error, reset }: ErrorComponentProps) {
   const isDev = import.meta.env.DEV;
+  useErrorReporting(error);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">

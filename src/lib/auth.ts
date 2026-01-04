@@ -27,6 +27,8 @@ import {
 } from "@/lib/db";
 import { MagicLinkTemplate, PasswordResetTemplate, VerifyEmailTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
+import { captureServerException } from "@/lib/error-tracking.server";
+import { getErrorDetails, logErrorEvent } from "@/lib/logging";
 
 const isProd = env.NODE_ENV === "production";
 
@@ -198,6 +200,11 @@ export const auth = betterAuth({
           html,
         });
         if (error) {
+          captureServerException(error, { emailType: "magic_link" });
+          logErrorEvent("error.email.send_failed", {
+            emailType: "magic_link",
+            ...getErrorDetails(error),
+          });
           throw new Error(`Failed to send magic link email: ${error.message}`);
         }
       },
@@ -263,6 +270,11 @@ export const auth = betterAuth({
         html,
       });
       if (error) {
+        captureServerException(error, { emailType: "password_reset" });
+        logErrorEvent("error.email.send_failed", {
+          emailType: "password_reset",
+          ...getErrorDetails(error),
+        });
         throw new Error(`Failed to send password reset email: ${error.message}`);
       }
     },
@@ -284,6 +296,11 @@ export const auth = betterAuth({
         html,
       });
       if (error) {
+        captureServerException(error, { emailType: "verification" });
+        logErrorEvent("error.email.send_failed", {
+          emailType: "verification",
+          ...getErrorDetails(error),
+        });
         throw new Error(`Failed to send verification email: ${error.message}`);
       }
     },

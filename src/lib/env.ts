@@ -57,6 +57,12 @@ export const env = createEnv({
 
     // Statsig Feature Flags & Analytics
     STATSIG_SERVER_SECRET: z.string().optional(),
+    // Better Stack Logging
+    BETTERSTACK_SOURCE_TOKEN: z.string().optional(),
+    BETTERSTACK_INGESTING_HOST: z.string().optional(),
+
+    // Better Stack Error Tracking (Sentry SDK)
+    SENTRY_DSN: z.string().optional(),
   },
   runtimeEnv: process.env,
 });

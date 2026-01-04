@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organization } from "@/lib/db/schema/auth";
 import { env } from "@/lib/env";
+import { logAuditEvent, logErrorEvent } from "@/lib/logging";
 import type { SubscriptionTier } from "./config";
 import { SUBSCRIPTION_TIERS } from "./config";
 
@@ -31,14 +32,21 @@ export const handleOrderPaid = async (payload: WebhookOrderPaidPayload) => {
   const productId = order.productId;
 
   if (!productId) {
-    console.error("[Polar Webhook] Order missing productId");
+    logErrorEvent("billing.webhook.order_missing_product", {
+      customerId,
+      orderId: order.id,
+    });
     return;
   }
 
   const tier = getTierFromProductId(productId);
 
   if (!tier) {
-    console.error(`[Polar Webhook] Unknown product ID: ${productId}`);
+    logErrorEvent("billing.webhook.unknown_product", {
+      customerId,
+      productId,
+      orderId: order.id,
+    });
     return;
   }
 
@@ -56,7 +64,11 @@ export const handleOrderPaid = async (payload: WebhookOrderPaidPayload) => {
     })
     .where(eq(organization.polarCustomerId, customerId));
 
-  console.log(`[Polar Webhook] Organization upgraded to ${tier} tier`);
+  logAuditEvent("billing.subscription.upgraded", {
+    customerId,
+    tier,
+    subscriptionId: order.subscriptionId ?? null,
+  });
 };
 
 /**
@@ -70,7 +82,11 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
   const tier = getTierFromProductId(productId);
 
   if (!tier) {
-    console.error(`[Polar Webhook] Unknown product ID: ${productId}`);
+    logErrorEvent("billing.webhook.unknown_product", {
+      customerId,
+      productId,
+      subscriptionId: subscription.id,
+    });
     return;
   }
 
@@ -88,7 +104,12 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
     })
     .where(eq(organization.polarCustomerId, customerId));
 
-  console.log(`[Polar Webhook] Subscription created: ${tier} (status: ${subscription.status})`);
+  logAuditEvent("billing.subscription.created", {
+    customerId,
+    tier,
+    status: subscription.status,
+    subscriptionId: subscription.id,
+  });
 };
 
 /**
@@ -106,7 +127,10 @@ export const handleSubscriptionCanceled = async (payload: WebhookSubscriptionCan
     })
     .where(eq(organization.polarCustomerId, customerId));
 
-  console.log("[Polar Webhook] Subscription canceled (grace period active)");
+  logAuditEvent("billing.subscription.canceled", {
+    customerId,
+    subscriptionId: subscription.id,
+  });
 };
 
 /**
@@ -130,7 +154,10 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
     })
     .where(eq(organization.polarCustomerId, customerId));
 
-  console.log("[Polar Webhook] Subscription ended, reverted to free tier");
+  logAuditEvent("billing.subscription.revoked", {
+    customerId,
+    subscriptionId: subscription.id,
+  });
 };
 
 /**
@@ -164,7 +191,12 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
         })
         .where(eq(organization.polarCustomerId, customerId));
 
-      console.log(`[Polar Webhook] Customer state synced: ${tier} tier`);
+      logAuditEvent("billing.subscription.synced", {
+        customerId,
+        tier,
+        status: sub.status,
+        subscriptionId: sub.id,
+      });
     }
   } else {
     const freeTier = SUBSCRIPTION_TIERS.free;
@@ -181,6 +213,11 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
       })
       .where(eq(organization.polarCustomerId, customerId));
 
-    console.log("[Polar Webhook] Customer state synced: free tier (no active subscription)");
+    logAuditEvent("billing.subscription.synced", {
+      customerId,
+      tier: "free",
+      status: "active",
+      subscriptionId: null,
+    });
   }
 };
