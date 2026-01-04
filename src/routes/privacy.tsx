@@ -1,20 +1,20 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
-import { Navigation } from '@/components/marketing/navigation'
-import { Footer } from '@/components/marketing/sections'
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
+import { Navigation } from "@/components/marketing/navigation";
+import { Footer } from "@/components/marketing/sections";
 
-export const Route = createFileRoute('/privacy')({
+export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
   head: () => ({
     meta: [
-      { title: 'Privacy Policy - STL Shelf' },
+      { title: "Privacy Policy - STL Shelf" },
       {
-        name: 'description',
-        content: 'Privacy policy for STL Shelf - how we handle your data.',
+        name: "description",
+        content: "Privacy policy for STL Shelf - how we handle your data.",
       },
     ],
   }),
-})
+});
 
 function PrivacyPage() {
   return (
@@ -31,7 +31,7 @@ function PrivacyPage() {
                 linear-gradient(30deg, hsl(var(--foreground)) 1px, transparent 1px),
                 linear-gradient(150deg, hsl(var(--foreground)) 1px, transparent 1px)
               `,
-              backgroundSize: '40px 40px',
+              backgroundSize: "40px 40px",
             }}
           />
 
@@ -55,14 +55,14 @@ function PrivacyPage() {
 
               <h1
                 className="animate-fade-in-up text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6"
-                style={{ animationDelay: '0.1s' }}
+                style={{ animationDelay: "0.1s" }}
               >
                 Privacy <span className="text-orange-500">Policy</span>
               </h1>
 
               <p
                 className="animate-fade-in-up text-muted-foreground"
-                style={{ animationDelay: '0.2s' }}
+                style={{ animationDelay: "0.2s" }}
               >
                 Last updated: December 2024
               </p>
@@ -76,14 +76,14 @@ function PrivacyPage() {
             <div className="max-w-3xl mx-auto prose prose-neutral dark:prose-invert prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3 prose-p:text-muted-foreground prose-li:text-muted-foreground">
               <h2>Overview</h2>
               <p>
-                STL Shelf ("we", "our", or "us") is committed to protecting your
-                privacy. This Privacy Policy explains how we collect, use, and
-                safeguard your information when you use our service.
+                STL Shelf ("we", "our", or "us") is committed to protecting your privacy. This
+                Privacy Policy explains how we collect, use, and safeguard your information when you
+                use our service.
               </p>
               <p>
-                <strong>Self-Hosted Users:</strong> If you self-host STL Shelf,
-                your data never touches our servers. This policy primarily
-                applies to users of our cloud-hosted service.
+                <strong>Self-Hosted Users:</strong> If you self-host STL Shelf, your data never
+                touches our servers. This policy primarily applies to users of our cloud-hosted
+                service.
               </p>
 
               <h2>Information We Collect</h2>
@@ -105,9 +105,7 @@ function PrivacyPage() {
               </ul>
 
               <h3>Your 3D Models</h3>
-              <p>
-                Your uploaded 3D models are stored securely and are never:
-              </p>
+              <p>Your uploaded 3D models are stored securely and are never:</p>
               <ul>
                 <li>Shared with third parties</li>
                 <li>Used for training AI models</li>
@@ -126,9 +124,8 @@ function PrivacyPage() {
 
               <h2>Data Storage & Security</h2>
               <p>
-                Your data is stored on secure servers with encryption at rest
-                and in transit. We use industry-standard security practices
-                including:
+                Your data is stored on secure servers with encryption at rest and in transit. We use
+                industry-standard security practices including:
               </p>
               <ul>
                 <li>TLS 1.3 for all data transmission</li>
@@ -159,38 +156,32 @@ function PrivacyPage() {
 
               <h2>Data Retention</h2>
               <p>
-                We retain your data for as long as your account is active. Upon
-                account deletion, all your data is permanently removed within 30
-                days.
+                We retain your data for as long as your account is active. Upon account deletion,
+                all your data is permanently removed within 30 days.
               </p>
 
               <h2>Cookies</h2>
               <p>
-                We use essential cookies only for authentication and session
-                management. We do not use tracking cookies or third-party
-                analytics that track you across websites.
+                We use essential cookies only for authentication and session management. We do not
+                use tracking cookies or third-party analytics that track you across websites.
               </p>
 
               <h2>Children's Privacy</h2>
               <p>
-                STL Shelf is not intended for children under 13. We do not
-                knowingly collect information from children under 13.
+                STL Shelf is not intended for children under 13. We do not knowingly collect
+                information from children under 13.
               </p>
 
               <h2>Changes to This Policy</h2>
               <p>
-                We may update this policy from time to time. We will notify you
-                of any significant changes via email or through the service.
+                We may update this policy from time to time. We will notify you of any significant
+                changes via email or through the service.
               </p>
 
               <h2>Contact Us</h2>
               <p>
-                If you have questions about this Privacy Policy, please contact
-                us at{' '}
-                <a
-                  href="mailto:privacy@stlshelf.com"
-                  className="text-orange-500 hover:underline"
-                >
+                If you have questions about this Privacy Policy, please contact us at{" "}
+                <a href="mailto:privacy@stlshelf.com" className="text-orange-500 hover:underline">
                   privacy@stlshelf.com
                 </a>
                 .
@@ -201,5 +192,5 @@ function PrivacyPage() {
       </main>
       <Footer />
     </div>
-  )
+  );
 }

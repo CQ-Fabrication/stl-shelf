@@ -1,12 +1,4 @@
 {
-  "recommendations": [
-    "oxc.oxc-vscode",
-    "anthropic.claude-code",
-    "bradlc.vscode-tailwindcss",
-  ],
-  "unwantedRecommendations": [
-    "biomejs.biome",
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-  ],
+  "recommendations": ["oxc.oxc-vscode", "anthropic.claude-code", "bradlc.vscode-tailwindcss"],
+  "unwantedRecommendations": ["biomejs.biome", "dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
 }

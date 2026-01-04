@@ -17,8 +17,7 @@ export function EmptyState({ hasFilters }: EmptyStateProps) {
         </div>
         <h3 className="mb-2 font-semibold text-lg">No models found</h3>
         <p className="max-w-sm text-center text-muted-foreground text-sm">
-          Try adjusting your search terms or filters to find what you're looking
-          for.
+          Try adjusting your search terms or filters to find what you're looking for.
         </p>
       </div>
     );
@@ -47,9 +46,7 @@ export function EmptyState({ hasFilters }: EmptyStateProps) {
         </div>
 
         {/* Heading */}
-        <h2 className="mb-3 font-bold text-2xl tracking-tight">
-          Your Library is Empty
-        </h2>
+        <h2 className="mb-3 font-bold text-2xl tracking-tight">Your Library is Empty</h2>
         <p className="mb-8 max-w-md text-center text-muted-foreground">
           Upload your first 3D model to get started. STL Shelf supports{" "}
           <span className="font-medium text-foreground">STL</span>,{" "}

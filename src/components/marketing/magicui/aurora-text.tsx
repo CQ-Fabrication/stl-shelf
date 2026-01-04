@@ -1,32 +1,32 @@
-'use client'
+"use client";
 
-import type { ReactNode } from 'react'
-import { memo } from 'react'
-import { cn } from '@/lib/utils'
+import type { ReactNode } from "react";
+import { memo } from "react";
+import { cn } from "@/lib/utils";
 
 type AuroraTextProps = {
-  children: ReactNode
-  className?: string
-  colors?: string[]
-  speed?: number
-}
+  children: ReactNode;
+  className?: string;
+  colors?: string[];
+  speed?: number;
+};
 
 export const AuroraText = memo(
   ({
     children,
     className,
-    colors = ['#f97316', '#ff6b6b', '#a3e635', '#f97316'],
+    colors = ["#f97316", "#ff6b6b", "#a3e635", "#f97316"],
     speed = 1,
   }: AuroraTextProps) => {
     const gradientStyle = {
-      backgroundImage: `linear-gradient(135deg, ${colors.join(', ')}, ${colors[0]})`,
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
+      backgroundImage: `linear-gradient(135deg, ${colors.join(", ")}, ${colors[0]})`,
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
       animationDuration: `${10 / speed}s`,
-    }
+    };
 
     return (
-      <span className={cn('relative inline-block', className)}>
+      <span className={cn("relative inline-block", className)}>
         <span className="sr-only">{children}</span>
         <span
           className="animate-aurora relative bg-[length:200%_auto] bg-clip-text text-transparent"
@@ -45,8 +45,8 @@ export const AuroraText = memo(
           }
         `}</style>
       </span>
-    )
-  }
-)
+    );
+  },
+);
 
-AuroraText.displayName = 'AuroraText'
+AuroraText.displayName = "AuroraText";

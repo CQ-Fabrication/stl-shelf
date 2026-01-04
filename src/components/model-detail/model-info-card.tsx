@@ -1,16 +1,24 @@
-import { useQuery } from "@tanstack/react-query";
-import {
-  Box,
-  Calendar,
-  FileText,
-  HardDrive,
-  ImageIcon,
-  PenLine,
-} from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Box, Calendar, FileText, HardDrive, ImageIcon, PenLine, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { AddFilesSection } from "@/components/model-detail/add-files-section";
+import { AddFileSheet } from "@/components/model-detail/add-file-sheet";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TagEditor } from "@/components/model-detail/tag-editor";
+import {
+  type CompletenessCategory,
+  type CompletenessOptions,
+  COMPLETENESS_CATEGORY_INFO,
+  canRemoveFile,
+  formatGracePeriodRemaining,
+  getCompletenessStatus,
+  getCategoryFromExtension,
+} from "@/lib/files/completeness";
 import { formatDate, formatFileSize } from "@/utils/formatters";
 import {
   getModel,
@@ -19,6 +27,7 @@ import {
   getModelFiles,
   getModelVersions,
 } from "@/server/functions/models";
+import { removeFileFromVersion } from "@/server/functions/files";
 
 type ModelInfoCardProps = {
   modelId: string;
@@ -26,6 +35,10 @@ type ModelInfoCardProps = {
 };
 
 export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
+  const queryClient = useQueryClient();
+  const [addFileCategory, setAddFileCategory] = useState<CompletenessCategory | null>(null);
+  const [removingFileId, setRemovingFileId] = useState<string | null>(null);
+
   const { data: model } = useQuery({
     queryKey: ["model", modelId],
     queryFn: () => getModel({ data: { id: modelId } }),
@@ -38,7 +51,7 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
     queryKey: ["model", modelId, "tags"],
     queryFn: () => getModelTags({ data: { id: modelId } }),
   });
-  const { data: files } = useQuery({
+  const { data: files, refetch: refetchFiles } = useQuery({
     queryKey: ["model", modelId, "files", versionId],
     queryFn: () => getModelFiles({ data: { modelId, versionId: versionId! } }),
     enabled: !!versionId,
@@ -48,20 +61,79 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
     queryFn: () => getModelVersions({ data: { modelId } }),
   });
 
-  const activeVersion = versionId
-    ? versions?.find((v) => v.id === versionId)
-    : versions?.[0];
+  const activeVersion = versionId ? versions?.find((v) => v.id === versionId) : versions?.[0];
+
+  const completenessFiles = useMemo(() => {
+    if (!files) return [];
+    return files.map((f) => ({
+      extension: f.extension,
+      createdAt: f.createdAt,
+    }));
+  }, [files]);
+
+  const completenessOptions: CompletenessOptions = useMemo(
+    () => ({ hasThumbnail: !!activeVersion?.thumbnailUrl }),
+    [activeVersion?.thumbnailUrl],
+  );
+
+  const completenessStatus = useMemo(
+    () => getCompletenessStatus(completenessFiles, completenessOptions),
+    [completenessFiles, completenessOptions],
+  );
+
+  const groupedFiles = useMemo(() => {
+    if (!files) return { model: [], slicer: [], image: [] };
+
+    const groups: Record<CompletenessCategory, typeof files> = {
+      model: [],
+      slicer: [],
+      image: [],
+    };
+
+    for (const file of files) {
+      const category = getCategoryFromExtension(file.extension);
+      if (category) {
+        groups[category].push(file);
+      }
+    }
+
+    return groups;
+  }, [files]);
+
+  const handleAddFile = (category: CompletenessCategory) => {
+    setAddFileCategory(category);
+  };
+
+  const handleAddFileSuccess = () => {
+    refetchFiles();
+    queryClient.invalidateQueries({ queryKey: ["models"] });
+  };
+
+  const handleRemoveFile = async (fileId: string) => {
+    setRemovingFileId(fileId);
+    try {
+      await removeFileFromVersion({ data: { fileId } });
+      toast.success("File removed successfully");
+      refetchFiles();
+      queryClient.invalidateQueries({ queryKey: ["models"] });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to remove file";
+      toast.error(message);
+    } finally {
+      setRemovingFileId(null);
+    }
+  };
 
   const getFileIcon = (extension: string) => {
     const ext = extension.toLowerCase();
-    if (["stl", "3mf", "obj", "ply"].includes(ext)) {
-      return Box;
-    }
+    if (["stl", "obj", "ply"].includes(ext)) return Box;
+    if (ext === "3mf") return Box;
+    if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) return ImageIcon;
     return FileText;
   };
 
   const getFileTypeBadgeVariant = (
-    extension: string
+    extension: string,
   ): "default" | "secondary" | "outline" | "destructive" => {
     const ext = extension.toLowerCase();
     switch (ext) {
@@ -134,9 +206,7 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
             <div>
               <div className="font-medium">Version Created</div>
               <div className="text-muted-foreground">
-                {activeVersion?.createdAt
-                  ? formatDate(new Date(activeVersion.createdAt))
-                  : "N/A"}
+                {activeVersion?.createdAt ? formatDate(new Date(activeVersion.createdAt)) : "N/A"}
               </div>
             </div>
           </div>
@@ -146,12 +216,7 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
               <div className="font-medium">Version Size</div>
               <div className="text-muted-foreground">
                 {activeVersion?.files
-                  ? formatFileSize(
-                      activeVersion.files.reduce(
-                        (sum, file) => sum + file.size,
-                        0
-                      )
-                    )
+                  ? formatFileSize(activeVersion.files.reduce((sum, file) => sum + file.size, 0))
                   : "N/A"}
               </div>
             </div>
@@ -176,52 +241,103 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
           </div>
         )}
 
-        {/* Available Files */}
+        {/* Files by Category */}
         {files && files.length > 0 && (
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <HardDrive className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Available Files</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {files
-                .filter((file) =>
-                  ["stl", "3mf", "obj", "ply"].includes(
-                    file.extension.toLowerCase()
-                  )
-                )
-                .map((file) => {
-                  const Icon = getFileIcon(file.extension);
-                  return (
-                    <div
-                      className="flex items-center gap-2 rounded-md border bg-muted/50 px-2 py-1 transition-colors hover:bg-muted/80"
-                      key={file.filename}
-                    >
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{file.originalName}</span>
-                      <Badge
-                        className="text-xs"
-                        variant={
-                          file.extension.toLowerCase() === "stl"
-                            ? "default"
-                            : getFileTypeBadgeVariant(file.extension)
-                        }
-                      >
-                        {file.extension.toUpperCase()}
-                      </Badge>
-                      <span className="text-muted-foreground text-xs">
-                        {formatFileSize(file.size)}
-                      </span>
-                    </div>
-                  );
-                })}
-            </div>
+          <div className="space-y-4">
+            {(["model", "slicer", "image"] as const).map((category) => {
+              const categoryFiles = groupedFiles[category];
+              const categoryInfo = COMPLETENESS_CATEGORY_INFO[category];
+
+              if (categoryFiles.length === 0) return null;
+
+              return (
+                <div key={category}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <HardDrive className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">{categoryInfo.label}</span>
+                    <span className="text-muted-foreground text-xs">({categoryFiles.length})</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {categoryFiles.map((file) => {
+                      const Icon = getFileIcon(file.extension);
+                      const removal = canRemoveFile({
+                        extension: file.extension,
+                        createdAt: file.createdAt,
+                      });
+
+                      return (
+                        <div
+                          className="group/file flex items-center gap-2 rounded-md border bg-muted/50 px-2 py-1 transition-colors hover:bg-muted/80"
+                          key={file.id}
+                        >
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <span className="max-w-32 truncate text-sm" title={file.originalName}>
+                            {file.originalName}
+                          </span>
+                          <Badge
+                            className="text-xs"
+                            variant={getFileTypeBadgeVariant(file.extension)}
+                          >
+                            {file.extension.toUpperCase()}
+                          </Badge>
+                          <span className="text-muted-foreground text-xs">
+                            {formatFileSize(file.size)}
+                          </span>
+                          {removal.allowed && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    className="h-5 w-5 opacity-0 transition-opacity group-hover/file:opacity-100"
+                                    disabled={removingFileId === file.id}
+                                    onClick={() => handleRemoveFile(file.id)}
+                                    size="icon"
+                                    variant="ghost"
+                                  >
+                                    <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent className="text-xs" side="top">
+                                  Remove file ({formatGracePeriodRemaining(removal.hoursRemaining!)}
+                                  )
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
+        )}
+
+        {/* Add Files Section */}
+        {versionId && (
+          <AddFilesSection
+            completenessOptions={completenessOptions}
+            files={completenessFiles}
+            onAddFile={handleAddFile}
+            status={completenessStatus}
+          />
         )}
 
         {/* Tags */}
         <TagEditor currentTags={tags ?? []} modelId={modelId} />
       </CardContent>
+
+      {/* Add File Sheet */}
+      {addFileCategory && versionId && (
+        <AddFileSheet
+          category={addFileCategory}
+          onOpenChange={(open) => !open && setAddFileCategory(null)}
+          onSuccess={handleAddFileSuccess}
+          open={!!addFileCategory}
+          versionId={versionId}
+        />
+      )}
     </Card>
   );
 };

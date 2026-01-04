@@ -10,11 +10,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TextHighlight } from "@/components/ui/text-highlight";
 import { cn } from "@/lib/utils";
 
@@ -99,16 +95,15 @@ export function TagCombobox({
 
   // Filter available tags based on input
   const filteredTags = normalizedTags.filter((tag) =>
-    tag.name.toLowerCase().includes(inputValue.toLowerCase())
+    tag.name.toLowerCase().includes(inputValue.toLowerCase()),
   );
 
   // Check if input value is an exact match or already selected
   const exactMatch = normalizedTags.some(
-    (tag) => tag.name.toLowerCase() === inputValue.toLowerCase()
+    (tag) => tag.name.toLowerCase() === inputValue.toLowerCase(),
   );
   const isAlreadySelected = selectedTags.includes(inputValue.toLowerCase());
-  const shouldShowCreate =
-    allowCreate && inputValue.trim() && !exactMatch && !isAlreadySelected;
+  const shouldShowCreate = allowCreate && inputValue.trim() && !exactMatch && !isAlreadySelected;
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -123,9 +118,7 @@ export function TagCombobox({
           >
             <span className="text-muted-foreground">
               {selectedTags.length > 0
-                ? `${selectedTags.length} tag${
-                    selectedTags.length > 1 ? "s" : ""
-                  } selected`
+                ? `${selectedTags.length} tag${selectedTags.length > 1 ? "s" : ""} selected`
                 : placeholder}
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -141,9 +134,7 @@ export function TagCombobox({
             <CommandList>
               <CommandEmpty>
                 {inputValue.trim() ? (
-                  <div className="py-2 text-muted-foreground text-sm">
-                    No tags found.
-                  </div>
+                  <div className="py-2 text-muted-foreground text-sm">No tags found.</div>
                 ) : (
                   <div className="py-2 text-muted-foreground text-sm">
                     Start typing to search or create tags.
@@ -160,11 +151,7 @@ export function TagCombobox({
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     <span>
-                      Create{" "}
-                      <TextHighlight
-                        highlight={inputValue}
-                        text={`"${inputValue}"`}
-                      />
+                      Create <TextHighlight highlight={inputValue} text={`"${inputValue}"`} />
                     </span>
                   </CommandItem>
                 </CommandGroup>
@@ -183,7 +170,7 @@ export function TagCombobox({
                           "mr-2 h-4 w-4",
                           selectedTags.includes(tag.name.toLowerCase())
                             ? "opacity-100"
-                            : "opacity-0"
+                            : "opacity-0",
                         )}
                       />
                       <span>

@@ -1,49 +1,56 @@
-import { skipToken, useQuery } from '@tanstack/react-query'
-import { filterModelFiles, type ModelFile } from '@/lib/model-files'
-import { getModelFiles, getModelVersions } from '@/server/functions/models'
+import { skipToken, useQuery } from "@tanstack/react-query";
+import { filterModelFiles, type ModelFile } from "@/lib/model-files";
+import { getModelFiles, getModelVersions } from "@/server/functions/models";
 
 type UseModelFilesParams = {
-  modelId: string
-  versionId?: string
-}
+  modelId: string;
+  versionId?: string;
+};
+
+type ModelVersion = {
+  id: string;
+  version: string;
+  name: string;
+  description: string | null;
+  thumbnailPath: string | null;
+  thumbnailUrl: string | null;
+  files: ModelFile[];
+  createdAt: string;
+  updatedAt: string;
+};
 
 type UseModelFilesResult = {
-  files: ModelFile[] | undefined
-  modelFiles: ModelFile[] | undefined
-  versions: Array<{ id: string }> | undefined
-  activeVersion: { id: string } | undefined
-  isLoading: boolean
-  error: Error | null
-}
+  files: ModelFile[] | undefined;
+  modelFiles: ModelFile[] | undefined;
+  versions: ModelVersion[] | undefined;
+  activeVersion: ModelVersion | undefined;
+  isLoading: boolean;
+  error: Error | null;
+};
 
-export const useModelFiles = ({
-  modelId,
-  versionId,
-}: UseModelFilesParams): UseModelFilesResult => {
+export const useModelFiles = ({ modelId, versionId }: UseModelFilesParams): UseModelFilesResult => {
   // Fetch model versions
   const { data: versions } = useQuery({
-    queryKey: ['models', modelId, 'versions'],
+    queryKey: ["models", modelId, "versions"],
     queryFn: () => getModelVersions({ data: { modelId } }),
-  })
+  });
 
-  const activeVersion = versionId
-    ? versions?.find((v) => v.id === versionId)
-    : versions?.[0]
+  const activeVersion = versionId ? versions?.find((v) => v.id === versionId) : versions?.[0];
 
   // Determine the versionId to use for files query
-  const effectiveVersionId = versionId || versions?.[0]?.id
+  const effectiveVersionId = versionId || versions?.[0]?.id;
 
   // Fetch files
   const filesQuery = useQuery({
-    queryKey: ['models', modelId, 'versions', effectiveVersionId, 'files'],
+    queryKey: ["models", modelId, "versions", effectiveVersionId, "files"],
     queryFn: effectiveVersionId
       ? () => getModelFiles({ data: { modelId, versionId: effectiveVersionId } })
       : skipToken,
     enabled: Boolean(effectiveVersionId),
-  })
+  });
 
-  const files = filesQuery.data as ModelFile[] | undefined
-  const modelFiles = files ? filterModelFiles(files) : undefined
+  const files = filesQuery.data as ModelFile[] | undefined;
+  const modelFiles = files ? filterModelFiles(files) : undefined;
 
   return {
     files,
@@ -52,5 +59,5 @@ export const useModelFiles = ({
     activeVersion,
     isLoading: filesQuery.isLoading,
     error: filesQuery.error,
-  }
-}
+  };
+};

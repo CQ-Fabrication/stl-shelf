@@ -22,11 +22,7 @@ import ReactCrop, {
 import "react-image-crop/dist/ReactCrop.css";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  formatBytes,
-  getFileSizeLimit,
-  getFileSizeLimitLabel,
-} from "@/lib/files/limits";
+import { formatBytes, getFileSizeLimit, getFileSizeLimitLabel } from "@/lib/files/limits";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 import type { UploadFormType } from "../use-upload-form";
 
@@ -86,12 +82,11 @@ function getFileCategory(filename: string): CategoryKey | null {
 }
 
 function getCategoryStatus(files: UploadFile[], previewImage?: File) {
-  const result: Record<CategoryKey, { hasFiles: boolean; files: UploadFile[] }> =
-    {
-      model: { hasFiles: false, files: [] },
-      slicer: { hasFiles: false, files: [] },
-      image: { hasFiles: false, files: [] },
-    };
+  const result: Record<CategoryKey, { hasFiles: boolean; files: UploadFile[] }> = {
+    model: { hasFiles: false, files: [] },
+    slicer: { hasFiles: false, files: [] },
+    image: { hasFiles: false, files: [] },
+  };
 
   for (const file of files) {
     result[file.category].hasFiles = true;
@@ -109,13 +104,7 @@ function getCategoryStatus(files: UploadFile[], previewImage?: File) {
   };
 }
 
-
-export function StepFiles({
-  form,
-  onPrev,
-  onSubmit,
-  isSubmitting,
-}: StepFilesProps) {
+export function StepFiles({ form, onPrev, onSubmit, isSubmitting }: StepFilesProps) {
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>(() => {
     const currentFiles = form.state.values.files || [];
     return currentFiles.map((file: File) => ({
@@ -139,7 +128,7 @@ export function StepFiles({
 
   const categoryStatus = useMemo(
     () => getCategoryStatus(uploadFiles, form.state.values.previewImage),
-    [uploadFiles, form.state.values.previewImage]
+    [uploadFiles, form.state.values.previewImage],
   );
 
   const onDrop = useCallback(
@@ -179,10 +168,7 @@ export function StepFiles({
         setUploadFiles((prev) => [...prev, ...new3DFiles]);
 
         const currentFiles = form.state.values.files || [];
-        const updatedFiles = [
-          ...currentFiles,
-          ...new3DFiles.map((f) => f.file),
-        ];
+        const updatedFiles = [...currentFiles, ...new3DFiles.map((f) => f.file)];
         form.setFieldValue("files", updatedFiles);
         uploadModalActions.updateFormData("files", updatedFiles);
 
@@ -208,7 +194,7 @@ export function StepFiles({
         setCompletedCrop(null);
       }
     },
-    [form]
+    [form],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -267,7 +253,7 @@ export function StepFiles({
     const newCrop = centerCrop(
       makeAspectCrop({ unit: "%", width: 90 }, 16 / 9, width, height),
       width,
-      height
+      height,
     );
     setCrop(newCrop);
   };
@@ -307,7 +293,7 @@ export function StepFiles({
         0,
         0,
         completedCrop.width * scaleX,
-        completedCrop.height * scaleY
+        completedCrop.height * scaleY,
       );
 
       canvas.toBlob((blob) => {
@@ -417,12 +403,8 @@ export function StepFiles({
           <p className="text-blue-600 text-sm">Drop files here...</p>
         ) : (
           <div className="space-y-1">
-            <p className="font-medium text-sm">
-              Drag & drop files here, or click to browse
-            </p>
-            <p className="text-muted-foreground text-xs">
-              {ALL_EXTENSIONS.join(", ")}
-            </p>
+            <p className="font-medium text-sm">Drag & drop files here, or click to browse</p>
+            <p className="text-muted-foreground text-xs">{ALL_EXTENSIONS.join(", ")}</p>
             <p className="text-muted-foreground text-xs">
               STL/OBJ/PLY: 100-150MB • 3MF: 250MB • Images: 10MB
             </p>
@@ -435,20 +417,12 @@ export function StepFiles({
         <div className="space-y-4">
           {/* Model Files */}
           {categoryStatus.model.files.length > 0 && (
-            <FileGroup
-              files={categoryStatus.model.files}
-              label="Model"
-              onRemove={removeFile}
-            />
+            <FileGroup files={categoryStatus.model.files} label="Model" onRemove={removeFile} />
           )}
 
           {/* Slicer Files */}
           {categoryStatus.slicer.files.length > 0 && (
-            <FileGroup
-              files={categoryStatus.slicer.files}
-              label="Slicer"
-              onRemove={removeFile}
-            />
+            <FileGroup files={categoryStatus.slicer.files} label="Slicer" onRemove={removeFile} />
           )}
 
           {/* Image Section with Inline Cropping */}
@@ -489,12 +463,7 @@ export function StepFiles({
                         <ChevronDown className="ml-1 h-3.5 w-3.5" />
                       )}
                     </Button>
-                    <Button
-                      onClick={removePreviewImage}
-                      size="sm"
-                      type="button"
-                      variant="ghost"
-                    >
+                    <Button onClick={removePreviewImage} size="sm" type="button" variant="ghost">
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -524,9 +493,7 @@ export function StepFiles({
                     <div className="flex items-center justify-center gap-4">
                       <Button
                         disabled={scale <= 0.5}
-                        onClick={() =>
-                          setScale((prev) => Math.max(prev - 0.1, 0.5))
-                        }
+                        onClick={() => setScale((prev) => Math.max(prev - 0.1, 0.5))}
                         size="sm"
                         type="button"
                         variant="outline"
@@ -538,9 +505,7 @@ export function StepFiles({
                           className="w-24"
                           max="3"
                           min="0.5"
-                          onChange={(e) =>
-                            setScale(Number.parseFloat(e.target.value))
-                          }
+                          onChange={(e) => setScale(Number.parseFloat(e.target.value))}
                           step="0.1"
                           type="range"
                           value={scale}
@@ -551,9 +516,7 @@ export function StepFiles({
                       </div>
                       <Button
                         disabled={scale >= 3}
-                        onClick={() =>
-                          setScale((prev) => Math.min(prev + 0.1, 3))
-                        }
+                        onClick={() => setScale((prev) => Math.min(prev + 0.1, 3))}
                         size="sm"
                         type="button"
                         variant="outline"
@@ -566,12 +529,7 @@ export function StepFiles({
                       Adjust the crop area (16:9 ratio)
                     </p>
 
-                    <canvas
-                      className="hidden"
-                      height={225}
-                      ref={previewCanvasRef}
-                      width={400}
-                    />
+                    <canvas className="hidden" height={225} ref={previewCanvasRef} width={400} />
                   </div>
                 )}
               </div>
@@ -582,12 +540,7 @@ export function StepFiles({
 
       {/* Navigation Buttons */}
       <div className="flex justify-between pt-4">
-        <Button
-          disabled={isSubmitting}
-          onClick={onPrev}
-          type="button"
-          variant="outline"
-        >
+        <Button disabled={isSubmitting} onClick={onPrev} type="button" variant="outline">
           Previous
         </Button>
         <Button disabled={isSubmitting} onClick={handleSubmit} type="button">
@@ -619,9 +572,7 @@ function FileGroup({
 }) {
   return (
     <div className="space-y-2">
-      <h4 className="font-medium text-xs text-muted-foreground uppercase tracking-wide">
-        {label}
-      </h4>
+      <h4 className="font-medium text-xs text-muted-foreground uppercase tracking-wide">{label}</h4>
       {files.map((uploadFile) => (
         <div
           className="flex items-center justify-between rounded-lg border p-3"
@@ -636,12 +587,7 @@ function FileGroup({
               </div>
             </div>
           </div>
-          <Button
-            onClick={() => onRemove(uploadFile.id)}
-            size="sm"
-            type="button"
-            variant="ghost"
-          >
+          <Button onClick={() => onRemove(uploadFile.id)} size="sm" type="button" variant="ghost">
             <X className="h-4 w-4" />
           </Button>
         </div>

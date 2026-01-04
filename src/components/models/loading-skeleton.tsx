@@ -1,10 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 const SKELETON_COUNT = 8;
-const SKELETON_KEYS = Array.from(
-  { length: SKELETON_COUNT },
-  (_, i) => `sk-${i}`
-);
+const SKELETON_KEYS = Array.from({ length: SKELETON_COUNT }, (_, i) => `sk-${i}`);
 
 export function LoadingSkeleton() {
   return (

@@ -22,18 +22,13 @@ type DeleteAccountModalProps = {
 };
 
 const deleteSchema = z.object({
-  confirmation: z
-    .string()
-    .refine((val) => val === "DELETE", {
-      message: 'Please type "DELETE" to confirm',
-    }),
+  confirmation: z.string().refine((val) => val === "DELETE", {
+    message: 'Please type "DELETE" to confirm',
+  }),
   password: z.string().min(1, "Password is required"),
 });
 
-export function DeleteAccountModal({
-  open,
-  onOpenChange,
-}: DeleteAccountModalProps) {
+export function DeleteAccountModal({ open, onOpenChange }: DeleteAccountModalProps) {
   const router = useRouter();
 
   const form = useForm({
@@ -84,18 +79,14 @@ export function DeleteAccountModal({
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
             <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
-          <AlertDialogTitle className="text-center">
-            Delete Account
-          </AlertDialogTitle>
+          <AlertDialogTitle className="text-center">Delete Account</AlertDialogTitle>
           <AlertDialogDescription className="text-center">
             This action is permanent and cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
-          <p className="font-medium text-destructive">
-            The following will be permanently deleted:
-          </p>
+          <p className="font-medium text-destructive">The following will be permanently deleted:</p>
           <ul className="mt-2 list-inside list-disc space-y-1 text-muted-foreground">
             <li>Your account and profile data</li>
             <li>All active sessions</li>
@@ -116,25 +107,19 @@ export function DeleteAccountModal({
             {(field) => (
               <div className="space-y-2">
                 <Label htmlFor="confirmation">
-                  Type <span className="font-mono font-bold">DELETE</span> to
-                  confirm
+                  Type <span className="font-mono font-bold">DELETE</span> to confirm
                 </Label>
                 <Input
                   autoComplete="off"
                   id="confirmation"
                   onBlur={field.handleBlur}
-                  onChange={(e) =>
-                    field.handleChange(e.target.value.toUpperCase())
-                  }
+                  onChange={(e) => field.handleChange(e.target.value.toUpperCase())}
                   placeholder="DELETE"
                   value={field.state.value}
                 />
-                {field.state.meta.isTouched &&
-                  field.state.meta.errors.length > 0 && (
-                    <p className="text-destructive text-sm">
-                      {field.state.meta.errors[0]?.message}
-                    </p>
-                  )}
+                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                  <p className="text-destructive text-sm">{field.state.meta.errors[0]?.message}</p>
+                )}
               </div>
             )}
           </form.Field>
@@ -142,9 +127,7 @@ export function DeleteAccountModal({
           <form.Field name="password">
             {(field) => (
               <div className="space-y-2">
-                <Label htmlFor="delete-password">
-                  Enter your password to confirm
-                </Label>
+                <Label htmlFor="delete-password">Enter your password to confirm</Label>
                 <Input
                   autoComplete="current-password"
                   id="delete-password"
@@ -154,12 +137,9 @@ export function DeleteAccountModal({
                   type="password"
                   value={field.state.value}
                 />
-                {field.state.meta.isTouched &&
-                  field.state.meta.errors.length > 0 && (
-                    <p className="text-destructive text-sm">
-                      {field.state.meta.errors[0]?.message}
-                    </p>
-                  )}
+                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                  <p className="text-destructive text-sm">{field.state.meta.errors[0]?.message}</p>
+                )}
               </div>
             )}
           </form.Field>
@@ -175,16 +155,11 @@ export function DeleteAccountModal({
             </Button>
             <Button
               className="w-full sm:w-auto"
-              disabled={
-                form.state.isSubmitting ||
-                form.state.values.confirmation !== "DELETE"
-              }
+              disabled={form.state.isSubmitting || form.state.values.confirmation !== "DELETE"}
               type="submit"
               variant="destructive"
             >
-              {form.state.isSubmitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+              {form.state.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Delete Account Forever
             </Button>
           </AlertDialogFooter>

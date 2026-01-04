@@ -1,24 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Globe,
-  Loader2,
-  LogOut,
-  Monitor,
-  Smartphone,
-  Tablet,
-  Trash2,
-} from "lucide-react";
+import { Globe, Loader2, LogOut, Monitor, Smartphone, Tablet, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 type Session = {
@@ -188,9 +174,7 @@ export function SessionsTab() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg">Current Session</CardTitle>
-                <CardDescription>
-                  This is the device you're currently using
-                </CardDescription>
+                <CardDescription>This is the device you're currently using</CardDescription>
               </div>
               <Badge className="bg-brand text-brand-foreground">Active</Badge>
             </div>
@@ -234,9 +218,7 @@ export function SessionsTab() {
           {otherSessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Monitor className="mb-3 h-10 w-10 text-muted-foreground/50" />
-              <p className="text-muted-foreground">
-                You're only signed in on this device
-              </p>
+              <p className="text-muted-foreground">You're only signed in on this device</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -292,12 +274,7 @@ function SessionItem({
         </div>
       </div>
       {!isCurrentSession && onRevoke && (
-        <Button
-          disabled={isRevoking}
-          onClick={onRevoke}
-          size="icon"
-          variant="ghost"
-        >
+        <Button disabled={isRevoking} onClick={onRevoke} size="icon" variant="ghost">
           {isRevoking ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (

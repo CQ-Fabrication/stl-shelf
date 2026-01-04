@@ -1,11 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import {
-  Download,
-  Eye,
-  HardDrive,
-  MoreVertical,
-  Trash2,
-} from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ChevronDown, Download, Eye, HardDrive, MoreVertical, Trash2 } from "lucide-react";
 import { memo, useState } from "react";
 import { useDeleteModel } from "@/hooks/use-delete-model";
 import { cn } from "@/lib/utils";
@@ -21,13 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,12 +24,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type ModelCardProps = {
   model: {
@@ -61,6 +45,12 @@ type ModelCardProps = {
     };
     createdAt: string;
     updatedAt: string;
+    completeness: {
+      hasModel: boolean;
+      hasSlicer: boolean;
+      hasImage: boolean;
+      isComplete: boolean;
+    };
   };
 };
 
@@ -68,6 +58,13 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const deleteModel = useDeleteModel();
+  const navigate = useNavigate();
+
+  const handleTagClick = (tag: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    navigate({ to: "/library", search: { tags: tag } });
+  };
 
   const formatFileSize = (bytes: number) => {
     const sizes = ["B", "KB", "MB", "GB"];
@@ -94,11 +91,12 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-1">
             <CardTitle className="line-clamp-2 text-lg">{model.name}</CardTitle>
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+              {/* User Avatar */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="relative z-20 flex items-center gap-1.5">
+                    <div className="relative z-20">
                       <GradientAvatar
                         className="ring-1 ring-border/50"
                         id={model.owner.id}
@@ -106,17 +104,37 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
                         size="xs"
                         src={model.owner.image}
                       />
-                      <span className="max-w-20 truncate">{model.owner.name.split(' ')[0]}</span>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    <p className="text-xs">Uploaded by {model.owner.name}</p>
+                    <p className="text-xs">{model.owner.name}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <span className="text-muted-foreground/40">•</span>
-              <HardDrive className="h-3 w-3" />
-              {formatFileSize(model.totalSize)}
+
+              <span className="text-muted-foreground/30">·</span>
+
+              {/* File size group */}
+              <div className="flex items-center gap-1">
+                <HardDrive className="h-3 w-3" />
+                <span>{formatFileSize(model.totalSize)}</span>
+              </div>
+
+              <span className="text-muted-foreground/30">·</span>
+
+              <span>
+                {model.fileCount} file{model.fileCount !== 1 ? "s" : ""}
+              </span>
+
+              <span className="text-muted-foreground/30">·</span>
+
+              {/* Version badge */}
+              <Badge
+                className="h-4 border-brand/30 bg-brand/5 px-1.5 py-0 font-medium text-brand text-[10px]"
+                variant="outline"
+              >
+                {model.currentVersion}
+              </Badge>
             </div>
           </div>
           <DropdownMenu onOpenChange={setDropdownOpen} open={dropdownOpen}>
@@ -124,9 +142,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
               <Button
                 className={cn(
                   "relative z-20 transition-opacity",
-                  dropdownOpen
-                    ? "opacity-100"
-                    : "opacity-0 group-hover:opacity-100"
+                  dropdownOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                 )}
                 size="sm"
                 variant="ghost"
@@ -161,7 +177,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
         </div>
       </CardHeader>
       <CardContent className="flex flex-grow flex-col">
-        {/* Thumbnail preview */}
+        {/* Thumbnail preview - clean, no overlays */}
         <div className="mb-3">
           <div className="aspect-video overflow-hidden rounded-md bg-muted transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
             {model.thumbnailUrl ? (
@@ -208,127 +224,113 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
         {/* Spacer to push footer to bottom */}
         <div className="flex-grow" />
 
-        {/* Combined footer with tags and file info - always at bottom */}
-        <div className="mt-auto flex min-h-[24px] items-center justify-between gap-3 text-xs">
-          {/* Tags on left - with reserved space to prevent layout shifts */}
-          <div className="flex min-w-0 max-w-[60%] flex-1 items-center gap-1">
-            {model.tags && model.tags.length > 0 ? (
-              <TooltipProvider>
-                {/* Desktop: show 2 tags */}
-                <div className="hidden min-w-0 items-center gap-1 sm:flex">
-                  {model.tags.slice(0, 2).map((tag) => (
-                    <Tooltip key={tag}>
-                      <TooltipTrigger asChild>
+        {/* Tags footer - always at bottom */}
+        {model.tags && model.tags.length > 0 && (
+          <div className="mt-auto flex min-h-[24px] items-center gap-1.5 text-xs">
+            {/* Desktop: show 2 tags */}
+            <div className="hidden items-center gap-1.5 sm:flex">
+              {model.tags.slice(0, 2).map((tag) => (
+                <Badge
+                  aria-label={`Filter by ${tag}`}
+                  className="relative z-20 max-w-24 cursor-pointer truncate text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                  key={tag}
+                  onClick={(e) => handleTagClick(tag, e)}
+                  role="button"
+                  tabIndex={0}
+                  title={tag.length > 12 ? tag : undefined}
+                  variant="secondary"
+                >
+                  {tag}
+                </Badge>
+              ))}
+              {model.tags.length > 2 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Badge
+                      className="relative z-20 flex cursor-pointer items-center gap-0.5 border border-border/50 bg-muted/50 text-xs hover:bg-muted"
+                      variant="secondary"
+                    >
+                      +{model.tags.length - 2}
+                      <ChevronDown className="h-3 w-3" />
+                    </Badge>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-64 p-3" side="top">
+                    <p className="mb-2 font-medium text-muted-foreground text-xs">
+                      All tags ({model.tags.length})
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {model.tags.map((tag) => (
                         <Badge
-                          className="max-w-24 cursor-help truncate text-xs transition-colors hover:bg-secondary/80"
-                          title={tag.length > 12 ? tag : undefined}
+                          aria-label={`Filter by ${tag}`}
+                          className="cursor-pointer text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                          key={tag}
+                          onClick={(e) => handleTagClick(tag, e)}
+                          role="button"
+                          tabIndex={0}
                           variant="secondary"
                         >
                           {tag}
                         </Badge>
-                      </TooltipTrigger>
-                      {tag.length > 12 && (
-                        <TooltipContent side="top">
-                          <p className="font-medium text-xs">{tag}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  ))}
-                  {model.tags.length > 2 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          className="min-w-[2rem] cursor-help text-center text-xs transition-colors hover:bg-accent"
-                          variant="outline"
-                        >
-                          +{model.tags.length - 2}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs" side="top">
-                        <p className="mb-2 font-medium text-xs">
-                          Additional tags:
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {model.tags.slice(2).map((tag) => (
-                            <Badge
-                              className="text-xs"
-                              key={tag}
-                              variant="secondary"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
 
-                {/* Mobile: show 1 tag with improved touch targets */}
-                <div className="flex min-w-0 items-center gap-1.5 sm:hidden">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge
-                        className="min-h-6 max-w-20 cursor-pointer truncate px-2 text-xs"
-                        title={
-                          (model.tags[0]?.length ?? 0) > 8 ? model.tags[0] : undefined
-                        }
-                        variant="secondary"
-                      >
-                        {model.tags[0]}
-                      </Badge>
-                    </TooltipTrigger>
-                    {(model.tags[0]?.length ?? 0) > 8 && (
-                      <TooltipContent side="top">
-                        <p className="font-medium text-xs">{model.tags[0]}</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                  {model.tags.length > 1 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
+            {/* Mobile: show 1 tag */}
+            <div className="flex items-center gap-1.5 sm:hidden">
+              <Badge
+                aria-label={`Filter by ${model.tags[0]}`}
+                className="relative z-20 max-w-20 cursor-pointer truncate text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                onClick={(e) => handleTagClick(model.tags[0], e)}
+                role="button"
+                tabIndex={0}
+                title={(model.tags[0]?.length ?? 0) > 8 ? model.tags[0] : undefined}
+                variant="secondary"
+              >
+                {model.tags[0]}
+              </Badge>
+              {model.tags.length > 1 && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Badge
+                      className="relative z-20 flex cursor-pointer items-center gap-0.5 border border-border/50 bg-muted/50 text-xs hover:bg-muted"
+                      variant="secondary"
+                    >
+                      +{model.tags.length - 1}
+                      <ChevronDown className="h-3 w-3" />
+                    </Badge>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="center"
+                    className="w-[calc(100vw-2rem)] max-w-xs p-3"
+                    side="top"
+                  >
+                    <p className="mb-2 font-medium text-muted-foreground text-xs">
+                      All tags ({model.tags.length})
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {model.tags.map((tag) => (
                         <Badge
-                          className="min-h-6 min-w-[2.5rem] cursor-pointer px-2 text-center text-xs"
-                          variant="outline"
+                          aria-label={`Filter by ${tag}`}
+                          className="cursor-pointer text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                          key={tag}
+                          onClick={(e) => handleTagClick(tag, e)}
+                          role="button"
+                          tabIndex={0}
+                          variant="secondary"
                         >
-                          +{model.tags.length - 1}
+                          {tag}
                         </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs" side="top">
-                        <p className="mb-2 font-medium text-xs">All tags:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {model.tags.map((tag) => (
-                            <Badge
-                              className="text-xs"
-                              key={tag}
-                              variant="secondary"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </TooltipProvider>
-            ) : (
-              // Reserved space when no tags to prevent layout shifts
-              <div className="h-6" />
-            )}
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
           </div>
-
-          {/* File info on right - guaranteed minimum space */}
-          <div className="flex min-w-[40%] shrink-0 items-center justify-end text-muted-foreground">
-            <span className="whitespace-nowrap">
-              {model.fileCount} file{model.fileCount !== 1 ? "s" : ""}
-            </span>
-            <span className="mx-1.5 text-muted-foreground/60">•</span>
-            <span className="whitespace-nowrap font-medium text-brand">
-              {model.currentVersion}
-            </span>
-          </div>
-        </div>
+        )}
       </CardContent>
 
       {/* Delete Confirmation Dialog */}
@@ -337,8 +339,8 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Model</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{model.name}"? This action can be
-              undone by contacting support.
+              Are you sure you want to delete "{model.name}"? This action can be undone by
+              contacting support.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -63,7 +63,7 @@ export const uploadModalActions = {
 
   updateFormData: <K extends keyof UploadModalState["formData"]>(
     key: K,
-    value: UploadModalState["formData"][K]
+    value: UploadModalState["formData"][K],
   ) => {
     uploadModalStore.setState((state) => ({
       ...state,

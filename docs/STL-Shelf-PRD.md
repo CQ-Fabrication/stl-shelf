@@ -12,10 +12,10 @@
 2. Goals & Non-Goals
 3. Target Users & Use Cases
 4. Technical Stack
-4.1 Platform Components
-4.2 Deployment & Operations
+   4.1 Platform Components
+   4.2 Deployment & Operations
 5. Functional Requirements
-5.1 TODO — Metadata Model
+   5.1 TODO — Metadata Model
 6. Extended Features & Differentiators
 7. Non-Functional Requirements
 8. Analytics & Success Metrics

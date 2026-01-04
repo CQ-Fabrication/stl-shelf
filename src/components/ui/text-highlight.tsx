@@ -6,11 +6,7 @@ type TextHighlightProps = {
   className?: string;
 };
 
-export function TextHighlight({
-  text,
-  highlight,
-  className,
-}: TextHighlightProps) {
+export function TextHighlight({ text, highlight, className }: TextHighlightProps) {
   if (!highlight.trim()) {
     return <>{text}</>;
   }
@@ -23,16 +19,12 @@ export function TextHighlight({
   return (
     <>
       {parts.map((part, index) => {
-        const isHighlighted =
-          highlight && part.toLowerCase() === highlight.toLowerCase();
+        const isHighlighted = highlight && part.toLowerCase() === highlight.toLowerCase();
         const key = `${part}-${index}`;
 
         if (isHighlighted) {
           return (
-            <span
-              className={cn("font-semibold text-brand", className)}
-              key={key}
-            >
+            <span className={cn("font-semibold text-brand", className)} key={key}>
               {part}
             </span>
           );

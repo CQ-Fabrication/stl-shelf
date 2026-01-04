@@ -1,90 +1,90 @@
-import { randomUUID } from 'node:crypto'
-import { and, eq, sql } from 'drizzle-orm'
-import { db } from '@/lib/db'
-import { organization } from '@/lib/db/schema/auth'
-import { modelFiles, models, modelVersions } from '@/lib/db/schema/models'
-import { slugify } from '@/lib/slug'
-import { storageService } from '@/server/services/storage'
-import { tagService } from '@/server/services/tags/tag.service'
+import { randomUUID } from "node:crypto";
+import { and, eq, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { organization } from "@/lib/db/schema/auth";
+import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
+import { slugify } from "@/lib/slug";
+import { storageService } from "@/server/services/storage";
+import { tagService } from "@/server/services/tags/tag.service";
 
-const INITIAL_VERSION = 'v1'
-const FALLBACK_FILENAME = 'model-file'
-const DEFAULT_CONTENT_TYPE = 'application/octet-stream'
-const SLICER_EXTENSIONS = new Set(['3mf'])
+const INITIAL_VERSION = "v1";
+const FALLBACK_FILENAME = "model-file";
+const DEFAULT_CONTENT_TYPE = "application/octet-stream";
+const SLICER_EXTENSIONS = new Set(["3mf"]);
 
-function getStorageKind(extension: string): 'source' | 'slicer' {
-  return SLICER_EXTENSIONS.has(extension.toLowerCase()) ? 'slicer' : 'source'
+function getStorageKind(extension: string): "source" | "slicer" {
+  return SLICER_EXTENSIONS.has(extension.toLowerCase()) ? "slicer" : "source";
 }
 
 type UploadedFileMetadata = {
-  storageKey: string
-  storageBucket: string
-}
+  storageKey: string;
+  storageBucket: string;
+};
 
 type PreparedFile = UploadedFileMetadata & {
-  filename: string
-  originalName: string
-  mimeType: string
-  extension: string
-  size: number
-}
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  extension: string;
+  size: number;
+};
 
 export type CreateModelInput = {
-  organizationId: string
-  ownerId: string
-  name: string
-  description?: string | null
-  tags?: string[]
-  files: File[]
-  previewImage?: File
-  ipAddress?: string | null
-}
+  organizationId: string;
+  ownerId: string;
+  name: string;
+  description?: string | null;
+  tags?: string[];
+  files: File[];
+  previewImage?: File;
+  ipAddress?: string | null;
+};
 
 export type CreateModelResult = {
-  modelId: string
-  versionId: string
-  version: string
-  slug: string
-  storageRoot: string
-  createdAt: Date
+  modelId: string;
+  versionId: string;
+  version: string;
+  slug: string;
+  storageRoot: string;
+  createdAt: Date;
   files: Array<{
-    id: string
-    filename: string
-    originalName: string
-    size: number
-    mimeType: string
-    extension: string
-    storageKey: string
-    storageUrl: string | null
-    storageBucket: string
-  }>
-}
+    id: string;
+    filename: string;
+    originalName: string;
+    size: number;
+    mimeType: string;
+    extension: string;
+    storageKey: string;
+    storageUrl: string | null;
+    storageBucket: string;
+  }>;
+};
 
 export class ModelCreationService {
   async createModel(input: CreateModelInput): Promise<CreateModelResult> {
     if (input.files.length === 0) {
-      throw new Error('At least one file is required to create a model')
+      throw new Error("At least one file is required to create a model");
     }
 
-    const organizationId = input.organizationId
-    const ownerId = input.ownerId
-    const versionLabel = INITIAL_VERSION
-    const timestamp = new Date()
-    const modelId = randomUUID()
-    const versionId = randomUUID()
+    const organizationId = input.organizationId;
+    const ownerId = input.ownerId;
+    const versionLabel = INITIAL_VERSION;
+    const timestamp = new Date();
+    const modelId = randomUUID();
+    const versionId = randomUUID();
 
-    const slug = await this.generateUniqueSlug(organizationId, input.name)
+    const slug = await this.generateUniqueSlug(organizationId, input.name);
 
-    const uniqueTags = input.tags ? Array.from(new Set(input.tags)) : []
+    const uniqueTags = input.tags ? Array.from(new Set(input.tags)) : [];
 
     const auditMetadata = {
       processed: false,
       uploadedAt: timestamp.toISOString(),
       uploadedBy: ownerId,
       uploadedIp: input.ipAddress ?? undefined,
-    } as const
+    } as const;
 
-    const uploadResults: PreparedFile[] = []
+    const uploadResults: PreparedFile[] = [];
 
     try {
       for (const file of input.files) {
@@ -93,38 +93,37 @@ export class ModelCreationService {
           organizationId,
           modelId,
           version: versionLabel,
-        })
+        });
 
-        uploadResults.push(prepared)
+        uploadResults.push(prepared);
       }
     } catch (error) {
-      await this.cleanupUploadedFiles(uploadResults)
-      throw error
+      await this.cleanupUploadedFiles(uploadResults);
+      throw error;
     }
 
-    let thumbnailPath: string | null = null
+    let thumbnailPath: string | null = null;
     if (input.previewImage) {
       try {
-        const ext =
-          input.previewImage.name.split('.').pop()?.toLowerCase() || 'jpg'
-        const previewFilename = `preview.${ext}`
+        const ext = input.previewImage.name.split(".").pop()?.toLowerCase() || "jpg";
+        const previewFilename = `preview.${ext}`;
         const previewKey = storageService.generateStorageKey({
           organizationId,
           modelId,
           version: versionLabel,
           filename: previewFilename,
-          kind: 'artifact',
-        })
+          kind: "artifact",
+        });
 
         await storageService.uploadFile({
           key: previewKey,
           file: input.previewImage,
-        })
+        });
 
-        thumbnailPath = previewKey
+        thumbnailPath = previewKey;
       } catch (error) {
-        await this.cleanupUploadedFiles(uploadResults)
-        throw error
+        await this.cleanupUploadedFiles(uploadResults);
+        throw error;
       }
     }
 
@@ -144,10 +143,10 @@ export class ModelCreationService {
             createdAt: timestamp,
             updatedAt: timestamp,
           })
-          .returning()
+          .returning();
 
         if (!model) {
-          throw new Error('Failed to create model record')
+          throw new Error("Failed to create model record");
         }
 
         const [version] = await tx
@@ -162,10 +161,10 @@ export class ModelCreationService {
             createdAt: timestamp,
             updatedAt: timestamp,
           })
-          .returning()
+          .returning();
 
         if (!version) {
-          throw new Error('Failed to create model version')
+          throw new Error("Failed to create model version");
         }
 
         const files = await tx
@@ -186,41 +185,36 @@ export class ModelCreationService {
               },
               createdAt: timestamp,
               updatedAt: timestamp,
-            }))
+            })),
           )
-          .returning()
+          .returning();
 
         if (uniqueTags.length) {
-          await tagService.addTagsToModel(
-            modelId,
-            uniqueTags,
-            organizationId,
-            tx
-          )
+          await tagService.addTagsToModel(modelId, uniqueTags, organizationId, tx);
         }
 
         // Update organization usage counters
-        const totalFileSize = uploadResults.reduce((sum, f) => sum + f.size, 0)
+        const totalFileSize = uploadResults.reduce((sum, f) => sum + f.size, 0);
         await tx
           .update(organization)
           .set({
             currentModelCount: sql`COALESCE(${organization.currentModelCount}, 0) + 1`,
             currentStorage: sql`COALESCE(${organization.currentStorage}, 0) + ${totalFileSize}`,
           })
-          .where(eq(organization.id, organizationId))
+          .where(eq(organization.id, organizationId));
 
         return {
           model,
           version,
           files,
-        }
-      })
+        };
+      });
 
       const storageRoot = storageService.getModelVersionRoot({
         organizationId,
         modelId,
         version: versionLabel,
-      })
+      });
 
       return {
         modelId: result.model.id,
@@ -240,63 +234,56 @@ export class ModelCreationService {
           storageUrl: file.storageUrl,
           storageBucket: file.storageBucket,
         })),
-      }
+      };
     } catch (error) {
-      await this.cleanupUploadedFiles(uploadResults)
-      throw error
+      await this.cleanupUploadedFiles(uploadResults);
+      throw error;
     }
   }
 
-  private async generateUniqueSlug(
-    organizationId: string,
-    name: string
-  ): Promise<string> {
-    const baseSlug = slugify(name, 'model')
-    let candidate = baseSlug
-    let index = 1
+  private async generateUniqueSlug(organizationId: string, name: string): Promise<string> {
+    const baseSlug = slugify(name, "model");
+    let candidate = baseSlug;
+    let index = 1;
 
     for (;;) {
       const existing = await db.query.models.findFirst({
         columns: { id: true },
-        where: and(
-          eq(models.organizationId, organizationId),
-          eq(models.slug, candidate)
-        ),
-      })
+        where: and(eq(models.organizationId, organizationId), eq(models.slug, candidate)),
+      });
 
       if (!existing) {
-        return candidate
+        return candidate;
       }
 
-      candidate = `${baseSlug}-${index}`
-      index += 1
+      candidate = `${baseSlug}-${index}`;
+      index += 1;
     }
   }
 
   private async uploadFile(options: {
-    file: File
-    organizationId: string
-    modelId: string
-    version: string
+    file: File;
+    organizationId: string;
+    modelId: string;
+    version: string;
   }): Promise<PreparedFile> {
-    const { file, organizationId, modelId, version } = options
-    const originalName = file.name || FALLBACK_FILENAME
-    const { storedFilename, extension } =
-      this.createStoredFilename(originalName)
-    const kind = getStorageKind(extension)
+    const { file, organizationId, modelId, version } = options;
+    const originalName = file.name || FALLBACK_FILENAME;
+    const { storedFilename, extension } = this.createStoredFilename(originalName);
+    const kind = getStorageKind(extension);
     const storageKey = storageService.generateStorageKey({
       organizationId,
       modelId,
       version,
       filename: storedFilename,
       kind,
-    })
+    });
 
     await storageService.uploadFile({
       key: storageKey,
       file,
       contentType: file.type || DEFAULT_CONTENT_TYPE,
-    })
+    });
 
     return {
       storageKey,
@@ -306,44 +293,35 @@ export class ModelCreationService {
       mimeType: file.type || DEFAULT_CONTENT_TYPE,
       extension,
       size: file.size,
-    }
+    };
   }
 
   private createStoredFilename(originalName: string): {
-    storedFilename: string
-    extension: string
+    storedFilename: string;
+    extension: string;
   } {
-    const trimmedName = originalName.trim() || FALLBACK_FILENAME
-    const lastDotIndex = trimmedName.lastIndexOf('.')
-    const hasExtension =
-      lastDotIndex > 0 && lastDotIndex < trimmedName.length - 1
-    const extension = hasExtension
-      ? trimmedName.slice(lastDotIndex + 1).toLowerCase()
-      : ''
-    const baseName = hasExtension
-      ? trimmedName.slice(0, lastDotIndex)
-      : trimmedName
-    const safeBase = slugify(baseName || FALLBACK_FILENAME)
-    const uniqueSuffix = randomUUID().split('-')[0]
+    const trimmedName = originalName.trim() || FALLBACK_FILENAME;
+    const lastDotIndex = trimmedName.lastIndexOf(".");
+    const hasExtension = lastDotIndex > 0 && lastDotIndex < trimmedName.length - 1;
+    const extension = hasExtension ? trimmedName.slice(lastDotIndex + 1).toLowerCase() : "";
+    const baseName = hasExtension ? trimmedName.slice(0, lastDotIndex) : trimmedName;
+    const safeBase = slugify(baseName || FALLBACK_FILENAME);
+    const uniqueSuffix = randomUUID().split("-")[0];
     const storedFilename = extension
       ? `${safeBase}-${uniqueSuffix}.${extension}`
-      : `${safeBase}-${uniqueSuffix}`
+      : `${safeBase}-${uniqueSuffix}`;
 
     return {
       storedFilename,
-      extension: extension || 'bin',
-    }
+      extension: extension || "bin",
+    };
   }
 
-  private async cleanupUploadedFiles(
-    files: UploadedFileMetadata[]
-  ): Promise<void> {
+  private async cleanupUploadedFiles(files: UploadedFileMetadata[]): Promise<void> {
     await Promise.all(
-      files.map((file) =>
-        storageService.deleteFile(file.storageKey).catch(() => {})
-      )
-    )
+      files.map((file) => storageService.deleteFile(file.storageKey).catch(() => {})),
+    );
   }
 }
 
-export const modelCreationService = new ModelCreationService()
+export const modelCreationService = new ModelCreationService();

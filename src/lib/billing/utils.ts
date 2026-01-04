@@ -55,7 +55,7 @@ export const getUsageProgressColor = (percentage: number): string => {
  * Get tier display name (capitalize first letter)
  */
 export const getTierDisplayName = (tier: string | null | undefined): string => {
-  if (!tier) return 'Free';
+  if (!tier) return "Free";
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 };
 

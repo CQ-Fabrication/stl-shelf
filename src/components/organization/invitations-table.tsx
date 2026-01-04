@@ -8,13 +8,7 @@ import { useActiveOrganization } from "@/hooks/use-organizations";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -23,12 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InviteModal } from "./invite-modal";
 
 type Invitation = {
@@ -104,8 +93,7 @@ export function InvitationsTable({ memberLimit }: InvitationsTableProps) {
 
   // Use REAL member count from query
   const realMemberCount = members?.length ?? 0;
-  const pendingInvitations =
-    invitations?.filter((inv) => inv.status === "pending") ?? [];
+  const pendingInvitations = invitations?.filter((inv) => inv.status === "pending") ?? [];
 
   // BULLETPROOF limit check: real members + pending invitations >= limit
   const totalSlotsTaken = realMemberCount + pendingInvitations.length;
@@ -152,14 +140,14 @@ export function InvitationsTable({ memberLimit }: InvitationsTableProps) {
                 }
                 setIsResending(null);
               },
-            }
+            },
           );
         },
         onError: (ctx) => {
           toast.error(ctx.error.message ?? "Failed to cancel old invitation");
           setIsResending(null);
         },
-      }
+      },
     );
   };
 
@@ -180,7 +168,7 @@ export function InvitationsTable({ memberLimit }: InvitationsTableProps) {
           toast.error(ctx.error.message ?? "Failed to cancel invitation");
           setIsCanceling(null);
         },
-      }
+      },
     );
   };
 
@@ -211,10 +199,17 @@ export function InvitationsTable({ memberLimit }: InvitationsTableProps) {
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between text-amber-800 dark:text-amber-200">
             <span>
-              <strong>Member limit reached.</strong> You have {realMemberCount} member{realMemberCount !== 1 ? "s" : ""}
-              {pendingInvitations.length > 0 && ` + ${pendingInvitations.length} pending`} ({totalSlotsTaken}/{memberLimit} slots used).
+              <strong>Member limit reached.</strong> You have {realMemberCount} member
+              {realMemberCount !== 1 ? "s" : ""}
+              {pendingInvitations.length > 0 && ` + ${pendingInvitations.length} pending`} (
+              {totalSlotsTaken}/{memberLimit} slots used).
             </span>
-            <Button asChild size="sm" variant="outline" className="ml-4 shrink-0 border-amber-600 text-amber-700 hover:bg-amber-100 dark:border-amber-500 dark:text-amber-400 dark:hover:bg-amber-950">
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="ml-4 shrink-0 border-amber-600 text-amber-700 hover:bg-amber-100 dark:border-amber-500 dark:text-amber-400 dark:hover:bg-amber-950"
+            >
               <Link to="/billing">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Upgrade Plan
@@ -228,7 +223,9 @@ export function InvitationsTable({ memberLimit }: InvitationsTableProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className={atLimit ? "text-muted-foreground" : ""}>Pending Invitations</CardTitle>
+              <CardTitle className={atLimit ? "text-muted-foreground" : ""}>
+                Pending Invitations
+              </CardTitle>
               <CardDescription>
                 {pendingInvitations.length > 0
                   ? `${pendingInvitations.length} pending invitation${pendingInvitations.length > 1 ? "s" : ""}`
@@ -257,7 +254,10 @@ export function InvitationsTable({ memberLimit }: InvitationsTableProps) {
                 </TooltipTrigger>
                 {atLimit && (
                   <TooltipContent side="left" className="max-w-xs">
-                    <p>Member limit reached ({totalSlotsTaken}/{memberLimit}). Upgrade your plan to invite more members.</p>
+                    <p>
+                      Member limit reached ({totalSlotsTaken}/{memberLimit}). Upgrade your plan to
+                      invite more members.
+                    </p>
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -294,9 +294,7 @@ export function InvitationsTable({ memberLimit }: InvitationsTableProps) {
                         <span className="font-medium">{invitation.email}</span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">
-                          {invitation.role ?? "member"}
-                        </Badge>
+                        <Badge variant="secondary">{invitation.role ?? "member"}</Badge>
                       </TableCell>
                       <TableCell>
                         {expired ? (
@@ -324,9 +322,7 @@ export function InvitationsTable({ memberLimit }: InvitationsTableProps) {
                         <div className="flex items-center gap-1">
                           <Button
                             disabled={isResending === invitation.id}
-                            onClick={() =>
-                              handleResendInvitation(invitation.id)
-                            }
+                            onClick={() => handleResendInvitation(invitation.id)}
                             size="icon"
                             title="Resend invitation"
                             variant="ghost"
@@ -339,9 +335,7 @@ export function InvitationsTable({ memberLimit }: InvitationsTableProps) {
                           </Button>
                           <Button
                             disabled={isCanceling === invitation.id}
-                            onClick={() =>
-                              handleCancelInvitation(invitation.id)
-                            }
+                            onClick={() => handleCancelInvitation(invitation.id)}
                             size="icon"
                             title="Cancel invitation"
                             variant="ghost"

@@ -1,93 +1,93 @@
-'use client'
+"use client";
 
-import { Check, Sparkles, Zap } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { ShimmerButton } from '@/components/ui/shimmer-button'
-import { cn } from '@/lib/utils'
+import { Check, Sparkles, Zap } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { cn } from "@/lib/utils";
 
 type PricingTier = {
-  name: string
-  price: string
-  period: string
-  description: string
-  badge?: string
-  badgeVariant?: 'default' | 'popular'
-  features: string[]
-  cta: string
-  highlighted?: boolean
-}
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  badge?: string;
+  badgeVariant?: "default" | "popular";
+  features: string[];
+  cta: string;
+  highlighted?: boolean;
+};
 
 const tiers: PricingTier[] = [
   {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Perfect for getting started',
-    badge: 'Free Forever',
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    description: "Perfect for getting started",
+    badge: "Free Forever",
     features: [
-      '1 user',
-      '200 MB storage',
-      '10 models',
-      '3D model preview',
-      'Basic organization',
-      'Community support',
+      "1 user",
+      "200 MB storage",
+      "10 models",
+      "3D model preview",
+      "Basic organization",
+      "Community support",
     ],
-    cta: 'Get Started',
+    cta: "Get Started",
   },
   {
-    name: 'Basic',
-    price: '$4.99',
-    period: '/month',
-    description: 'For growing collections',
-    badge: 'Most Popular',
-    badgeVariant: 'popular',
+    name: "Basic",
+    price: "$4.99",
+    period: "/month",
+    description: "For growing collections",
+    badge: "Most Popular",
+    badgeVariant: "popular",
     highlighted: true,
     features: [
-      'Up to 3 team members',
-      '10 GB storage',
-      '200 models',
-      'Version history',
-      'Advanced organization',
-      'Priority email support',
+      "Up to 3 team members",
+      "10 GB storage",
+      "200 models",
+      "Version history",
+      "Advanced organization",
+      "Priority email support",
     ],
-    cta: 'Start Free Trial',
+    cta: "Start Free Trial",
   },
   {
-    name: 'Pro',
-    price: '$12.99',
-    period: '/month',
-    description: 'For power users & teams',
+    name: "Pro",
+    price: "$12.99",
+    period: "/month",
+    description: "For power users & teams",
     features: [
-      'Up to 10 team members',
-      '50 GB storage',
-      'Unlimited models',
-      'Full API access',
-      'Custom integrations',
-      'Premium support',
+      "Up to 10 team members",
+      "50 GB storage",
+      "Unlimited models",
+      "Full API access",
+      "Custom integrations",
+      "Premium support",
     ],
-    cta: 'Start Free Trial',
+    cta: "Start Free Trial",
   },
-]
+];
 
 function PricingCard({ tier, index }: { tier: PricingTier; index: number }) {
   return (
     <div
       className={cn(
-        'animate-fade-in-up relative flex flex-col rounded-2xl border bg-card/80 backdrop-blur-sm p-6 transition-all duration-500',
+        "animate-fade-in-up relative flex flex-col rounded-2xl border bg-card/80 backdrop-blur-sm p-6 transition-all duration-500",
         tier.highlighted
-          ? 'border-orange-500/50 shadow-[0_0_40px_rgba(249,115,22,0.15)] scale-105 z-10'
-          : 'border-border/50 hover:border-orange-500/30'
+          ? "border-orange-500/50 shadow-[0_0_40px_rgba(249,115,22,0.15)] scale-105 z-10"
+          : "border-border/50 hover:border-orange-500/30",
       )}
       style={{ animationDelay: `${0.2 + index * 0.1}s` }}
     >
       {tier.badge && (
         <div
           className={cn(
-            'absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold',
-            tier.badgeVariant === 'popular'
-              ? 'bg-orange-500 text-white'
-              : 'bg-muted border border-border text-muted-foreground'
+            "absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold",
+            tier.badgeVariant === "popular"
+              ? "bg-orange-500 text-white"
+              : "bg-muted border border-border text-muted-foreground",
           )}
         >
           {tier.badge}
@@ -99,8 +99,8 @@ function PricingCard({ tier, index }: { tier: PricingTier; index: number }) {
         <div className="flex items-baseline justify-center gap-1">
           <span
             className={cn(
-              'text-4xl font-bold tracking-tight',
-              tier.highlighted && 'text-orange-500'
+              "text-4xl font-bold tracking-tight",
+              tier.highlighted && "text-orange-500",
             )}
           >
             {tier.price}
@@ -115,8 +115,8 @@ function PricingCard({ tier, index }: { tier: PricingTier; index: number }) {
           <li key={feature} className="flex items-start gap-2 text-sm">
             <Check
               className={cn(
-                'h-4 w-4 mt-0.5 shrink-0',
-                tier.highlighted ? 'text-orange-500' : 'text-emerald-500'
+                "h-4 w-4 mt-0.5 shrink-0",
+                tier.highlighted ? "text-orange-500" : "text-emerald-500",
               )}
             />
             <span>{feature}</span>
@@ -134,19 +134,15 @@ function PricingCard({ tier, index }: { tier: PricingTier; index: number }) {
           </ShimmerButton>
         </Link>
       ) : (
-        <Button
-          variant={tier.name === 'Pro' ? 'default' : 'outline'}
-          className="w-full"
-          asChild
-        >
+        <Button variant={tier.name === "Pro" ? "default" : "outline"} className="w-full" asChild>
           <Link to="/signup">
-            {tier.name === 'Pro' && <Zap className="h-4 w-4 mr-2" />}
+            {tier.name === "Pro" && <Zap className="h-4 w-4 mr-2" />}
             {tier.cta}
           </Link>
         </Button>
       )}
     </div>
-  )
+  );
 }
 
 export function Pricing() {
@@ -159,7 +155,7 @@ export function Pricing() {
             linear-gradient(30deg, hsl(var(--foreground)) 1px, transparent 1px),
             linear-gradient(150deg, hsl(var(--foreground)) 1px, transparent 1px)
           `,
-          backgroundSize: '40px 40px',
+          backgroundSize: "40px 40px",
         }}
       />
 
@@ -185,10 +181,9 @@ export function Pricing() {
         </div>
 
         <div className="animate-fade-in-up text-center mt-12 text-sm text-muted-foreground">
-          All plans include 3D model preview, file organization, and secure
-          storage.
+          All plans include 3D model preview, file organization, and secure storage.
         </div>
       </div>
     </section>
-  )
+  );
 }

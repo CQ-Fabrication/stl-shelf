@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
-import type { ReactNode } from 'react'
-import type { QueryClient } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import type { ReactNode } from "react";
+import type { QueryClient } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   HeadContent,
   Link,
@@ -9,21 +9,21 @@ import {
   createRootRouteWithContext,
   redirect,
   useRouterState,
-} from '@tanstack/react-router'
-import type { ErrorComponentProps } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { AlertTriangle, Home, RotateCw } from 'lucide-react'
-import { GracePeriodBanner } from '@/components/billing/grace-period-banner'
-import Header from '@/components/header'
-import { NotFound } from '@/components/not-found'
-import { Button } from '@/components/ui/button'
-import { getSessionFn, listOrganizationsFn } from '@/server/functions/auth'
-import { ThemeProvider } from '@/components/theme-provider'
-import { Toaster } from '@/components/ui/sonner'
-import appCss from '@/styles.css?url'
+} from "@tanstack/react-router";
+import type { ErrorComponentProps } from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { AlertTriangle, Home, RotateCw } from "lucide-react";
+import { GracePeriodBanner } from "@/components/billing/grace-period-banner";
+import Header from "@/components/header";
+import { NotFound } from "@/components/not-found";
+import { Button } from "@/components/ui/button";
+import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import appCss from "@/styles.css?url";
 
 function RootErrorFallback({ error, reset }: ErrorComponentProps) {
-  const isDev = import.meta.env.DEV
+  const isDev = import.meta.env.DEV;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
@@ -33,12 +33,9 @@ function RootErrorFallback({ error, reset }: ErrorComponentProps) {
         </div>
 
         <div className="space-y-2">
-          <h1 className="font-bold text-2xl tracking-tight">
-            Something went wrong
-          </h1>
+          <h1 className="font-bold text-2xl tracking-tight">Something went wrong</h1>
           <p className="text-muted-foreground">
-            We encountered an unexpected error. Please try again or go back to
-            the home page.
+            We encountered an unexpected error. Please try again or go back to the home page.
           </p>
         </div>
 
@@ -69,103 +66,103 @@ function RootErrorFallback({ error, reset }: ErrorComponentProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export type RouterAppContext = {
-  queryClient: QueryClient
-}
+  queryClient: QueryClient;
+};
 
 // Routes that don't require authentication
 const PUBLIC_ROUTES = [
-  '/',
-  '/login',
-  '/signup',
-  '/forgot-password',
-  '/reset-password',
-  '/verify-email',
-  '/verify-email-pending',
-  '/about',
-  '/pricing',
-  '/privacy',
-  '/terms',
-]
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/verify-email-pending",
+  "/about",
+  "/pricing",
+  "/privacy",
+  "/terms",
+];
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       {
-        charSet: 'utf-8',
+        charSet: "utf-8",
       },
       {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
       },
       {
-        title: 'STL Shelf',
+        title: "STL Shelf",
       },
       {
-        name: 'description',
-        content: 'Your personal 3D model library, organized and versioned',
+        name: "description",
+        content: "Your personal 3D model library, organized and versioned",
       },
     ],
     links: [
-      { rel: 'stylesheet', href: appCss },
-      { rel: 'icon', href: '/favicon.ico' },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.ico" },
     ],
   }),
   beforeLoad: async ({ location }) => {
     // Skip auth check for public routes
     if (PUBLIC_ROUTES.includes(location.pathname)) {
-      return
+      return;
     }
 
     // Get session using server function (has cookie access during SSR)
-    let session: Awaited<ReturnType<typeof getSessionFn>> | null = null
+    let session: Awaited<ReturnType<typeof getSessionFn>> | null = null;
     try {
-      session = await getSessionFn()
+      session = await getSessionFn();
     } catch (error) {
-      console.error('Session check failed:', error)
-      throw redirect({ to: '/login', replace: true })
+      console.error("Session check failed:", error);
+      throw redirect({ to: "/login", replace: true });
     }
 
     // If no session, redirect to login
     if (!session?.user) {
-      throw redirect({ to: '/login', replace: true })
+      throw redirect({ to: "/login", replace: true });
     }
 
     // Allow organization creation page for authenticated users
-    if (location.pathname === '/organization/create') {
-      return { session }
+    if (location.pathname === "/organization/create") {
+      return { session };
     }
 
     // Check organizations using server function
-    let organizations: Array<{ id: string }> = []
+    let organizations: Array<{ id: string }> = [];
     try {
-      const result = await listOrganizationsFn()
-      organizations = result.organizations
+      const result = await listOrganizationsFn();
+      organizations = result.organizations;
     } catch (error) {
-      console.error('Failed to fetch organizations:', error)
-      throw redirect({ to: '/organization/create', replace: true })
+      console.error("Failed to fetch organizations:", error);
+      throw redirect({ to: "/organization/create", replace: true });
     }
 
     // If no organizations, redirect to create one
     if (organizations.length === 0) {
-      throw redirect({ to: '/organization/create', replace: true })
+      throw redirect({ to: "/organization/create", replace: true });
     }
 
     // activeOrganizationId is automatically set at session creation via databaseHooks
     // See src/lib/auth.ts databaseHooks.session.create.before
 
-    return { session }
+    return { session };
   },
   shellComponent: RootDocument,
   notFoundComponent: NotFound,
   errorComponent: RootErrorFallback,
-})
+});
 
 function RootDocument({ children }: { children: ReactNode }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -195,5 +192,5 @@ function RootDocument({ children }: { children: ReactNode }) {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }

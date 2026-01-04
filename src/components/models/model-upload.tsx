@@ -1,14 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  AlertCircle,
-  CheckCircle,
-  FileText,
-  ImageIcon,
-  Upload,
-  X,
-} from "lucide-react";
+import { AlertCircle, CheckCircle, FileText, ImageIcon, Upload, X } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -19,13 +12,7 @@ import { Label } from "@/components/ui/label";
 import { TagCombobox } from "@/components/ui/tag-combobox";
 import { MODELS_QUERY_KEY } from "@/hooks/use-delete-model";
 import { createModel, getAllTags } from "@/server/functions/models";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Validation schema matching server expectations
 const modelUploadSchema = z.object({
@@ -111,9 +98,7 @@ export function ModelUpload() {
     onError: (error: Error) => {
       console.error("Model upload error:", error);
       toast.error("Failed to upload model. Please try again.");
-      setUploadFiles((prev) =>
-        prev.map((f) => ({ ...f, status: "error" as const }))
-      );
+      setUploadFiles((prev) => prev.map((f) => ({ ...f, status: "error" as const })));
     },
   });
 
@@ -131,9 +116,7 @@ export function ModelUpload() {
     },
     onSubmit: ({ value }) => {
       // Update file states to uploading
-      setUploadFiles((prev) =>
-        prev.map((f) => ({ ...f, status: "uploading" as const }))
-      );
+      setUploadFiles((prev) => prev.map((f) => ({ ...f, status: "uploading" as const })));
 
       // Submit to oRPC mutation
       createModelMutation.mutate(value);
@@ -163,7 +146,7 @@ export function ModelUpload() {
         form.setFieldValue("name", nameWithoutExt);
       }
     },
-    [form]
+    [form],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -252,9 +235,7 @@ export function ModelUpload() {
         <Card>
           <CardHeader>
             <CardTitle>Model Details</CardTitle>
-            <CardDescription>
-              Provide information about your 3D model
-            </CardDescription>
+            <CardDescription>Provide information about your 3D model</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Name field */}
@@ -274,9 +255,7 @@ export function ModelUpload() {
                     value={field.state.value}
                   />
                   {!field.state.meta.isValid && (
-                    <div className="text-red-600 text-sm">
-                      {field.state.meta.errors.join(", ")}
-                    </div>
+                    <div className="text-red-600 text-sm">{field.state.meta.errors.join(", ")}</div>
                   )}
                 </div>
               )}
@@ -297,9 +276,7 @@ export function ModelUpload() {
                     value={field.state.value || ""}
                   />
                   {!field.state.meta.isValid && (
-                    <div className="text-red-600 text-sm">
-                      {field.state.meta.errors.join(", ")}
-                    </div>
+                    <div className="text-red-600 text-sm">{field.state.meta.errors.join(", ")}</div>
                   )}
                 </div>
               )}
@@ -319,9 +296,7 @@ export function ModelUpload() {
                     selectedTags={field.state.value}
                   />
                   {!field.state.meta.isValid && (
-                    <div className="text-red-600 text-sm">
-                      {field.state.meta.errors.join(", ")}
-                    </div>
+                    <div className="text-red-600 text-sm">{field.state.meta.errors.join(", ")}</div>
                   )}
                 </div>
               )}
@@ -358,9 +333,7 @@ export function ModelUpload() {
                     type="button"
                   >
                     <ImageIcon className="mb-2 h-8 w-8 text-muted-foreground" />
-                    <p className="text-muted-foreground text-sm">
-                      Click to add preview image
-                    </p>
+                    <p className="text-muted-foreground text-sm">Click to add preview image</p>
                     <p className="mt-1 text-muted-foreground text-xs">
                       JPEG, PNG, or WebP (Optional)
                     </p>
@@ -382,9 +355,7 @@ export function ModelUpload() {
         <Card>
           <CardHeader>
             <CardTitle>Files</CardTitle>
-            <CardDescription>
-              Upload STL, OBJ, 3MF, or PLY files (max 100MB each)
-            </CardDescription>
+            <CardDescription>Upload STL, OBJ, 3MF, or PLY files (max 100MB each)</CardDescription>
           </CardHeader>
           <CardContent>
             {/* Dropzone */}
@@ -402,9 +373,7 @@ export function ModelUpload() {
                 <p className="text-blue-600">Drop files here...</p>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-lg">
-                    Drag & drop files here, or click to browse
-                  </p>
+                  <p className="text-lg">Drag & drop files here, or click to browse</p>
                   <p className="text-muted-foreground text-sm">
                     Supports: {ACCEPTED_EXTENSIONS.join(", ")}
                   </p>
@@ -435,9 +404,7 @@ export function ModelUpload() {
                     <div className="flex items-center gap-3">
                       {getFileIcon(uploadFile.status)}
                       <div>
-                        <div className="font-medium text-sm">
-                          {uploadFile.file.name}
-                        </div>
+                        <div className="font-medium text-sm">{uploadFile.file.name}</div>
                         <div className="text-muted-foreground text-xs">
                           {formatFileSize(uploadFile.file.size)}
                         </div>
@@ -461,16 +428,10 @@ export function ModelUpload() {
         </Card>
 
         {/* Actions */}
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit]) => (
             <div className="flex gap-4">
-              <Button
-                className="flex-1"
-                disabled={!canSubmit || isUploading}
-                type="submit"
-              >
+              <Button className="flex-1" disabled={!canSubmit || isUploading} type="submit">
                 {isUploading ? (
                   <>
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

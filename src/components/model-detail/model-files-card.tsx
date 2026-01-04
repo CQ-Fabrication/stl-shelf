@@ -1,13 +1,7 @@
 import { Download, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatFileSize } from "@/utils/formatters";
 import type { ModelVersion } from "@/types/model";
 
@@ -16,10 +10,7 @@ type ModelFilesCardProps = {
   onDownloadFile: (filename: string) => void;
 };
 
-export const ModelFilesCard = ({
-  version,
-  onDownloadFile,
-}: ModelFilesCardProps) => {
+export const ModelFilesCard = ({ version, onDownloadFile }: ModelFilesCardProps) => {
   return (
     <Card>
       <CardHeader>
@@ -39,20 +30,14 @@ export const ModelFilesCard = ({
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <div className="font-medium text-sm">{file.filename}</div>
-                  <div className="text-muted-foreground text-xs">
-                    {formatFileSize(file.size)}
-                  </div>
+                  <div className="text-muted-foreground text-xs">{formatFileSize(file.size)}</div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge className="text-xs" variant="outline">
                   {file.extension.slice(1).toUpperCase()}
                 </Badge>
-                <Button
-                  onClick={() => onDownloadFile(file.filename)}
-                  size="sm"
-                  variant="ghost"
-                >
+                <Button onClick={() => onDownloadFile(file.filename)} size="sm" variant="ghost">
                   <Download className="h-3 w-3" />
                 </Button>
               </div>

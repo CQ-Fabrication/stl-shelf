@@ -1,11 +1,5 @@
 import { Box, HardDrive, Loader2, Users } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useUsageStats } from "@/hooks/use-usage-stats";
 import {
@@ -34,9 +28,7 @@ export const UsageCard = () => {
     <Card>
       <CardHeader>
         <CardTitle>Resource Usage</CardTitle>
-        <CardDescription>
-          Track your organization's current usage
-        </CardDescription>
+        <CardDescription>Track your organization's current usage</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Storage Usage */}
@@ -47,8 +39,7 @@ export const UsageCard = () => {
               <span className="font-medium">Storage</span>
             </div>
             <span className={getUsageColor(usage.storage.percentage)}>
-              {formatStorage(usage.storage.used ?? 0)} /{" "}
-              {formatStorage(usage.storage.limit ?? 0)}
+              {formatStorage(usage.storage.used ?? 0)} / {formatStorage(usage.storage.limit ?? 0)}
             </span>
           </div>
           <Progress

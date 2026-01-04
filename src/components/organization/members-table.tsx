@@ -6,13 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import { useActiveOrganization } from "@/hooks/use-organizations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -102,7 +96,7 @@ export function MembersTable({ memberLimit }: MembersTableProps) {
           toast.error(ctx.error.message ?? "Failed to update member role");
           setIsUpdating(null);
         },
-      }
+      },
     );
   };
 
@@ -130,7 +124,7 @@ export function MembersTable({ memberLimit }: MembersTableProps) {
           toast.error(ctx.error.message ?? "Failed to remove member");
           setIsRemoving(null);
         },
-      }
+      },
     );
   };
 
@@ -150,9 +144,7 @@ export function MembersTable({ memberLimit }: MembersTableProps) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Members</CardTitle>
-            <CardDescription>
-              People who have access to this organization
-            </CardDescription>
+            <CardDescription>People who have access to this organization</CardDescription>
           </div>
           <Badge variant="secondary">
             {memberCount}/{memberLimit} members
@@ -189,14 +181,10 @@ export function MembersTable({ memberLimit }: MembersTableProps) {
                         <p className="font-medium text-sm">
                           {member.user.name ?? "No name"}
                           {isCurrentUser && (
-                            <span className="ml-2 text-muted-foreground text-xs">
-                              (you)
-                            </span>
+                            <span className="ml-2 text-muted-foreground text-xs">(you)</span>
                           )}
                         </p>
-                        <p className="text-muted-foreground text-xs">
-                          {member.user.email}
-                        </p>
+                        <p className="text-muted-foreground text-xs">{member.user.email}</p>
                       </div>
                     </div>
                   </TableCell>
@@ -224,24 +212,18 @@ export function MembersTable({ memberLimit }: MembersTableProps) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
-                          {ROLES.filter((r) => r.value !== "owner").map(
-                            (role) => (
-                              <DropdownMenuItem
-                                key={role.value}
-                                onClick={() =>
-                                  handleRoleChange(member.id, role.value)
-                                }
-                              >
-                                <role.icon className="mr-2 h-4 w-4" />
-                                <div>
-                                  <p className="font-medium">{role.label}</p>
-                                  <p className="text-muted-foreground text-xs">
-                                    {role.description}
-                                  </p>
-                                </div>
-                              </DropdownMenuItem>
-                            )
-                          )}
+                          {ROLES.filter((r) => r.value !== "owner").map((role) => (
+                            <DropdownMenuItem
+                              key={role.value}
+                              onClick={() => handleRoleChange(member.id, role.value)}
+                            >
+                              <role.icon className="mr-2 h-4 w-4" />
+                              <div>
+                                <p className="font-medium">{role.label}</p>
+                                <p className="text-muted-foreground text-xs">{role.description}</p>
+                              </div>
+                            </DropdownMenuItem>
+                          ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
@@ -254,7 +236,7 @@ export function MembersTable({ memberLimit }: MembersTableProps) {
                           handleRemoveMember(
                             member.id,
                             member.user.email,
-                            member.user.name ?? member.user.email
+                            member.user.name ?? member.user.email,
                           )
                         }
                         size="icon"

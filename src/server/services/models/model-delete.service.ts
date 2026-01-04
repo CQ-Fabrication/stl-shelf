@@ -1,12 +1,12 @@
-import { and, eq, isNull, sql } from 'drizzle-orm'
-import { db } from '@/lib/db'
-import { organization } from '@/lib/db/schema/auth'
-import { modelFiles, models, modelVersions } from '@/lib/db/schema/models'
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { organization } from "@/lib/db/schema/auth";
+import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
 
 type DeleteModelInput = {
-  modelId: string
-  organizationId: string
-}
+  modelId: string;
+  organizationId: string;
+};
 
 /**
  * Soft delete a model by setting deletedAt timestamp
@@ -23,13 +23,13 @@ export async function deleteModel({
       and(
         eq(models.id, modelId),
         eq(models.organizationId, organizationId),
-        isNull(models.deletedAt)
-      )
+        isNull(models.deletedAt),
+      ),
     )
-    .limit(1)
+    .limit(1);
 
   if (!model) {
-    throw new Error('Model not found or already deleted')
+    throw new Error("Model not found or already deleted");
   }
 
   const [storageResult] = await db
@@ -38,9 +38,9 @@ export async function deleteModel({
     })
     .from(modelFiles)
     .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
-    .where(eq(modelVersions.modelId, modelId))
+    .where(eq(modelVersions.modelId, modelId));
 
-  const storageToFree = storageResult?.totalStorage ?? 0
+  const storageToFree = storageResult?.totalStorage ?? 0;
 
   await db
     .update(models)
@@ -48,7 +48,7 @@ export async function deleteModel({
       deletedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(eq(models.id, modelId))
+    .where(eq(models.id, modelId));
 
   await db
     .update(organization)
@@ -56,11 +56,11 @@ export async function deleteModel({
       currentModelCount: sql`GREATEST(${organization.currentModelCount} - 1, 0)`,
       currentStorage: sql`GREATEST(${organization.currentStorage} - ${storageToFree}, 0)`,
     })
-    .where(eq(organization.id, organizationId))
+    .where(eq(organization.id, organizationId));
 
-  return { deletedId: modelId }
+  return { deletedId: modelId };
 }
 
 export const modelDeleteService = {
   deleteModel,
-}
+};

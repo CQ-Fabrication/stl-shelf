@@ -12,12 +12,7 @@ type StepChangelogProps = {
   isSubmitting: boolean;
 };
 
-export function StepChangelog({
-  form,
-  onPrev,
-  onSubmit,
-  isSubmitting,
-}: StepChangelogProps) {
+export function StepChangelog({ form, onPrev, onSubmit, isSubmitting }: StepChangelogProps) {
   const handleSubmit = () => {
     const changelog = form.state.values.changelog.trim();
 
@@ -69,12 +64,7 @@ export function StepChangelog({
 
       {/* Navigation Buttons */}
       <div className="flex justify-between pt-4">
-        <Button
-          disabled={isSubmitting}
-          onClick={onPrev}
-          type="button"
-          variant="outline"
-        >
+        <Button disabled={isSubmitting} onClick={onPrev} type="button" variant="outline">
           Previous
         </Button>
         <Button disabled={isSubmitting} onClick={handleSubmit} type="button">

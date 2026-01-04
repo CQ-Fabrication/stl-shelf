@@ -23,6 +23,4 @@ const _createVersionUploadFormForTypeInference = () =>
   });
 
 // INFERRED TYPE from form - this resolves the FormApi error
-export type VersionUploadFormType = ReturnType<
-  typeof _createVersionUploadFormForTypeInference
->;
+export type VersionUploadFormType = ReturnType<typeof _createVersionUploadFormForTypeInference>;

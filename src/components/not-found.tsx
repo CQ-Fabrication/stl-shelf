@@ -25,28 +25,11 @@ export function NotFound() {
         {/* Broken mesh visual */}
         <div className="relative mb-8 h-48 w-56">
           {/* Scattered triangles - broken mesh aesthetic */}
-          <svg
-            className="absolute inset-0 h-full w-full"
-            viewBox="0 0 200 150"
-          >
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 200 150">
             <defs>
-              <linearGradient
-                id="brokenMeshGrad"
-                x1="0%"
-                x2="100%"
-                y1="0%"
-                y2="100%"
-              >
-                <stop
-                  offset="0%"
-                  stopColor="hsl(var(--primary))"
-                  stopOpacity="0.6"
-                />
-                <stop
-                  offset="100%"
-                  stopColor="hsl(var(--primary))"
-                  stopOpacity="0.1"
-                />
+              <linearGradient id="brokenMeshGrad" x1="0%" x2="100%" y1="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
               </linearGradient>
             </defs>
 
@@ -164,21 +147,17 @@ export function NotFound() {
 
         {/* 404 display */}
         <div className="relative mb-2">
-          <span className="font-mono text-7xl font-bold tracking-tighter text-primary/20">
-            404
-          </span>
+          <span className="font-mono text-7xl font-bold tracking-tighter text-primary/20">404</span>
           <span className="absolute inset-0 flex items-center justify-center font-mono text-7xl font-bold tracking-tighter text-primary animate-glitch">
             404
           </span>
         </div>
 
         {/* Message */}
-        <h2 className="mb-2 text-xl font-semibold tracking-tight">
-          Model Not Found
-        </h2>
+        <h2 className="mb-2 text-xl font-semibold tracking-tight">Model Not Found</h2>
         <p className="mb-8 max-w-sm text-center text-muted-foreground text-sm">
-          The mesh you're looking for doesn't exist or may have been deleted.
-          Check the URL or navigate back to your library.
+          The mesh you're looking for doesn't exist or may have been deleted. Check the URL or
+          navigate back to your library.
         </p>
 
         {/* Action buttons */}

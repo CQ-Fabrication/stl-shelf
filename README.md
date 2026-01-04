@@ -15,6 +15,7 @@ A self-hosted web application for managing your personal library of 3D printable
 ### Prerequisites
 
 1. **Docker & Docker Compose**
+
    ```bash
    # macOS
    brew install --cask docker
@@ -30,12 +31,14 @@ A self-hosted web application for managing your personal library of 3D printable
 ### Quick Start
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/your-org/stl-shelf.git
    cd stl-shelf
    ```
 
 2. **Start the database services**
+
    ```bash
    docker compose up -d
    ```
@@ -45,6 +48,7 @@ A self-hosted web application for managing your personal library of 3D printable
    - **MinIO** on port `9000` (API) and `9001` (Console) - Object storage
 
 3. **Configure CORS for MinIO** (required for 3D viewer)
+
    ```bash
    # Run once after first start
    docker exec stl-shelf-minio mc alias set local http://localhost:9000 stlshelf stlshelf_minio_dev_password
@@ -53,18 +57,21 @@ A self-hosted web application for managing your personal library of 3D printable
    ```
 
 4. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 5. **Install dependencies and run migrations**
+
    ```bash
    bun install
    bun db:migrate
    ```
 
 6. **Start the application**
+
    ```bash
    bun dev
    ```
@@ -92,10 +99,12 @@ docker compose restart minio
 ### Data Persistence
 
 All data is stored in Docker volumes:
+
 - `stl-shelf_postgres_data` - Database
 - `stl-shelf_minio_data` - Uploaded files
 
 To backup your data:
+
 ```bash
 # Backup PostgreSQL
 docker exec stl-shelf-postgres pg_dump -U stlshelf stlshelf > backup.sql

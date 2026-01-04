@@ -1,33 +1,30 @@
-'use client'
+"use client";
 
-import { Eye, FolderTree, Upload } from 'lucide-react'
+import { Eye, FolderTree, Upload } from "lucide-react";
 
 const steps = [
   {
-    number: '01',
+    number: "01",
     icon: Upload,
-    title: 'Upload',
-    description:
-      'Drag and drop your 3D models — STL, OBJ, 3MF, PLY supported out of the box.',
+    title: "Upload",
+    description: "Drag and drop your 3D models — STL, OBJ, 3MF, PLY supported out of the box.",
     visual: UploadVisual,
   },
   {
-    number: '02',
+    number: "02",
     icon: FolderTree,
-    title: 'Organize',
-    description:
-      'Tag, categorize, and version your models. Find anything in seconds.',
+    title: "Organize",
+    description: "Tag, categorize, and version your models. Find anything in seconds.",
     visual: OrganizeVisual,
   },
   {
-    number: '03',
+    number: "03",
     icon: Eye,
-    title: 'Preview & Share',
-    description:
-      'View models in 3D, download files, or share with your workflow.',
+    title: "Preview & Share",
+    description: "View models in 3D, download files, or share with your workflow.",
     visual: PreviewVisual,
   },
-]
+];
 
 function UploadVisual() {
   return (
@@ -62,19 +59,19 @@ function UploadVisual() {
         {/* Floating file badges */}
         <div
           className="absolute -top-2 -right-3 px-1.5 py-0.5 rounded text-[8px] font-mono bg-orange-500/20 text-orange-400 border border-orange-500/30 animate-float"
-          style={{ animationDelay: '0s' }}
+          style={{ animationDelay: "0s" }}
         >
           .stl
         </div>
         <div
           className="absolute -bottom-1 -left-4 px-1.5 py-0.5 rounded text-[8px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-float"
-          style={{ animationDelay: '0.5s' }}
+          style={{ animationDelay: "0.5s" }}
         >
           .3mf
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function OrganizeVisual() {
@@ -88,10 +85,7 @@ function OrganizeVisual() {
           <div className="h-6 w-14 -mt-1 rounded-b-md bg-gradient-to-b from-orange-500/25 to-orange-500/15 border border-orange-500/40 border-t-0" />
 
           {/* Connecting lines to subfolders */}
-          <svg
-            className="absolute -right-6 top-4 h-12 w-6"
-            viewBox="0 0 24 48"
-          >
+          <svg className="absolute -right-6 top-4 h-12 w-6" viewBox="0 0 24 48">
             <path
               d="M 0 8 L 12 8 L 12 16 L 24 16"
               stroke="rgb(249, 115, 22)"
@@ -113,11 +107,11 @@ function OrganizeVisual() {
         <div className="flex flex-col gap-2 ml-6">
           <div
             className="h-5 w-8 rounded bg-purple-500/20 border border-purple-500/30 animate-pulse-soft"
-            style={{ animationDelay: '0s' }}
+            style={{ animationDelay: "0s" }}
           />
           <div
             className="h-5 w-8 rounded bg-emerald-500/20 border border-emerald-500/30 animate-pulse-soft"
-            style={{ animationDelay: '0.3s' }}
+            style={{ animationDelay: "0.3s" }}
           />
         </div>
 
@@ -129,7 +123,7 @@ function OrganizeVisual() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function PreviewVisual() {
@@ -139,10 +133,7 @@ function PreviewVisual() {
       <div className="relative">
         <svg viewBox="0 0 60 50" className="h-16 w-20">
           {/* Wireframe cube */}
-          <g
-            className="animate-rotate-slow-y"
-            style={{ transformOrigin: '30px 25px' }}
-          >
+          <g className="animate-rotate-slow-y" style={{ transformOrigin: "30px 25px" }}>
             {/* Front face */}
             <polygon
               points="15,15 45,15 45,40 15,40"
@@ -204,7 +195,7 @@ function PreviewVisual() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function HowItWorks() {
@@ -218,7 +209,7 @@ export function HowItWorks() {
             linear-gradient(rgba(249, 115, 22, 1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(249, 115, 22, 1) 1px, transparent 1px)
           `,
-          backgroundSize: '40px 40px',
+          backgroundSize: "40px 40px",
         }}
       />
 
@@ -236,7 +227,7 @@ export function HowItWorks() {
             <span className="h-px w-8 bg-gradient-to-l from-transparent to-orange-500/50" />
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
-            Simple as{' '}
+            Simple as{" "}
             <span className="relative">
               <span className="text-orange-500">1, 2, 3</span>
               <span className="absolute -bottom-1 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
@@ -328,5 +319,5 @@ export function HowItWorks() {
         .animate-travel { animation: travel 3s linear infinite; }
       `}</style>
     </section>
-  )
+  );
 }

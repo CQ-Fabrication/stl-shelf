@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
 
 type ZipDownloadProps = {
-  className?: string
-}
+  className?: string;
+};
 
 export const ZipDownload = ({ className }: ZipDownloadProps) => {
   return (
-    <div className={cn('absolute inset-0 overflow-hidden', className)}>
+    <div className={cn("absolute inset-0 overflow-hidden", className)}>
       {/* Cascading file download visualization */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative h-32 w-40">
@@ -19,10 +19,7 @@ export const ZipDownload = ({ className }: ZipDownloadProps) => {
                 {/* Zipper pattern */}
                 <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-2 flex flex-col items-center justify-center gap-0.5">
                   {[0, 1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="h-1.5 w-1.5 bg-amber-500/60 rounded-sm"
-                    />
+                    <div key={i} className="h-1.5 w-1.5 bg-amber-500/60 rounded-sm" />
                   ))}
                 </div>
                 {/* ZIP label */}
@@ -38,38 +35,26 @@ export const ZipDownload = ({ className }: ZipDownloadProps) => {
           {/* Cascading files */}
           <div className="absolute bottom-0 left-0 right-0 h-20">
             {/* File 1 */}
-            <div
-              className="absolute left-2 animate-cascade"
-              style={{ animationDelay: '0s' }}
-            >
+            <div className="absolute left-2 animate-cascade" style={{ animationDelay: "0s" }}>
               <div className="h-8 w-10 rounded border border-orange-500/30 bg-slate-800/70 flex items-center justify-center">
-                <span className="font-mono text-[7px] text-orange-400/70">
-                  .stl
-                </span>
+                <span className="font-mono text-[7px] text-orange-400/70">.stl</span>
               </div>
             </div>
 
             {/* File 2 */}
             <div
               className="absolute left-1/2 -translate-x-1/2 animate-cascade"
-              style={{ animationDelay: '0.3s' }}
+              style={{ animationDelay: "0.3s" }}
             >
               <div className="h-8 w-10 rounded border border-emerald-500/30 bg-slate-800/70 flex items-center justify-center">
-                <span className="font-mono text-[7px] text-emerald-400/70">
-                  .3mf
-                </span>
+                <span className="font-mono text-[7px] text-emerald-400/70">.3mf</span>
               </div>
             </div>
 
             {/* File 3 */}
-            <div
-              className="absolute right-2 animate-cascade"
-              style={{ animationDelay: '0.6s' }}
-            >
+            <div className="absolute right-2 animate-cascade" style={{ animationDelay: "0.6s" }}>
               <div className="h-8 w-10 rounded border border-purple-500/30 bg-slate-800/70 flex items-center justify-center">
-                <span className="font-mono text-[7px] text-purple-400/70">
-                  .obj
-                </span>
+                <span className="font-mono text-[7px] text-purple-400/70">.obj</span>
               </div>
             </div>
           </div>
@@ -78,16 +63,8 @@ export const ZipDownload = ({ className }: ZipDownloadProps) => {
           <svg className="absolute inset-0 h-full w-full pointer-events-none">
             <defs>
               <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop
-                  offset="0%"
-                  stopColor="rgb(249, 115, 22)"
-                  stopOpacity="0.8"
-                />
-                <stop
-                  offset="100%"
-                  stopColor="rgb(249, 115, 22)"
-                  stopOpacity="0"
-                />
+                <stop offset="0%" stopColor="rgb(249, 115, 22)" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="rgb(249, 115, 22)" stopOpacity="0" />
               </linearGradient>
             </defs>
             <path
@@ -109,9 +86,7 @@ export const ZipDownload = ({ className }: ZipDownloadProps) => {
         </div>
         <div className="flex justify-between mt-1.5">
           <span className="font-mono text-[9px] text-slate-400">3 files</span>
-          <span className="font-mono text-[9px] text-orange-400/80">
-            2.4 MB
-          </span>
+          <span className="font-mono text-[9px] text-orange-400/80">2.4 MB</span>
         </div>
       </div>
 
@@ -133,9 +108,7 @@ export const ZipDownload = ({ className }: ZipDownloadProps) => {
               />
             </svg>
           </div>
-          <span className="font-mono text-[8px] text-emerald-400/70">
-            model.stl
-          </span>
+          <span className="font-mono text-[8px] text-emerald-400/70">model.stl</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="h-3 w-3 rounded-full bg-emerald-500/20 flex items-center justify-center">
@@ -153,17 +126,13 @@ export const ZipDownload = ({ className }: ZipDownloadProps) => {
               />
             </svg>
           </div>
-          <span className="font-mono text-[8px] text-emerald-400/70">
-            print.3mf
-          </span>
+          <span className="font-mono text-[8px] text-emerald-400/70">print.3mf</span>
         </div>
         <div className="flex items-center gap-1 animate-pulse">
           <div className="h-3 w-3 rounded-full bg-orange-500/20 flex items-center justify-center">
             <div className="h-1.5 w-1.5 rounded-full bg-orange-400" />
           </div>
-          <span className="font-mono text-[8px] text-orange-400/70">
-            backup.obj
-          </span>
+          <span className="font-mono text-[8px] text-orange-400/70">backup.obj</span>
         </div>
       </div>
 
@@ -172,7 +141,7 @@ export const ZipDownload = ({ className }: ZipDownloadProps) => {
         className="absolute inset-0 opacity-[0.02]"
         style={{
           backgroundImage: `radial-gradient(circle, rgba(249, 115, 22, 0.4) 1px, transparent 1px)`,
-          backgroundSize: '16px 16px',
+          backgroundSize: "16px 16px",
         }}
       />
 
@@ -198,5 +167,5 @@ export const ZipDownload = ({ className }: ZipDownloadProps) => {
         .animate-progress-pulse { animation: progress-pulse 2s ease-in-out infinite; }
       `}</style>
     </div>
-  )
-}
+  );
+};

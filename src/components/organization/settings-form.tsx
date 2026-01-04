@@ -1,12 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import {
-  AlertTriangle,
-  Building2,
-  Camera,
-  Globe,
-  Loader2,
-  Save,
-} from "lucide-react";
+import { AlertTriangle, Building2, Camera, Globe, Loader2, Save } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -14,22 +7,13 @@ import { authClient } from "@/lib/auth-client";
 import { useActiveOrganization } from "@/hooks/use-organizations";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const nameSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Organization name is required")
-    .max(100, "Name is too long"),
+  name: z.string().min(1, "Organization name is required").max(100, "Name is too long"),
 });
 
 const slugSchema = z.object({
@@ -39,7 +23,7 @@ const slugSchema = z.object({
     .max(50, "Slug is too long")
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must be lowercase, alphanumeric, and can contain hyphens"
+      "Slug must be lowercase, alphanumeric, and can contain hyphens",
     ),
 });
 
@@ -104,9 +88,7 @@ export function OrganizationSettingsForm() {
     fileInputRef.current?.click();
   };
 
-  const handleLogoChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleLogoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !activeOrg) return;
 
@@ -171,9 +153,7 @@ export function OrganizationSettingsForm() {
       <Card>
         <CardHeader>
           <CardTitle>Organization Logo</CardTitle>
-          <CardDescription>
-            Click on the logo to upload a new image
-          </CardDescription>
+          <CardDescription>Click on the logo to upload a new image</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-6">
@@ -200,9 +180,7 @@ export function OrganizationSettingsForm() {
             </button>
             <div>
               <p className="font-medium">{activeOrg.name}</p>
-              <p className="text-muted-foreground text-sm">
-                /{activeOrg.slug}
-              </p>
+              <p className="text-muted-foreground text-sm">/{activeOrg.slug}</p>
             </div>
           </div>
           <input
@@ -248,21 +226,16 @@ export function OrganizationSettingsForm() {
                           value={field.state.value}
                         />
                       </div>
-                      {field.state.meta.isTouched &&
-                        field.state.meta.errors.length > 0 && (
-                          <p className="text-destructive text-sm">
-                            {field.state.meta.errors[0]?.message}
-                          </p>
-                        )}
+                      {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                        <p className="text-destructive text-sm">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 </nameForm.Field>
               </div>
-              <Button
-                disabled={nameForm.state.isSubmitting}
-                size="sm"
-                type="submit"
-              >
+              <Button disabled={nameForm.state.isSubmitting} size="sm" type="submit">
                 {nameForm.state.isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -280,8 +253,7 @@ export function OrganizationSettingsForm() {
         <CardHeader>
           <CardTitle>Organization Slug</CardTitle>
           <CardDescription>
-            Used in URLs for your organization. Changing this may break existing
-            links.
+            Used in URLs for your organization. Changing this may break existing links.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -309,11 +281,7 @@ export function OrganizationSettingsForm() {
                           value={field.state.value}
                         />
                       </div>
-                      <Button
-                        disabled={slugForm.state.isSubmitting}
-                        size="sm"
-                        type="submit"
-                      >
+                      <Button disabled={slugForm.state.isSubmitting} size="sm" type="submit">
                         {slugForm.state.isSubmitting ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
@@ -322,12 +290,11 @@ export function OrganizationSettingsForm() {
                         Save
                       </Button>
                     </div>
-                    {field.state.meta.isTouched &&
-                      field.state.meta.errors.length > 0 && (
-                        <p className="text-destructive text-sm">
-                          {field.state.meta.errors[0]?.message}
-                        </p>
-                      )}
+                    {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                      <p className="text-destructive text-sm">
+                        {field.state.meta.errors[0]?.message}
+                      </p>
+                    )}
                     <p className="text-muted-foreground text-xs">
                       Current URL: stl-shelf.com/org/
                       <span className="font-mono">{field.state.value}</span>
@@ -340,9 +307,8 @@ export function OrganizationSettingsForm() {
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
-                    Changing the slug will break any existing links to your
-                    organization. Make sure to update any bookmarks or shared
-                    links.
+                    Changing the slug will break any existing links to your organization. Make sure
+                    to update any bookmarks or shared links.
                   </AlertDescription>
                 </Alert>
               )}

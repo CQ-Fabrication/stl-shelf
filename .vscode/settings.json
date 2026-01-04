@@ -5,29 +5,26 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.oxc": "explicit",
+    "source.fixAll.oxc": "explicit"
   },
   "oxc.lint.enable": true,
   "oxc.fmt.enable": true,
   "files.associations": {
-    "*.css": "tailwindcss",
+    "*.css": "tailwindcss"
   },
   "tailwindCSS.experimental.classRegex": [
-    [
-      "(?:twMerge|twJoin|cva|cn|clsx)\\(([^\\);]*)[\\);]",
-      "[`'\"]([^'\"`,;]*)[`'\"]",
-    ],
+    ["(?:twMerge|twJoin|cva|cn|clsx)\\(([^\\);]*)[\\);]", "[`'\"]([^'\"`,;]*)[`'\"]"]
   ],
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     "*.ts": "${capture}.js,${capture}.test.ts",
-    "*.tsx": "${capture}.ts, ${capture}.test.tsx",
+    "*.tsx": "${capture}.ts, ${capture}.test.tsx"
   },
   "terminal.integrated.suggest.enabled": true,
   "terminal.integrated.localEchoStyle": "dim",
   "search.exclude": {
     "**/node_modules": true,
-    "**/old": true,
+    "**/old": true
   },
-  "typescript.referencesCodeLens.enabled": true,
+  "typescript.referencesCodeLens.enabled": true
 }

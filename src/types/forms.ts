@@ -24,7 +24,7 @@ export const validateNumericField = (
   value: string,
   fieldName: string,
   min?: number,
-  max?: number
+  max?: number,
 ) => {
   if (value?.trim()) {
     const numValue = Number.parseFloat(value);
@@ -55,10 +55,7 @@ export const parseIntegerValue = (value: string): number | undefined => {
 };
 
 // Create metadata payload from form data
-export const createMetadataFromFormData = (
-  formData: EditModelFormData,
-  model: Model
-) => ({
+export const createMetadataFromFormData = (formData: EditModelFormData, model: Model) => ({
   name: formData.name.trim(),
   description: formData.description.trim() || undefined,
   tags: formData.tags,

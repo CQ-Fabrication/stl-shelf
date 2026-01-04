@@ -1,25 +1,25 @@
-import { AlertTriangle, X } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { useGracePeriod } from '@/hooks/use-grace-period'
+import { AlertTriangle, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useGracePeriod } from "@/hooks/use-grace-period";
 
 export function GracePeriodBanner() {
-  const { gracePeriod, isLoading } = useGracePeriod()
-  const [isDismissed, setIsDismissed] = useState(false)
+  const { gracePeriod, isLoading } = useGracePeriod();
+  const [isDismissed, setIsDismissed] = useState(false);
 
   // Don't show if not in grace period, loading, or dismissed
   if (isLoading || !gracePeriod.inGracePeriod || isDismissed) {
-    return null
+    return null;
   }
 
   const formattedDeadline = gracePeriod.deadline
-    ? gracePeriod.deadline.toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
+    ? gracePeriod.deadline.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
       })
-    : ''
+    : "";
 
   // Show expired state with stronger urgency
   if (gracePeriod.expired) {
@@ -29,8 +29,8 @@ export function GracePeriodBanner() {
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             <p className="text-sm font-medium">
-              Your grace period has expired. Your account is now in read-only mode.
-              Please upgrade or reduce usage to restore full access.
+              Your grace period has expired. Your account is now in read-only mode. Please upgrade
+              or reduce usage to restore full access.
             </p>
           </div>
           <Button
@@ -42,14 +42,14 @@ export function GracePeriodBanner() {
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   // Active grace period - show countdown
   const daysText =
     gracePeriod.daysRemaining === 1
-      ? '1 day remaining'
-      : `${gracePeriod.daysRemaining} days remaining`
+      ? "1 day remaining"
+      : `${gracePeriod.daysRemaining} days remaining`;
 
   return (
     <div className="bg-amber-500 text-amber-950">
@@ -57,17 +57,12 @@ export function GracePeriodBanner() {
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <p className="text-sm">
-            <span className="font-medium">Your current usage exceeds your plan limits.</span>{' '}
-            Please upgrade or reduce usage by {formattedDeadline} ({daysText}) to avoid
-            read-only mode.
+            <span className="font-medium">Your current usage exceeds your plan limits.</span> Please
+            upgrade or reduce usage by {formattedDeadline} ({daysText}) to avoid read-only mode.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            asChild
-            className="bg-amber-950 text-amber-50 hover:bg-amber-900"
-            size="sm"
-          >
+          <Button asChild className="bg-amber-950 text-amber-50 hover:bg-amber-900" size="sm">
             <Link to="/billing">View Plans</Link>
           </Button>
           <Button
@@ -82,5 +77,5 @@ export function GracePeriodBanner() {
         </div>
       </div>
     </div>
-  )
+  );
 }

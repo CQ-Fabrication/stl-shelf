@@ -21,10 +21,7 @@ import {
   StepperTitle,
   StepperTrigger,
 } from "@/components/ui/stepper";
-import {
-  uploadModalActions,
-  uploadModalStore,
-} from "@/stores/upload-modal.store";
+import { uploadModalActions, uploadModalStore } from "@/stores/upload-modal.store";
 import { MODELS_QUERY_KEY } from "@/hooks/use-delete-model";
 import { useUploadLimits } from "@/hooks/use-upload-limits";
 import { createModel, getAllTags } from "@/server/functions/models";
@@ -109,9 +106,7 @@ export function UploadModal() {
 
       if (isLimitError) {
         // Race condition: another upload completed while user was filling form
-        toast.error(
-          "Another upload completed while you were working. You're now at your limit."
-        );
+        toast.error("Another upload completed while you were working. You're now at your limit.");
         setRaceConditionBlocked(true);
         refetchLimits();
       } else {
@@ -159,9 +154,7 @@ export function UploadModal() {
         showCloseButton={!createModelMutation.isPending}
       >
         <DialogHeader>
-          <DialogTitle>
-            {isBlocked ? "Upload Limit Reached" : "Upload New Model"}
-          </DialogTitle>
+          <DialogTitle>{isBlocked ? "Upload Limit Reached" : "Upload New Model"}</DialogTitle>
           {!isLoadingLimits && !isBlocked && limits && (
             <DialogDescription asChild>
               <UploadUsageIndicator limits={limits} />
@@ -173,9 +166,7 @@ export function UploadModal() {
         {isLoadingLimits && (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Checking your usage limits...
-            </p>
+            <p className="text-sm text-muted-foreground">Checking your usage limits...</p>
           </div>
         )}
 
@@ -196,12 +187,7 @@ export function UploadModal() {
                     <StepperItem
                       className="not-last:flex-1"
                       completed={isCompleted}
-                      disabled={
-                        !uploadModalActions.canNavigateToStep(
-                          stepNumber,
-                          modalState
-                        )
-                      }
+                      disabled={!uploadModalActions.canNavigateToStep(stepNumber, modalState)}
                       key={step.id}
                       step={stepNumber}
                     >

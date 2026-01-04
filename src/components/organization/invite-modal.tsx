@@ -91,7 +91,7 @@ export function InviteModal({ open, onOpenChange, onSuccess }: InviteModalProps)
             }
             setIsSubmitting(false);
           },
-        }
+        },
       );
     },
   });
@@ -112,8 +112,8 @@ export function InviteModal({ open, onOpenChange, onSuccess }: InviteModalProps)
             Invite Team Member
           </DialogTitle>
           <DialogDescription>
-            Send an invitation link via email. They'll be able to join your
-            organization once they accept.
+            Send an invitation link via email. They'll be able to join your organization once they
+            accept.
           </DialogDescription>
         </DialogHeader>
 
@@ -142,12 +142,9 @@ export function InviteModal({ open, onOpenChange, onSuccess }: InviteModalProps)
                     value={field.state.value}
                   />
                 </div>
-                {field.state.meta.isTouched &&
-                  field.state.meta.errors.length > 0 && (
-                    <p className="text-destructive text-sm">
-                      {field.state.meta.errors[0]?.message}
-                    </p>
-                  )}
+                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                  <p className="text-destructive text-sm">{field.state.meta.errors[0]?.message}</p>
+                )}
               </div>
             )}
           </form.Field>
@@ -157,9 +154,7 @@ export function InviteModal({ open, onOpenChange, onSuccess }: InviteModalProps)
               <div className="space-y-2">
                 <Label htmlFor="invite-role">Role</Label>
                 <Select
-                  onValueChange={(value: string) =>
-                    field.handleChange(value as "admin" | "member")
-                  }
+                  onValueChange={(value: string) => field.handleChange(value as "admin" | "member")}
                   value={field.state.value}
                 >
                   <SelectTrigger id="invite-role">
@@ -170,9 +165,7 @@ export function InviteModal({ open, onOpenChange, onSuccess }: InviteModalProps)
                       <SelectItem key={role.value} value={role.value}>
                         <div className="flex flex-col items-start">
                           <span className="font-medium">{role.label}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {role.description}
-                          </span>
+                          <span className="text-muted-foreground text-xs">{role.description}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -183,11 +176,7 @@ export function InviteModal({ open, onOpenChange, onSuccess }: InviteModalProps)
           </form.Field>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              onClick={() => handleClose(false)}
-              type="button"
-              variant="outline"
-            >
+            <Button onClick={() => handleClose(false)} type="button" variant="outline">
               Cancel
             </Button>
             <Button disabled={isSubmitting} type="submit">

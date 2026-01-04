@@ -22,7 +22,7 @@ type TagEditorProps = {
 export function TagEditor({ modelId, currentTags }: TagEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>(() =>
-    currentTags.map((t) => t.name.toLowerCase())
+    currentTags.map((t) => t.name.toLowerCase()),
   );
   const queryClient = useQueryClient();
 
@@ -32,8 +32,7 @@ export function TagEditor({ modelId, currentTags }: TagEditorProps) {
   });
 
   const updateTagsMutation = useMutation({
-    mutationFn: (input: { modelId: string; tags: string[] }) =>
-      updateModelTags({ data: input }),
+    mutationFn: (input: { modelId: string; tags: string[] }) => updateModelTags({ data: input }),
     onMutate: async (input) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["model", modelId] });
@@ -48,9 +47,7 @@ export function TagEditor({ modelId, currentTags }: TagEditorProps) {
       // Build optimistic tags from selected tag names
       // Use existing tag info for color, generate temp IDs (real IDs come on invalidation)
       const optimisticTags: ModelTag[] = input.tags.map((tagName) => {
-        const existing = availableTags.find(
-          (t) => t.name.toLowerCase() === tagName.toLowerCase()
-        );
+        const existing = availableTags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
         return {
           id: `temp-${tagName}`,
           name: tagName,
@@ -86,7 +83,7 @@ export function TagEditor({ modelId, currentTags }: TagEditorProps) {
           pages: infiniteData.pages.map((page) => ({
             ...page,
             models: page.models.map((model) =>
-              model.id === modelId ? { ...model, tags: tagNames } : model
+              model.id === modelId ? { ...model, tags: tagNames } : model,
             ),
           })),
         };
@@ -155,11 +152,7 @@ export function TagEditor({ modelId, currentTags }: TagEditorProps) {
           >
             Cancel
           </Button>
-          <Button
-            disabled={updateTagsMutation.isPending}
-            onClick={handleSave}
-            size="sm"
-          >
+          <Button disabled={updateTagsMutation.isPending} onClick={handleSave} size="sm">
             {updateTagsMutation.isPending ? "Saving..." : "Save"}
           </Button>
         </div>

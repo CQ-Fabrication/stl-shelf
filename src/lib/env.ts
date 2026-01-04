@@ -1,5 +1,5 @@
-import { createEnv } from '@t3-oss/env-core'
-import { z } from 'zod'
+import { createEnv } from "@t3-oss/env-core";
+import { z } from "zod";
 
 export const env = createEnv({
   server: {
@@ -10,12 +10,12 @@ export const env = createEnv({
     POSTGRES_CONNECTION_TIMEOUT: z.coerce.number().min(1).default(5),
 
     // Storage (R2/MinIO/S3-compatible)
-    STORAGE_REGION: z.string().min(1).default('auto'),
+    STORAGE_REGION: z.string().min(1).default("auto"),
     STORAGE_ENDPOINT: z.string().min(1),
     STORAGE_ACCESS_KEY: z.string().min(1),
     STORAGE_SECRET_KEY: z.string().min(1),
-    STORAGE_BUCKET_NAME: z.string().min(1).default('stl-models'),
-    STORAGE_USE_SSL: z.enum(['true', 'false']).default('true'),
+    STORAGE_BUCKET_NAME: z.string().min(1).default("stl-models"),
+    STORAGE_USE_SSL: z.enum(["true", "false"]).default("true"),
 
     // BetterAuth / Auth
     AUTH_URL: z.string().url(),
@@ -35,23 +35,20 @@ export const env = createEnv({
 
     // Resend for transactional emails
     RESEND_API_KEY: z.string(),
-    EMAIL_FROM: z
-      .string()
-      .optional()
-      .default('STL Shelf <noreply@mail.stl-shelf.com>'),
+    EMAIL_FROM: z.string().optional().default("STL Shelf <noreply@mail.stl-shelf.com>"),
     EMAIL_LOGO_URL: z.string().url().optional(),
 
     // Server Configuration
-    NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
+    NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
     PORT: z.coerce.number().min(1).default(3000),
 
     // Polar.sh Billing
-    POLAR_ACCESS_TOKEN: z.string().min(1).default('polar_placeholder'),
-    POLAR_WEBHOOK_SECRET: z.string().min(1).default('whsec_placeholder'),
-    POLAR_SERVER: z.enum(['sandbox', 'production']).default('sandbox'),
+    POLAR_ACCESS_TOKEN: z.string().min(1).default("polar_placeholder"),
+    POLAR_WEBHOOK_SECRET: z.string().min(1).default("whsec_placeholder"),
+    POLAR_SERVER: z.enum(["sandbox", "production"]).default("sandbox"),
     POLAR_PRODUCT_FREE: z.string().optional(),
     POLAR_PRODUCT_BASIC: z.string().optional(),
     POLAR_PRODUCT_PRO: z.string().optional(),
   },
   runtimeEnv: process.env,
-})
+});

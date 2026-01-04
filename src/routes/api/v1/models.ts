@@ -1,24 +1,21 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { db, models } from '@/lib/db'
-import { eq, and, isNull, desc } from 'drizzle-orm'
-import { validateApiKey } from '@/server/middleware/api-key'
+import { createFileRoute } from "@tanstack/react-router";
+import { db, models } from "@/lib/db";
+import { eq, and, isNull, desc } from "drizzle-orm";
+import { validateApiKey } from "@/server/middleware/api-key";
 
-export const Route = createFileRoute('/api/v1/models')({
+export const Route = createFileRoute("/api/v1/models")({
   server: {
     handlers: {
       GET: async ({ request }: { request: Request }) => {
-        const validation = await validateApiKey(request)
+        const validation = await validateApiKey(request);
         if (!validation.valid) {
-          return Response.json(
-            { error: validation.error },
-            { status: validation.status }
-          )
+          return Response.json({ error: validation.error }, { status: validation.status });
         }
 
         try {
-          const url = new URL(request.url)
-          const limit = Math.min(Number(url.searchParams.get('limit')) || 50, 100)
-          const offset = Number(url.searchParams.get('offset')) || 0
+          const url = new URL(request.url);
+          const limit = Math.min(Number(url.searchParams.get("limit")) || 50, 100);
+          const offset = Number(url.searchParams.get("offset")) || 0;
 
           const modelsList = await db
             .select({
@@ -33,14 +30,11 @@ export const Route = createFileRoute('/api/v1/models')({
             })
             .from(models)
             .where(
-              and(
-                eq(models.organizationId, validation.organizationId),
-                isNull(models.deletedAt)
-              )
+              and(eq(models.organizationId, validation.organizationId), isNull(models.deletedAt)),
             )
             .orderBy(desc(models.updatedAt))
             .limit(limit)
-            .offset(offset)
+            .offset(offset);
 
           return Response.json({
             models: modelsList,
@@ -49,15 +43,12 @@ export const Route = createFileRoute('/api/v1/models')({
               offset,
               hasMore: modelsList.length === limit,
             },
-          })
+          });
         } catch (error) {
-          console.error('API v1 models list error:', error)
-          return Response.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-          )
+          console.error("API v1 models list error:", error);
+          return Response.json({ error: "Internal server error" }, { status: 500 });
         }
       },
     },
   },
-})
+});

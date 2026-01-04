@@ -1,52 +1,52 @@
-import { createFileRoute, Link, useSearch } from '@tanstack/react-router'
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { z } from 'zod/v4'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Logo } from '@/components/ui/logo'
-import { authClient } from '@/lib/auth-client'
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod/v4";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Logo } from "@/components/ui/logo";
+import { authClient } from "@/lib/auth-client";
 
 const searchSchema = z.object({
   email: z.string().optional(),
-})
+});
 
-export const Route = createFileRoute('/verify-email-pending')({
+export const Route = createFileRoute("/verify-email-pending")({
   validateSearch: searchSchema,
   component: VerifyEmailPendingPage,
-})
+});
 
 function VerifyEmailPendingPage() {
-  const { email } = useSearch({ from: '/verify-email-pending' })
-  const [isResending, setIsResending] = useState(false)
-  const [resendCooldown, setResendCooldown] = useState(0)
+  const { email } = useSearch({ from: "/verify-email-pending" });
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const handleResendEmail = async () => {
-    if (!email || resendCooldown > 0) return
+    if (!email || resendCooldown > 0) return;
 
-    setIsResending(true)
+    setIsResending(true);
     try {
       await authClient.sendVerificationEmail({
         email,
         callbackURL: `${window.location.origin}/library`,
-      })
-      toast.success('Verification email sent!')
-      setResendCooldown(60)
+      });
+      toast.success("Verification email sent!");
+      setResendCooldown(60);
       const interval = setInterval(() => {
         setResendCooldown((prev) => {
           if (prev <= 1) {
-            clearInterval(interval)
-            return 0
+            clearInterval(interval);
+            return 0;
           }
-          return prev - 1
-        })
-      }, 1000)
+          return prev - 1;
+        });
+      }, 1000);
     } catch {
-      toast.error('Failed to resend email. Please try again.')
+      toast.error("Failed to resend email. Please try again.");
     } finally {
-      setIsResending(false)
+      setIsResending(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-svh items-center justify-center px-4">
@@ -81,11 +81,11 @@ function VerifyEmailPendingPage() {
             <div className="space-y-2">
               <h3 className="font-semibold text-lg">Verify your email</h3>
               <p className="text-muted-foreground text-sm">
-                We've sent a verification link to{' '}
+                We've sent a verification link to{" "}
                 {email ? (
                   <span className="font-medium text-foreground">{email}</span>
                 ) : (
-                  'your email address'
+                  "your email address"
                 )}
                 . Click the link to activate your account.
               </p>
@@ -100,15 +100,15 @@ function VerifyEmailPendingPage() {
               variant="outline"
             >
               {isResending
-                ? 'Sending...'
+                ? "Sending..."
                 : resendCooldown > 0
                   ? `Resend in ${resendCooldown}s`
-                  : 'Resend verification email'}
+                  : "Resend verification email"}
             </Button>
           )}
 
           <div className="text-center text-muted-foreground text-sm">
-            Already verified?{' '}
+            Already verified?{" "}
             <Link className="underline underline-offset-4" to="/login">
               Sign in
             </Link>
@@ -116,5 +116,5 @@ function VerifyEmailPendingPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

@@ -1,22 +1,22 @@
-import { Link } from '@tanstack/react-router'
-import { Logo } from '@/components/ui/logo'
-import { Github, Twitter } from 'lucide-react'
+import { Link } from "@tanstack/react-router";
+import { Logo } from "@/components/ui/logo";
+import { Github, Twitter } from "lucide-react";
 
 const footerLinks = {
   product: [
-    { label: 'Features', href: '/#features', isExternal: false },
-    { label: 'Pricing', href: '/pricing', isExternal: false },
+    { label: "Features", href: "/#features", isExternal: false },
+    { label: "Pricing", href: "/pricing", isExternal: false },
   ],
   resources: [
-    { label: 'Documentation', href: 'https://github.com', isExternal: true },
-    { label: 'GitHub', href: 'https://github.com', isExternal: true },
+    { label: "Documentation", href: "https://github.com", isExternal: true },
+    { label: "GitHub", href: "https://github.com", isExternal: true },
   ],
   legal: [
-    { label: 'Privacy', href: '/privacy', isExternal: false },
-    { label: 'Terms', href: '/terms', isExternal: false },
-    { label: 'About', href: '/about', isExternal: false },
+    { label: "Privacy", href: "/privacy", isExternal: false },
+    { label: "Terms", href: "/terms", isExternal: false },
+    { label: "About", href: "/about", isExternal: false },
   ],
-}
+};
 
 export function Footer() {
   return (
@@ -135,14 +135,14 @@ export function Footer() {
         <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} STL Shelf. All rights reserved.</p>
           <p>
-            Made with{' '}
+            Made with{" "}
             <span className="text-orange-500" aria-label="love">
               ♥
-            </span>{' '}
+            </span>{" "}
             for makers
           </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

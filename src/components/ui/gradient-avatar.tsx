@@ -7,14 +7,54 @@ import { cn } from "@/lib/utils";
  * Each gradient is designed to work well in both light and dark modes.
  */
 const GRADIENT_CONFIGS = [
-  { from: "from-rose-400", to: "to-orange-300", darkFrom: "dark:from-rose-500", darkTo: "dark:to-orange-400" },
-  { from: "from-violet-400", to: "to-purple-300", darkFrom: "dark:from-violet-500", darkTo: "dark:to-purple-400" },
-  { from: "from-blue-400", to: "to-cyan-300", darkFrom: "dark:from-blue-500", darkTo: "dark:to-cyan-400" },
-  { from: "from-emerald-400", to: "to-teal-300", darkFrom: "dark:from-emerald-500", darkTo: "dark:to-teal-400" },
-  { from: "from-amber-400", to: "to-yellow-300", darkFrom: "dark:from-amber-500", darkTo: "dark:to-yellow-400" },
-  { from: "from-pink-400", to: "to-rose-300", darkFrom: "dark:from-pink-500", darkTo: "dark:to-rose-400" },
-  { from: "from-indigo-400", to: "to-blue-300", darkFrom: "dark:from-indigo-500", darkTo: "dark:to-blue-400" },
-  { from: "from-teal-400", to: "to-emerald-300", darkFrom: "dark:from-teal-500", darkTo: "dark:to-emerald-400" },
+  {
+    from: "from-rose-400",
+    to: "to-orange-300",
+    darkFrom: "dark:from-rose-500",
+    darkTo: "dark:to-orange-400",
+  },
+  {
+    from: "from-violet-400",
+    to: "to-purple-300",
+    darkFrom: "dark:from-violet-500",
+    darkTo: "dark:to-purple-400",
+  },
+  {
+    from: "from-blue-400",
+    to: "to-cyan-300",
+    darkFrom: "dark:from-blue-500",
+    darkTo: "dark:to-cyan-400",
+  },
+  {
+    from: "from-emerald-400",
+    to: "to-teal-300",
+    darkFrom: "dark:from-emerald-500",
+    darkTo: "dark:to-teal-400",
+  },
+  {
+    from: "from-amber-400",
+    to: "to-yellow-300",
+    darkFrom: "dark:from-amber-500",
+    darkTo: "dark:to-yellow-400",
+  },
+  {
+    from: "from-pink-400",
+    to: "to-rose-300",
+    darkFrom: "dark:from-pink-500",
+    darkTo: "dark:to-rose-400",
+  },
+  {
+    from: "from-indigo-400",
+    to: "to-blue-300",
+    darkFrom: "dark:from-indigo-500",
+    darkTo: "dark:to-blue-400",
+  },
+  {
+    from: "from-teal-400",
+    to: "to-emerald-300",
+    darkFrom: "dark:from-teal-500",
+    darkTo: "dark:to-emerald-400",
+  },
 ] as const;
 
 /**
@@ -62,7 +102,7 @@ const avatarVariants = cva(
     defaultVariants: {
       size: "md",
     },
-  }
+  },
 );
 
 type GradientAvatarProps = {
@@ -83,14 +123,7 @@ type GradientAvatarProps = {
  * Falls back to a gradient background with initials if no image is provided or if image fails to load.
  * The gradient color is deterministic based on the id prop.
  */
-export function GradientAvatar({
-  src,
-  name,
-  id,
-  size,
-  className,
-  alt,
-}: GradientAvatarProps) {
+export function GradientAvatar({ src, name, id, size, className, alt }: GradientAvatarProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -99,11 +132,7 @@ export function GradientAvatar({
 
   return (
     <span
-      className={cn(
-        avatarVariants({ size }),
-        gradientClasses,
-        className
-      )}
+      className={cn(avatarVariants({ size }), gradientClasses, className)}
       data-slot="gradient-avatar"
     >
       {/* Gradient background with initial - always rendered for smooth fallback */}
@@ -111,7 +140,7 @@ export function GradientAvatar({
         aria-hidden={showImage && imageLoaded ? true : undefined}
         className={cn(
           "absolute inset-0 flex items-center justify-center transition-opacity duration-200",
-          showImage && imageLoaded ? "opacity-0" : "opacity-100"
+          showImage && imageLoaded ? "opacity-0" : "opacity-100",
         )}
       >
         {getInitials(name)}
@@ -123,7 +152,7 @@ export function GradientAvatar({
           alt={alt ?? name}
           className={cn(
             "absolute inset-0 h-full w-full object-cover transition-opacity duration-200",
-            imageLoaded ? "opacity-100" : "opacity-0"
+            imageLoaded ? "opacity-100" : "opacity-0",
           )}
           onError={() => setImageError(true)}
           onLoad={() => setImageLoaded(true)}

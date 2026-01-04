@@ -1,7 +1,7 @@
-import { QueryClient } from '@tanstack/react-query'
-import { createRouter } from '@tanstack/react-router'
-import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
-import { routeTree } from './routeTree.gen'
+import { QueryClient } from "@tanstack/react-query";
+import { createRouter } from "@tanstack/react-router";
+import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
+import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
   // QueryClient must be created per-request for SSR
@@ -11,28 +11,28 @@ export function getRouter() {
         staleTime: 1000 * 60 * 5, // 5 minutes
       },
     },
-  })
+  });
 
   const router = createRouter({
     routeTree,
     context: { queryClient },
-    defaultPreload: 'intent',
+    defaultPreload: "intent",
     scrollRestoration: true,
     defaultStructuralSharing: true,
     defaultPreloadStaleTime: 0,
-  })
+  });
 
   // Enable SSR data dehydration/hydration for TanStack Query
   setupRouterSsrQueryIntegration({
     router,
     queryClient,
-  })
+  });
 
-  return router
+  return router;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface Register {
-    router: ReturnType<typeof getRouter>
+    router: ReturnType<typeof getRouter>;
   }
 }

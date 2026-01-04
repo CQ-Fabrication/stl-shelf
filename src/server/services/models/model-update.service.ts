@@ -1,15 +1,15 @@
-import { and, eq, isNull } from 'drizzle-orm'
-import { db } from '@/lib/db'
-import { models } from '@/lib/db/schema/models'
+import { and, eq, isNull } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { models } from "@/lib/db/schema/models";
 
 // Characters that are dangerous for filesystems
-const INVALID_CHARS_REGEX = /[<>:"/\\|?*]/g
+const INVALID_CHARS_REGEX = /[<>:"/\\|?*]/g;
 
 type RenameModelInput = {
-  modelId: string
-  organizationId: string
-  name: string
-}
+  modelId: string;
+  organizationId: string;
+  name: string;
+};
 
 /**
  * Validates model name according to requirements:
@@ -18,21 +18,21 @@ type RenameModelInput = {
  * - No filesystem-dangerous characters
  */
 function validateName(name: string): { valid: boolean; error?: string } {
-  const trimmed = name.trim()
+  const trimmed = name.trim();
 
   if (trimmed.length === 0) {
-    return { valid: false, error: 'Name is required' }
+    return { valid: false, error: "Name is required" };
   }
 
   if (trimmed.length > 100) {
-    return { valid: false, error: 'Name must be 100 characters or less' }
+    return { valid: false, error: "Name must be 100 characters or less" };
   }
 
   if (INVALID_CHARS_REGEX.test(trimmed)) {
-    return { valid: false, error: 'Name contains invalid characters' }
+    return { valid: false, error: "Name contains invalid characters" };
   }
 
-  return { valid: true }
+  return { valid: true };
 }
 
 /**
@@ -48,12 +48,12 @@ export async function renameModel({
   name,
 }: RenameModelInput): Promise<{ success: true; name: string }> {
   // Trim the name
-  const trimmedName = name.trim()
+  const trimmedName = name.trim();
 
   // Validate name
-  const validation = validateName(trimmedName)
+  const validation = validateName(trimmedName);
   if (!validation.valid) {
-    throw new Error(validation.error)
+    throw new Error(validation.error);
   }
 
   // Verify model exists and belongs to organization
@@ -64,13 +64,13 @@ export async function renameModel({
       and(
         eq(models.id, modelId),
         eq(models.organizationId, organizationId),
-        isNull(models.deletedAt)
-      )
+        isNull(models.deletedAt),
+      ),
     )
-    .limit(1)
+    .limit(1);
 
   if (!model) {
-    throw new Error('Model not found')
+    throw new Error("Model not found");
   }
 
   // Update the model name (slug remains unchanged)
@@ -80,11 +80,11 @@ export async function renameModel({
       name: trimmedName,
       updatedAt: new Date(),
     })
-    .where(eq(models.id, modelId))
+    .where(eq(models.id, modelId));
 
-  return { success: true, name: trimmedName }
+  return { success: true, name: trimmedName };
 }
 
 export const modelUpdateService = {
   renameModel,
-}
+};

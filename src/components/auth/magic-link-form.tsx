@@ -13,11 +13,7 @@ type MagicLinkFormProps = {
   magicLinkSent: boolean;
 };
 
-export function MagicLinkForm({
-  auth,
-  onSuccess,
-  magicLinkSent,
-}: MagicLinkFormProps) {
+export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormProps) {
   const form = useForm({
     defaultValues: {
       email: "",
@@ -32,16 +28,12 @@ export function MagicLinkForm({
         toast.success("Check your email for a magic link");
       } catch (error) {
         const err = error as { error?: { message?: string } };
-        toast.error(
-          err.error?.message || "Failed to send magic link. Please try again."
-        );
+        toast.error(err.error?.message || "Failed to send magic link. Please try again.");
       }
     },
     validators: {
       onSubmit: z.object({
-        email: z
-          .email("Enter a valid email address")
-          .max(255, "Email is too long"),
+        email: z.email("Enter a valid email address").max(255, "Email is too long"),
       }),
     },
   });
@@ -67,37 +59,26 @@ export function MagicLinkForm({
             </Label>
             <Input
               autoComplete="email"
-              
               id={field.name}
               name={field.name}
               onBlur={field.handleBlur}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                field.handleChange(e.target.value)
-              }
+              onChange={(e: ChangeEvent<HTMLInputElement>) => field.handleChange(e.target.value)}
               placeholder="you@example.com"
               type="email"
               value={field.state.value}
             />
             {!field.state.meta.isValid && (
               <div className="text-red-600 text-sm">
-                {field.state.meta.errors
-                  .flatMap((error) => error?.message)
-                  .join(", ")}
+                {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
               </div>
             )}
           </div>
         )}
       </form.Field>
 
-      <form.Subscribe
-        selector={(state) => [state.canSubmit, state.isSubmitting]}
-      >
+      <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (
-          <Button
-            className="w-full"
-            disabled={!canSubmit || isSubmitting}
-            type="submit"
-          >
+          <Button className="w-full" disabled={!canSubmit || isSubmitting} type="submit">
             {isSubmitting ? "Sending..." : "Send magic link"}
           </Button>
         )}
@@ -132,8 +113,7 @@ function MagicLinkSentState() {
       <div className="space-y-2">
         <h3 className="font-semibold text-lg">Check your email</h3>
         <p className="text-muted-foreground text-sm">
-          We've sent a magic link to your email address. Click the link to sign
-          in.
+          We've sent a magic link to your email address. Click the link to sign in.
         </p>
       </div>
     </div>

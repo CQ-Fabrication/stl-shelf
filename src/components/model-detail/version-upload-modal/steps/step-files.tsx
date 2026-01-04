@@ -22,11 +22,7 @@ import ReactCrop, {
 import "react-image-crop/dist/ReactCrop.css";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  formatBytes,
-  getFileSizeLimit,
-  getFileSizeLimitLabel,
-} from "@/lib/files/limits";
+import { formatBytes, getFileSizeLimit, getFileSizeLimitLabel } from "@/lib/files/limits";
 import type { VersionUploadFormType } from "../../use-version-upload-form";
 
 type UploadFile = {
@@ -65,16 +61,7 @@ const FILE_CATEGORIES = {
 type CategoryKey = keyof typeof FILE_CATEGORIES;
 
 // Validated by extension only - browsers don't recognize 3D file MIME types
-const ALL_EXTENSIONS = [
-  ".stl",
-  ".obj",
-  ".3mf",
-  ".ply",
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".webp",
-];
+const ALL_EXTENSIONS = [".stl", ".obj", ".3mf", ".ply", ".jpg", ".jpeg", ".png", ".webp"];
 
 function getFileExtension(filename: string): string {
   return filename.split(".").pop()?.toLowerCase() ?? "";
@@ -91,12 +78,11 @@ function getFileCategory(filename: string): CategoryKey | null {
 }
 
 function getCategoryStatus(files: UploadFile[], previewImage?: File) {
-  const result: Record<CategoryKey, { hasFiles: boolean; files: UploadFile[] }> =
-    {
-      model: { hasFiles: false, files: [] },
-      slicer: { hasFiles: false, files: [] },
-      image: { hasFiles: false, files: [] },
-    };
+  const result: Record<CategoryKey, { hasFiles: boolean; files: UploadFile[] }> = {
+    model: { hasFiles: false, files: [] },
+    slicer: { hasFiles: false, files: [] },
+    image: { hasFiles: false, files: [] },
+  };
 
   for (const file of files) {
     result[file.category].hasFiles = true;
@@ -113,7 +99,6 @@ function getCategoryStatus(files: UploadFile[], previewImage?: File) {
     hasModelFile: result.model.hasFiles,
   };
 }
-
 
 export function StepFiles({ form, onNext }: StepFilesProps) {
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>(() => {
@@ -139,7 +124,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
 
   const categoryStatus = useMemo(
     () => getCategoryStatus(uploadFiles, form.state.values.previewImage),
-    [uploadFiles, form.state.values.previewImage]
+    [uploadFiles, form.state.values.previewImage],
   );
 
   const onDrop = useCallback(
@@ -179,10 +164,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
         setUploadFiles((prev) => [...prev, ...new3DFiles]);
 
         const currentFiles = form.state.values.files || [];
-        const updatedFiles = [
-          ...currentFiles,
-          ...new3DFiles.map((f) => f.file),
-        ];
+        const updatedFiles = [...currentFiles, ...new3DFiles.map((f) => f.file)];
         form.setFieldValue("files", updatedFiles);
       }
 
@@ -196,7 +178,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
         setCompletedCrop(null);
       }
     },
-    [form]
+    [form],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -231,9 +213,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
     setUploadFiles((prev) => prev.filter((f) => f.id !== fileId));
 
     const currentFiles = form.state.values.files || [];
-    const updatedFiles = currentFiles.filter(
-      (f: File) => f !== fileToRemove.file
-    );
+    const updatedFiles = currentFiles.filter((f: File) => f !== fileToRemove.file);
     form.setFieldValue("files", updatedFiles);
   };
 
@@ -254,7 +234,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
     const newCrop = centerCrop(
       makeAspectCrop({ unit: "%", width: 90 }, 16 / 9, width, height),
       width,
-      height
+      height,
     );
     setCrop(newCrop);
   };
@@ -294,7 +274,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
         0,
         0,
         completedCrop.width * scaleX,
-        completedCrop.height * scaleY
+        completedCrop.height * scaleY,
       );
 
       canvas.toBlob((blob) => {
@@ -403,12 +383,8 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
           <p className="text-blue-600 text-sm">Drop files here...</p>
         ) : (
           <div className="space-y-1">
-            <p className="font-medium text-sm">
-              Drag & drop files here, or click to browse
-            </p>
-            <p className="text-muted-foreground text-xs">
-              {ALL_EXTENSIONS.join(", ")}
-            </p>
+            <p className="font-medium text-sm">Drag & drop files here, or click to browse</p>
+            <p className="text-muted-foreground text-xs">{ALL_EXTENSIONS.join(", ")}</p>
             <p className="text-muted-foreground text-xs">
               STL/OBJ/PLY: 100-150MB • 3MF: 250MB • Images: 10MB
             </p>
@@ -421,20 +397,12 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
         <div className="space-y-4">
           {/* Model Files */}
           {categoryStatus.model.files.length > 0 && (
-            <FileGroup
-              files={categoryStatus.model.files}
-              label="Model"
-              onRemove={removeFile}
-            />
+            <FileGroup files={categoryStatus.model.files} label="Model" onRemove={removeFile} />
           )}
 
           {/* Slicer Files */}
           {categoryStatus.slicer.files.length > 0 && (
-            <FileGroup
-              files={categoryStatus.slicer.files}
-              label="Slicer"
-              onRemove={removeFile}
-            />
+            <FileGroup files={categoryStatus.slicer.files} label="Slicer" onRemove={removeFile} />
           )}
 
           {/* Image Section with Inline Cropping */}
@@ -475,12 +443,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
                         <ChevronDown className="ml-1 h-3.5 w-3.5" />
                       )}
                     </Button>
-                    <Button
-                      onClick={removePreviewImage}
-                      size="sm"
-                      type="button"
-                      variant="ghost"
-                    >
+                    <Button onClick={removePreviewImage} size="sm" type="button" variant="ghost">
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
@@ -510,9 +473,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
                     <div className="flex items-center justify-center gap-4">
                       <Button
                         disabled={scale <= 0.5}
-                        onClick={() =>
-                          setScale((prev) => Math.max(prev - 0.1, 0.5))
-                        }
+                        onClick={() => setScale((prev) => Math.max(prev - 0.1, 0.5))}
                         size="sm"
                         type="button"
                         variant="outline"
@@ -524,9 +485,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
                           className="w-24"
                           max="3"
                           min="0.5"
-                          onChange={(e) =>
-                            setScale(Number.parseFloat(e.target.value))
-                          }
+                          onChange={(e) => setScale(Number.parseFloat(e.target.value))}
                           step="0.1"
                           type="range"
                           value={scale}
@@ -537,9 +496,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
                       </div>
                       <Button
                         disabled={scale >= 3}
-                        onClick={() =>
-                          setScale((prev) => Math.min(prev + 0.1, 3))
-                        }
+                        onClick={() => setScale((prev) => Math.min(prev + 0.1, 3))}
                         size="sm"
                         type="button"
                         variant="outline"
@@ -552,12 +509,7 @@ export function StepFiles({ form, onNext }: StepFilesProps) {
                       Adjust the crop area (16:9 ratio)
                     </p>
 
-                    <canvas
-                      className="hidden"
-                      height={225}
-                      ref={previewCanvasRef}
-                      width={400}
-                    />
+                    <canvas className="hidden" height={225} ref={previewCanvasRef} width={400} />
                   </div>
                 )}
               </div>
@@ -587,9 +539,7 @@ function FileGroup({
 }) {
   return (
     <div className="space-y-2">
-      <h4 className="font-medium text-xs text-muted-foreground uppercase tracking-wide">
-        {label}
-      </h4>
+      <h4 className="font-medium text-xs text-muted-foreground uppercase tracking-wide">{label}</h4>
       {files.map((uploadFile) => (
         <div
           className="flex items-center justify-between rounded-lg border p-3"
@@ -604,12 +554,7 @@ function FileGroup({
               </div>
             </div>
           </div>
-          <Button
-            onClick={() => onRemove(uploadFile.id)}
-            size="sm"
-            type="button"
-            variant="ghost"
-          >
+          <Button onClick={() => onRemove(uploadFile.id)} size="sm" type="button" variant="ghost">
             <X className="h-4 w-4" />
           </Button>
         </div>

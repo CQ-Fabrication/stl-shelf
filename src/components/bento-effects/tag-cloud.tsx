@@ -1,79 +1,79 @@
-'use client'
+"use client";
 
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
 
 type TagCloudProps = {
-  className?: string
-}
+  className?: string;
+};
 
 const TAGS = [
-  { label: 'mechanical', color: 'orange', size: 'lg' },
-  { label: 'miniature', color: 'purple', size: 'md' },
-  { label: 'functional', color: 'emerald', size: 'sm' },
-  { label: 'decorative', color: 'amber', size: 'md' },
-  { label: 'prototype', color: 'orange', size: 'sm' },
-  { label: 'tested', color: 'emerald', size: 'lg' },
-  { label: 'v2.1', color: 'purple', size: 'sm' },
-  { label: 'PLA', color: 'amber', size: 'md' },
-]
+  { label: "mechanical", color: "orange", size: "lg" },
+  { label: "miniature", color: "purple", size: "md" },
+  { label: "functional", color: "emerald", size: "sm" },
+  { label: "decorative", color: "amber", size: "md" },
+  { label: "prototype", color: "orange", size: "sm" },
+  { label: "tested", color: "emerald", size: "lg" },
+  { label: "v2.1", color: "purple", size: "sm" },
+  { label: "PLA", color: "amber", size: "md" },
+];
 
 const colorMap = {
   orange: {
-    bg: 'bg-orange-500/15',
-    border: 'border-orange-500/40',
-    text: 'text-orange-400',
-    glow: 'shadow-[0_0_8px_rgba(249,115,22,0.3)]',
+    bg: "bg-orange-500/15",
+    border: "border-orange-500/40",
+    text: "text-orange-400",
+    glow: "shadow-[0_0_8px_rgba(249,115,22,0.3)]",
   },
   purple: {
-    bg: 'bg-purple-500/15',
-    border: 'border-purple-500/40',
-    text: 'text-purple-400',
-    glow: 'shadow-[0_0_8px_rgba(168,85,247,0.3)]',
+    bg: "bg-purple-500/15",
+    border: "border-purple-500/40",
+    text: "text-purple-400",
+    glow: "shadow-[0_0_8px_rgba(168,85,247,0.3)]",
   },
   emerald: {
-    bg: 'bg-emerald-500/15',
-    border: 'border-emerald-500/40',
-    text: 'text-emerald-400',
-    glow: 'shadow-[0_0_8px_rgba(34,197,94,0.3)]',
+    bg: "bg-emerald-500/15",
+    border: "border-emerald-500/40",
+    text: "text-emerald-400",
+    glow: "shadow-[0_0_8px_rgba(34,197,94,0.3)]",
   },
   amber: {
-    bg: 'bg-amber-500/15',
-    border: 'border-amber-500/40',
-    text: 'text-amber-400',
-    glow: 'shadow-[0_0_8px_rgba(245,158,11,0.3)]',
+    bg: "bg-amber-500/15",
+    border: "border-amber-500/40",
+    text: "text-amber-400",
+    glow: "shadow-[0_0_8px_rgba(245,158,11,0.3)]",
   },
-}
+};
 
 const sizeMap = {
-  sm: 'text-[9px] px-1.5 py-0.5',
-  md: 'text-[10px] px-2 py-1',
-  lg: 'text-xs px-2.5 py-1',
-}
+  sm: "text-[9px] px-1.5 py-0.5",
+  md: "text-[10px] px-2 py-1",
+  lg: "text-xs px-2.5 py-1",
+};
 
 export const TagCloud = ({ className }: TagCloudProps) => {
   return (
-    <div className={cn('absolute inset-0 overflow-hidden', className)}>
+    <div className={cn("absolute inset-0 overflow-hidden", className)}>
       {/* Floating tags */}
       <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-2 p-6">
         {TAGS.map((tag, index) => {
-          const colors = colorMap[tag.color as keyof typeof colorMap]
-          const size = sizeMap[tag.size as keyof typeof sizeMap]
+          const colors = colorMap[tag.color as keyof typeof colorMap];
+          const size = sizeMap[tag.size as keyof typeof sizeMap];
           return (
             <div
               key={tag.label}
               className={cn(
-                'rounded-full border font-mono backdrop-blur-sm transition-all duration-500',
-                'hover:scale-110 group-hover:animate-float-tag',
+                "rounded-full border font-mono backdrop-blur-sm transition-all duration-500",
+                "hover:scale-110 group-hover:animate-float-tag",
                 colors.bg,
                 colors.border,
                 colors.text,
-                size
+                size,
               )}
               style={{ animationDelay: `${index * 0.15}s` }}
             >
               {tag.label}
             </div>
-          )
+          );
         })}
       </div>
 
@@ -145,7 +145,7 @@ export const TagCloud = ({ className }: TagCloudProps) => {
             linear-gradient(rgba(249, 115, 22, 1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(249, 115, 22, 1) 1px, transparent 1px)
           `,
-          backgroundSize: '32px 32px',
+          backgroundSize: "32px 32px",
         }}
       />
 
@@ -161,5 +161,5 @@ export const TagCloud = ({ className }: TagCloudProps) => {
         .animate-float-tag { animation: float-tag 4s ease-in-out infinite; }
       `}</style>
     </div>
-  )
-}
+  );
+};

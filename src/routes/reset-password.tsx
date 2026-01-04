@@ -1,61 +1,61 @@
-import { useForm } from '@tanstack/react-form'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { z } from 'zod/v4'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Logo } from '@/components/ui/logo'
-import { authClient } from '@/lib/auth-client'
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { z } from "zod/v4";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Logo } from "@/components/ui/logo";
+import { authClient } from "@/lib/auth-client";
 
-export const Route = createFileRoute('/reset-password')({
+export const Route = createFileRoute("/reset-password")({
   component: ResetPasswordPage,
-})
+});
 
 const resetPasswordSchema = z
   .object({
     newPassword: z
       .string()
-      .min(8, 'Password must be at least 8 characters')
-      .max(128, 'Password is too long')
+      .min(8, "Password must be at least 8 characters")
+      .max(128, "Password is too long")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
-        'Password must contain uppercase, lowercase, and number'
+        "Password must contain uppercase, lowercase, and number",
       ),
     confirmPassword: z.string(),
-    token: z.string().min(1, 'Reset token is required'),
+    token: z.string().min(1, "Reset token is required"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  })
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
-type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
 const defaultValues: ResetPasswordForm = {
-  newPassword: '',
-  confirmPassword: '',
-  token: '',
-}
+  newPassword: "",
+  confirmPassword: "",
+  token: "",
+};
 
 function ResetPasswordPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const urlParams = new URLSearchParams(window.location.search)
-  const tokenParam = urlParams.get('token')
-  const errorParam = urlParams.get('error')
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenParam = urlParams.get("token");
+  const errorParam = urlParams.get("error");
 
-  const hasInvalidToken = errorParam === 'INVALID_TOKEN' || !tokenParam
-  const token = tokenParam || ''
+  const hasInvalidToken = errorParam === "INVALID_TOKEN" || !tokenParam;
+  const token = tokenParam || "";
 
   const handleResetPassword = async (value: ResetPasswordForm) => {
     await authClient.resetPassword({
       newPassword: value.newPassword,
       token: value.token,
-    })
+    });
 
-    navigate({ to: '/login' })
-  }
+    navigate({ to: "/login" });
+  };
 
   const form = useForm({
     defaultValues: {
@@ -66,11 +66,11 @@ function ResetPasswordPage() {
       onSubmit: resetPasswordSchema,
     },
     onSubmit: async ({ value }) => {
-      await handleResetPassword(value)
+      await handleResetPassword(value);
     },
-  })
+  });
 
-  const submissionError = form.state.errorMap.onSubmit
+  const submissionError = form.state.errorMap.onSubmit;
 
   if (form.state.isSubmitSuccessful) {
     return (
@@ -83,12 +83,10 @@ function ResetPasswordPage() {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="text-center">
-              <h2 className="font-semibold text-lg">
-                Password reset successful
-              </h2>
+              <h2 className="font-semibold text-lg">Password reset successful</h2>
               <p className="mt-2 text-muted-foreground text-sm">
-                Your password has been reset successfully. You'll be redirected
-                to the login page shortly.
+                Your password has been reset successfully. You'll be redirected to the login page
+                shortly.
               </p>
               <div className="mt-6">
                 <Link to="/login">
@@ -99,7 +97,7 @@ function ResetPasswordPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -113,23 +111,20 @@ function ResetPasswordPage() {
         <CardContent className="pt-6">
           <div className="mb-6">
             <h2 className="font-semibold text-lg">Reset your password</h2>
-            <p className="mt-1 text-muted-foreground text-sm">
-              Enter your new password below.
-            </p>
+            <p className="mt-1 text-muted-foreground text-sm">Enter your new password below.</p>
           </div>
 
           {hasInvalidToken && (
             <div className="mb-4 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
-              This password reset link is invalid or has expired. Please request
-              a new one.
+              This password reset link is invalid or has expired. Please request a new one.
             </div>
           )}
 
           {submissionError && (
             <div className="mb-4 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
-              {typeof submissionError === 'string'
+              {typeof submissionError === "string"
                 ? submissionError
-                : 'Failed to reset password. Please try again or request a new reset link.'}
+                : "Failed to reset password. Please try again or request a new reset link."}
             </div>
           )}
 
@@ -148,9 +143,9 @@ function ResetPasswordPage() {
             <form
               className="flex flex-col gap-3"
               onSubmit={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                form.handleSubmit()
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
               }}
             >
               <form.Field
@@ -171,9 +166,7 @@ function ResetPasswordPage() {
                     />
                     {!field.state.meta.isValid && (
                       <div className="text-red-600 text-sm">
-                        {field.state.meta.errors
-                          .flatMap((error) => error?.message)
-                          .join(', ')}
+                        {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
                       </div>
                     )}
                   </div>
@@ -185,8 +178,7 @@ function ResetPasswordPage() {
                 children={(field) => (
                   <div className="flex flex-col gap-2">
                     <Label htmlFor={field.name}>
-                      Confirm Password{' '}
-                      <sup className="-ml-1 text-red-600">*</sup>
+                      Confirm Password <sup className="-ml-1 text-red-600">*</sup>
                     </Label>
                     <Input
                       autoComplete="new-password"
@@ -200,9 +192,7 @@ function ResetPasswordPage() {
                     />
                     {!field.state.meta.isValid && (
                       <div className="text-red-600 text-sm">
-                        {field.state.meta.errors
-                          .flatMap((error) => error?.message)
-                          .join(', ')}
+                        {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
                       </div>
                     )}
                   </div>
@@ -210,16 +200,10 @@ function ResetPasswordPage() {
                 name="confirmPassword"
               />
 
-              <form.Subscribe
-                selector={(state) => [state.canSubmit, state.isSubmitting]}
-              >
+              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
                 {([canSubmit, isSubmitting]) => (
-                  <Button
-                    className="w-full"
-                    disabled={!canSubmit || isSubmitting}
-                    type="submit"
-                  >
-                    {isSubmitting ? 'Resetting...' : 'Reset password'}
+                  <Button className="w-full" disabled={!canSubmit || isSubmitting} type="submit">
+                    {isSubmitting ? "Resetting..." : "Reset password"}
                   </Button>
                 )}
               </form.Subscribe>
@@ -236,5 +220,5 @@ function ResetPasswordPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

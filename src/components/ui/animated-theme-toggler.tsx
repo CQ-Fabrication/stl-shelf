@@ -37,30 +37,26 @@ export function AnimatedThemeToggler({ className, showLabel = false }: Props) {
         });
       }).ready;
 
-      const { top, left, width, height } =
-        buttonRef.current.getBoundingClientRect();
+      const { top, left, width, height } = buttonRef.current.getBoundingClientRect();
       const x = left + width / 2;
       const y = top + height / 2;
       const maxRadius = Math.hypot(
         Math.max(left, window.innerWidth - left),
-        Math.max(top, window.innerHeight - top)
+        Math.max(top, window.innerHeight - top),
       );
 
       document.documentElement.animate(
         {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${maxRadius}px at ${x}px ${y}px)`,
-          ],
+          clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxRadius}px at ${x}px ${y}px)`],
         },
         {
           duration: 700,
           easing: "ease-in-out",
           pseudoElement: "::view-transition-new(root)",
-        }
+        },
       );
     },
-    [resolvedTheme, setTheme]
+    [resolvedTheme, setTheme],
   );
 
   const isLight = resolvedTheme === "light";
@@ -69,7 +65,7 @@ export function AnimatedThemeToggler({ className, showLabel = false }: Props) {
     <button
       className={cn(
         "flex w-full items-center justify-start rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
-        className
+        className,
       )}
       onClick={toggleTheme}
       ref={buttonRef}

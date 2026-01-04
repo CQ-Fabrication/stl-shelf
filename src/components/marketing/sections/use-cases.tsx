@@ -1,100 +1,100 @@
-'use client'
+"use client";
 
-import { Factory, Lightbulb, Palette, Users } from 'lucide-react'
+import { Factory, Lightbulb, Palette, Users } from "lucide-react";
 
 const useCases = [
   {
-    number: '01',
+    number: "01",
     icon: Lightbulb,
-    title: 'Hobbyist Makers',
+    title: "Hobbyist Makers",
     description:
-      'Personal library for your growing collection of STL files from Printables, Thingiverse, and your own designs.',
+      "Personal library for your growing collection of STL files from Printables, Thingiverse, and your own designs.",
     visual: HobbyistVisual,
-    accentColor: 'yellow',
-    stat: '100+ models',
+    accentColor: "yellow",
+    stat: "100+ models",
   },
   {
-    number: '02',
+    number: "02",
     icon: Palette,
-    title: 'Design Iterators',
+    title: "Design Iterators",
     description:
-      'Track every version of your designs. Compare iterations and never lose your progress.',
+      "Track every version of your designs. Compare iterations and never lose your progress.",
     visual: IteratorVisual,
-    accentColor: 'purple',
-    stat: 'v2.1 → v2.2',
+    accentColor: "purple",
+    stat: "v2.1 → v2.2",
   },
   {
-    number: '03',
+    number: "03",
     icon: Factory,
-    title: 'Small Print Farms',
+    title: "Small Print Farms",
     description:
-      'Catalog your production models. Quick access to files when customers need reprints.',
+      "Catalog your production models. Quick access to files when customers need reprints.",
     visual: PrintFarmVisual,
-    accentColor: 'orange',
-    stat: '24/7 access',
+    accentColor: "orange",
+    stat: "24/7 access",
   },
   {
-    number: '04',
+    number: "04",
     icon: Users,
-    title: 'Digital Hoarders',
+    title: "Digital Hoarders",
     description:
-      'Finally tame your 10,000+ model collection. Search, tag, and organize like a pro.',
+      "Finally tame your 10,000+ model collection. Search, tag, and organize like a pro.",
     visual: HoarderVisual,
-    accentColor: 'emerald',
-    stat: '10,000+',
+    accentColor: "emerald",
+    stat: "10,000+",
   },
-]
+];
 
 const accentColors = {
   yellow: {
-    border: 'border-yellow-500/40',
-    borderHover: 'hover:border-yellow-500/60',
-    bg: 'bg-yellow-500/10',
-    bgHover: 'group-hover:bg-yellow-500/20',
-    text: 'text-yellow-500',
-    textMuted: 'text-yellow-400/70',
-    glow: 'group-hover:shadow-[0_0_30px_rgba(234,179,8,0.15)]',
-    numberBg: 'text-yellow-500/[0.07] group-hover:text-yellow-500/[0.12]',
-    badgeBg: 'bg-yellow-500/20',
-    badgeBorder: 'border-yellow-500/30',
+    border: "border-yellow-500/40",
+    borderHover: "hover:border-yellow-500/60",
+    bg: "bg-yellow-500/10",
+    bgHover: "group-hover:bg-yellow-500/20",
+    text: "text-yellow-500",
+    textMuted: "text-yellow-400/70",
+    glow: "group-hover:shadow-[0_0_30px_rgba(234,179,8,0.15)]",
+    numberBg: "text-yellow-500/[0.07] group-hover:text-yellow-500/[0.12]",
+    badgeBg: "bg-yellow-500/20",
+    badgeBorder: "border-yellow-500/30",
   },
   purple: {
-    border: 'border-purple-500/40',
-    borderHover: 'hover:border-purple-500/60',
-    bg: 'bg-purple-500/10',
-    bgHover: 'group-hover:bg-purple-500/20',
-    text: 'text-purple-500',
-    textMuted: 'text-purple-400/70',
-    glow: 'group-hover:shadow-[0_0_30px_rgba(168,85,247,0.15)]',
-    numberBg: 'text-purple-500/[0.07] group-hover:text-purple-500/[0.12]',
-    badgeBg: 'bg-purple-500/20',
-    badgeBorder: 'border-purple-500/30',
+    border: "border-purple-500/40",
+    borderHover: "hover:border-purple-500/60",
+    bg: "bg-purple-500/10",
+    bgHover: "group-hover:bg-purple-500/20",
+    text: "text-purple-500",
+    textMuted: "text-purple-400/70",
+    glow: "group-hover:shadow-[0_0_30px_rgba(168,85,247,0.15)]",
+    numberBg: "text-purple-500/[0.07] group-hover:text-purple-500/[0.12]",
+    badgeBg: "bg-purple-500/20",
+    badgeBorder: "border-purple-500/30",
   },
   orange: {
-    border: 'border-orange-500/40',
-    borderHover: 'hover:border-orange-500/60',
-    bg: 'bg-orange-500/10',
-    bgHover: 'group-hover:bg-orange-500/20',
-    text: 'text-orange-500',
-    textMuted: 'text-orange-400/70',
-    glow: 'group-hover:shadow-[0_0_30px_rgba(249,115,22,0.15)]',
-    numberBg: 'text-orange-500/[0.07] group-hover:text-orange-500/[0.12]',
-    badgeBg: 'bg-orange-500/20',
-    badgeBorder: 'border-orange-500/30',
+    border: "border-orange-500/40",
+    borderHover: "hover:border-orange-500/60",
+    bg: "bg-orange-500/10",
+    bgHover: "group-hover:bg-orange-500/20",
+    text: "text-orange-500",
+    textMuted: "text-orange-400/70",
+    glow: "group-hover:shadow-[0_0_30px_rgba(249,115,22,0.15)]",
+    numberBg: "text-orange-500/[0.07] group-hover:text-orange-500/[0.12]",
+    badgeBg: "bg-orange-500/20",
+    badgeBorder: "border-orange-500/30",
   },
   emerald: {
-    border: 'border-emerald-500/40',
-    borderHover: 'hover:border-emerald-500/60',
-    bg: 'bg-emerald-500/10',
-    bgHover: 'group-hover:bg-emerald-500/20',
-    text: 'text-emerald-500',
-    textMuted: 'text-emerald-400/70',
-    glow: 'group-hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]',
-    numberBg: 'text-emerald-500/[0.07] group-hover:text-emerald-500/[0.12]',
-    badgeBg: 'bg-emerald-500/20',
-    badgeBorder: 'border-emerald-500/30',
+    border: "border-emerald-500/40",
+    borderHover: "hover:border-emerald-500/60",
+    bg: "bg-emerald-500/10",
+    bgHover: "group-hover:bg-emerald-500/20",
+    text: "text-emerald-500",
+    textMuted: "text-emerald-400/70",
+    glow: "group-hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]",
+    numberBg: "text-emerald-500/[0.07] group-hover:text-emerald-500/[0.12]",
+    badgeBg: "bg-emerald-500/20",
+    badgeBorder: "border-emerald-500/30",
   },
-}
+};
 
 function HobbyistVisual() {
   return (
@@ -105,17 +105,11 @@ function HobbyistVisual() {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-float-slow">
           <div className="relative">
             <div className="h-10 w-8 rounded border border-yellow-500/40 bg-gradient-to-b from-slate-700/60 to-slate-800/60 flex items-center justify-center">
-              <span className="font-mono text-[7px] text-yellow-400/80">
-                .stl
-              </span>
+              <span className="font-mono text-[7px] text-yellow-400/80">.stl</span>
             </div>
             {/* Heart favorite */}
             <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500/80 flex items-center justify-center animate-pulse-heart">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-2 w-2 text-white"
-                fill="currentColor"
-              >
+              <svg viewBox="0 0 24 24" className="h-2 w-2 text-white" fill="currentColor">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
             </div>
@@ -123,18 +117,12 @@ function HobbyistVisual() {
         </div>
 
         {/* Secondary files */}
-        <div
-          className="absolute left-0 top-2 animate-float"
-          style={{ animationDelay: '0.3s' }}
-        >
+        <div className="absolute left-0 top-2 animate-float" style={{ animationDelay: "0.3s" }}>
           <div className="h-7 w-6 rounded border border-orange-500/30 bg-slate-800/50 flex items-center justify-center opacity-70">
             <span className="font-mono text-[6px] text-orange-400/60">.3mf</span>
           </div>
         </div>
-        <div
-          className="absolute right-0 bottom-0 animate-float"
-          style={{ animationDelay: '0.6s' }}
-        >
+        <div className="absolute right-0 bottom-0 animate-float" style={{ animationDelay: "0.6s" }}>
           <div className="h-7 w-6 rounded border border-amber-500/30 bg-slate-800/50 flex items-center justify-center opacity-70">
             <span className="font-mono text-[6px] text-amber-400/60">.obj</span>
           </div>
@@ -150,7 +138,7 @@ function HobbyistVisual() {
         </svg>
       </div>
     </div>
-  )
+  );
 }
 
 function IteratorVisual() {
@@ -203,10 +191,10 @@ function IteratorVisual() {
             v1.0
           </text>
         </g>
-        <g className="animate-pulse-commit" style={{ animationDelay: '0.2s' }}>
+        <g className="animate-pulse-commit" style={{ animationDelay: "0.2s" }}>
           <circle cx="30" cy="25" r="4" fill="rgb(168, 85, 247)" fillOpacity="0.6" />
         </g>
-        <g className="animate-pulse-commit" style={{ animationDelay: '0.4s' }}>
+        <g className="animate-pulse-commit" style={{ animationDelay: "0.4s" }}>
           <circle cx="45" cy="15" r="3" fill="rgb(236, 72, 153)" fillOpacity="0.6" />
           <text
             x="45"
@@ -219,10 +207,10 @@ function IteratorVisual() {
             fix
           </text>
         </g>
-        <g className="animate-pulse-commit" style={{ animationDelay: '0.6s' }}>
+        <g className="animate-pulse-commit" style={{ animationDelay: "0.6s" }}>
           <circle cx="55" cy="25" r="4" fill="rgb(168, 85, 247)" fillOpacity="0.7" />
         </g>
-        <g className="animate-pulse-commit" style={{ animationDelay: '0.8s' }}>
+        <g className="animate-pulse-commit" style={{ animationDelay: "0.8s" }}>
           <circle
             cx="70"
             cy="25"
@@ -244,7 +232,7 @@ function IteratorVisual() {
         </g>
       </svg>
     </div>
-  )
+  );
 }
 
 function PrintFarmVisual() {
@@ -253,15 +241,11 @@ function PrintFarmVisual() {
       {/* Mini printer farm */}
       <div className="flex items-end gap-2">
         {[
-          { status: 'printing', progress: 75 },
-          { status: 'printing', progress: 30 },
-          { status: 'idle', progress: 0 },
+          { status: "printing", progress: 75 },
+          { status: "printing", progress: 30 },
+          { status: "idle", progress: 0 },
         ].map((printer, i) => (
-          <div
-            key={i}
-            className="relative"
-            style={{ animationDelay: `${i * 0.2}s` }}
-          >
+          <div key={i} className="relative" style={{ animationDelay: `${i * 0.2}s` }}>
             {/* Printer body */}
             <div className="h-10 w-8 rounded border border-slate-600/50 bg-gradient-to-b from-slate-700/60 to-slate-800/80">
               {/* Build plate */}
@@ -271,25 +255,22 @@ function PrintFarmVisual() {
               <div
                 className="absolute left-1/2 -translate-x-1/2 w-3 h-1 bg-slate-500/60 rounded-sm transition-all"
                 style={{
-                  top:
-                    printer.status === 'printing'
-                      ? `${100 - printer.progress}%`
-                      : '20%',
+                  top: printer.status === "printing" ? `${100 - printer.progress}%` : "20%",
                 }}
               />
 
               {/* Status LED */}
               <div
                 className={`absolute top-1 right-1 h-1.5 w-1.5 rounded-full ${
-                  printer.status === 'printing'
-                    ? 'bg-emerald-500 shadow-[0_0_4px_rgba(34,197,94,0.8)] animate-blink'
-                    : 'bg-orange-500/60'
+                  printer.status === "printing"
+                    ? "bg-emerald-500 shadow-[0_0_4px_rgba(34,197,94,0.8)] animate-blink"
+                    : "bg-orange-500/60"
                 }`}
               />
             </div>
 
             {/* Progress indicator */}
-            {printer.status === 'printing' && (
+            {printer.status === "printing" && (
               <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-slate-700/50 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-500/80 rounded-full animate-progress"
@@ -306,7 +287,7 @@ function PrintFarmVisual() {
         3 units
       </div>
     </div>
-  )
+  );
 }
 
 function HoarderVisual() {
@@ -330,8 +311,8 @@ function HoarderVisual() {
               <div
                 className={`h-5 w-10 rounded-t-sm rounded-b border ${
                   i === 4
-                    ? 'border-emerald-500/50 bg-gradient-to-b from-emerald-500/30 to-emerald-500/20'
-                    : 'border-slate-600/40 bg-gradient-to-b from-slate-700/40 to-slate-800/40'
+                    ? "border-emerald-500/50 bg-gradient-to-b from-emerald-500/30 to-emerald-500/20"
+                    : "border-slate-600/40 bg-gradient-to-b from-slate-700/40 to-slate-800/40"
                 }`}
               />
             </div>
@@ -341,14 +322,7 @@ function HoarderVisual() {
         {/* Search magnifier */}
         <div className="absolute -right-6 top-0 animate-search-bounce">
           <svg viewBox="0 0 24 24" className="h-6 w-6 text-emerald-400/80">
-            <circle
-              cx="10"
-              cy="10"
-              r="6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            />
+            <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
             <line
               x1="14"
               y1="14"
@@ -373,7 +347,7 @@ function HoarderVisual() {
         <div className="absolute -left-2 -bottom-1 h-2 w-3 rounded-sm border border-slate-600/30 bg-slate-700/30 -rotate-6 opacity-40" />
       </div>
     </div>
-  )
+  );
 }
 
 export function UseCases() {
@@ -387,7 +361,7 @@ export function UseCases() {
             linear-gradient(rgba(249, 115, 22, 1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(249, 115, 22, 1) 1px, transparent 1px)
           `,
-          backgroundSize: '48px 48px',
+          backgroundSize: "48px 48px",
         }}
       />
 
@@ -408,15 +382,14 @@ export function UseCases() {
             Built for <span className="text-orange-500">Makers</span> Like You
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Whether you're organizing your first 100 models or your 10,000th,
-            STL Shelf grows with you.
+            Whether you're organizing your first 100 models or your 10,000th, STL Shelf grows with
+            you.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {useCases.map((useCase, index) => {
-            const colors =
-              accentColors[useCase.accentColor as keyof typeof accentColors]
+            const colors = accentColors[useCase.accentColor as keyof typeof accentColors];
             return (
               <div
                 key={useCase.title}
@@ -448,9 +421,7 @@ export function UseCases() {
                     <useCase.visual />
 
                     {/* Content */}
-                    <h3 className="text-lg font-semibold mb-1.5 mt-3">
-                      {useCase.title}
-                    </h3>
+                    <h3 className="text-lg font-semibold mb-1.5 mt-3">{useCase.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                       {useCase.description}
                     </p>
@@ -460,7 +431,7 @@ export function UseCases() {
                       className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-mono ${colors.badgeBg} ${colors.textMuted} border ${colors.badgeBorder}`}
                     >
                       <span
-                        className={`h-1 w-1 rounded-full ${colors.bg.replace('/10', '')} animate-pulse`}
+                        className={`h-1 w-1 rounded-full ${colors.bg.replace("/10", "")} animate-pulse`}
                       />
                       {useCase.stat}
                     </div>
@@ -472,7 +443,7 @@ export function UseCases() {
                   />
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </div>
@@ -525,5 +496,5 @@ export function UseCases() {
         .animate-search-bounce { animation: search-bounce 2s ease-in-out infinite; }
       `}</style>
     </section>
-  )
+  );
 }

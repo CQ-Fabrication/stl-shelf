@@ -165,11 +165,7 @@ function ErrorFallback({ error }: { error: Error }) {
   );
 }
 
-export function STLViewer({
-  filename,
-  className = "",
-  url,
-}: STLViewerProps) {
+export function STLViewer({ filename, className = "", url }: STLViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { theme } = useTheme();
 
@@ -223,12 +219,7 @@ export function STLViewer({
 
         {/* Model */}
         <Suspense fallback={null}>
-          <ModelMesh
-            autoRotate={false}
-            color={modelColor}
-            filename={filename}
-            url={modelUrl}
-          />
+          <ModelMesh autoRotate={false} color={modelColor} filename={filename} url={modelUrl} />
         </Suspense>
       </Canvas>
 
@@ -242,11 +233,7 @@ export function STLViewer({
 export function STLViewerWithSuspense(props: STLViewerProps) {
   return (
     <ViewerErrorBoundary
-      fallback={
-        <ErrorFallback
-          error={new Error("The 3D viewer encountered an error")}
-        />
-      }
+      fallback={<ErrorFallback error={new Error("The 3D viewer encountered an error")} />}
     >
       <Suspense fallback={<LoadingFallback />}>
         <STLViewer {...props} />

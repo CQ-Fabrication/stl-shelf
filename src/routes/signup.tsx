@@ -1,47 +1,43 @@
-import { useForm } from '@tanstack/react-form'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { z } from 'zod/v4'
-import { Turnstile } from '@/components/turnstile'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Logo } from '@/components/ui/logo'
-import { authClient } from '@/lib/auth-client'
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { z } from "zod/v4";
+import { Turnstile } from "@/components/turnstile";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Logo } from "@/components/ui/logo";
+import { authClient } from "@/lib/auth-client";
 
-export const Route = createFileRoute('/signup')({
+export const Route = createFileRoute("/signup")({
   component: SignUpPage,
-})
+});
 
 const signUpSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, 'Name is required')
-    .max(100, 'Name is too long'),
-  email: z.email('Enter a valid email address').max(200, 'Email is too long'),
+  name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
+  email: z.email("Enter a valid email address").max(200, "Email is too long"),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password is too long')
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password is too long")
     .regex(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
-      'Password must contain uppercase, lowercase, and number'
+      "Password must contain uppercase, lowercase, and number",
     ),
-  captcha: z.string().min(1, 'Captcha is required'),
-})
+  captcha: z.string().min(1, "Captcha is required"),
+});
 
-type SignUpForm = z.infer<typeof signUpSchema>
+type SignUpForm = z.infer<typeof signUpSchema>;
 
 const defaultValues: SignUpForm = {
-  name: '',
-  email: '',
-  password: '',
-  captcha: '',
-}
+  name: "",
+  email: "",
+  password: "",
+  captcha: "",
+};
 
 function SignUpPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleSignUp = async (value: SignUpForm) => {
     await authClient.signUp.email({
@@ -50,16 +46,16 @@ function SignUpPage() {
       password: value.password,
       fetchOptions: {
         headers: {
-          'x-captcha-response': value.captcha,
+          "x-captcha-response": value.captcha,
         },
       },
-    })
+    });
 
     await navigate({
-      to: '/verify-email-pending',
+      to: "/verify-email-pending",
       search: { email: value.email },
-    })
-  }
+    });
+  };
 
   const form = useForm({
     defaultValues,
@@ -69,12 +65,12 @@ function SignUpPage() {
     },
     onSubmit: async ({ value }) => {
       try {
-        await handleSignUp(value)
+        await handleSignUp(value);
       } catch (err) {
-        if (import.meta.env.DEV) console.debug('signUp error', err)
+        if (import.meta.env.DEV) console.debug("signUp error", err);
       }
     },
-  })
+  });
 
   return (
     <div className="flex min-h-svh items-center justify-center px-4">
@@ -88,9 +84,9 @@ function SignUpPage() {
           <form
             className="flex flex-col gap-3"
             onSubmit={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              form.handleSubmit()
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
             }}
           >
             <form.Field
@@ -110,9 +106,7 @@ function SignUpPage() {
                   />
                   {!field.state.meta.isValid && (
                     <div className="text-red-600 text-sm">
-                      {field.state.meta.errors
-                        .flatMap((error) => error?.message)
-                        .join(', ')}
+                      {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
                     </div>
                   )}
                 </div>
@@ -138,9 +132,7 @@ function SignUpPage() {
                   />
                   {!field.state.meta.isValid && (
                     <div className="text-red-600 text-sm">
-                      {field.state.meta.errors
-                        .flatMap((error) => error?.message)
-                        .join(', ')}
+                      {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
                     </div>
                   )}
                 </div>
@@ -166,9 +158,7 @@ function SignUpPage() {
                   />
                   {!field.state.meta.isValid && (
                     <div className="text-red-600 text-sm">
-                      {field.state.meta.errors
-                        .flatMap((error) => error?.message)
-                        .join(', ')}
+                      {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
                     </div>
                   )}
                 </div>
@@ -178,30 +168,23 @@ function SignUpPage() {
 
             <Turnstile
               className="m-2 flex justify-center"
-              onError={() => form.setFieldValue('captcha', '')}
-              onExpire={() => form.setFieldValue('captcha', '')}
-              onVerify={(token) => form.setFieldValue('captcha', token)}
+              onError={() => form.setFieldValue("captcha", "")}
+              onExpire={() => form.setFieldValue("captcha", "")}
+              onVerify={(token) => form.setFieldValue("captcha", token)}
               siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
             />
 
-            <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-            >
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (
                 <div className="flex w-full flex-col items-center gap-2">
-                  <Button
-                    className="w-full"
-                    disabled={!canSubmit || isSubmitting}
-                    type="submit"
-                  >
-                    {isSubmitting ? 'Creating...' : 'Create account'}
+                  <Button className="w-full" disabled={!canSubmit || isSubmitting} type="submit">
+                    {isSubmitting ? "Creating..." : "Create account"}
                   </Button>
                   <Link
                     className="mt-2 text-muted-foreground text-sm underline-offset-4"
                     to="/login"
                   >
-                    Already have an account?{' '}
-                    <span className="underline">Sign in</span>
+                    Already have an account? <span className="underline">Sign in</span>
                   </Link>
                 </div>
               )}
@@ -210,5 +193,5 @@ function SignUpPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

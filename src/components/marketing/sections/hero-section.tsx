@@ -1,18 +1,18 @@
-'use client'
+"use client";
 
-import { ArrowRight, Box, Download } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { ShimmerButton } from '@/components/ui/shimmer-button'
-import { AuroraText } from '@/components/marketing/magicui/aurora-text'
-import { NumberTicker } from '@/components/marketing/magicui/number-ticker'
-import { HeroBackground } from '@/components/marketing/hero-background'
+import { ArrowRight, Box, Download } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { AuroraText } from "@/components/marketing/magicui/aurora-text";
+import { NumberTicker } from "@/components/marketing/magicui/number-ticker";
+import { HeroBackground } from "@/components/marketing/hero-background";
 
 const stats = [
-  { value: 10000, suffix: '+', label: 'Models Organized' },
-  { value: 5, suffix: '', label: 'File Formats' },
-  { value: 100, suffix: '%', label: 'Self-Hosted' },
-]
+  { value: 10000, suffix: "+", label: "Models Organized" },
+  { value: 5, suffix: "", label: "File Formats" },
+  { value: 100, suffix: "%", label: "Self-Hosted" },
+];
 
 export function HeroSection() {
   return (
@@ -26,7 +26,7 @@ export function HeroSection() {
             linear-gradient(30deg, hsl(var(--foreground)) 1px, transparent 1px),
             linear-gradient(150deg, hsl(var(--foreground)) 1px, transparent 1px)
           `,
-          backgroundSize: '40px 40px',
+          backgroundSize: "40px 40px",
         }}
       />
 
@@ -40,18 +40,16 @@ export function HeroSection() {
           </div>
 
           <h1 className="animate-fade-in-up text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight">
-            Organize Your{' '}
-            <AuroraText className="font-bold">3D Printing</AuroraText> Library
+            Organize Your <AuroraText className="font-bold">3D Printing</AuroraText> Library
           </h1>
 
           <p className="animate-fade-in-up text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto">
-            Self-hosted solution for managing your personal collection of 3D
-            printable models. Version control, preview, and organize all your
-            STL files in one place.
+            Self-hosted solution for managing your personal collection of 3D printable models.
+            Version control, preview, and organize all your STL files in one place.
           </p>
 
           <div className="animate-fade-in-up flex flex-wrap justify-center gap-2 pt-2">
-            {['STL', 'OBJ', '3MF', 'PLY', 'GCODE'].map((format) => (
+            {["STL", "OBJ", "3MF", "PLY", "GCODE"].map((format) => (
               <span
                 key={format}
                 className="inline-flex items-center rounded-md border border-border/50 bg-muted/50 px-3 py-1 font-mono text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/30 hover:text-foreground"
@@ -82,15 +80,9 @@ export function HeroSection() {
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-3xl md:text-4xl font-bold text-foreground">
-                  <NumberTicker
-                    value={stat.value}
-                    suffix={stat.suffix}
-                    delay={0.5 + index * 0.2}
-                  />
+                  <NumberTicker value={stat.value} suffix={stat.suffix} delay={0.5 + index * 0.2} />
                 </div>
-                <div className="text-sm text-muted-foreground mt-1 font-medium">
-                  {stat.label}
-                </div>
+                <div className="text-sm text-muted-foreground mt-1 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -103,5 +95,5 @@ export function HeroSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

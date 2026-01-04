@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
 
 type VersionTreeProps = {
-  className?: string
-}
+  className?: string;
+};
 
 export const VersionTree = ({ className }: VersionTreeProps) => {
   return (
-    <div className={cn('absolute inset-0 overflow-hidden', className)}>
+    <div className={cn("absolute inset-0 overflow-hidden", className)}>
       {/* Git-like version tree visualization */}
       <div className="absolute inset-0 flex items-center justify-center px-4">
         <svg viewBox="0 0 120 100" className="h-full w-full max-h-32">
@@ -53,107 +53,38 @@ export const VersionTree = ({ className }: VersionTreeProps) => {
               fill="rgb(249, 115, 22)"
               className="animate-glow-orange"
             />
-            <text
-              x="28"
-              y="18"
-              fontSize="7"
-              fill="rgb(148, 163, 184)"
-              fontFamily="monospace"
-            >
+            <text x="28" y="18" fontSize="7" fill="rgb(148, 163, 184)" fontFamily="monospace">
               v1.0
             </text>
           </g>
-          <g
-            className="animate-pulse-commit"
-            style={{ animationDelay: '0.3s' }}
-          >
+          <g className="animate-pulse-commit" style={{ animationDelay: "0.3s" }}>
             <circle cx="20" cy="35" r="5" fill="rgb(249, 115, 22)" />
-            <text
-              x="28"
-              y="38"
-              fontSize="7"
-              fill="rgb(148, 163, 184)"
-              fontFamily="monospace"
-            >
+            <text x="28" y="38" fontSize="7" fill="rgb(148, 163, 184)" fontFamily="monospace">
               v1.1
             </text>
           </g>
-          <g
-            className="animate-pulse-commit"
-            style={{ animationDelay: '0.6s' }}
-          >
-            <circle
-              cx="20"
-              cy="55"
-              r="4"
-              fill="rgb(249, 115, 22)"
-              fillOpacity="0.7"
-            />
+          <g className="animate-pulse-commit" style={{ animationDelay: "0.6s" }}>
+            <circle cx="20" cy="55" r="4" fill="rgb(249, 115, 22)" fillOpacity="0.7" />
           </g>
-          <g
-            className="animate-pulse-commit"
-            style={{ animationDelay: '0.9s' }}
-          >
-            <circle
-              cx="20"
-              cy="85"
-              r="6"
-              fill="rgb(34, 197, 94)"
-              className="animate-glow-green"
-            />
-            <text
-              x="28"
-              y="88"
-              fontSize="7"
-              fill="rgb(148, 163, 184)"
-              fontFamily="monospace"
-            >
+          <g className="animate-pulse-commit" style={{ animationDelay: "0.9s" }}>
+            <circle cx="20" cy="85" r="6" fill="rgb(34, 197, 94)" className="animate-glow-green" />
+            <text x="28" y="88" fontSize="7" fill="rgb(148, 163, 184)" fontFamily="monospace">
               v2.0
             </text>
           </g>
 
           {/* Commits on feature branch */}
-          <g
-            className="animate-pulse-commit"
-            style={{ animationDelay: '0.4s' }}
-          >
-            <circle
-              cx="50"
-              cy="50"
-              r="4"
-              fill="rgb(168, 85, 247)"
-              fillOpacity="0.8"
-            />
-            <text
-              x="56"
-              y="48"
-              fontSize="6"
-              fill="rgb(148, 163, 184)"
-              fontFamily="monospace"
-            >
+          <g className="animate-pulse-commit" style={{ animationDelay: "0.4s" }}>
+            <circle cx="50" cy="50" r="4" fill="rgb(168, 85, 247)" fillOpacity="0.8" />
+            <text x="56" y="48" fontSize="6" fill="rgb(148, 163, 184)" fontFamily="monospace">
               fix
             </text>
           </g>
-          <g
-            className="animate-pulse-commit"
-            style={{ animationDelay: '0.7s' }}
-          >
-            <circle
-              cx="55"
-              cy="65"
-              r="4"
-              fill="rgb(168, 85, 247)"
-              fillOpacity="0.8"
-            />
+          <g className="animate-pulse-commit" style={{ animationDelay: "0.7s" }}>
+            <circle cx="55" cy="65" r="4" fill="rgb(168, 85, 247)" fillOpacity="0.8" />
           </g>
-          <g className="animate-pulse-commit" style={{ animationDelay: '1s' }}>
-            <circle
-              cx="50"
-              cy="80"
-              r="4"
-              fill="rgb(168, 85, 247)"
-              fillOpacity="0.6"
-            />
+          <g className="animate-pulse-commit" style={{ animationDelay: "1s" }}>
+            <circle cx="50" cy="80" r="4" fill="rgb(168, 85, 247)" fillOpacity="0.6" />
           </g>
 
           {/* Version labels */}
@@ -212,7 +143,7 @@ export const VersionTree = ({ className }: VersionTreeProps) => {
         className="absolute inset-0 opacity-[0.02]"
         style={{
           backgroundImage: `radial-gradient(circle, rgba(249, 115, 22, 0.3) 1px, transparent 1px)`,
-          backgroundSize: '16px 16px',
+          backgroundSize: "16px 16px",
         }}
       />
 
@@ -243,5 +174,5 @@ export const VersionTree = ({ className }: VersionTreeProps) => {
         .animate-glow-green { animation: glow-green 2s ease-in-out infinite; }
       `}</style>
     </div>
-  )
-}
+  );
+};

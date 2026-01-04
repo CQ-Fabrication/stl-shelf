@@ -1,87 +1,86 @@
-'use client'
+"use client";
 
-import { Factory, Lightbulb, Palette, Star } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { Factory, Lightbulb, Palette, Star } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 type Testimonial = {
-  quote: string
-  author: string
-  role: string
-  roleKey: 'hobbyist' | 'designer' | 'farmOwner'
-  initials: string
-  rating: number
-  verified: boolean
-}
+  quote: string;
+  author: string;
+  role: string;
+  roleKey: "hobbyist" | "designer" | "farmOwner";
+  initials: string;
+  rating: number;
+  verified: boolean;
+};
 
 const testimonials: Testimonial[] = [
   {
     quote:
       "Finally, a way to organize my 5,000+ STL files. I can actually find what I'm looking for now.",
-    author: 'Alex Chen',
-    role: 'Hobbyist Maker',
-    roleKey: 'hobbyist',
-    initials: 'AC',
+    author: "Alex Chen",
+    role: "Hobbyist Maker",
+    roleKey: "hobbyist",
+    initials: "AC",
     rating: 5,
     verified: true,
   },
   {
     quote:
       'The version control feature alone is worth it. No more "benchy_v2_final_FINAL.stl" nightmare.',
-    author: 'Sarah Martinez',
-    role: 'Product Designer',
-    roleKey: 'designer',
-    initials: 'SM',
+    author: "Sarah Martinez",
+    role: "Product Designer",
+    roleKey: "designer",
+    initials: "SM",
     rating: 5,
     verified: true,
   },
   {
-    quote:
-      'Self-hosting means my designs stay mine. Plus the 3D preview is incredibly fast.',
-    author: 'Mike Johnson',
-    role: 'Print Farm Owner',
-    roleKey: 'farmOwner',
-    initials: 'MJ',
+    quote: "Self-hosting means my designs stay mine. Plus the 3D preview is incredibly fast.",
+    author: "Mike Johnson",
+    role: "Print Farm Owner",
+    roleKey: "farmOwner",
+    initials: "MJ",
     rating: 5,
     verified: true,
   },
-]
+];
 
 const roleStyles: Record<
-  Testimonial['roleKey'],
+  Testimonial["roleKey"],
   {
-    icon: LucideIcon
-    borderColor: string
-    bgColor: string
-    textColor: string
-    glowColor: string
-    ringColor: string
+    icon: LucideIcon;
+    borderColor: string;
+    bgColor: string;
+    textColor: string;
+    glowColor: string;
+    ringColor: string;
   }
 > = {
   hobbyist: {
     icon: Lightbulb,
-    borderColor: 'border-yellow-500/40',
-    bgColor: 'bg-yellow-500/10',
-    textColor: 'text-yellow-500',
-    glowColor: 'group-hover:shadow-[0_0_20px_rgba(234,179,8,0.2)]',
-    ringColor: 'rgba(234, 179, 8, 0.4)',
+    borderColor: "border-yellow-500/40",
+    bgColor: "bg-yellow-500/10",
+    textColor: "text-yellow-500",
+    glowColor: "group-hover:shadow-[0_0_20px_rgba(234,179,8,0.2)]",
+    ringColor: "rgba(234, 179, 8, 0.4)",
   },
   designer: {
     icon: Palette,
-    borderColor: 'border-purple-500/40',
-    bgColor: 'bg-purple-500/10',
-    textColor: 'text-purple-500',
-    glowColor: 'group-hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]',
-    ringColor: 'rgba(168, 85, 247, 0.4)',
+    borderColor: "border-purple-500/40",
+    bgColor: "bg-purple-500/10",
+    textColor: "text-purple-500",
+    glowColor: "group-hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]",
+    ringColor: "rgba(168, 85, 247, 0.4)",
   },
   farmOwner: {
     icon: Factory,
-    borderColor: 'border-orange-500/40',
-    bgColor: 'bg-orange-500/10',
-    textColor: 'text-orange-500',
-    glowColor: 'group-hover:shadow-[0_0_20px_rgba(249,115,22,0.2)]',
-    ringColor: 'rgba(249, 115, 22, 0.4)',
+    borderColor: "border-orange-500/40",
+    bgColor: "bg-orange-500/10",
+    textColor: "text-orange-500",
+    glowColor: "group-hover:shadow-[0_0_20px_rgba(249,115,22,0.2)]",
+    ringColor: "rgba(249, 115, 22, 0.4)",
   },
-}
+};
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -90,15 +89,13 @@ function StarRating({ rating }: { rating: number }) {
         <Star
           key={i}
           className={`h-3.5 w-3.5 ${
-            i < rating
-              ? 'text-orange-500 fill-orange-500'
-              : 'text-slate-600 fill-slate-600/20'
-          } ${i < rating ? 'animate-star-shimmer' : ''}`}
+            i < rating ? "text-orange-500 fill-orange-500" : "text-slate-600 fill-slate-600/20"
+          } ${i < rating ? "animate-star-shimmer" : ""}`}
           style={{ animationDelay: `${i * 0.1}s` }}
         />
       ))}
     </div>
-  )
+  );
 }
 
 function DecorativeQuote() {
@@ -124,7 +121,7 @@ function DecorativeQuote() {
         "
       </text>
     </svg>
-  )
+  );
 }
 
 function VerifiedBadge() {
@@ -141,7 +138,7 @@ function VerifiedBadge() {
       </svg>
       <span className="text-[9px] font-mono text-emerald-400">Verified</span>
     </div>
-  )
+  );
 }
 
 export function Testimonials() {
@@ -155,7 +152,7 @@ export function Testimonials() {
             linear-gradient(rgba(249, 115, 22, 1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(249, 115, 22, 1) 1px, transparent 1px)
           `,
-          backgroundSize: '40px 40px',
+          backgroundSize: "40px 40px",
         }}
       />
 
@@ -179,8 +176,8 @@ export function Testimonials() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {testimonials.map((testimonial, index) => {
-            const style = roleStyles[testimonial.roleKey]
-            const RoleIcon = style.icon
+            const style = roleStyles[testimonial.roleKey];
+            const RoleIcon = style.icon;
             return (
               <div
                 key={testimonial.author}
@@ -222,9 +219,7 @@ export function Testimonials() {
 
                     {/* Author info */}
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm mb-0.5">
-                        {testimonial.author}
-                      </div>
+                      <div className="font-semibold text-sm mb-0.5">{testimonial.author}</div>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
                         <RoleIcon className={`h-3 w-3 ${style.textColor}`} />
                         <span>{testimonial.role}</span>
@@ -237,15 +232,12 @@ export function Testimonials() {
                   <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-transparent to-transparent group-hover:via-orange-500/40 transition-all duration-500" />
                 </div>
               </div>
-            )
+            );
           })}
         </div>
 
         {/* Trust indicator */}
-        <div
-          className="mt-12 text-center animate-fade-in-up"
-          style={{ animationDelay: '0.6s' }}
-        >
+        <div className="mt-12 text-center animate-fade-in-up" style={{ animationDelay: "0.6s" }}>
           <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-border/50 bg-card/50 backdrop-blur-sm">
             <div className="flex -space-x-2">
               {testimonials.map((t, i) => (
@@ -261,9 +253,7 @@ export function Testimonials() {
             <div className="h-4 w-px bg-border/50" />
             <div className="flex items-center gap-1.5">
               <span className="text-sm text-muted-foreground">Trusted by</span>
-              <span className="text-sm font-semibold text-orange-500">
-                500+ makers
-              </span>
+              <span className="text-sm font-semibold text-orange-500">500+ makers</span>
             </div>
           </div>
         </div>
@@ -293,5 +283,5 @@ export function Testimonials() {
         .animate-avatar-ring { animation: avatar-ring 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
       `}</style>
     </section>
-  )
+  );
 }

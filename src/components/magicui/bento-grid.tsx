@@ -1,38 +1,38 @@
-'use client'
+"use client";
 
-import type { CSSProperties, ReactNode } from 'react'
-import { cn } from '@/lib/utils'
-import { ArrowRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import type { CSSProperties, ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type BentoGridProps = {
-  children: ReactNode
-  className?: string
-}
+  children: ReactNode;
+  className?: string;
+};
 
 export const BentoGrid = ({ children, className }: BentoGridProps) => {
   return (
     <div
       className={cn(
-        'grid auto-rows-[14rem] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3',
-        className
+        "grid auto-rows-[14rem] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3",
+        className,
       )}
     >
       {children}
     </div>
-  )
-}
+  );
+};
 
 type BentoCardProps = {
-  name: string
-  description: string
-  icon: ReactNode
-  className?: string
-  style?: CSSProperties
-  background?: ReactNode
-  href?: string
-  cta?: string
-}
+  name: string;
+  description: string;
+  icon: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  background?: ReactNode;
+  href?: string;
+  cta?: string;
+};
 
 export const BentoCard = ({
   name,
@@ -42,16 +42,16 @@ export const BentoCard = ({
   style,
   background,
   href,
-  cta = 'Learn more',
+  cta = "Learn more",
 }: BentoCardProps) => {
   return (
     <div
       className={cn(
-        'group relative col-span-1 flex flex-col justify-end overflow-hidden rounded-xl',
-        'border border-border/40 bg-card/50 backdrop-blur-sm',
-        'shadow-sm transition-all duration-300',
-        'hover:shadow-xl hover:border-primary/30 hover:bg-card/80',
-        className
+        "group relative col-span-1 flex flex-col justify-end overflow-hidden rounded-xl",
+        "border border-border/40 bg-card/50 backdrop-blur-sm",
+        "shadow-sm transition-all duration-300",
+        "hover:shadow-xl hover:border-primary/30 hover:bg-card/80",
+        className,
       )}
       style={style}
     >
@@ -68,7 +68,7 @@ export const BentoCard = ({
             linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
             linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)
           `,
-          backgroundSize: '20px 20px',
+          backgroundSize: "20px 20px",
         }}
       />
 
@@ -80,12 +80,8 @@ export const BentoCard = ({
         </div>
 
         {/* Title & Description */}
-        <h3 className="mt-3 text-base font-semibold tracking-tight text-foreground">
-          {name}
-        </h3>
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {description}
-        </p>
+        <h3 className="mt-3 text-base font-semibold tracking-tight text-foreground">{name}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
       </div>
 
       {/* CTA Button */}
@@ -125,5 +121,5 @@ export const BentoCard = ({
       {/* Hover glow effect */}
       <div className="pointer-events-none absolute inset-0 z-[5] rounded-xl transition-all duration-300 group-hover:shadow-[inset_0_0_30px_rgba(0,212,255,0.05)]" />
     </div>
-  )
-}
+  );
+};

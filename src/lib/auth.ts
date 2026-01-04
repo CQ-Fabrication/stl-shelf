@@ -1,20 +1,20 @@
-import { checkout, polar, portal, webhooks } from '@polar-sh/better-auth'
-import { Polar } from '@polar-sh/sdk'
-import { render } from '@react-email/components'
-import { betterAuth } from 'better-auth'
-import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { captcha, magicLink, openAPI, organization } from 'better-auth/plugins'
-import { tanstackStartCookies } from 'better-auth/tanstack-start'
-import { and, eq } from 'drizzle-orm'
-import { Resend } from 'resend'
-import { z } from 'zod'
+import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
+import { Polar } from "@polar-sh/sdk";
+import { render } from "@react-email/components";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { captcha, magicLink, openAPI, organization } from "better-auth/plugins";
+import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { and, eq } from "drizzle-orm";
+import { Resend } from "resend";
+import { z } from "zod";
 import {
   handleCustomerStateChanged,
   handleOrderPaid,
   handleSubscriptionCanceled,
   handleSubscriptionCreated,
   handleSubscriptionRevoked,
-} from '@/lib/billing/webhook-handlers'
+} from "@/lib/billing/webhook-handlers";
 import {
   account as accountTable,
   db,
@@ -24,52 +24,48 @@ import {
   session as sessionTable,
   user as userTable,
   verification as verificationTable,
-} from '@/lib/db'
-import {
-  MagicLinkTemplate,
-  PasswordResetTemplate,
-  VerifyEmailTemplate,
-} from '@/lib/email'
-import { env } from '@/lib/env'
+} from "@/lib/db";
+import { MagicLinkTemplate, PasswordResetTemplate, VerifyEmailTemplate } from "@/lib/email";
+import { env } from "@/lib/env";
 
-const isProd = env.NODE_ENV === 'production'
+const isProd = env.NODE_ENV === "production";
 
-const emailSchema = z.string().email().max(255)
+const emailSchema = z.string().email().max(255);
 
-let resendClient: Resend | null = null
+let resendClient: Resend | null = null;
 function getResendClient(): Resend {
   if (!resendClient) {
-    resendClient = new Resend(env.RESEND_API_KEY)
+    resendClient = new Resend(env.RESEND_API_KEY);
   }
-  return resendClient
+  return resendClient;
 }
 
 function validateEmail(email: string | undefined): string {
-  const result = emailSchema.safeParse(email)
+  const result = emailSchema.safeParse(email);
   if (!result.success) {
-    throw new Error('Invalid email address')
+    throw new Error("Invalid email address");
   }
-  return result.data
+  return result.data;
 }
 
 const polarClient = new Polar({
   accessToken: env.POLAR_ACCESS_TOKEN,
   server: env.POLAR_SERVER,
-})
+});
 
 export const auth = betterAuth({
-  appName: 'STL Shelf',
+  appName: "STL Shelf",
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.AUTH_URL ?? `http://localhost:${env.PORT}`,
-  basePath: '/api/auth',
-  trustedOrigins: ['https://app.stl-shelf.com', 'http://localhost:3000'],
+  basePath: "/api/auth",
+  trustedOrigins: ["https://app.stl-shelf.com", "http://localhost:3000"],
   rateLimit: {
     window: 60, // 1 minute in seconds
     max: 15,
     customRules: {
-      '/sign-in/email': { window: 60, max: 3 },
-      '/sign-up/email': { window: 60, max: 3 },
-      '/send-verification-email': { window: 300, max: 3 },
+      "/sign-in/email": { window: 60, max: 3 },
+      "/sign-up/email": { window: 60, max: 3 },
+      "/send-verification-email": { window: 300, max: 3 },
     },
   },
   session: {
@@ -83,57 +79,57 @@ export const auth = betterAuth({
         organization: {
           additionalFields: {
             ownerId: {
-              type: 'string',
+              type: "string",
               input: false,
               required: false,
             },
             polarCustomerId: {
-              type: 'string',
+              type: "string",
               input: false,
               required: false,
             },
             subscriptionTier: {
-              type: 'string',
+              type: "string",
               input: false,
               required: false,
             },
             subscriptionStatus: {
-              type: 'string',
+              type: "string",
               input: false,
               required: false,
             },
             subscriptionId: {
-              type: 'string',
+              type: "string",
               input: false,
               required: false,
             },
             storageLimit: {
-              type: 'number',
+              type: "number",
               input: false,
               required: false,
             },
             modelCountLimit: {
-              type: 'number',
+              type: "number",
               input: false,
               required: false,
             },
             memberLimit: {
-              type: 'number',
+              type: "number",
               input: false,
               required: false,
             },
             currentStorage: {
-              type: 'number',
+              type: "number",
               input: false,
               required: false,
             },
             currentModelCount: {
-              type: 'number',
+              type: "number",
               input: false,
               required: false,
             },
             currentMemberCount: {
-              type: 'number',
+              type: "number",
               input: false,
               required: false,
             },
@@ -147,7 +143,7 @@ export const auth = betterAuth({
               ...organization,
               ownerId: user.id,
             },
-          }
+          };
         },
         beforeCreateInvitation: async ({ organization }) => {
           // Get current member count from DB
@@ -155,7 +151,7 @@ export const auth = betterAuth({
             .select({ count: memberTable.id })
             .from(memberTable)
             .where(eq(memberTable.organizationId, organization.id))
-            .then((rows) => rows.length)
+            .then((rows) => rows.length);
 
           // Get pending invitation count
           const pendingInvitationCount = await db
@@ -164,45 +160,45 @@ export const auth = betterAuth({
             .where(
               and(
                 eq(invitationTable.organizationId, organization.id),
-                eq(invitationTable.status, 'pending')
-              )
+                eq(invitationTable.status, "pending"),
+              ),
             )
-            .then((rows) => rows.length)
+            .then((rows) => rows.length);
 
-          const totalSlotsTaken = memberCount + pendingInvitationCount
-          const memberLimit = (organization as { memberLimit?: number }).memberLimit ?? 1
+          const totalSlotsTaken = memberCount + pendingInvitationCount;
+          const memberLimit = (organization as { memberLimit?: number }).memberLimit ?? 1;
 
           if (totalSlotsTaken >= memberLimit) {
             throw new Error(
-              `Member limit reached. Your plan allows ${memberLimit} member${memberLimit > 1 ? 's' : ''}. Upgrade to invite more.`
-            )
+              `Member limit reached. Your plan allows ${memberLimit} member${memberLimit > 1 ? "s" : ""}. Upgrade to invite more.`,
+            );
           }
         },
       },
     }),
     captcha({
-      provider: 'cloudflare-turnstile',
-      endpoints: ['/sign-in/email', '/sign-up/email'],
+      provider: "cloudflare-turnstile",
+      endpoints: ["/sign-in/email", "/sign-up/email"],
       secretKey: env.TURNSTILE_SECRET_KEY,
     }),
     magicLink({
       expiresIn: 60 * 15, // 15 minutes
       sendMagicLink: async ({ email, url }: { email: string; url: string }) => {
-        const validEmail = validateEmail(email)
+        const validEmail = validateEmail(email);
         const html = await render(
           MagicLinkTemplate({
             magicLinkUrl: url,
             logoUrl: env.EMAIL_LOGO_URL,
-          })
-        )
+          }),
+        );
         const { error } = await getResendClient().emails.send({
           from: env.EMAIL_FROM,
           to: validEmail,
-          subject: 'Sign in to STL Shelf',
+          subject: "Sign in to STL Shelf",
           html,
-        })
+        });
         if (error) {
-          throw new Error(`Failed to send magic link email: ${error.message}`)
+          throw new Error(`Failed to send magic link email: ${error.message}`);
         }
       },
     }),
@@ -213,9 +209,9 @@ export const auth = betterAuth({
       use: [
         checkout({
           products: [
-            env.POLAR_PRODUCT_FREE && { productId: env.POLAR_PRODUCT_FREE, slug: 'free' },
-            env.POLAR_PRODUCT_BASIC && { productId: env.POLAR_PRODUCT_BASIC, slug: 'basic' },
-            env.POLAR_PRODUCT_PRO && { productId: env.POLAR_PRODUCT_PRO, slug: 'pro' },
+            env.POLAR_PRODUCT_FREE && { productId: env.POLAR_PRODUCT_FREE, slug: "free" },
+            env.POLAR_PRODUCT_BASIC && { productId: env.POLAR_PRODUCT_BASIC, slug: "basic" },
+            env.POLAR_PRODUCT_PRO && { productId: env.POLAR_PRODUCT_PRO, slug: "pro" },
           ].filter(Boolean) as { productId: string; slug: string }[],
           successUrl: `${env.WEB_URL}/checkout/success?checkout_id={CHECKOUT_ID}`,
           authenticatedUsersOnly: true,
@@ -236,7 +232,7 @@ export const auth = betterAuth({
   ],
 
   database: drizzleAdapter(db, {
-    provider: 'pg',
+    provider: "pg",
     schema: {
       user: userTable,
       session: sessionTable,
@@ -252,55 +248,43 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     resetPasswordTokenExpiresIn: 60 * 60, // 1 hour
-    sendResetPassword: async ({
-      user,
-      url,
-    }: {
-      user: { email?: string }
-      url: string
-    }) => {
-      const validEmail = validateEmail(user.email)
+    sendResetPassword: async ({ user, url }: { user: { email?: string }; url: string }) => {
+      const validEmail = validateEmail(user.email);
       const html = await render(
         PasswordResetTemplate({
           resetUrl: url,
           logoUrl: env.EMAIL_LOGO_URL,
-        })
-      )
+        }),
+      );
       const { error } = await getResendClient().emails.send({
         from: env.EMAIL_FROM,
         to: validEmail,
-        subject: 'Reset your password',
+        subject: "Reset your password",
         html,
-      })
+      });
       if (error) {
-        throw new Error(`Failed to send password reset email: ${error.message}`)
+        throw new Error(`Failed to send password reset email: ${error.message}`);
       }
     },
   },
 
   emailVerification: {
-    sendVerificationEmail: async ({
-      user,
-      url,
-    }: {
-      user: { email?: string }
-      url: string
-    }) => {
-      const validEmail = validateEmail(user.email)
+    sendVerificationEmail: async ({ user, url }: { user: { email?: string }; url: string }) => {
+      const validEmail = validateEmail(user.email);
       const html = await render(
         VerifyEmailTemplate({
           verificationUrl: url,
           logoUrl: env.EMAIL_LOGO_URL,
-        })
-      )
+        }),
+      );
       const { error } = await getResendClient().emails.send({
         from: env.EMAIL_FROM,
         to: validEmail,
-        subject: 'Verify your email address',
+        subject: "Verify your email address",
         html,
-      })
+      });
       if (error) {
-        throw new Error(`Failed to send verification email: ${error.message}`)
+        throw new Error(`Failed to send verification email: ${error.message}`);
       }
     },
     sendOnSignUp: true,
@@ -308,13 +292,13 @@ export const auth = betterAuth({
 
   socialProviders: {
     github: {
-      clientId: env.GITHUB_CLIENT_ID ?? '',
-      clientSecret: env.GITHUB_CLIENT_SECRET ?? '',
+      clientId: env.GITHUB_CLIENT_ID ?? "",
+      clientSecret: env.GITHUB_CLIENT_SECRET ?? "",
       enabled: Boolean(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET),
     },
     google: {
-      clientId: env.GOOGLE_CLIENT_ID ?? '',
-      clientSecret: env.GOOGLE_CLIENT_SECRET ?? '',
+      clientId: env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: env.GOOGLE_CLIENT_SECRET ?? "",
       enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
     },
   },
@@ -322,11 +306,11 @@ export const auth = betterAuth({
   advanced: {
     useSecureCookies: isProd,
     defaultCookieAttributes: {
-      sameSite: isProd ? 'none' : 'lax',
+      sameSite: isProd ? "none" : "lax",
       secure: isProd,
       domain: env.AUTH_COOKIE_DOMAIN || undefined,
       httpOnly: true,
-      path: '/',
+      path: "/",
     },
   },
 
@@ -340,18 +324,18 @@ export const auth = betterAuth({
             .select({ organizationId: memberTable.organizationId })
             .from(memberTable)
             .where(eq(memberTable.userId, session.userId))
-            .limit(1)
+            .limit(1);
 
           return {
             data: {
               ...session,
               activeOrganizationId: membership?.organizationId ?? null,
             },
-          }
+          };
         },
       },
     },
   },
-})
+});
 
-export type Auth = typeof auth
+export type Auth = typeof auth;

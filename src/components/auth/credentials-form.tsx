@@ -42,9 +42,7 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
     },
     validators: {
       onSubmit: z.object({
-        email: z
-          .email("Enter a valid email address")
-          .max(255, "Email is too long"),
+        email: z.email("Enter a valid email address").max(255, "Email is too long"),
         password: z.string().min(1, "Password is required"),
         captcha: z.string().min(1, "Please complete the captcha"),
       }),
@@ -71,18 +69,14 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
               id={field.name}
               name={field.name}
               onBlur={field.handleBlur}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                field.handleChange(e.target.value)
-              }
+              onChange={(e: ChangeEvent<HTMLInputElement>) => field.handleChange(e.target.value)}
               placeholder="you@example.com"
               type="email"
               value={field.state.value}
             />
             {!field.state.meta.isValid && (
               <div className="text-red-600 text-sm">
-                {field.state.meta.errors
-                  .flatMap((error) => error?.message)
-                  .join(", ")}
+                {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
               </div>
             )}
           </div>
@@ -108,17 +102,13 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
               id={field.name}
               name={field.name}
               onBlur={field.handleBlur}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                field.handleChange(e.target.value)
-              }
+              onChange={(e: ChangeEvent<HTMLInputElement>) => field.handleChange(e.target.value)}
               type="password"
               value={field.state.value}
             />
             {!field.state.meta.isValid && (
               <div className="text-red-600 text-sm">
-                {field.state.meta.errors
-                  .flatMap((error) => error?.message)
-                  .join(", ")}
+                {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
               </div>
             )}
           </div>
@@ -136,15 +126,9 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
         />
       </div>
 
-      <form.Subscribe
-        selector={(state) => [state.canSubmit, state.isSubmitting]}
-      >
+      <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (
-          <Button
-            className="w-full"
-            disabled={!canSubmit || isSubmitting}
-            type="submit"
-          >
+          <Button className="w-full" disabled={!canSubmit || isSubmitting} type="submit">
             {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
         )}

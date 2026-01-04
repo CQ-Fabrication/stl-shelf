@@ -1,21 +1,21 @@
-'use client'
+"use client";
 
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
 
 type FileLibraryProps = {
-  className?: string
-}
+  className?: string;
+};
 
 export const FileLibrary = ({ className }: FileLibraryProps) => {
   return (
-    <div className={cn('absolute inset-0 overflow-hidden', className)}>
+    <div className={cn("absolute inset-0 overflow-hidden", className)}>
       {/* Stacked file cards with 3D printing layer aesthetic */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative h-36 w-44">
           {/* Back file - .obj */}
           <div
             className="absolute inset-0 rounded-lg border border-orange-500/20 bg-gradient-to-br from-slate-800/60 to-slate-900/40 shadow-lg transition-all duration-500 group-hover:-translate-y-3 group-hover:rotate-[-10deg]"
-            style={{ transform: 'rotate(-8deg) translateY(12px)' }}
+            style={{ transform: "rotate(-8deg) translateY(12px)" }}
           >
             <div className="flex items-center gap-2 p-3 border-b border-orange-500/10">
               <div className="h-2 w-2 rounded-sm bg-amber-500/60" />
@@ -29,7 +29,7 @@ export const FileLibrary = ({ className }: FileLibraryProps) => {
           {/* Middle file - .3mf */}
           <div
             className="absolute inset-0 rounded-lg border border-orange-500/30 bg-gradient-to-br from-slate-700/70 to-slate-800/50 shadow-xl transition-all duration-500 group-hover:-translate-y-1 group-hover:rotate-[-3deg]"
-            style={{ transform: 'rotate(-3deg) translateY(6px)' }}
+            style={{ transform: "rotate(-3deg) translateY(6px)" }}
           >
             <div className="flex items-center gap-2 p-3 border-b border-orange-500/15">
               <div className="h-2 w-2 rounded-sm bg-emerald-500/60" />
@@ -58,23 +58,9 @@ export const FileLibrary = ({ className }: FileLibraryProps) => {
                 {/* Triangle mesh pattern */}
                 <svg viewBox="0 0 100 50" className="h-full w-full opacity-60">
                   <defs>
-                    <linearGradient
-                      id="meshGrad"
-                      x1="0%"
-                      y1="0%"
-                      x2="100%"
-                      y2="100%"
-                    >
-                      <stop
-                        offset="0%"
-                        stopColor="rgb(249, 115, 22)"
-                        stopOpacity="0.4"
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="rgb(249, 115, 22)"
-                        stopOpacity="0.1"
-                      />
+                    <linearGradient id="meshGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="rgb(249, 115, 22)" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="rgb(249, 115, 22)" stopOpacity="0.1" />
                     </linearGradient>
                   </defs>
                   <polygon
@@ -126,19 +112,19 @@ export const FileLibrary = ({ className }: FileLibraryProps) => {
       {/* Floating file format badges */}
       <div
         className="absolute right-6 top-6 rounded border border-orange-500/30 bg-slate-800/60 px-2 py-1 font-mono text-[9px] text-orange-400/70 backdrop-blur-sm animate-float"
-        style={{ animationDelay: '0s' }}
+        style={{ animationDelay: "0s" }}
       >
         PLY
       </div>
       <div
         className="absolute bottom-10 left-4 rounded border border-emerald-500/30 bg-slate-800/60 px-2 py-1 font-mono text-[9px] text-emerald-400/70 backdrop-blur-sm animate-float"
-        style={{ animationDelay: '0.7s' }}
+        style={{ animationDelay: "0.7s" }}
       >
         GCODE
       </div>
       <div
         className="absolute right-10 bottom-16 rounded border border-amber-500/30 bg-slate-800/60 px-2 py-1 font-mono text-[9px] text-amber-400/70 backdrop-blur-sm animate-float"
-        style={{ animationDelay: '1.4s' }}
+        style={{ animationDelay: "1.4s" }}
       >
         OBJ
       </div>
@@ -151,7 +137,7 @@ export const FileLibrary = ({ className }: FileLibraryProps) => {
             linear-gradient(rgba(249, 115, 22, 1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(249, 115, 22, 1) 1px, transparent 1px)
           `,
-          backgroundSize: '24px 24px',
+          backgroundSize: "24px 24px",
         }}
       />
 
@@ -166,5 +152,5 @@ export const FileLibrary = ({ className }: FileLibraryProps) => {
         .animate-float { animation: float 4s ease-in-out infinite; }
       `}</style>
     </div>
-  )
-}
+  );
+};

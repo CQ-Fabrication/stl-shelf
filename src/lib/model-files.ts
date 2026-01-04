@@ -8,6 +8,7 @@ export type ModelFile = {
   storageKey: string;
   storageUrl: string | null;
   storageBucket: string;
+  createdAt: string;
 };
 
 const MODEL_FILE_EXTENSIONS = ["stl", "3mf", "obj", "ply"] as const;
@@ -15,6 +16,6 @@ const MODEL_FILE_EXTENSIONS = ["stl", "3mf", "obj", "ply"] as const;
 export const filterModelFiles = (files: ModelFile[]): ModelFile[] =>
   files.filter((f) =>
     MODEL_FILE_EXTENSIONS.includes(
-      f.extension.toLowerCase() as (typeof MODEL_FILE_EXTENSIONS)[number]
-    )
+      f.extension.toLowerCase() as (typeof MODEL_FILE_EXTENSIONS)[number],
+    ),
   );

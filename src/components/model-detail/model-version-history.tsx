@@ -2,13 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/utils/formatters";
@@ -59,10 +53,7 @@ export const ModelVersionHistory = ({
             {isLoading && (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div
-                    className="flex items-start justify-between rounded border p-3"
-                    key={i}
-                  >
+                  <div className="flex items-start justify-between rounded border p-3" key={i}>
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-5 w-20" />
                       <Skeleton className="h-4 w-32" />
@@ -94,25 +85,17 @@ export const ModelVersionHistory = ({
               versions.map((version, index) => (
                 <div
                   className={`flex items-start justify-between rounded border p-3 ${
-                    version.id === activeVersion
-                      ? "border-l-4 border-l-brand"
-                      : ""
+                    version.id === activeVersion ? "border-l-4 border-l-brand" : ""
                   }`}
                   key={version.id}
                 >
                   <div className="flex-1">
                     <div className="mb-1 flex items-center gap-2">
-                      <Badge
-                        variant={
-                          version.id === activeVersion ? "default" : "outline"
-                        }
-                      >
+                      <Badge variant={version.id === activeVersion ? "default" : "outline"}>
                         {version.version}
                       </Badge>
                       {version.id === activeVersion && (
-                        <Badge className="bg-brand text-brand-foreground text-xs">
-                          Active
-                        </Badge>
+                        <Badge className="bg-brand text-brand-foreground text-xs">Active</Badge>
                       )}
                       {index === 0 && version.id !== activeVersion && (
                         <Badge className="text-xs" variant="outline">
@@ -126,14 +109,10 @@ export const ModelVersionHistory = ({
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      className={
-                        version.id !== activeVersion ? "hover:text-brand" : ""
-                      }
+                      className={version.id !== activeVersion ? "hover:text-brand" : ""}
                       onClick={() => onVersionSelect(version.id)}
                       size="sm"
-                      variant={
-                        version.id === activeVersion ? "secondary" : "outline"
-                      }
+                      variant={version.id === activeVersion ? "secondary" : "outline"}
                     >
                       {version.id === activeVersion ? "Viewing" : "View"}
                     </Button>

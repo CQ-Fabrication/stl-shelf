@@ -62,7 +62,6 @@ export function StepDetails({ form, availableTags, onNext }: StepDetailsProps) {
               Name <sup className="-ml-1 text-red-600">*</sup>
             </Label>
             <Input
-              
               id={field.name}
               name={field.name}
               onBlur={field.handleBlur}
@@ -71,9 +70,7 @@ export function StepDetails({ form, availableTags, onNext }: StepDetailsProps) {
               value={field.state.value}
             />
             {field.state.meta.errors.length > 0 && (
-              <div className="text-red-600 text-sm">
-                {field.state.meta.errors.join(", ")}
-              </div>
+              <div className="text-red-600 text-sm">{field.state.meta.errors.join(", ")}</div>
             )}
           </div>
         )}
@@ -92,9 +89,7 @@ export function StepDetails({ form, availableTags, onNext }: StepDetailsProps) {
               value={field.state.value || ""}
             />
             {field.state.meta.errors.length > 0 && (
-              <div className="text-red-600 text-sm">
-                {field.state.meta.errors.join(", ")}
-              </div>
+              <div className="text-red-600 text-sm">{field.state.meta.errors.join(", ")}</div>
             )}
           </div>
         )}
@@ -112,9 +107,7 @@ export function StepDetails({ form, availableTags, onNext }: StepDetailsProps) {
               selectedTags={field.state.value}
             />
             {field.state.meta.errors.length > 0 && (
-              <div className="text-red-600 text-sm">
-                {field.state.meta.errors.join(", ")}
-              </div>
+              <div className="text-red-600 text-sm">{field.state.meta.errors.join(", ")}</div>
             )}
           </div>
         )}

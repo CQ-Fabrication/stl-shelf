@@ -1,12 +1,16 @@
-import { AlertTriangle, Box, CreditCard, Crown, HardDrive, Loader2, Sparkles, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  Box,
+  CreditCard,
+  Crown,
+  HardDrive,
+  Loader2,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
@@ -112,7 +116,9 @@ export const SubscriptionStatusCard = () => {
     usage.members.percentage >= 75;
 
   return (
-    <Card className={`${hasPaymentIssue ? "border-red-500/50" : isPro ? "border-orange-500/50" : ""} ${hasWarning && isFree ? "border-amber-500/30" : ""}`}>
+    <Card
+      className={`${hasPaymentIssue ? "border-red-500/50" : isPro ? "border-orange-500/50" : ""} ${hasWarning && isFree ? "border-amber-500/30" : ""}`}
+    >
       {/* Payment failure banner */}
       {hasPaymentIssue && isOwner && (
         <div className="rounded-t-lg border-b border-red-500/30 bg-red-50 px-6 py-3 dark:bg-red-950/30">
@@ -121,15 +127,8 @@ export const SubscriptionStatusCard = () => {
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>Payment failed. Update your payment method to avoid service interruption.</span>
             </p>
-            <Button
-              size="sm"
-              variant="destructive"
-              disabled={isPortalLoading}
-              onClick={openPortal}
-            >
-              {isPortalLoading ? (
-                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-              ) : null}
+            <Button size="sm" variant="destructive" disabled={isPortalLoading} onClick={openPortal}>
+              {isPortalLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
               Fix Now
             </Button>
           </div>
@@ -140,9 +139,7 @@ export const SubscriptionStatusCard = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {isPro && <Crown className="h-5 w-5 text-orange-500" />}
-            <CardTitle className="text-xl">
-              {getTierDisplayName(subscription.tier)} Plan
-            </CardTitle>
+            <CardTitle className="text-xl">{getTierDisplayName(subscription.tier)} Plan</CardTitle>
             <Badge
               variant={isActive ? "default" : hasPaymentIssue ? "destructive" : "secondary"}
               className={isActive ? "bg-green-600 hover:bg-green-600" : ""}

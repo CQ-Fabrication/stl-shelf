@@ -11,12 +11,7 @@ function OrganizationSettingsPage() {
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
       <div className="mb-6">
-        <Button
-          asChild
-          className="transition-colors hover:text-brand"
-          size="sm"
-          variant="ghost"
-        >
+        <Button asChild className="transition-colors hover:text-brand" size="sm" variant="ghost">
           <Link to="/library">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Library

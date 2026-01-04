@@ -1,102 +1,87 @@
-import { randomUUID } from 'node:crypto'
-import { and, eq } from 'drizzle-orm'
-import { db } from '@/lib/db'
-import { modelFiles, models, modelVersions } from '@/lib/db/schema/models'
-import { slugify } from '@/lib/slug'
-import { storageService } from '@/server/services/storage'
+import { randomUUID } from "node:crypto";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
+import { slugify } from "@/lib/slug";
+import { storageService } from "@/server/services/storage";
 
-const FALLBACK_FILENAME = 'model-file'
-const DEFAULT_CONTENT_TYPE = 'application/octet-stream'
-const VERSION_REGEX = /^v(\d+)$/
-const SLICER_EXTENSIONS = new Set(['3mf'])
+const FALLBACK_FILENAME = "model-file";
+const DEFAULT_CONTENT_TYPE = "application/octet-stream";
+const VERSION_REGEX = /^v(\d+)$/;
+const SLICER_EXTENSIONS = new Set(["3mf"]);
 
-function getStorageKind(extension: string): 'source' | 'slicer' {
-  return SLICER_EXTENSIONS.has(extension.toLowerCase()) ? 'slicer' : 'source'
+function getStorageKind(extension: string): "source" | "slicer" {
+  return SLICER_EXTENSIONS.has(extension.toLowerCase()) ? "slicer" : "source";
 }
 
 type UploadedFileMetadata = {
-  storageKey: string
-  storageBucket: string
-}
+  storageKey: string;
+  storageBucket: string;
+};
 
 type PreparedFile = UploadedFileMetadata & {
-  filename: string
-  originalName: string
-  mimeType: string
-  extension: string
-  size: number
-}
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  extension: string;
+  size: number;
+};
 
 export type AddVersionInput = {
-  modelId: string
-  organizationId: string
-  ownerId: string
-  changelog: string
-  files: File[]
-  previewImage?: File
-  ipAddress?: string | null
-}
+  modelId: string;
+  organizationId: string;
+  ownerId: string;
+  changelog: string;
+  files: File[];
+  previewImage?: File;
+  ipAddress?: string | null;
+};
 
 export type AddVersionResult = {
-  versionId: string
-  version: string
+  versionId: string;
+  version: string;
   files: Array<{
-    id: string
-    filename: string
-    originalName: string
-    size: number
-    mimeType: string
-    extension: string
-    storageKey: string
-    storageUrl: string | null
-    storageBucket: string
-  }>
-}
+    id: string;
+    filename: string;
+    originalName: string;
+    size: number;
+    mimeType: string;
+    extension: string;
+    storageKey: string;
+    storageUrl: string | null;
+    storageBucket: string;
+  }>;
+};
 
 export class ModelVersionService {
   async addVersion(input: AddVersionInput): Promise<AddVersionResult> {
     if (input.files.length === 0) {
-      throw new Error('At least one file is required to create a version')
+      throw new Error("At least one file is required to create a version");
     }
 
     const model = await db.query.models.findFirst({
-      where: and(
-        eq(models.id, input.modelId),
-        eq(models.organizationId, input.organizationId)
-      ),
-    })
+      where: and(eq(models.id, input.modelId), eq(models.organizationId, input.organizationId)),
+    });
 
     if (!model) {
-      throw new Error('Model not found or access denied')
+      throw new Error("Model not found or access denied");
     }
 
-    const currentVersionData = await db.query.modelVersions.findFirst({
-      where: and(
-        eq(modelVersions.modelId, input.modelId),
-        eq(modelVersions.version, model.currentVersion)
-      ),
-      columns: {
-        thumbnailPath: true,
-      },
-    })
+    const currentVersion = model.currentVersion;
+    const versionNumber = this.extractVersionNumber(currentVersion);
+    const newVersionLabel = `v${versionNumber + 1}`;
 
-    const fallbackThumbnailPath = currentVersionData?.thumbnailPath ?? null
-
-    const currentVersion = model.currentVersion
-    const versionNumber = this.extractVersionNumber(currentVersion)
-    const newVersionLabel = `v${versionNumber + 1}`
-
-    const timestamp = new Date()
-    const versionId = randomUUID()
+    const timestamp = new Date();
+    const versionId = randomUUID();
 
     const auditMetadata = {
       processed: false,
       uploadedAt: timestamp.toISOString(),
       uploadedBy: input.ownerId,
       uploadedIp: input.ipAddress ?? undefined,
-    } as const
+    } as const;
 
-    const uploadResults: PreparedFile[] = []
+    const uploadResults: PreparedFile[] = [];
 
     try {
       for (const file of input.files) {
@@ -105,38 +90,37 @@ export class ModelVersionService {
           organizationId: input.organizationId,
           modelId: input.modelId,
           version: newVersionLabel,
-        })
+        });
 
-        uploadResults.push(prepared)
+        uploadResults.push(prepared);
       }
     } catch (error) {
-      await this.cleanupUploadedFiles(uploadResults)
-      throw error
+      await this.cleanupUploadedFiles(uploadResults);
+      throw error;
     }
 
-    let thumbnailPath = fallbackThumbnailPath
+    let thumbnailPath: string | null = null;
     if (input.previewImage) {
       try {
-        const ext =
-          input.previewImage.name.split('.').pop()?.toLowerCase() || 'jpg'
-        const previewFilename = `preview.${ext}`
+        const ext = input.previewImage.name.split(".").pop()?.toLowerCase() || "jpg";
+        const previewFilename = `preview.${ext}`;
         const previewKey = storageService.generateStorageKey({
           organizationId: input.organizationId,
           modelId: input.modelId,
           version: newVersionLabel,
           filename: previewFilename,
-          kind: 'artifact',
-        })
+          kind: "artifact",
+        });
 
         await storageService.uploadFile({
           key: previewKey,
           file: input.previewImage,
-        })
+        });
 
-        thumbnailPath = previewKey
+        thumbnailPath = previewKey;
       } catch (error) {
-        await this.cleanupUploadedFiles(uploadResults)
-        throw error
+        await this.cleanupUploadedFiles(uploadResults);
+        throw error;
       }
     }
 
@@ -154,10 +138,10 @@ export class ModelVersionService {
             createdAt: timestamp,
             updatedAt: timestamp,
           })
-          .returning()
+          .returning();
 
         if (!version) {
-          throw new Error('Failed to create model version')
+          throw new Error("Failed to create model version");
         }
 
         const files = await tx
@@ -178,9 +162,9 @@ export class ModelVersionService {
               },
               createdAt: timestamp,
               updatedAt: timestamp,
-            }))
+            })),
           )
-          .returning()
+          .returning();
 
         await tx
           .update(models)
@@ -189,13 +173,13 @@ export class ModelVersionService {
             totalVersions: model.totalVersions + 1,
             updatedAt: timestamp,
           })
-          .where(eq(models.id, input.modelId))
+          .where(eq(models.id, input.modelId));
 
         return {
           version,
           files,
-        }
-      })
+        };
+      });
 
       return {
         versionId: result.version.id,
@@ -211,45 +195,44 @@ export class ModelVersionService {
           storageUrl: file.storageUrl,
           storageBucket: file.storageBucket,
         })),
-      }
+      };
     } catch (error) {
-      await this.cleanupUploadedFiles(uploadResults)
-      throw error
+      await this.cleanupUploadedFiles(uploadResults);
+      throw error;
     }
   }
 
   private extractVersionNumber(versionLabel: string): number {
-    const match = versionLabel.match(VERSION_REGEX)
+    const match = versionLabel.match(VERSION_REGEX);
     if (match?.[1]) {
-      return Number.parseInt(match[1], 10)
+      return Number.parseInt(match[1], 10);
     }
-    return 1
+    return 1;
   }
 
   private async uploadFile(options: {
-    file: File
-    organizationId: string
-    modelId: string
-    version: string
+    file: File;
+    organizationId: string;
+    modelId: string;
+    version: string;
   }): Promise<PreparedFile> {
-    const { file, organizationId, modelId, version } = options
-    const originalName = file.name || FALLBACK_FILENAME
-    const { storedFilename, extension } =
-      this.createStoredFilename(originalName)
-    const kind = getStorageKind(extension)
+    const { file, organizationId, modelId, version } = options;
+    const originalName = file.name || FALLBACK_FILENAME;
+    const { storedFilename, extension } = this.createStoredFilename(originalName);
+    const kind = getStorageKind(extension);
     const storageKey = storageService.generateStorageKey({
       organizationId,
       modelId,
       version,
       filename: storedFilename,
       kind,
-    })
+    });
 
     await storageService.uploadFile({
       key: storageKey,
       file,
       contentType: file.type || DEFAULT_CONTENT_TYPE,
-    })
+    });
 
     return {
       storageKey,
@@ -259,44 +242,35 @@ export class ModelVersionService {
       mimeType: file.type || DEFAULT_CONTENT_TYPE,
       extension,
       size: file.size,
-    }
+    };
   }
 
   private createStoredFilename(originalName: string): {
-    storedFilename: string
-    extension: string
+    storedFilename: string;
+    extension: string;
   } {
-    const trimmedName = originalName.trim() || FALLBACK_FILENAME
-    const lastDotIndex = trimmedName.lastIndexOf('.')
-    const hasExtension =
-      lastDotIndex > 0 && lastDotIndex < trimmedName.length - 1
-    const extension = hasExtension
-      ? trimmedName.slice(lastDotIndex + 1).toLowerCase()
-      : ''
-    const baseName = hasExtension
-      ? trimmedName.slice(0, lastDotIndex)
-      : trimmedName
-    const safeBase = slugify(baseName || FALLBACK_FILENAME)
-    const uniqueSuffix = randomUUID().split('-')[0]
+    const trimmedName = originalName.trim() || FALLBACK_FILENAME;
+    const lastDotIndex = trimmedName.lastIndexOf(".");
+    const hasExtension = lastDotIndex > 0 && lastDotIndex < trimmedName.length - 1;
+    const extension = hasExtension ? trimmedName.slice(lastDotIndex + 1).toLowerCase() : "";
+    const baseName = hasExtension ? trimmedName.slice(0, lastDotIndex) : trimmedName;
+    const safeBase = slugify(baseName || FALLBACK_FILENAME);
+    const uniqueSuffix = randomUUID().split("-")[0];
     const storedFilename = extension
       ? `${safeBase}-${uniqueSuffix}.${extension}`
-      : `${safeBase}-${uniqueSuffix}`
+      : `${safeBase}-${uniqueSuffix}`;
 
     return {
       storedFilename,
-      extension: extension || 'bin',
-    }
+      extension: extension || "bin",
+    };
   }
 
-  private async cleanupUploadedFiles(
-    files: UploadedFileMetadata[]
-  ): Promise<void> {
+  private async cleanupUploadedFiles(files: UploadedFileMetadata[]): Promise<void> {
     await Promise.all(
-      files.map((file) =>
-        storageService.deleteFile(file.storageKey).catch(() => {})
-      )
-    )
+      files.map((file) => storageService.deleteFile(file.storageKey).catch(() => {})),
+    );
   }
 }
 
-export const modelVersionService = new ModelVersionService()
+export const modelVersionService = new ModelVersionService();

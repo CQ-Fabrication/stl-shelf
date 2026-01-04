@@ -2,19 +2,10 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCheckout } from "@/hooks/use-checkout";
 import { useSubscription } from "@/hooks/use-subscription";
-import {
-  SUBSCRIPTION_TIERS,
-  type SubscriptionTier,
-} from "@/lib/billing/config";
+import { SUBSCRIPTION_TIERS, type SubscriptionTier } from "@/lib/billing/config";
 import { formatPrice } from "@/lib/billing/utils";
 
 const formatStorage = (bytes: number): string => {
@@ -68,12 +59,8 @@ export const PlanSelector = () => {
             <CardHeader>
               <CardTitle>{config.name}</CardTitle>
               <CardDescription>
-                <span className="font-bold text-3xl">
-                  {formatPrice(config.price)}
-                </span>
-                {config.price > 0 && (
-                  <span className="text-muted-foreground">/month</span>
-                )}
+                <span className="font-bold text-3xl">{formatPrice(config.price)}</span>
+                {config.price > 0 && <span className="text-muted-foreground">/month</span>}
               </CardDescription>
             </CardHeader>
 
@@ -86,17 +73,16 @@ export const PlanSelector = () => {
                   {formatStorage(config.storageLimit)} storage
                 </p>
                 <p className="text-muted-foreground">
-                  {config.modelCountLimit === -1 ? "Unlimited models" : `${config.modelCountLimit} models`}
+                  {config.modelCountLimit === -1
+                    ? "Unlimited models"
+                    : `${config.modelCountLimit} models`}
                 </p>
               </div>
 
               <div className="flex-1 border-t pt-4">
                 <ul className="space-y-2">
                   {config.features.map((feature) => (
-                    <li
-                      className="flex items-center gap-2 text-sm"
-                      key={feature}
-                    >
+                    <li className="flex items-center gap-2 text-sm" key={feature}>
                       <Check className="h-4 w-4 shrink-0 text-primary" />
                       <span>{feature}</span>
                     </li>
@@ -111,9 +97,7 @@ export const PlanSelector = () => {
                   onClick={() => handleSelectPlan(tier as SubscriptionTier)}
                   variant={isCurrentPlan ? "outline" : "default"}
                 >
-                  {loadingTier === tier && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                  {loadingTier === tier && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isCurrentPlan
                     ? "Current Plan"
                     : tier === "free"

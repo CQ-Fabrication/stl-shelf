@@ -5,13 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,9 +55,7 @@ export function ProfileTab() {
     onSubmit: async ({ value }) => {
       try {
         await authClient.changeEmail({ newEmail: value.email });
-        toast.success(
-          "Verification email sent. Please check your inbox to confirm the change."
-        );
+        toast.success("Verification email sent. Please check your inbox to confirm the change.");
       } catch (error) {
         toast.error("Failed to change email");
         throw error;
@@ -75,9 +67,7 @@ export function ProfileTab() {
     fileInputRef.current?.click();
   };
 
-  const handleAvatarChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -130,9 +120,7 @@ export function ProfileTab() {
       <Card>
         <CardHeader>
           <CardTitle>Profile Picture</CardTitle>
-          <CardDescription>
-            Click on your avatar to upload a new image
-          </CardDescription>
+          <CardDescription>Click on your avatar to upload a new image</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-6">
@@ -201,21 +189,16 @@ export function ProfileTab() {
                         placeholder="Enter your name"
                         value={field.state.value}
                       />
-                      {field.state.meta.isTouched &&
-                        field.state.meta.errors.length > 0 && (
-                          <p className="text-destructive text-sm">
-                            {field.state.meta.errors[0]?.message}
-                          </p>
-                        )}
+                      {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                        <p className="text-destructive text-sm">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 </nameForm.Field>
               </div>
-              <Button
-                disabled={nameForm.state.isSubmitting}
-                size="sm"
-                type="submit"
-              >
+              <Button disabled={nameForm.state.isSubmitting} size="sm" type="submit">
                 {nameForm.state.isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -233,8 +216,8 @@ export function ProfileTab() {
         <CardHeader>
           <CardTitle>Email Address</CardTitle>
           <CardDescription>
-            Changing your email will require verification. We'll notify your
-            current email address about this change.
+            Changing your email will require verification. We'll notify your current email address
+            about this change.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -259,20 +242,18 @@ export function ProfileTab() {
                         type="email"
                         value={field.state.value}
                       />
-                      {field.state.meta.isTouched &&
-                        field.state.meta.errors.length > 0 && (
-                          <p className="text-destructive text-sm">
-                            {field.state.meta.errors[0]?.message}
-                          </p>
-                        )}
+                      {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                        <p className="text-destructive text-sm">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 </emailForm.Field>
               </div>
               <Button
                 disabled={
-                  emailForm.state.isSubmitting ||
-                  emailForm.state.values.email === user.email
+                  emailForm.state.isSubmitting || emailForm.state.values.email === user.email
                 }
                 size="sm"
                 type="submit"

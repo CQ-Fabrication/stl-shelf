@@ -1,56 +1,56 @@
-import { AlertCircle, Check, Trash2 } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useCheckout } from '@/hooks/use-checkout'
-import type { UploadLimitsResult } from '@/hooks/use-upload-limits'
-import { SUBSCRIPTION_TIERS, type SubscriptionTier } from '@/lib/billing/config'
-import { formatStorage } from '@/lib/billing/utils'
+import { AlertCircle, Check, Trash2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCheckout } from "@/hooks/use-checkout";
+import type { UploadLimitsResult } from "@/hooks/use-upload-limits";
+import { SUBSCRIPTION_TIERS, type SubscriptionTier } from "@/lib/billing/config";
+import { formatStorage } from "@/lib/billing/utils";
 
 type UploadBlockedStateProps = {
-  limits: UploadLimitsResult
-  onClose: () => void
-}
+  limits: UploadLimitsResult;
+  onClose: () => void;
+};
 
-const TIER_ORDER: SubscriptionTier[] = ['free', 'basic', 'pro']
+const TIER_ORDER: SubscriptionTier[] = ["free", "basic", "pro"];
 
 const getRecommendedTier = (currentTier: SubscriptionTier): SubscriptionTier => {
-  const currentIndex = TIER_ORDER.indexOf(currentTier)
+  const currentIndex = TIER_ORDER.indexOf(currentTier);
   if (currentIndex < TIER_ORDER.length - 1) {
     // Safe access - we've already verified the index is in bounds
-    return TIER_ORDER[currentIndex + 1] as SubscriptionTier
+    return TIER_ORDER[currentIndex + 1] as SubscriptionTier;
   }
-  return currentTier
-}
+  return currentTier;
+};
 
 export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps) {
-  const { startCheckout, loadingTier, isLoading } = useCheckout()
-  const recommendedTier = getRecommendedTier(limits.tier)
+  const { startCheckout, loadingTier, isLoading } = useCheckout();
+  const recommendedTier = getRecommendedTier(limits.tier);
 
   const blockMessage =
-    limits.blockReason === 'model_limit'
+    limits.blockReason === "model_limit"
       ? `Model limit reached (${limits.models.current}/${limits.models.limit})`
-      : `Storage limit reached (${formatStorage(limits.storage.current)}/${formatStorage(limits.storage.limit)})`
+      : `Storage limit reached (${formatStorage(limits.storage.current)}/${formatStorage(limits.storage.limit)})`;
 
   // Analytics placeholder
-  console.log('limit_block_shown', {
+  console.log("limit_block_shown", {
     reason: limits.blockReason,
     tier: limits.tier,
-  })
+  });
 
   const handleUpgradeClick = (tier: SubscriptionTier) => {
-    console.log('limit_upgrade_clicked', { from: limits.tier, to: tier })
-    startCheckout(tier)
-  }
+    console.log("limit_upgrade_clicked", { from: limits.tier, to: tier });
+    startCheckout(tier);
+  };
 
   const handleDismiss = () => {
-    console.log('limit_block_dismissed', {
+    console.log("limit_block_dismissed", {
       reason: limits.blockReason,
       tier: limits.tier,
-    })
-    onClose()
-  }
+    });
+    onClose();
+  };
 
   return (
     <div className="space-y-6">
@@ -68,14 +68,14 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
       {/* Plan comparison grid */}
       <div className="grid gap-4 md:grid-cols-3">
         {TIER_ORDER.map((tierKey) => {
-          const config = SUBSCRIPTION_TIERS[tierKey]
-          const isCurrent = limits.tier === tierKey
-          const isRecommended = tierKey === recommendedTier && !isCurrent
+          const config = SUBSCRIPTION_TIERS[tierKey];
+          const isCurrent = limits.tier === tierKey;
+          const isRecommended = tierKey === recommendedTier && !isCurrent;
 
           return (
             <Card
               key={tierKey}
-              className={`relative ${isRecommended ? 'ring-2 ring-orange-500/20 border-orange-500' : ''}`}
+              className={`relative ${isRecommended ? "ring-2 ring-orange-500/20 border-orange-500" : ""}`}
             >
               {isCurrent && (
                 <Badge variant="secondary" className="absolute top-3 right-3">
@@ -92,9 +92,7 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
                 <CardTitle className="text-lg">{config.name}</CardTitle>
                 <p className="font-bold text-2xl">
                   ${config.price}
-                  <span className="font-normal text-muted-foreground text-sm">
-                    /mo
-                  </span>
+                  <span className="font-normal text-muted-foreground text-sm">/mo</span>
                 </p>
               </CardHeader>
 
@@ -103,7 +101,7 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-primary" />
                     {config.modelCountLimit === -1
-                      ? 'Unlimited models'
+                      ? "Unlimited models"
                       : `${config.modelCountLimit} models`}
                   </li>
                   <li className="flex items-center gap-2">
@@ -113,20 +111,20 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
                 </ul>
 
                 <Button
-                  variant={isRecommended ? 'default' : 'outline'}
-                  className={`w-full ${isRecommended ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
-                  disabled={isCurrent || tierKey === 'free' || isLoading}
+                  variant={isRecommended ? "default" : "outline"}
+                  className={`w-full ${isRecommended ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                  disabled={isCurrent || tierKey === "free" || isLoading}
                   onClick={() => handleUpgradeClick(tierKey)}
                 >
                   {loadingTier === tierKey
-                    ? 'Loading...'
+                    ? "Loading..."
                     : isCurrent
-                      ? 'Current Plan'
+                      ? "Current Plan"
                       : `Upgrade to ${config.name}`}
                 </Button>
               </CardContent>
             </Card>
-          )
+          );
         })}
       </div>
 
@@ -141,5 +139,5 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
         </Button>
       </div>
     </div>
-  )
+  );
 }

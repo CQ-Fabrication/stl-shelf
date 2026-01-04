@@ -1,24 +1,18 @@
-'use client'
+"use client";
 
-import { ArrowRight, Github } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { ShimmerButton } from '@/components/ui/shimmer-button'
-import { Particles } from '@/components/ui/particles'
-import { AuroraText } from '@/components/marketing/magicui/aurora-text'
+import { ArrowRight, Github } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { Particles } from "@/components/ui/particles";
+import { AuroraText } from "@/components/marketing/magicui/aurora-text";
 
 export function FinalCTA() {
   return (
     <section className="relative py-32 overflow-hidden">
       {/* Particle background - same as hero for visual continuity */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        <Particles
-          className="absolute inset-0"
-          quantity={80}
-          ease={80}
-          color="#000000"
-          refresh
-        />
+        <Particles className="absolute inset-0" quantity={80} ease={80} color="#000000" refresh />
       </div>
 
       {/* Isometric grid overlay - matching hero */}
@@ -29,7 +23,7 @@ export function FinalCTA() {
             linear-gradient(30deg, hsl(var(--foreground)) 1px, transparent 1px),
             linear-gradient(150deg, hsl(var(--foreground)) 1px, transparent 1px)
           `,
-          backgroundSize: '40px 40px',
+          backgroundSize: "40px 40px",
         }}
       />
 
@@ -38,7 +32,7 @@ export function FinalCTA() {
           {/* Small label */}
           <div
             className="animate-fade-in-up flex justify-center"
-            style={{ animationDelay: '0.1s' }}
+            style={{ animationDelay: "0.1s" }}
           >
             <span className="text-sm font-medium text-muted-foreground tracking-wider uppercase">
               Start Your Journey
@@ -48,16 +42,15 @@ export function FinalCTA() {
           {/* Main headline with AuroraText */}
           <h2
             className="animate-fade-in-up text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight"
-            style={{ animationDelay: '0.2s' }}
+            style={{ animationDelay: "0.2s" }}
           >
-            Ready to Organize Your{' '}
-            <AuroraText className="font-bold">Collection?</AuroraText>
+            Ready to Organize Your <AuroraText className="font-bold">Collection?</AuroraText>
           </h2>
 
           {/* Subtext */}
           <p
             className="animate-fade-in-up text-lg md:text-xl text-muted-foreground max-w-xl mx-auto"
-            style={{ animationDelay: '0.3s' }}
+            style={{ animationDelay: "0.3s" }}
           >
             Start managing your 3D model library today.
             <br />
@@ -67,7 +60,7 @@ export function FinalCTA() {
           {/* CTA Buttons */}
           <div
             className="animate-fade-in-up flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
-            style={{ animationDelay: '0.4s' }}
+            style={{ animationDelay: "0.4s" }}
           >
             <Link to="/signup">
               <ShimmerButton className="shadow-2xl">
@@ -92,5 +85,5 @@ export function FinalCTA() {
         </div>
       </div>
     </section>
-  )
+  );
 }

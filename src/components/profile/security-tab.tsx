@@ -5,13 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DeleteAccountModal } from "./delete-account-modal";
@@ -19,9 +13,7 @@ import { DeleteAccountModal } from "./delete-account-modal";
 const passwordSchema = z
   .object({
     currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: z
-      .string()
-      .min(8, "Password must be at least 8 characters"),
+    newPassword: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -55,9 +47,7 @@ export function SecurityTab() {
         // Invalidate all other sessions for security
         await authClient.revokeSessions();
 
-        toast.success(
-          "Password changed successfully. All other sessions have been signed out."
-        );
+        toast.success("Password changed successfully. All other sessions have been signed out.");
 
         // Reset form
         passwordForm.reset();
@@ -83,8 +73,8 @@ export function SecurityTab() {
         <CardHeader>
           <CardTitle>Change Password</CardTitle>
           <CardDescription>
-            Update your password. For security, all other devices will be signed
-            out when you change your password.
+            Update your password. For security, all other devices will be signed out when you change
+            your password.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -124,12 +114,11 @@ export function SecurityTab() {
                       )}
                     </Button>
                   </div>
-                  {field.state.meta.isTouched &&
-                    field.state.meta.errors.length > 0 && (
-                      <p className="text-destructive text-sm">
-                        {field.state.meta.errors[0]?.message}
-                      </p>
-                    )}
+                  {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                    <p className="text-destructive text-sm">
+                      {field.state.meta.errors[0]?.message}
+                    </p>
+                  )}
                 </div>
               )}
             </passwordForm.Field>
@@ -162,15 +151,12 @@ export function SecurityTab() {
                       )}
                     </Button>
                   </div>
-                  {field.state.meta.isTouched &&
-                    field.state.meta.errors.length > 0 && (
-                      <p className="text-destructive text-sm">
-                        {field.state.meta.errors[0]?.message}
-                      </p>
-                    )}
-                  <p className="text-muted-foreground text-xs">
-                    Minimum 8 characters
-                  </p>
+                  {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                    <p className="text-destructive text-sm">
+                      {field.state.meta.errors[0]?.message}
+                    </p>
+                  )}
+                  <p className="text-muted-foreground text-xs">Minimum 8 characters</p>
                 </div>
               )}
             </passwordForm.Field>
@@ -203,12 +189,11 @@ export function SecurityTab() {
                       )}
                     </Button>
                   </div>
-                  {field.state.meta.isTouched &&
-                    field.state.meta.errors.length > 0 && (
-                      <p className="text-destructive text-sm">
-                        {field.state.meta.errors[0]?.message}
-                      </p>
-                    )}
+                  {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                    <p className="text-destructive text-sm">
+                      {field.state.meta.errors[0]?.message}
+                    </p>
+                  )}
                 </div>
               )}
             </passwordForm.Field>
@@ -234,8 +219,7 @@ export function SecurityTab() {
         <CardHeader>
           <CardTitle className="text-destructive">Danger Zone</CardTitle>
           <CardDescription>
-            Permanently delete your account and all associated data. This action
-            cannot be undone.
+            Permanently delete your account and all associated data. This action cannot be undone.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -243,13 +227,11 @@ export function SecurityTab() {
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
               <div className="flex-1">
-                <p className="font-medium text-destructive text-sm">
-                  Delete Account
-                </p>
+                <p className="font-medium text-destructive text-sm">Delete Account</p>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  This will permanently delete your account, all your sessions,
-                  organization memberships, and if you're an owner, your entire
-                  organization including all models and files.
+                  This will permanently delete your account, all your sessions, organization
+                  memberships, and if you're an owner, your entire organization including all models
+                  and files.
                 </p>
                 <Button
                   className="mt-4"
@@ -265,10 +247,7 @@ export function SecurityTab() {
         </CardContent>
       </Card>
 
-      <DeleteAccountModal
-        onOpenChange={setIsDeleteModalOpen}
-        open={isDeleteModalOpen}
-      />
+      <DeleteAccountModal onOpenChange={setIsDeleteModalOpen} open={isDeleteModalOpen} />
     </div>
   );
 }

@@ -1,77 +1,75 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Logo } from '@/components/ui/logo'
-import { authClient } from '@/lib/auth-client'
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Logo } from "@/components/ui/logo";
+import { authClient } from "@/lib/auth-client";
 
-export const Route = createFileRoute('/verify-email')({
+export const Route = createFileRoute("/verify-email")({
   component: VerifyEmailPage,
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      token: (search.token as string) || '',
-    }
+      token: (search.token as string) || "",
+    };
   },
-})
+});
 
-type VerificationState = 'pending' | 'verifying' | 'success' | 'error'
+type VerificationState = "pending" | "verifying" | "success" | "error";
 
-const SUCCESS_REDIRECT_DELAY_MS = 2000
+const SUCCESS_REDIRECT_DELAY_MS = 2000;
 
 function VerifyEmailPage() {
-  const { token } = Route.useSearch()
-  const [state, setState] = useState<VerificationState>(
-    token ? 'verifying' : 'pending'
-  )
-  const [isResending, setIsResending] = useState(false)
-  const navigate = useNavigate()
+  const { token } = Route.useSearch();
+  const [state, setState] = useState<VerificationState>(token ? "verifying" : "pending");
+  const [isResending, setIsResending] = useState(false);
+  const navigate = useNavigate();
 
   const verifyEmail = useCallback(
     async (verificationToken: string) => {
       try {
         await authClient.verifyEmail({
           query: { token: verificationToken },
-        })
-        setState('success')
-        toast.success('Email verified successfully!')
+        });
+        setState("success");
+        toast.success("Email verified successfully!");
 
         setTimeout(() => {
-          navigate({ to: '/library' })
-        }, SUCCESS_REDIRECT_DELAY_MS)
+          navigate({ to: "/library" });
+        }, SUCCESS_REDIRECT_DELAY_MS);
       } catch (_error) {
-        setState('error')
-        toast.error('Failed to verify email')
+        setState("error");
+        toast.error("Failed to verify email");
       }
     },
-    [navigate]
-  )
+    [navigate],
+  );
 
   useEffect(() => {
-    if (token && state === 'verifying') {
-      verifyEmail(token)
+    if (token && state === "verifying") {
+      verifyEmail(token);
     }
-  }, [token, state, verifyEmail])
+  }, [token, state, verifyEmail]);
 
   const handleResend = async () => {
-    setIsResending(true)
+    setIsResending(true);
     try {
-      const { data: session } = await authClient.getSession()
+      const { data: session } = await authClient.getSession();
       if (session?.user?.email) {
         await authClient.sendVerificationEmail({
           email: session.user.email,
           callbackURL: `${window.location.origin}/verify-email`,
-        })
-        toast.success('Verification email sent!')
+        });
+        toast.success("Verification email sent!");
       } else {
-        toast.error('Please sign in to resend verification email')
+        toast.error("Please sign in to resend verification email");
       }
     } catch (_error) {
-      toast.error('Failed to send verification email')
+      toast.error("Failed to send verification email");
     } finally {
-      setIsResending(false)
+      setIsResending(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-svh items-center justify-center px-4">
@@ -82,27 +80,19 @@ function VerifyEmailPage() {
           </Link>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
-          {state === 'pending' && (
+          {state === "pending" && (
             <PendingState isResending={isResending} onResend={handleResend} />
           )}
-          {state === 'verifying' && <VerifyingState />}
-          {state === 'success' && <SuccessState />}
-          {state === 'error' && (
-            <ErrorState isResending={isResending} onResend={handleResend} />
-          )}
+          {state === "verifying" && <VerifyingState />}
+          {state === "success" && <SuccessState />}
+          {state === "error" && <ErrorState isResending={isResending} onResend={handleResend} />}
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
-function PendingState({
-  onResend,
-  isResending,
-}: {
-  onResend: () => void
-  isResending: boolean
-}) {
+function PendingState({ onResend, isResending }: { onResend: () => void; isResending: boolean }) {
   return (
     <>
       <div className="space-y-4 text-center">
@@ -125,25 +115,18 @@ function PendingState({
         <div className="space-y-2">
           <h3 className="font-semibold text-lg">Check your email</h3>
           <p className="text-muted-foreground text-sm">
-            We've sent a verification link to your email address. Click the link
-            to verify your account.
+            We've sent a verification link to your email address. Click the link to verify your
+            account.
           </p>
         </div>
       </div>
 
       <div className="space-y-3">
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">
-            Didn't receive the email?{' '}
-          </span>
+          <span className="text-muted-foreground">Didn't receive the email? </span>
         </div>
-        <Button
-          className="w-full"
-          disabled={isResending}
-          onClick={onResend}
-          variant="outline"
-        >
-          {isResending ? 'Resending...' : 'Resend verification email'}
+        <Button className="w-full" disabled={isResending} onClick={onResend} variant="outline">
+          {isResending ? "Resending..." : "Resend verification email"}
         </Button>
         <Link to="/login">
           <Button className="w-full" variant="ghost">
@@ -152,7 +135,7 @@ function PendingState({
         </Link>
       </div>
     </>
-  )
+  );
 }
 
 function VerifyingState() {
@@ -166,7 +149,7 @@ function VerifyingState() {
         <p className="text-muted-foreground text-sm">Please wait a moment.</p>
       </div>
     </div>
-  )
+  );
 }
 
 function SuccessState() {
@@ -192,8 +175,7 @@ function SuccessState() {
         <div className="space-y-2">
           <h3 className="font-semibold text-lg">Email verified!</h3>
           <p className="text-muted-foreground text-sm">
-            Your email has been verified successfully. Redirecting you to the
-            app...
+            Your email has been verified successfully. Redirecting you to the app...
           </p>
         </div>
       </div>
@@ -202,16 +184,10 @@ function SuccessState() {
         <Button className="w-full">Go to app</Button>
       </Link>
     </>
-  )
+  );
 }
 
-function ErrorState({
-  onResend,
-  isResending,
-}: {
-  onResend: () => void
-  isResending: boolean
-}) {
+function ErrorState({ onResend, isResending }: { onResend: () => void; isResending: boolean }) {
   return (
     <>
       <div className="space-y-4 text-center">
@@ -234,15 +210,14 @@ function ErrorState({
         <div className="space-y-2">
           <h3 className="font-semibold text-lg">Verification failed</h3>
           <p className="text-muted-foreground text-sm">
-            This verification link is invalid or has expired. Please request a
-            new one.
+            This verification link is invalid or has expired. Please request a new one.
           </p>
         </div>
       </div>
 
       <div className="space-y-3">
         <Button className="w-full" disabled={isResending} onClick={onResend}>
-          {isResending ? 'Resending...' : 'Request new verification email'}
+          {isResending ? "Resending..." : "Request new verification email"}
         </Button>
         <Link to="/login">
           <Button className="w-full" variant="outline">
@@ -251,5 +226,5 @@ function ErrorState({
         </Link>
       </div>
     </>
-  )
+  );
 }

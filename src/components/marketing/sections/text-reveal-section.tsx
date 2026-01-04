@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { TextReveal } from '@/components/marketing/magicui/text-reveal'
+import { TextReveal } from "@/components/marketing/magicui/text-reveal";
 
 export function TextRevealSection() {
   return (
@@ -13,7 +13,7 @@ export function TextRevealSection() {
             linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
             linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)
           `,
-          backgroundSize: '60px 60px',
+          backgroundSize: "60px 60px",
         }}
       />
 
@@ -26,5 +26,5 @@ export function TextRevealSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

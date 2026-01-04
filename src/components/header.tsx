@@ -1,21 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
-import {
-  Check,
-  CreditCard,
-  LogOut,
-  Plus,
-  Settings,
-  User,
-  Users,
-} from "lucide-react";
+import { Check, CreditCard, LogOut, Plus, Settings, User, Users } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import {
-  useActiveOrganization,
-  useOrganizations,
-} from "@/hooks/use-organizations";
+import { useActiveOrganization, useOrganizations } from "@/hooks/use-organizations";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
@@ -24,7 +13,7 @@ import { Logo } from "@/components/ui/logo";
 const UploadModal = lazy(() =>
   import("./models/upload-modal/upload-modal").then((mod) => ({
     default: mod.UploadModal,
-  }))
+  })),
 );
 
 import {
@@ -89,10 +78,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           {/* Upload button - Only show if user has organizations */}
           {hasOrganizations && (
-            <Button
-              onClick={() => uploadModalActions.openModal()}
-              size="sm"
-            >
+            <Button onClick={() => uploadModalActions.openModal()} size="sm">
               <Plus className="mr-2 h-4 w-4" />
               Upload
             </Button>
@@ -137,9 +123,7 @@ export default function Header() {
                       <span className="truncate">{activeOrg.name}</span>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
-                      <DropdownMenuLabel className="text-xs">
-                        Switch Organization
-                      </DropdownMenuLabel>
+                      <DropdownMenuLabel className="text-xs">Switch Organization</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       {organizations?.map((org) => {
                         const isActive = org.id === activeOrg.id;
@@ -148,9 +132,7 @@ export default function Header() {
                             className={isActive ? "bg-accent" : ""}
                             disabled={isActive}
                             key={org.id}
-                            onClick={() =>
-                              !isActive && switchOrganization(org.id)
-                            }
+                            onClick={() => !isActive && switchOrganization(org.id)}
                           >
                             <div className="flex w-full items-center gap-2">
                               <GradientAvatar
@@ -160,12 +142,8 @@ export default function Header() {
                                 size="xs"
                                 src={org.logo ?? undefined}
                               />
-                              <span className="flex-1 truncate">
-                                {org.name}
-                              </span>
-                              {isActive && (
-                                <Check className="h-4 w-4 flex-shrink-0" />
-                              )}
+                              <span className="flex-1 truncate">{org.name}</span>
+                              {isActive && <Check className="h-4 w-4 flex-shrink-0" />}
                             </div>
                           </DropdownMenuItem>
                         );
@@ -227,9 +205,9 @@ export default function Header() {
           <AlertDialogHeader>
             <AlertDialogTitle>Organization Limit Reached</AlertDialogTitle>
             <AlertDialogDescription>
-              Currently, only one organization per user is supported. We're
-              working hard to add more features including multiple organizations
-              support, enhanced collaboration tools, and much more!
+              Currently, only one organization per user is supported. We're working hard to add more
+              features including multiple organizations support, enhanced collaboration tools, and
+              much more!
               <br />
               <br />
               Stay tuned for updates as we continue to improve STL Shelf.

@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Navigation } from '@/components/marketing/navigation'
+import { createFileRoute } from "@tanstack/react-router";
+import { Navigation } from "@/components/marketing/navigation";
 import {
   HeroSection,
   TextRevealSection,
@@ -10,23 +10,23 @@ import {
   Testimonials,
   FinalCTA,
   Footer,
-} from '@/components/marketing/sections'
+} from "@/components/marketing/sections";
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute("/")({
   component: LandingPage,
   head: () => ({
     meta: [
       {
-        title: 'STL Shelf - Self-Hosted 3D Model Library',
+        title: "STL Shelf - Self-Hosted 3D Model Library",
       },
       {
-        name: 'description',
+        name: "description",
         content:
-          'Organize, version, and share your 3D printable models. Self-hosted solution for makers and teams.',
+          "Organize, version, and share your 3D printable models. Self-hosted solution for makers and teams.",
       },
     ],
   }),
-})
+});
 
 function LandingPage() {
   return (
@@ -44,5 +44,5 @@ function LandingPage() {
         <Footer />
       </main>
     </>
-  )
+  );
 }

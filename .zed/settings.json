@@ -4,9 +4,9 @@
     "postgres-context-server": {
       "enabled": true,
       "settings": {
-        "database_url": "postgresql://stlshelf:stlshelf_dev_password@localhost:5432/stlshelf",
-      },
-    },
+        "database_url": "postgresql://stlshelf:stlshelf_dev_password@localhost:5432/stlshelf"
+      }
+    }
   },
   "lsp": {
     "oxlint": {
@@ -16,9 +16,9 @@
           "fixKind": "safe_fix",
           "run": "onType",
           "typeAware": true,
-          "unusedDisableDirectives": "deny",
-        },
-      },
+          "unusedDisableDirectives": "deny"
+        }
+      }
     },
     "oxfmt": {
       "initialization_options": {
@@ -29,10 +29,10 @@
           "fmt.experimental": true,
           "run": "onSave",
           "typeAware": false,
-          "unusedDisableDirectives": false,
-        },
-      },
-    },
+          "unusedDisableDirectives": false
+        }
+      }
+    }
   },
   "languages": {
     "JavaScript": {
@@ -41,13 +41,13 @@
       "formatter": [
         {
           "language_server": {
-            "name": "oxfmt",
-          },
+            "name": "oxfmt"
+          }
         },
         {
-          "code_action": "source.fixAll.oxc",
-        },
-      ],
+          "code_action": "source.fixAll.oxc"
+        }
+      ]
     },
     "TypeScript": {
       "language_servers": ["tsgo", "!biome"],
@@ -55,13 +55,13 @@
       "formatter": [
         {
           "language_server": {
-            "name": "oxfmt",
-          },
+            "name": "oxfmt"
+          }
         },
         {
-          "code_action": "source.fixAll.oxc",
-        },
-      ],
+          "code_action": "source.fixAll.oxc"
+        }
+      ]
     },
     "TSX": {
       "language_servers": ["tsgo", "!biome"],
@@ -69,13 +69,13 @@
       "formatter": [
         {
           "language_server": {
-            "name": "oxfmt",
-          },
+            "name": "oxfmt"
+          }
         },
         {
-          "code_action": "source.fixAll.oxc",
-        },
-      ],
-    },
-  },
+          "code_action": "source.fixAll.oxc"
+        }
+      ]
+    }
+  }
 }

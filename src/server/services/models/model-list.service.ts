@@ -1,57 +1,48 @@
-import {
-  and,
-  desc,
-  eq,
-  ilike,
-  inArray,
-  isNull,
-  or,
-  sql,
-} from 'drizzle-orm'
-import { db } from '@/lib/db'
-import { user } from '@/lib/db/schema/auth'
-import {
-  modelFiles,
-  models,
-  modelTags,
-  modelVersions,
-  tags,
-} from '@/lib/db/schema/models'
-import { storageService } from '@/server/services/storage'
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { user } from "@/lib/db/schema/auth";
+import { modelFiles, models, modelTags, modelVersions, tags } from "@/lib/db/schema/models";
+import { storageService } from "@/server/services/storage";
 
 export type ListModelsInput = {
-  organizationId: string
-  cursor?: number
-  limit?: number
-  search?: string
-  tags?: string[]
-}
+  organizationId: string;
+  cursor?: number;
+  limit?: number;
+  search?: string;
+  tags?: string[];
+};
 
 export type ModelOwner = {
-  id: string
-  name: string
-  image: string | null
-}
+  id: string;
+  name: string;
+  image: string | null;
+};
 
 export type ModelListItem = {
-  id: string
-  slug: string
-  name: string
-  description: string | null
-  currentVersion: string
-  fileCount: number
-  totalSize: number
-  tags: string[]
-  thumbnailUrl: string | null
-  owner: ModelOwner
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  currentVersion: string;
+  fileCount: number;
+  totalSize: number;
+  tags: string[];
+  thumbnailUrl: string | null;
+  owner: ModelOwner;
+  createdAt: string;
+  updatedAt: string;
+  completeness: {
+    hasModel: boolean;
+    hasSlicer: boolean;
+    hasImage: boolean;
+    isComplete: boolean;
+  };
+};
 
 export type ListModelsOutput = {
-  models: ModelListItem[]
-  nextCursor: number | null
-}
+  models: ModelListItem[];
+  nextCursor: number | null;
+};
 
 /**
  * Optimized listModels with cursor-based pagination for infinite scroll
@@ -64,22 +55,19 @@ export async function listModels({
   search,
   tags: filterTags,
 }: ListModelsInput): Promise<ListModelsOutput> {
-  const safeLimit = Math.min(100, Math.max(1, limit))
-  const offset = Math.max(0, cursor)
+  const safeLimit = Math.min(100, Math.max(1, limit));
+  const offset = Math.max(0, cursor);
 
-  const conditions = [
-    eq(models.organizationId, organizationId),
-    isNull(models.deletedAt),
-  ]
+  const conditions = [eq(models.organizationId, organizationId), isNull(models.deletedAt)];
 
   if (search?.trim()) {
-    const searchPattern = `%${search.trim()}%`
+    const searchPattern = `%${search.trim()}%`;
     const searchCondition = or(
       ilike(models.name, searchPattern),
-      ilike(models.description, searchPattern)
-    )
+      ilike(models.description, searchPattern),
+    );
     if (searchCondition) {
-      conditions.push(searchCondition)
+      conditions.push(searchCondition);
     }
   }
 
@@ -88,14 +76,9 @@ export async function listModels({
       .select({ modelId: modelTags.modelId })
       .from(modelTags)
       .innerJoin(tags, eq(tags.id, modelTags.tagId))
-      .where(
-        and(
-          eq(tags.organizationId, organizationId),
-          inArray(tags.name, filterTags)
-        )
-      )
+      .where(and(eq(tags.organizationId, organizationId), inArray(tags.name, filterTags)));
 
-    conditions.push(inArray(models.id, modelsWithTags))
+    conditions.push(inArray(models.id, modelsWithTags));
   }
 
   const modelsWithData = await db
@@ -135,29 +118,59 @@ export async function listModels({
         AND mv.version = models.current_version
         LIMIT 1
       )`,
+      hasModelFile: sql<boolean>`(
+        SELECT EXISTS(
+          SELECT 1 FROM ${modelVersions} mv
+          INNER JOIN ${modelFiles} mf ON mf.version_id = mv.id
+          WHERE mv.model_id = models.id
+          AND mv.version = models.current_version
+          AND mf.extension IN ('stl', 'obj', 'ply')
+        )
+      )`,
+      hasSlicerFile: sql<boolean>`(
+        SELECT EXISTS(
+          SELECT 1 FROM ${modelVersions} mv
+          INNER JOIN ${modelFiles} mf ON mf.version_id = mv.id
+          WHERE mv.model_id = models.id
+          AND mv.version = models.current_version
+          AND mf.extension = '3mf'
+        )
+      )`,
+      hasImageFile: sql<boolean>`(
+        SELECT EXISTS(
+          SELECT 1 FROM ${modelVersions} mv
+          INNER JOIN ${modelFiles} mf ON mf.version_id = mv.id
+          WHERE mv.model_id = models.id
+          AND mv.version = models.current_version
+          AND mf.extension IN ('jpg', 'jpeg', 'png', 'webp', 'gif')
+        )
+      )`,
     })
     .from(models)
     .innerJoin(user, eq(models.ownerId, user.id))
     .where(and(...conditions))
     .orderBy(desc(models.updatedAt))
     .limit(safeLimit + 1)
-    .offset(offset)
+    .offset(offset);
 
-  const hasMore = modelsWithData.length > safeLimit
-  const items = hasMore ? modelsWithData.slice(0, safeLimit) : modelsWithData
+  const hasMore = modelsWithData.length > safeLimit;
+  const items = hasMore ? modelsWithData.slice(0, safeLimit) : modelsWithData;
 
   const modelList = await Promise.all(
     items.map(async (row) => {
-      let thumbnailUrl: string | null = null
+      let thumbnailUrl: string | null = null;
       if (row.thumbnailPath) {
         try {
-          thumbnailUrl = await storageService.generateDownloadUrl(
-            row.thumbnailPath
-          )
+          thumbnailUrl = await storageService.generateDownloadUrl(row.thumbnailPath);
         } catch {
-          thumbnailUrl = null
+          thumbnailUrl = null;
         }
       }
+
+      const hasModel = row.hasModelFile ?? false;
+      const hasSlicer = row.hasSlicerFile ?? false;
+      // Image can be either in model_files OR as a thumbnail on the version
+      const hasImage = (row.hasImageFile ?? false) || !!row.thumbnailPath;
 
       return {
         id: row.id,
@@ -176,18 +189,24 @@ export async function listModels({
         },
         createdAt: row.createdAt.toISOString(),
         updatedAt: row.updatedAt.toISOString(),
-      }
-    })
-  )
+        completeness: {
+          hasModel,
+          hasSlicer,
+          hasImage,
+          isComplete: hasModel && hasSlicer && hasImage,
+        },
+      };
+    }),
+  );
 
-  const nextCursor = hasMore ? offset + safeLimit : null
+  const nextCursor = hasMore ? offset + safeLimit : null;
 
   return {
     models: modelList,
     nextCursor,
-  }
+  };
 }
 
 export const modelListService = {
   listModels,
-}
+};

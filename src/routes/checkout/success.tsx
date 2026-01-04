@@ -1,34 +1,28 @@
-import { useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { CheckCircle } from 'lucide-react'
-import { useEffect } from 'react'
-import { z } from 'zod'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { CheckCircle } from "lucide-react";
+import { useEffect } from "react";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const Route = createFileRoute('/checkout/success')({
+export const Route = createFileRoute("/checkout/success")({
   component: CheckoutSuccessPage,
   validateSearch: z.object({
     checkout_id: z.string(),
   }),
-})
+});
 
 function CheckoutSuccessPage() {
-  const { checkout_id } = Route.useSearch()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const { checkout_id } = Route.useSearch();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     queryClient.invalidateQueries({
-      queryKey: ['billing'],
-    })
-  }, [queryClient])
+      queryKey: ["billing"],
+    });
+  }, [queryClient]);
 
   return (
     <div className="container mx-auto flex min-h-screen max-w-2xl items-center justify-center px-4">
@@ -45,25 +39,24 @@ function CheckoutSuccessPage() {
         <CardContent className="space-y-4">
           <div className="rounded-lg bg-muted p-4">
             <p className="text-center text-muted-foreground text-sm">
-              Checkout ID:{' '}
-              <code className="font-mono text-xs">{checkout_id}</code>
+              Checkout ID: <code className="font-mono text-xs">{checkout_id}</code>
             </p>
           </div>
 
           <div className="flex gap-4">
             <Button
               className="flex-1"
-              onClick={() => navigate({ to: '/billing' })}
+              onClick={() => navigate({ to: "/billing" })}
               variant="outline"
             >
               View Billing
             </Button>
-            <Button className="flex-1" onClick={() => navigate({ to: '/' })}>
+            <Button className="flex-1" onClick={() => navigate({ to: "/" })}>
               Go to Library
             </Button>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

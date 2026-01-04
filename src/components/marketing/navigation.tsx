@@ -1,46 +1,46 @@
-'use client'
+"use client";
 
-import { Link, useLocation } from '@tanstack/react-router'
-import { ArrowRight, Menu, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Logo } from '@/components/ui/logo'
-import { authClient } from '@/lib/auth-client'
+import { Link, useLocation } from "@tanstack/react-router";
+import { ArrowRight, Menu, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/logo";
+import { authClient } from "@/lib/auth-client";
 
 const navItems = [
-  { label: 'Features', href: '/#features', scrollTo: '#features' },
-  { label: 'Pricing', href: '/pricing', scrollTo: null },
-  { label: 'About', href: '/about', scrollTo: null },
-]
+  { label: "Features", href: "/#features", scrollTo: "#features" },
+  { label: "Pricing", href: "/pricing", scrollTo: null },
+  { label: "About", href: "/about", scrollTo: null },
+];
 
 export function Navigation() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [isMounted, setIsMounted] = useState(false)
-  const location = useLocation()
-  const { data: session, isPending } = authClient.useSession()
-  const isHomePage = location.pathname === '/'
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const location = useLocation();
+  const { data: session, isPending } = authClient.useSession();
+  const isHomePage = location.pathname === "/";
 
   // Prevent hydration mismatch by only showing auth state after mount
   useEffect(() => {
-    setIsMounted(true)
-  }, [])
+    setIsMounted(true);
+  }, []);
 
-  const showLoading = !isMounted || isPending
-  const isAuthenticated = isMounted && !isPending && session?.user
+  const showLoading = !isMounted || isPending;
+  const isAuthenticated = isMounted && !isPending && session?.user;
 
   const handleNavClick = (item: (typeof navItems)[0]) => {
-    setMobileMenuOpen(false)
+    setMobileMenuOpen(false);
 
     // If on homepage and item has scrollTo, scroll to section
     if (isHomePage && item.scrollTo) {
-      const element = document.querySelector(item.scrollTo)
+      const element = document.querySelector(item.scrollTo);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
-        return true
+        element.scrollIntoView({ behavior: "smooth" });
+        return true;
       }
     }
-    return false
-  }
+    return false;
+  };
 
   return (
     <>
@@ -71,7 +71,7 @@ export function Navigation() {
                 >
                   {item.label}
                 </Link>
-              )
+              ),
             )}
           </div>
 
@@ -105,11 +105,7 @@ export function Navigation() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             type="button"
           >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
       </nav>
@@ -119,7 +115,7 @@ export function Navigation() {
           <div
             className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
             onClick={() => setMobileMenuOpen(false)}
-            onKeyDown={(e) => e.key === 'Escape' && setMobileMenuOpen(false)}
+            onKeyDown={(e) => e.key === "Escape" && setMobileMenuOpen(false)}
             role="button"
             tabIndex={0}
             aria-label="Close menu"
@@ -146,7 +142,7 @@ export function Navigation() {
                   >
                     {item.label}
                   </Link>
-                )
+                ),
               )}
 
               <div className="pt-4 space-y-3">
@@ -162,10 +158,14 @@ export function Navigation() {
                 ) : (
                   <>
                     <Button variant="outline" className="w-full" asChild>
-                      <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+                      <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                        Sign In
+                      </Link>
                     </Button>
                     <Button className="w-full" asChild>
-                      <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
+                      <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                        Get Started
+                      </Link>
                     </Button>
                   </>
                 )}
@@ -175,5 +175,5 @@ export function Navigation() {
         </>
       )}
     </>
-  )
+  );
 }

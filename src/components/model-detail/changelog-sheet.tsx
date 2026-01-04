@@ -19,12 +19,7 @@ type ChangelogSheetProps = {
   onClose: () => void;
 };
 
-export function ChangelogSheet({
-  modelId,
-  activeVersionId,
-  isOpen,
-  onClose,
-}: ChangelogSheetProps) {
+export function ChangelogSheet({ modelId, activeVersionId, isOpen, onClose }: ChangelogSheetProps) {
   const { data: versions } = useQuery({
     queryKey: ["model", modelId, "versions"],
     queryFn: () => getModelVersions({ data: { modelId } }),
@@ -53,20 +48,14 @@ export function ChangelogSheet({
 
                 return (
                   <div
-                    className={`rounded border p-3 ${
-                      isCurrent ? "border-l-4 border-l-brand" : ""
-                    }`}
+                    className={`rounded border p-3 ${isCurrent ? "border-l-4 border-l-brand" : ""}`}
                     key={version.id}
                   >
                     {/* Header: Badge row - same as card */}
                     <div className="mb-1 flex items-center gap-2">
-                      <Badge variant={isCurrent ? "default" : "outline"}>
-                        {version.version}
-                      </Badge>
+                      <Badge variant={isCurrent ? "default" : "outline"}>{version.version}</Badge>
                       {isCurrent && (
-                        <Badge className="bg-brand text-brand-foreground text-xs">
-                          Active
-                        </Badge>
+                        <Badge className="bg-brand text-brand-foreground text-xs">Active</Badge>
                       )}
                       {isLatest && !isCurrent && (
                         <Badge className="text-xs" variant="outline">

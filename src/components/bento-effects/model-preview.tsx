@@ -1,40 +1,23 @@
-'use client'
+"use client";
 
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
 
 type ModelPreviewProps = {
-  className?: string
-}
+  className?: string;
+};
 
 export const ModelPreview = ({ className }: ModelPreviewProps) => {
   return (
-    <div className={cn('absolute inset-0 overflow-hidden', className)}>
+    <div className={cn("absolute inset-0 overflow-hidden", className)}>
       {/* 3D Model wireframe visualization */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative h-32 w-32">
           {/* Rotating cube wireframe */}
-          <svg
-            viewBox="0 0 100 100"
-            className="h-full w-full animate-rotate-slow"
-          >
+          <svg viewBox="0 0 100 100" className="h-full w-full animate-rotate-slow">
             <defs>
-              <linearGradient
-                id="cubeGrad"
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="100%"
-              >
-                <stop
-                  offset="0%"
-                  stopColor="rgb(249, 115, 22)"
-                  stopOpacity="0.8"
-                />
-                <stop
-                  offset="100%"
-                  stopColor="rgb(168, 85, 247)"
-                  stopOpacity="0.4"
-                />
+              <linearGradient id="cubeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgb(249, 115, 22)" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="rgb(168, 85, 247)" stopOpacity="0.4" />
               </linearGradient>
             </defs>
 
@@ -132,9 +115,7 @@ export const ModelPreview = ({ className }: ModelPreviewProps) => {
 
       {/* Model info badge */}
       <div className="absolute top-4 right-4 rounded border border-orange-500/30 bg-slate-800/70 px-2 py-1 backdrop-blur-sm">
-        <div className="font-mono text-[9px] text-orange-400/80">
-          12,847 triangles
-        </div>
+        <div className="font-mono text-[9px] text-orange-400/80">12,847 triangles</div>
       </div>
 
       {/* Rotation indicator */}
@@ -164,7 +145,7 @@ export const ModelPreview = ({ className }: ModelPreviewProps) => {
         className="absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage: `radial-gradient(circle, rgba(249, 115, 22, 0.5) 1px, transparent 1px)`,
-          backgroundSize: '20px 20px',
+          backgroundSize: "20px 20px",
         }}
       />
 
@@ -189,5 +170,5 @@ export const ModelPreview = ({ className }: ModelPreviewProps) => {
         .animate-pulse-soft { animation: pulse-soft 3s ease-in-out infinite; }
       `}</style>
     </div>
-  )
-}
+  );
+};

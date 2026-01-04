@@ -1,28 +1,19 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { db, models, modelVersions, modelFiles } from '@/lib/db'
-import { eq, and, isNull } from 'drizzle-orm'
-import { validateApiKey } from '@/server/middleware/api-key'
+import { createFileRoute } from "@tanstack/react-router";
+import { db, models, modelVersions, modelFiles } from "@/lib/db";
+import { eq, and, isNull } from "drizzle-orm";
+import { validateApiKey } from "@/server/middleware/api-key";
 
-export const Route = createFileRoute('/api/v1/models/$modelId')({
+export const Route = createFileRoute("/api/v1/models/$modelId")({
   server: {
     handlers: {
-      GET: async ({
-        request,
-        params,
-      }: {
-        request: Request
-        params: { modelId: string }
-      }) => {
-        const validation = await validateApiKey(request)
+      GET: async ({ request, params }: { request: Request; params: { modelId: string } }) => {
+        const validation = await validateApiKey(request);
         if (!validation.valid) {
-          return Response.json(
-            { error: validation.error },
-            { status: validation.status }
-          )
+          return Response.json({ error: validation.error }, { status: validation.status });
         }
 
         try {
-          const { modelId } = params
+          const { modelId } = params;
 
           // Get model with current version details
           const [model] = await db
@@ -41,13 +32,13 @@ export const Route = createFileRoute('/api/v1/models/$modelId')({
               and(
                 eq(models.id, modelId),
                 eq(models.organizationId, validation.organizationId),
-                isNull(models.deletedAt)
-              )
+                isNull(models.deletedAt),
+              ),
             )
-            .limit(1)
+            .limit(1);
 
           if (!model) {
-            return Response.json({ error: 'Model not found' }, { status: 404 })
+            return Response.json({ error: "Model not found" }, { status: 404 });
           }
 
           // Get current version with files
@@ -63,10 +54,10 @@ export const Route = createFileRoute('/api/v1/models/$modelId')({
             .where(
               and(
                 eq(modelVersions.modelId, modelId),
-                eq(modelVersions.version, model.currentVersion)
-              )
+                eq(modelVersions.version, model.currentVersion),
+              ),
             )
-            .limit(1)
+            .limit(1);
 
           // Get files for current version
           const files = currentVersion
@@ -82,7 +73,7 @@ export const Route = createFileRoute('/api/v1/models/$modelId')({
                 .from(modelFiles)
                 .where(eq(modelFiles.versionId, currentVersion.id))
                 .orderBy(modelFiles.filename)
-            : []
+            : [];
 
           return Response.json({
             model: {
@@ -94,15 +85,12 @@ export const Route = createFileRoute('/api/v1/models/$modelId')({
                   }
                 : null,
             },
-          })
+          });
         } catch (error) {
-          console.error('API v1 model detail error:', error)
-          return Response.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-          )
+          console.error("API v1 model detail error:", error);
+          return Response.json({ error: "Internal server error" }, { status: 500 });
         }
       },
     },
   },
-})
+});

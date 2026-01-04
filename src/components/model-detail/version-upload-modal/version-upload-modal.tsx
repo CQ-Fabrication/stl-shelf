@@ -50,10 +50,7 @@ export function VersionUploadModal({
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
   // Fetch fresh limits when modal opens (only care about storage for versions)
-  const {
-    limits,
-    isLoading: isLoadingLimits,
-  } = useUploadLimits({ enabled: isOpen });
+  const { limits, isLoading: isLoadingLimits } = useUploadLimits({ enabled: isOpen });
 
   // For version uploads, only storage limits matter (not model count)
   const isStorageBlocked = limits?.storage.blocked ?? false;
@@ -115,9 +112,7 @@ export function VersionUploadModal({
         {isLoadingLimits && (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Checking your storage limits...
-            </p>
+            <p className="text-sm text-muted-foreground">Checking your storage limits...</p>
           </div>
         )}
 
@@ -134,8 +129,7 @@ export function VersionUploadModal({
                 {VERSION_UPLOAD_STEPS.map((step, index) => {
                   const stepNumber = index + 1;
                   const isCompleted = completedSteps.has(stepNumber);
-                  const canNavigate =
-                    isCompleted || stepNumber <= currentStep;
+                  const canNavigate = isCompleted || stepNumber <= currentStep;
 
                   return (
                     <StepperItem
@@ -154,9 +148,7 @@ export function VersionUploadModal({
                           </StepperDescription>
                         </div>
                       </StepperTrigger>
-                      {stepNumber < VERSION_UPLOAD_STEPS.length && (
-                        <StepperSeparator />
-                      )}
+                      {stepNumber < VERSION_UPLOAD_STEPS.length && <StepperSeparator />}
                     </StepperItem>
                   );
                 })}
@@ -169,9 +161,7 @@ export function VersionUploadModal({
                 e.stopPropagation();
               }}
             >
-              {currentStep === 1 && (
-                <StepFiles form={form} onNext={handleFilesNext} />
-              )}
+              {currentStep === 1 && <StepFiles form={form} onNext={handleFilesNext} />}
 
               {currentStep === 2 && (
                 <StepChangelog

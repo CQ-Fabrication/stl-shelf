@@ -11,7 +11,7 @@ declare global {
           "error-callback"?: () => void;
           "expired-callback"?: () => void;
           theme?: "light" | "dark" | "auto";
-        }
+        },
       ) => string;
       reset?: (widgetId?: string) => void;
       remove?: (widgetId?: string) => void;
@@ -76,9 +76,7 @@ export function Turnstile({
     } else {
       // Inject script once
       const scriptId = "cf-turnstile-script";
-      let script = document.getElementById(
-        scriptId
-      ) as HTMLScriptElement | null;
+      let script = document.getElementById(scriptId) as HTMLScriptElement | null;
       if (script) {
         // Will render when script has executed and window.turnstile is ready
         script.addEventListener("load", renderWidget, { once: true });
@@ -87,8 +85,7 @@ export function Turnstile({
       } else {
         script = document.createElement("script");
         script.id = scriptId;
-        script.src =
-          "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
         script.async = true;
         script.defer = true;
         script.onload = renderWidget;

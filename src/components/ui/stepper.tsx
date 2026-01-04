@@ -22,12 +22,8 @@ type StepItemContextValue = {
 type StepState = "active" | "completed" | "inactive" | "loading";
 
 // Contexts
-const StepperContext = createContext<StepperContextValue | undefined>(
-  undefined
-);
-const StepItemContext = createContext<StepItemContextValue | undefined>(
-  undefined
-);
+const StepperContext = createContext<StepperContextValue | undefined>(undefined);
+const StepItemContext = createContext<StepItemContextValue | undefined>(undefined);
 
 const useStepper = () => {
   const context = useContext(StepperContext);
@@ -70,7 +66,7 @@ function Stepper({
       }
       onValueChange?.(step);
     },
-    [value, onValueChange]
+    [value, onValueChange],
   );
 
   const currentStep = value ?? activeStep;
@@ -86,7 +82,7 @@ function Stepper({
       <div
         className={cn(
           "group/stepper inline-flex data-[orientation=horizontal]:w-full data-[orientation=horizontal]:flex-row data-[orientation=vertical]:flex-col",
-          className
+          className,
         )}
         data-orientation={orientation}
         data-slot="stepper"
@@ -116,22 +112,16 @@ function StepperItem({
   const { activeStep } = useStepper();
 
   const state: StepState =
-    completed || step < activeStep
-      ? "completed"
-      : activeStep === step
-        ? "active"
-        : "inactive";
+    completed || step < activeStep ? "completed" : activeStep === step ? "active" : "inactive";
 
   const isLoading = loading && step === activeStep;
 
   return (
-    <StepItemContext.Provider
-      value={{ step, state, isDisabled: disabled, isLoading }}
-    >
+    <StepItemContext.Provider value={{ step, state, isDisabled: disabled, isLoading }}>
       <div
         className={cn(
           "group/step flex items-center group-data-[orientation=horizontal]/stepper:flex-row group-data-[orientation=vertical]/stepper:flex-col",
-          className
+          className,
         )}
         data-slot="stepper-item"
         data-state={state}
@@ -145,17 +135,11 @@ function StepperItem({
 }
 
 // StepperTrigger
-interface StepperTriggerProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface StepperTriggerProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
 }
 
-function StepperTrigger({
-  asChild = false,
-  className,
-  children,
-  ...props
-}: StepperTriggerProps) {
+function StepperTrigger({ asChild = false, className, children, ...props }: StepperTriggerProps) {
   const { setActiveStep } = useStepper();
   const { step, isDisabled } = useStepItem();
 
@@ -171,7 +155,7 @@ function StepperTrigger({
     <button
       className={cn(
         "inline-flex items-center gap-3 rounded-full outline-none focus-visible:z-10 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
-        className
+        className,
       )}
       data-slot="stepper-trigger"
       disabled={isDisabled}
@@ -200,7 +184,7 @@ function StepperIndicator({
     <span
       className={cn(
         "relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-sm data-[state=active]:bg-brand data-[state=completed]:bg-brand data-[state=active]:text-brand-foreground data-[state=completed]:text-brand-foreground",
-        className
+        className,
       )}
       data-slot="stepper-indicator"
       data-state={state}
@@ -220,11 +204,7 @@ function StepperIndicator({
           />
           {isLoading && (
             <span className="absolute transition-all">
-              <LoaderCircleIcon
-                aria-hidden="true"
-                className="animate-spin"
-                size={14}
-              />
+              <LoaderCircleIcon aria-hidden="true" className="animate-spin" size={14} />
             </span>
           )}
         </>
@@ -234,24 +214,14 @@ function StepperIndicator({
 }
 
 // StepperTitle
-function StepperTitle({
-  className,
-  ...props
-}: HTMLAttributes<HTMLHeadingElement>) {
+function StepperTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3
-      className={cn("font-medium text-sm", className)}
-      data-slot="stepper-title"
-      {...props}
-    />
+    <h3 className={cn("font-medium text-sm", className)} data-slot="stepper-title" {...props} />
   );
 }
 
 // StepperDescription
-function StepperDescription({
-  className,
-  ...props
-}: HTMLAttributes<HTMLParagraphElement>) {
+function StepperDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
       className={cn("text-muted-foreground text-sm", className)}
@@ -262,15 +232,12 @@ function StepperDescription({
 }
 
 // StepperSeparator
-function StepperSeparator({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
+function StepperSeparator({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
         "mx-2 bg-muted group-data-[orientation=horizontal]/stepper:h-0.5 group-data-[orientation=vertical]/stepper:h-12 group-data-[orientation=horizontal]/stepper:w-full group-data-[orientation=vertical]/stepper:w-0.5 group-data-[orientation=horizontal]/stepper:flex-1 group-data-[state=completed]/step:bg-brand",
-        className
+        className,
       )}
       data-slot="stepper-separator"
       {...props}

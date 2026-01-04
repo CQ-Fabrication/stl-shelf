@@ -1,12 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { STLViewerWithSuspense } from "@/components/viewer/stl-viewer";
 import { getModelVersions, getModelFiles } from "@/server/functions/models";
@@ -16,17 +10,12 @@ type ModelPreviewCardProps = {
   versionId?: string;
 };
 
-export const ModelPreviewCard = ({
-  modelId,
-  versionId,
-}: ModelPreviewCardProps) => {
+export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) => {
   const { data: versions } = useQuery({
     queryKey: ["model", modelId, "versions"],
     queryFn: () => getModelVersions({ data: { modelId } }),
   });
-  const activeVersion = versionId
-    ? versions?.find((v) => v.id === versionId)
-    : versions?.[0];
+  const activeVersion = versionId ? versions?.find((v) => v.id === versionId) : versions?.[0];
 
   const { data: files, isLoading } = useQuery({
     queryKey: ["model", modelId, "files", activeVersion?.id],
@@ -35,13 +24,11 @@ export const ModelPreviewCard = ({
   });
 
   // Only find STL or OBJ files since the viewer only supports these formats
-  const mainModelFile = files?.find((f) =>
-    ["stl", "obj"].includes(f.extension.toLowerCase())
-  );
+  const mainModelFile = files?.find((f) => ["stl", "obj"].includes(f.extension.toLowerCase()));
 
   // Check if there are any 3D files at all (including unsupported ones)
   const has3DFiles = files?.some((f) =>
-    ["stl", "obj", "3mf", "ply"].includes(f.extension.toLowerCase())
+    ["stl", "obj", "3mf", "ply"].includes(f.extension.toLowerCase()),
   );
 
   if (isLoading) {
@@ -82,9 +69,7 @@ export const ModelPreviewCard = ({
     <Card className="pb-0 shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       <CardHeader>
         <CardTitle>3D Preview</CardTitle>
-        <CardDescription>
-          Interactive 3D view of {activeVersion.version}
-        </CardDescription>
+        <CardDescription>Interactive 3D view of {activeVersion.version}</CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         {mainModelFile?.storageUrl ? (
@@ -104,12 +89,9 @@ export const ModelPreviewCard = ({
               {has3DFiles ? (
                 <>
                   <div className="font-medium">Preview not available</div>
-                  <div className="mt-1 text-sm">
-                    STL viewer only supports .stl and .obj files
-                  </div>
+                  <div className="mt-1 text-sm">STL viewer only supports .stl and .obj files</div>
                   <div className="mt-2 text-xs">
-                    Available files:{" "}
-                    {files?.map((f) => f.extension.toUpperCase()).join(", ")}
+                    Available files: {files?.map((f) => f.extension.toUpperCase()).join(", ")}
                   </div>
                 </>
               ) : (

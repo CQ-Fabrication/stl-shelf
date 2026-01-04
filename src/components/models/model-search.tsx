@@ -1,128 +1,128 @@
-import { Loader2, Search, Tag, X } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Route } from '@/routes/library'
-import { useAllTags } from '@/hooks/use-all-tags'
-import { Badge } from '@/components/ui/badge'
+import { Loader2, Search, Tag, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Route } from "@/routes/library";
+import { useAllTags } from "@/hooks/use-all-tags";
+import { Badge } from "@/components/ui/badge";
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 
 // Parse tags string to array
 const parseTags = (tagsString?: string): string[] => {
-  if (!tagsString) return []
-  return tagsString.split(',').filter(Boolean)
-}
+  if (!tagsString) return [];
+  return tagsString.split(",").filter(Boolean);
+};
 
 function ModelSearch() {
-  const search = Route.useSearch()
-  const navigate = Route.useNavigate()
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
 
   // Local state for instant input feedback
-  const [localSearch, setLocalSearch] = useState(search.q ?? '')
-  const [isPending, setIsPending] = useState(false)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [localSearch, setLocalSearch] = useState(search.q ?? "");
+  const [isPending, setIsPending] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync URL -> local state (for direct URL access, back/forward navigation)
   useEffect(() => {
-    setLocalSearch(search.q ?? '')
-  }, [search.q])
+    setLocalSearch(search.q ?? "");
+  }, [search.q]);
 
-  const { tags: allTags } = useAllTags()
-  const selectedTags = parseTags(search.tags)
+  const { tags: allTags } = useAllTags();
+  const selectedTags = parseTags(search.tags);
 
   // Debounced navigation for search input
   const debouncedNavigate = useCallback(
     (value: string) => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+        clearTimeout(timeoutRef.current);
       }
-      setIsPending(true)
+      setIsPending(true);
 
       timeoutRef.current = setTimeout(() => {
-        setIsPending(false)
+        setIsPending(false);
         navigate({
           search: {
             q: value || undefined,
-            tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined,
+            tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,
           },
-        })
-      }, 300)
+        });
+      }, 300);
     },
-    [navigate, selectedTags]
-  )
+    [navigate, selectedTags],
+  );
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+        clearTimeout(timeoutRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const handleSearchChange = (value: string) => {
-    setLocalSearch(value)
-    debouncedNavigate(value)
-  }
+    setLocalSearch(value);
+    debouncedNavigate(value);
+  };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       // Immediate commit on Enter
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+        clearTimeout(timeoutRef.current);
       }
-      setIsPending(false)
+      setIsPending(false);
       navigate({
         search: {
           q: localSearch || undefined,
-          tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined,
+          tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,
         },
-      })
+      });
     }
-  }
+  };
 
   const handleTagToggle = (tag: string) => {
     // Tags update immediately (no debounce) - discrete selection
     const newTags = selectedTags.includes(tag)
       ? selectedTags.filter((t) => t !== tag)
-      : [...selectedTags, tag]
+      : [...selectedTags, tag];
 
     navigate({
       search: {
         q: search.q || undefined,
-        tags: newTags.length > 0 ? newTags.join(',') : undefined,
+        tags: newTags.length > 0 ? newTags.join(",") : undefined,
       },
-    })
-  }
+    });
+  };
 
   const handleTagRemove = (tag: string) => {
-    const newTags = selectedTags.filter((t) => t !== tag)
+    const newTags = selectedTags.filter((t) => t !== tag);
     navigate({
       search: {
         q: search.q || undefined,
-        tags: newTags.length > 0 ? newTags.join(',') : undefined,
+        tags: newTags.length > 0 ? newTags.join(",") : undefined,
       },
-    })
-  }
+    });
+  };
 
   const clearFilters = () => {
-    setLocalSearch('')
+    setLocalSearch("");
     if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
+      clearTimeout(timeoutRef.current);
     }
-    setIsPending(false)
+    setIsPending(false);
     navigate({
       search: {},
-    })
-  }
+    });
+  };
 
-  const hasFilters = localSearch || selectedTags.length > 0
+  const hasFilters = localSearch || selectedTags.length > 0;
 
   return (
     <div className="space-y-3">
@@ -130,7 +130,7 @@ function ModelSearch() {
       <div className="relative">
         <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
         <Input
-          className={`pr-10 pl-10 transition-opacity ${isPending ? 'opacity-70' : ''}`}
+          className={`pr-10 pl-10 transition-opacity ${isPending ? "opacity-70" : ""}`}
           onChange={(e) => handleSearchChange(e.target.value)}
           onKeyDown={handleSearchKeyDown}
           placeholder="Search models..."
@@ -142,7 +142,7 @@ function ModelSearch() {
         {localSearch && !isPending && (
           <Button
             className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8 transform p-0"
-            onClick={() => handleSearchChange('')}
+            onClick={() => handleSearchChange("")}
             size="sm"
             variant="ghost"
           >
@@ -168,12 +168,10 @@ function ModelSearch() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-48">
             {allTags.length === 0 ? (
-              <div className="p-2 text-muted-foreground text-sm">
-                No tags available
-              </div>
+              <div className="p-2 text-muted-foreground text-sm">No tags available</div>
             ) : (
               allTags.map((tag) => {
-                const isSelected = selectedTags.includes(tag.name)
+                const isSelected = selectedTags.includes(tag.name);
                 return (
                   <DropdownMenuCheckboxItem
                     checked={isSelected}
@@ -183,7 +181,7 @@ function ModelSearch() {
                   >
                     {tag.name}
                   </DropdownMenuCheckboxItem>
-                )
+                );
               })
             )}
           </DropdownMenuContent>
@@ -217,10 +215,10 @@ function ModelSearch() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-ModelSearch.displayName = 'ModelSearch'
+ModelSearch.displayName = "ModelSearch";
 
-export { ModelSearch }
-export default ModelSearch
+export { ModelSearch };
+export default ModelSearch;

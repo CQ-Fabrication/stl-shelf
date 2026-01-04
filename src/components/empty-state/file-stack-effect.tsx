@@ -56,23 +56,9 @@ export function FileStackEffect({ className }: FileStackEffectProps) {
                 {/* Triangle mesh pattern */}
                 <svg className="h-full w-full opacity-60" viewBox="0 0 100 50">
                   <defs>
-                    <linearGradient
-                      id="meshGrad"
-                      x1="0%"
-                      x2="100%"
-                      y1="0%"
-                      y2="100%"
-                    >
-                      <stop
-                        offset="0%"
-                        stopColor="hsl(var(--primary))"
-                        stopOpacity="0.4"
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="hsl(var(--primary))"
-                        stopOpacity="0.1"
-                      />
+                    <linearGradient id="meshGrad" x1="0%" x2="100%" y1="0%" y2="100%">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
                     </linearGradient>
                   </defs>
                   <polygon
