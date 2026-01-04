@@ -118,7 +118,7 @@ export function ModelUpload() {
       // Update file states to uploading
       setUploadFiles((prev) => prev.map((f) => ({ ...f, status: "uploading" as const })));
 
-      // Submit to oRPC mutation
+      // Submit mutation
       createModelMutation.mutate(value);
     },
   });

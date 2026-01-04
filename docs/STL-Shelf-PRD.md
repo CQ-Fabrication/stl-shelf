@@ -74,7 +74,7 @@ STL Shelf is an open-source, multi-tenant platform for organizing 3D-printable a
 
 ## 4) Technical Stack
 
-- **Backend:** Bun runtime with Hono + oRPC for type-safe HTTP APIs, deployed to Cloudflare Workers (managed) or Bun server (self-host).
+- **Backend:** Bun runtime with TanStack Start server functions for type-safe APIs, deployed to Cloudflare Workers (managed) or Bun server (self-host).
 - **Database:** PostgreSQL managed through Drizzle ORM migrations.
 - **Object Storage:** MinIO (self-host) or Cloudflare R2 (managed) for models, slices, and thumbnails.
 - **Frontend:** React 19 + TanStack Router/Query, TailwindCSS v4, shadcn/ui delivered via the same Cloudflare Worker bundle or standalone web host.
@@ -123,7 +123,7 @@ STL Shelf is an open-source, multi-tenant platform for organizing 3D-printable a
   - Detail page with 3D preview (React Three Fiber) when asset supports it.
   - Recently updated and starred sections for quick access.
 - **API & Integrations**
-  - API endpoints (oRPC) for CRUD on models, versions, files, and tags.
+  - API endpoints (server functions + REST) for CRUD on models, versions, files, and tags.
   - Webhooks/event streams for ingestion pipelines (model published, version archived).
   - CLI scaffolding (future) uses the same API tokens for automation.
 
