@@ -10,6 +10,66 @@
 
 import type { StatsigClient } from "@statsig/js-client";
 
+/**
+ * Client-side event name constants.
+ * Using const object ensures typos are caught at compile time.
+ */
+export const ClientEvent = {
+  // Navigation
+  NAV_CLICK: "nav_click",
+  CTA_CLICK: "cta_click",
+
+  // Forms
+  FORM_START: "form_start",
+  FORM_SUBMIT: "form_submit",
+  FORM_ERROR: "form_error",
+
+  // Modals
+  MODAL_OPEN: "modal_open",
+  MODAL_CLOSE: "modal_close",
+
+  // Actions
+  BUTTON_CLICK: "button_click",
+  FEATURE_INTERACTION: "feature_interaction",
+
+  // Model & Tags
+  MODEL_CARD_CLICK: "model_card_click",
+  TAG_CLICK: "tag_click",
+
+  // Search Friction
+  SEARCH_REFINED: "search_refined",
+  SEARCH_ABANDONED: "search_abandoned",
+  FRUSTRATED_SEARCH_SESSION: "frustrated_search_session",
+
+  // Upload
+  UPLOAD_STARTED: "upload_started",
+  UPLOAD_ABANDONED: "upload_abandoned",
+  UPLOAD_RETRY: "upload_retry",
+
+  // Preview
+  PREVIEW_LOADED: "preview_loaded",
+  PREVIEW_INTERACTED: "preview_interacted",
+  PREVIEW_TO_DOWNLOAD: "preview_to_download",
+
+  // Billing
+  PLAN_SELECTED: "plan_selected",
+  PRICING_INTERACTION: "pricing_interaction",
+  STORAGE_LIMIT_WARNING: "storage_limit_warning",
+
+  // Search & Filter
+  FILTER_APPLIED: "filter_applied",
+  SORT_CHANGED: "sort_changed",
+
+  // Version Control
+  VERSION_HISTORY_VIEWED: "version_history_viewed",
+  CHANGELOG_VIEWED: "changelog_viewed",
+
+  // Session
+  PURPOSEFUL_RETURN: "purposeful_return",
+} as const;
+
+export type ClientEventName = (typeof ClientEvent)[keyof typeof ClientEvent];
+
 // Helper to filter undefined values from metadata
 function cleanMetadata(
   obj: Record<string, string | undefined> | undefined
@@ -41,7 +101,7 @@ export function trackNavClick(
   item: string,
   context?: { from?: string; destination?: string }
 ) {
-  client.logEvent("nav_click", item, cleanMetadata(context));
+  client.logEvent(ClientEvent.NAV_CLICK, item, cleanMetadata(context));
 }
 
 /**
@@ -52,7 +112,7 @@ export function trackCtaClick(
   button: string,
   context?: { location?: string; variant?: string }
 ) {
-  client.logEvent("cta_click", button, cleanMetadata(context));
+  client.logEvent(ClientEvent.CTA_CLICK, button, cleanMetadata(context));
 }
 
 // ============================================================
@@ -63,7 +123,7 @@ export function trackCtaClick(
  * Track when user starts filling a form (focus on first field)
  */
 export function trackFormStart(client: StatsigClient, form: string) {
-  client.logEvent("form_start", form);
+  client.logEvent(ClientEvent.FORM_START, form);
 }
 
 /**
@@ -74,7 +134,7 @@ export function trackFormSubmit(
   form: string,
   metadata?: { success?: boolean; errorType?: string }
 ) {
-  client.logEvent("form_submit", form, {
+  client.logEvent(ClientEvent.FORM_SUBMIT, form, {
     success: metadata?.success !== false ? "true" : "false",
     ...(metadata?.errorType ? { errorType: metadata.errorType } : {}),
   });
@@ -89,7 +149,7 @@ export function trackFormError(
   field: string,
   errorType?: string
 ) {
-  client.logEvent("form_error", form, cleanMetadata({ field, errorType }));
+  client.logEvent(ClientEvent.FORM_ERROR, form, cleanMetadata({ field, errorType }));
 }
 
 // ============================================================
@@ -100,7 +160,7 @@ export function trackFormError(
  * Track modal/dialog opens
  */
 export function trackModalOpen(client: StatsigClient, modal: string) {
-  client.logEvent("modal_open", modal);
+  client.logEvent(ClientEvent.MODAL_OPEN, modal);
 }
 
 /**
@@ -111,7 +171,7 @@ export function trackModalClose(
   modal: string,
   action?: "submit" | "cancel" | "dismiss"
 ) {
-  client.logEvent("modal_close", modal, cleanMetadata({ action }));
+  client.logEvent(ClientEvent.MODAL_CLOSE, modal, cleanMetadata({ action }));
 }
 
 // ============================================================
@@ -126,7 +186,7 @@ export function trackButtonClick(
   button: string,
   context?: Record<string, string>
 ) {
-  client.logEvent("button_click", button, context);
+  client.logEvent(ClientEvent.BUTTON_CLICK, button, context);
 }
 
 /**
@@ -137,7 +197,7 @@ export function trackFeatureInteraction(
   feature: string,
   action: string
 ) {
-  client.logEvent("feature_interaction", feature, { action });
+  client.logEvent(ClientEvent.FEATURE_INTERACTION, feature, { action });
 }
 
 // ============================================================
@@ -153,7 +213,7 @@ export function trackModelCardClick(
   context?: { source?: string; position?: number }
 ) {
   client.logEvent(
-    "model_card_click",
+    ClientEvent.MODEL_CARD_CLICK,
     modelId,
     cleanMetadata({
       source: context?.source,
@@ -166,7 +226,7 @@ export function trackModelCardClick(
  * Track tag click (for filtering)
  */
 export function trackTagClick(client: StatsigClient, tag: string, source: string) {
-  client.logEvent("tag_click", tag, { source });
+  client.logEvent(ClientEvent.TAG_CLICK, tag, { source });
 }
 
 // ============================================================
@@ -183,7 +243,7 @@ export function trackSearchRefined(
   refinedQuery: string,
   secondsToRefine: number
 ) {
-  client.logEvent("search_refined", refinedQuery, {
+  client.logEvent(ClientEvent.SEARCH_REFINED, refinedQuery, {
     originalQuery,
     refinedQuery,
     secondsToRefine: secondsToRefine.toString(),
@@ -200,7 +260,7 @@ export function trackSearchAbandoned(
   resultsCount: number,
   secondsOnResults: number
 ) {
-  client.logEvent("search_abandoned", query, {
+  client.logEvent(ClientEvent.SEARCH_ABANDONED, query, {
     resultsCount: resultsCount.toString(),
     secondsOnResults: secondsOnResults.toString(),
   });
@@ -216,7 +276,7 @@ export function trackFrustratedSearchSession(
   queries: string[],
   sessionDurationSeconds: number
 ) {
-  client.logEvent("frustrated_search_session", searchCount.toString(), {
+  client.logEvent(ClientEvent.FRUSTRATED_SEARCH_SESSION, searchCount.toString(), {
     searchCount: searchCount.toString(),
     queries: queries.join(", ").slice(0, 200), // Truncate for metadata limits
     sessionDurationSeconds: sessionDurationSeconds.toString(),
@@ -235,7 +295,7 @@ export function trackUploadStarted(
   fileCount: number,
   totalSizeBytes: number
 ) {
-  client.logEvent("upload_started", fileCount.toString(), {
+  client.logEvent(ClientEvent.UPLOAD_STARTED, fileCount.toString(), {
     fileCount: fileCount.toString(),
     totalSizeBytes: totalSizeBytes.toString(),
   });
@@ -250,7 +310,7 @@ export function trackUploadAbandoned(
   secondsSpent: number,
   fileCount?: number
 ) {
-  client.logEvent("upload_abandoned", abandonedAtStep, {
+  client.logEvent(ClientEvent.UPLOAD_ABANDONED, abandonedAtStep, {
     abandonedAtStep,
     secondsSpent: secondsSpent.toString(),
     ...(fileCount ? { fileCount: fileCount.toString() } : {}),
@@ -265,7 +325,7 @@ export function trackUploadRetry(
   attemptNumber: number,
   previousErrorType?: string
 ) {
-  client.logEvent("upload_retry", attemptNumber.toString(), {
+  client.logEvent(ClientEvent.UPLOAD_RETRY, attemptNumber.toString(), {
     attemptNumber: attemptNumber.toString(),
     ...(previousErrorType ? { previousErrorType } : {}),
   });
@@ -284,7 +344,7 @@ export function trackPreviewLoaded(
   loadTimeMs: number,
   fileFormat: string
 ) {
-  client.logEvent("preview_loaded", modelId, {
+  client.logEvent(ClientEvent.PREVIEW_LOADED, modelId, {
     loadTimeMs: loadTimeMs.toString(),
     fileFormat,
   });
@@ -299,7 +359,7 @@ export function trackPreviewInteraction(
   action: "rotate" | "zoom" | "pan" | "reset" | "fullscreen",
   interactionCount: number
 ) {
-  client.logEvent("preview_interacted", modelId, {
+  client.logEvent(ClientEvent.PREVIEW_INTERACTED, modelId, {
     action,
     interactionCount: interactionCount.toString(),
   });
@@ -315,7 +375,7 @@ export function trackPreviewToDownload(
   previewDurationSeconds: number,
   interactionCount: number
 ) {
-  client.logEvent("preview_to_download", modelId, {
+  client.logEvent(ClientEvent.PREVIEW_TO_DOWNLOAD, modelId, {
     previewDurationSeconds: previewDurationSeconds.toString(),
     interactionCount: interactionCount.toString(),
   });
@@ -333,7 +393,7 @@ export function trackPlanSelected(
   planId: string,
   context?: { currentPlan?: string; action?: "upgrade" | "downgrade" | "initial" }
 ) {
-  client.logEvent("plan_selected", planId, cleanMetadata(context));
+  client.logEvent(ClientEvent.PLAN_SELECTED, planId, cleanMetadata(context));
 }
 
 /**
@@ -343,7 +403,7 @@ export function trackPricingInteraction(
   client: StatsigClient,
   action: "view_plans" | "toggle_billing" | "compare_features"
 ) {
-  client.logEvent("pricing_interaction", action);
+  client.logEvent(ClientEvent.PRICING_INTERACTION, action);
 }
 
 /**
@@ -355,7 +415,7 @@ export function trackStorageLimitWarning(
   usedBytes: number,
   limitBytes: number
 ) {
-  client.logEvent("storage_limit_warning", usagePercent.toString(), {
+  client.logEvent(ClientEvent.STORAGE_LIMIT_WARNING, usagePercent.toString(), {
     usagePercent: usagePercent.toString(),
     usedBytes: usedBytes.toString(),
     limitBytes: limitBytes.toString(),
@@ -374,14 +434,14 @@ export function trackFilterApplied(
   filterType: string,
   value: string
 ) {
-  client.logEvent("filter_applied", filterType, { value });
+  client.logEvent(ClientEvent.FILTER_APPLIED, filterType, { value });
 }
 
 /**
  * Track sort changed
  */
 export function trackSortChanged(client: StatsigClient, sortBy: string, order: string) {
-  client.logEvent("sort_changed", sortBy, { order });
+  client.logEvent(ClientEvent.SORT_CHANGED, sortBy, { order });
 }
 
 // ============================================================
@@ -392,7 +452,7 @@ export function trackSortChanged(client: StatsigClient, sortBy: string, order: s
  * Track version history viewed
  */
 export function trackVersionHistoryViewed(client: StatsigClient, modelId: string) {
-  client.logEvent("version_history_viewed", modelId);
+  client.logEvent(ClientEvent.VERSION_HISTORY_VIEWED, modelId);
 }
 
 /**
@@ -403,7 +463,7 @@ export function trackChangelogViewed(
   modelId: string,
   versionNumber: number
 ) {
-  client.logEvent("changelog_viewed", modelId, {
+  client.logEvent(ClientEvent.CHANGELOG_VIEWED, modelId, {
     versionNumber: versionNumber.toString(),
   });
 }
@@ -420,7 +480,7 @@ export function trackPurposefulReturn(
   daysSinceLastVisit: number,
   action: "search" | "download" | "upload" | "view"
 ) {
-  client.logEvent("purposeful_return", action, {
+  client.logEvent(ClientEvent.PURPOSEFUL_RETURN, action, {
     daysSinceLastVisit: daysSinceLastVisit.toString(),
     action,
   });
