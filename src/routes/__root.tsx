@@ -21,9 +21,17 @@ import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "@/styles.css?url";
+import { useErrorReporting } from "@/hooks/use-error-reporting";
+
+if (!import.meta.env.SSR) {
+  void import("@/lib/error-tracking.client").then(({ initClientErrorTracking }) => {
+    initClientErrorTracking();
+  });
+}
 
 function RootErrorFallback({ error, reset }: ErrorComponentProps) {
   const isDev = import.meta.env.DEV;
+  useErrorReporting(error);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">

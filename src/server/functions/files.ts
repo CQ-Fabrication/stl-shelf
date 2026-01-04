@@ -7,6 +7,7 @@ import { organization } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
 import type { SubscriptionTier } from "@/lib/billing/config";
 import { getTierConfig } from "@/lib/billing/config";
+import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } from "@/lib/logging";
 import {
   canRemoveFile,
@@ -124,11 +125,15 @@ export const addFileToVersion = createServerFn({ method: "POST" })
         };
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.file.add_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             versionId: data.versionId,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.file.add_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }
@@ -164,11 +169,15 @@ export const removeFileFromVersion = createServerFn({ method: "POST" })
         return result;
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.file.remove_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             fileId: data.fileId,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.file.remove_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }

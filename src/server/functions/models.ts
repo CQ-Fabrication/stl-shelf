@@ -7,6 +7,7 @@ import { organization } from "@/lib/db/schema/auth";
 import { models, modelFiles, modelVersions } from "@/lib/db/schema/models";
 import type { SubscriptionTier } from "@/lib/billing/config";
 import { getTierConfig, isUnlimited } from "@/lib/billing/config";
+import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } from "@/lib/logging";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
@@ -319,10 +320,14 @@ export const createModel = createServerFn({ method: "POST" })
         };
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.model.create_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.model.create_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }
@@ -421,11 +426,15 @@ export const addVersion = createServerFn({ method: "POST" })
         };
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.model.version_add_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             modelId: data.modelId,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.model.version_add_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }
@@ -463,11 +472,15 @@ export const downloadFile = createServerFn({ method: "POST" })
         return downloadInfo;
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.file.download_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             storageKey: data.storageKey,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.file.download_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }
@@ -506,11 +519,15 @@ export const downloadModelZip = createServerFn({ method: "POST" })
         return { versions, modelId: data.modelId };
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.model.download_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             modelId: data.modelId,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.model.download_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }
@@ -550,12 +567,16 @@ export const downloadVersionZip = createServerFn({ method: "POST" })
         return { files, modelId: data.modelId, versionId: data.versionId };
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.model.download_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             modelId: data.modelId,
             versionId: data.versionId,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.model.download_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }
@@ -592,11 +613,15 @@ export const getFileDownloadInfo = createServerFn({ method: "GET" })
         return downloadInfo;
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.file.download_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             storageKey: data.storageKey,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.file.download_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }
@@ -636,11 +661,15 @@ export const deleteModel = createServerFn({ method: "POST" })
         };
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.model.delete_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             modelId: data.id,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.model.delete_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }
@@ -678,11 +707,15 @@ export const renameModel = createServerFn({ method: "POST" })
         return result;
       } catch (error) {
         if (shouldLogServerError(error)) {
-          logErrorEvent("error.model.rename_failed", {
+          const errorContext = {
             organizationId: context.organizationId,
             userId: context.userId,
             modelId: data.id,
             ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.model.rename_failed", {
+            ...errorContext,
             ...getErrorDetails(error),
           });
         }
