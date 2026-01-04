@@ -163,6 +163,9 @@ export async function getExperiment(
  *
  * Type safety: Events with defined metadata in EventMetadata get strict typing.
  * Events without definitions accept Record<string, unknown> for flexibility.
+ *
+ * Performance: Checks isStatsigEnabled() before awaiting init to avoid
+ * unnecessary promise overhead on high-frequency events after initialization.
  */
 export async function logEvent<T extends EventName>(
   user: StatsigUser,
@@ -170,7 +173,7 @@ export async function logEvent<T extends EventName>(
   value?: string | number,
   metadata?: T extends keyof EventMetadata ? EventMetadata[T] : Record<string, unknown>,
 ): Promise<void> {
-  // Check if configured first (cheap check)
+  // Fast path: check if configured first (cheap check)
   if (!isStatsigConfigured()) {
     if (env.NODE_ENV === "development") {
       console.log(`[Statsig] Event (disabled):`, eventName, metadata);
@@ -178,6 +181,21 @@ export async function logEvent<T extends EventName>(
     return;
   }
 
+  // Fast path: if already initialized, skip async init check
+  // This avoids promise overhead for high-frequency events
+  if (isStatsigEnabled()) {
+    try {
+      const stringifiedMetadata = metadata
+        ? stringifyMetadata(metadata as Record<string, unknown>)
+        : undefined;
+      Statsig.logEvent(user, eventName, value, stringifiedMetadata);
+    } catch (error) {
+      console.warn(`[Statsig] Event logging failed for ${eventName}:`, error);
+    }
+    return;
+  }
+
+  // Slow path: need to initialize first
   try {
     await initializeStatsig();
 
