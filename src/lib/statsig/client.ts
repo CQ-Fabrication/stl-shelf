@@ -155,12 +155,15 @@ export async function getExperiment(
 /**
  * Log an event to Statsig
  * Silently fails if Statsig is unavailable (events are dropped)
+ *
+ * Type safety: Events with defined metadata in EventMetadata get strict typing.
+ * Events without definitions accept Record<string, unknown> for flexibility.
  */
 export async function logEvent<T extends EventName>(
   user: StatsigUser,
   eventName: T,
   value?: string | number,
-  metadata?: T extends keyof EventMetadata ? EventMetadata[T] : never,
+  metadata?: T extends keyof EventMetadata ? EventMetadata[T] : Record<string, unknown>,
 ): Promise<void> {
   // Check if configured first (cheap check)
   if (!isStatsigConfigured()) {
