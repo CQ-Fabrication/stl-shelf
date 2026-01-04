@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { StatsigClientProvider } from "@/lib/statsig/client-provider";
+import { PageTracker } from "@/lib/statsig/use-page-tracking";
 import appCss from "@/styles.css?url";
 import { useErrorReporting } from "@/hooks/use-error-reporting";
 
@@ -182,25 +184,28 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          disableTransitionOnChange
-          storageKey="stl-shelf-theme"
-        >
-          <div className="grid h-svh grid-rows-[auto_1fr]">
-            {PUBLIC_ROUTES.includes(pathname) ? null : (
-              <>
-                <Header />
-                <GracePeriodBanner />
-              </>
-            )}
-            {children}
-          </div>
-          <Toaster richColors />
-        </ThemeProvider>
-        <TanStackRouterDevtools position="bottom-left" />
-        <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
+        <StatsigClientProvider>
+          <PageTracker />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            disableTransitionOnChange
+            storageKey="stl-shelf-theme"
+          >
+            <div className="grid h-svh grid-rows-[auto_1fr]">
+              {PUBLIC_ROUTES.includes(pathname) ? null : (
+                <>
+                  <Header />
+                  <GracePeriodBanner />
+                </>
+              )}
+              {children}
+            </div>
+            <Toaster richColors />
+          </ThemeProvider>
+          <TanStackRouterDevtools position="bottom-left" />
+          <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
+        </StatsigClientProvider>
         <Scripts />
       </body>
     </html>

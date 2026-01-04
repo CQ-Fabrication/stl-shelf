@@ -1,0 +1,15 @@
+{
+  "_comment": "Local Statsig overrides for development. Copy to 'statsig.local.json' to use.",
+  "_docs": {
+    "usage": "This file lets you override feature gates and experiments locally without connecting to Statsig.",
+    "integration": "See src/lib/statsig/README.md for full integration docs.",
+    "gates": "Feature gates (gate_*) control feature availability. Set to true/false.",
+    "ops": "Operational toggles (ops_*) control system behavior. Default to true when Statsig unavailable.",
+    "experiments": "Set experiment values as objects with the variant config, or simple strings.",
+    "cache": "Overrides are cached for 5 seconds. Call clearOverrideCache() to force refresh."
+  },
+  "gate_new_upload_flow": true,
+  "gate_bulk_export": false,
+  "exp_card_layout": "variant_b",
+  "ops_maintenance_mode": false
+}

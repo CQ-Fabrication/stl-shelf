@@ -7,6 +7,7 @@ import { organization } from "@/lib/db/schema/auth";
 import { models, modelFiles, modelVersions } from "@/lib/db/schema/models";
 import type { SubscriptionTier } from "@/lib/billing/config";
 import { getTierConfig, isUnlimited } from "@/lib/billing/config";
+import { buildStatsigUser, trackModelViewed, trackSearchPerformed } from "@/lib/statsig";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } from "@/lib/logging";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
@@ -80,13 +81,26 @@ export const listModels = createServerFn({ method: "GET" })
       data: z.infer<typeof listModelsSchema>;
       context: AuthenticatedContext;
     }) => {
-      return await modelListService.listModels({
+      const result = await modelListService.listModels({
         organizationId: context.organizationId,
         cursor: data.cursor,
         limit: data.limit,
         search: data.search,
         tags: data.tags,
       });
+
+      // Track search events (only when search query is present)
+      if (data.search) {
+        const statsigUser = buildStatsigUser(context, null);
+        trackSearchPerformed(statsigUser, {
+          query: data.search,
+          resultsCount: result.models.length,
+          hasFilters: Boolean(data.tags?.length),
+          tags: data.tags,
+        }).catch(() => {}); // Fire and forget
+      }
+
+      return result;
     },
   );
 
@@ -109,7 +123,16 @@ export const getModel = createServerFn({ method: "GET" })
       data: z.infer<typeof getModelSchema>;
       context: AuthenticatedContext;
     }) => {
-      return await modelDetailService.getModel(data.id, context.organizationId);
+      const model = await modelDetailService.getModel(data.id, context.organizationId);
+
+      // Track model view
+      const statsigUser = buildStatsigUser(context, null);
+      trackModelViewed(statsigUser, {
+        modelId: data.id,
+        source: "direct",
+      }).catch(() => {}); // Fire and forget
+
+      return model;
     },
   );
 
