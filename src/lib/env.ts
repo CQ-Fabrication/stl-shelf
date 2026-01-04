@@ -49,6 +49,10 @@ export const env = createEnv({
     POLAR_PRODUCT_FREE: z.string().optional(),
     POLAR_PRODUCT_BASIC: z.string().optional(),
     POLAR_PRODUCT_PRO: z.string().optional(),
+
+    // Better Stack Logging
+    BETTERSTACK_SOURCE_TOKEN: z.string().optional(),
+    BETTERSTACK_INGESTING_HOST: z.string().optional(),
   },
   runtimeEnv: process.env,
 });

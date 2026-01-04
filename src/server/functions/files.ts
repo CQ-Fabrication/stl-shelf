@@ -7,6 +7,7 @@ import { organization } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
 import type { SubscriptionTier } from "@/lib/billing/config";
 import { getTierConfig } from "@/lib/billing/config";
+import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } from "@/lib/logging";
 import {
   canRemoveFile,
   formatGracePeriodRemaining,
@@ -52,66 +53,87 @@ export const addFileToVersion = createServerFn({ method: "POST" })
       data: { versionId: string; file: File };
       context: AuthenticatedContext;
     }) => {
-      const org = await db.query.organization.findFirst({
-        where: eq(organization.id, context.organizationId),
-      });
+      try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
 
-      if (!org) {
-        throw new Error("Organization not found");
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        const extension = data.file.name.split(".").pop()?.toLowerCase() || "";
+        const maxSize = getFileSizeLimit(extension);
+
+        if (data.file.size > maxSize) {
+          throw new Error(
+            `File too large. ${formatBytes(data.file.size)} exceeds the ${formatBytes(maxSize)} limit for .${extension} files`,
+          );
+        }
+
+        const tier = (org.subscriptionTier as SubscriptionTier) || "free";
+        const tierConfig = getTierConfig(tier);
+
+        const [storageResult] = await db
+          .select({ total: sum(modelFiles.size) })
+          .from(modelFiles)
+          .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
+          .innerJoin(models, eq(modelVersions.modelId, models.id))
+          .where(and(eq(models.organizationId, context.organizationId), isNull(models.deletedAt)));
+
+        const currentStorage = Number(storageResult?.total ?? 0);
+        const storageLimit = org.storageLimit ?? tierConfig.storageLimit;
+
+        if (currentStorage + data.file.size > storageLimit) {
+          const limitMB = (storageLimit / 1_048_576).toFixed(0);
+          throw new Error(
+            `Storage limit exceeded. Your ${tierConfig.name} plan allows ${limitMB} MB. Upgrade for more storage.`,
+          );
+        }
+
+        const result = await modelFileService.addFileToVersion({
+          versionId: data.versionId,
+          organizationId: context.organizationId,
+          userId: context.userId,
+          file: data.file,
+          ipAddress: context.ipAddress,
+        });
+
+        logAuditEvent("model.file_added", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          versionId: data.versionId,
+          fileId: result.file.id,
+          ipAddress: context.ipAddress,
+        });
+
+        return {
+          success: true,
+          file: {
+            id: result.file.id,
+            filename: result.file.filename,
+            originalName: result.file.originalName,
+            size: result.file.size,
+            mimeType: result.file.mimeType,
+            extension: result.file.extension,
+            storageKey: result.file.storageKey,
+            storageUrl: result.file.storageUrl,
+            createdAt: result.file.createdAt.toISOString(),
+          },
+          category: result.category,
+        };
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.file.add_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            versionId: data.versionId,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
       }
-
-      const extension = data.file.name.split(".").pop()?.toLowerCase() || "";
-      const maxSize = getFileSizeLimit(extension);
-
-      if (data.file.size > maxSize) {
-        throw new Error(
-          `File too large. ${formatBytes(data.file.size)} exceeds the ${formatBytes(maxSize)} limit for .${extension} files`,
-        );
-      }
-
-      const tier = (org.subscriptionTier as SubscriptionTier) || "free";
-      const tierConfig = getTierConfig(tier);
-
-      const [storageResult] = await db
-        .select({ total: sum(modelFiles.size) })
-        .from(modelFiles)
-        .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
-        .innerJoin(models, eq(modelVersions.modelId, models.id))
-        .where(and(eq(models.organizationId, context.organizationId), isNull(models.deletedAt)));
-
-      const currentStorage = Number(storageResult?.total ?? 0);
-      const storageLimit = org.storageLimit ?? tierConfig.storageLimit;
-
-      if (currentStorage + data.file.size > storageLimit) {
-        const limitMB = (storageLimit / 1_048_576).toFixed(0);
-        throw new Error(
-          `Storage limit exceeded. Your ${tierConfig.name} plan allows ${limitMB} MB. Upgrade for more storage.`,
-        );
-      }
-
-      const result = await modelFileService.addFileToVersion({
-        versionId: data.versionId,
-        organizationId: context.organizationId,
-        userId: context.userId,
-        file: data.file,
-        ipAddress: context.ipAddress,
-      });
-
-      return {
-        success: true,
-        file: {
-          id: result.file.id,
-          filename: result.file.filename,
-          originalName: result.file.originalName,
-          size: result.file.size,
-          mimeType: result.file.mimeType,
-          extension: result.file.extension,
-          storageKey: result.file.storageKey,
-          storageUrl: result.file.storageUrl,
-          createdAt: result.file.createdAt.toISOString(),
-        },
-        category: result.category,
-      };
     },
   );
 
@@ -126,12 +148,32 @@ export const removeFileFromVersion = createServerFn({ method: "POST" })
       data: z.infer<typeof removeFileFromVersionSchema>;
       context: AuthenticatedContext;
     }) => {
-      const result = await modelFileService.removeFileFromVersion({
-        fileId: data.fileId,
-        organizationId: context.organizationId,
-      });
+      try {
+        const result = await modelFileService.removeFileFromVersion({
+          fileId: data.fileId,
+          organizationId: context.organizationId,
+        });
 
-      return result;
+        logAuditEvent("model.file_removed", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          fileId: data.fileId,
+          ipAddress: context.ipAddress,
+        });
+
+        return result;
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.file.remove_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            fileId: data.fileId,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
     },
   );
 

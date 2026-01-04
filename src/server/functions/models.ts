@@ -7,6 +7,7 @@ import { organization } from "@/lib/db/schema/auth";
 import { models, modelFiles, modelVersions } from "@/lib/db/schema/models";
 import type { SubscriptionTier } from "@/lib/billing/config";
 import { getTierConfig, isUnlimited } from "@/lib/billing/config";
+import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } from "@/lib/logging";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { modelCreationService } from "@/server/services/models/model-create.service";
@@ -234,79 +235,99 @@ export const createModel = createServerFn({ method: "POST" })
       };
       context: AuthenticatedContext;
     }) => {
-      const org = await db.query.organization.findFirst({
-        where: eq(organization.id, context.organizationId),
-      });
+      try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
 
-      if (!org) {
-        throw new Error("Organization not found");
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        // Default to 'free' tier if subscriptionTier is null (new organizations)
+        const tier = (org.subscriptionTier as SubscriptionTier) || "free";
+        const tierConfig = getTierConfig(tier);
+
+        // CRITICAL: Always query actual counts from DB - never trust counters
+        // IMPORTANT: Exclude soft-deleted models (deletedAt IS NULL)
+        const [modelCountResult] = await db
+          .select({ count: count() })
+          .from(models)
+          .where(and(eq(models.organizationId, context.organizationId), isNull(models.deletedAt)));
+
+        const currentModelCount = modelCountResult?.count ?? 0;
+        const modelLimit = org.modelCountLimit ?? tierConfig.modelCountLimit;
+
+        // Check model limit (skip for unlimited -1)
+        if (!isUnlimited(modelLimit) && currentModelCount >= modelLimit) {
+          throw new Error(
+            `Model limit reached. Your ${tierConfig.name} plan allows ${modelLimit} model(s). Upgrade to add more models.`,
+          );
+        }
+
+        // Query actual storage usage from DB
+        // IMPORTANT: Exclude soft-deleted models
+        const [storageResult] = await db
+          .select({ total: sum(modelFiles.size) })
+          .from(modelFiles)
+          .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
+          .innerJoin(models, eq(modelVersions.modelId, models.id))
+          .where(and(eq(models.organizationId, context.organizationId), isNull(models.deletedAt)));
+
+        const currentStorage = Number(storageResult?.total ?? 0);
+        const totalFileSize = data.files.reduce((acc, file) => acc + file.size, 0);
+        const storageLimit = org.storageLimit ?? tierConfig.storageLimit;
+
+        // Check storage limit
+        if (currentStorage + totalFileSize > storageLimit) {
+          const limitMB = (storageLimit / 1_048_576).toFixed(0);
+          throw new Error(
+            `Storage limit exceeded. Your ${tierConfig.name} plan allows ${limitMB} MB. Upgrade for more storage.`,
+          );
+        }
+
+        const uniqueTags = Array.from(new Set(data.tags));
+
+        const result = await modelCreationService.createModel({
+          organizationId: context.organizationId,
+          ownerId: context.userId,
+          name: data.name,
+          description: data.description ?? null,
+          tags: uniqueTags,
+          files: data.files,
+          previewImage: data.previewImage ?? undefined,
+          ipAddress: context.ipAddress,
+        });
+
+        logAuditEvent("model.created", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          modelId: result.modelId,
+          versionId: result.versionId,
+          ipAddress: context.ipAddress,
+        });
+
+        return {
+          modelId: result.modelId,
+          versionId: result.versionId,
+          version: result.version,
+          slug: result.slug,
+          storageRoot: result.storageRoot,
+          createdAt: result.createdAt.toISOString(),
+          tags: uniqueTags,
+          files: result.files,
+        };
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.model.create_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
       }
-
-      // Default to 'free' tier if subscriptionTier is null (new organizations)
-      const tier = (org.subscriptionTier as SubscriptionTier) || "free";
-      const tierConfig = getTierConfig(tier);
-
-      // CRITICAL: Always query actual counts from DB - never trust counters
-      // IMPORTANT: Exclude soft-deleted models (deletedAt IS NULL)
-      const [modelCountResult] = await db
-        .select({ count: count() })
-        .from(models)
-        .where(and(eq(models.organizationId, context.organizationId), isNull(models.deletedAt)));
-
-      const currentModelCount = modelCountResult?.count ?? 0;
-      const modelLimit = org.modelCountLimit ?? tierConfig.modelCountLimit;
-
-      // Check model limit (skip for unlimited -1)
-      if (!isUnlimited(modelLimit) && currentModelCount >= modelLimit) {
-        throw new Error(
-          `Model limit reached. Your ${tierConfig.name} plan allows ${modelLimit} model(s). Upgrade to add more models.`,
-        );
-      }
-
-      // Query actual storage usage from DB
-      // IMPORTANT: Exclude soft-deleted models
-      const [storageResult] = await db
-        .select({ total: sum(modelFiles.size) })
-        .from(modelFiles)
-        .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
-        .innerJoin(models, eq(modelVersions.modelId, models.id))
-        .where(and(eq(models.organizationId, context.organizationId), isNull(models.deletedAt)));
-
-      const currentStorage = Number(storageResult?.total ?? 0);
-      const totalFileSize = data.files.reduce((acc, file) => acc + file.size, 0);
-      const storageLimit = org.storageLimit ?? tierConfig.storageLimit;
-
-      // Check storage limit
-      if (currentStorage + totalFileSize > storageLimit) {
-        const limitMB = (storageLimit / 1_048_576).toFixed(0);
-        throw new Error(
-          `Storage limit exceeded. Your ${tierConfig.name} plan allows ${limitMB} MB. Upgrade for more storage.`,
-        );
-      }
-
-      const uniqueTags = Array.from(new Set(data.tags));
-
-      const result = await modelCreationService.createModel({
-        organizationId: context.organizationId,
-        ownerId: context.userId,
-        name: data.name,
-        description: data.description ?? null,
-        tags: uniqueTags,
-        files: data.files,
-        previewImage: data.previewImage ?? undefined,
-        ipAddress: context.ipAddress,
-      });
-
-      return {
-        modelId: result.modelId,
-        versionId: result.versionId,
-        version: result.version,
-        slug: result.slug,
-        storageRoot: result.storageRoot,
-        createdAt: result.createdAt.toISOString(),
-        tags: uniqueTags,
-        files: result.files,
-      };
     },
   );
 
@@ -341,54 +362,75 @@ export const addVersion = createServerFn({ method: "POST" })
       };
       context: AuthenticatedContext;
     }) => {
-      // Get organization and tier for limit checking
-      const org = await db.query.organization.findFirst({
-        where: eq(organization.id, context.organizationId),
-      });
+      try {
+        // Get organization and tier for limit checking
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
 
-      if (!org) {
-        throw new Error("Organization not found");
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        const tier = (org.subscriptionTier as SubscriptionTier) || "free";
+        const tierConfig = getTierConfig(tier);
+
+        // Query actual storage usage from DB (don't trust counters)
+        // IMPORTANT: Exclude soft-deleted models
+        const [storageResult] = await db
+          .select({ total: sum(modelFiles.size) })
+          .from(modelFiles)
+          .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
+          .innerJoin(models, eq(modelVersions.modelId, models.id))
+          .where(and(eq(models.organizationId, context.organizationId), isNull(models.deletedAt)));
+
+        const currentStorage = Number(storageResult?.total ?? 0);
+        const totalFileSize = data.files.reduce((acc, file) => acc + file.size, 0);
+        const storageLimit = org.storageLimit ?? tierConfig.storageLimit;
+
+        // Check storage limit before adding version
+        if (currentStorage + totalFileSize > storageLimit) {
+          const limitMB = (storageLimit / 1_048_576).toFixed(0);
+          throw new Error(
+            `Storage limit exceeded. Your ${tierConfig.name} plan allows ${limitMB} MB. Upgrade for more storage.`,
+          );
+        }
+
+        const result = await modelVersionService.addVersion({
+          modelId: data.modelId,
+          organizationId: context.organizationId,
+          ownerId: context.userId,
+          changelog: data.changelog,
+          files: data.files,
+          previewImage: data.previewImage ?? undefined,
+          ipAddress: context.ipAddress,
+        });
+
+        logAuditEvent("model.version_added", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          modelId: data.modelId,
+          versionId: result.versionId,
+          ipAddress: context.ipAddress,
+        });
+
+        return {
+          versionId: result.versionId,
+          version: result.version,
+          files: result.files,
+        };
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.model.version_add_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            modelId: data.modelId,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
       }
-
-      const tier = (org.subscriptionTier as SubscriptionTier) || "free";
-      const tierConfig = getTierConfig(tier);
-
-      // Query actual storage usage from DB (don't trust counters)
-      // IMPORTANT: Exclude soft-deleted models
-      const [storageResult] = await db
-        .select({ total: sum(modelFiles.size) })
-        .from(modelFiles)
-        .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
-        .innerJoin(models, eq(modelVersions.modelId, models.id))
-        .where(and(eq(models.organizationId, context.organizationId), isNull(models.deletedAt)));
-
-      const currentStorage = Number(storageResult?.total ?? 0);
-      const totalFileSize = data.files.reduce((acc, file) => acc + file.size, 0);
-      const storageLimit = org.storageLimit ?? tierConfig.storageLimit;
-
-      // Check storage limit before adding version
-      if (currentStorage + totalFileSize > storageLimit) {
-        const limitMB = (storageLimit / 1_048_576).toFixed(0);
-        throw new Error(
-          `Storage limit exceeded. Your ${tierConfig.name} plan allows ${limitMB} MB. Upgrade for more storage.`,
-        );
-      }
-
-      const result = await modelVersionService.addVersion({
-        modelId: data.modelId,
-        organizationId: context.organizationId,
-        ownerId: context.userId,
-        changelog: data.changelog,
-        files: data.files,
-        previewImage: data.previewImage ?? undefined,
-        ipAddress: context.ipAddress,
-      });
-
-      return {
-        versionId: result.versionId,
-        version: result.version,
-        files: result.files,
-      };
     },
   );
 
@@ -404,11 +446,33 @@ export const downloadFile = createServerFn({ method: "POST" })
       data: z.infer<typeof downloadFileSchema>;
       context: AuthenticatedContext;
     }) => {
-      // Return signed URL instead of Blob (Blob not serializable in server functions)
-      return await modelDownloadService.getFileDownloadInfo(
-        data.storageKey,
-        context.organizationId,
-      );
+      try {
+        // Return signed URL instead of Blob (Blob not serializable in server functions)
+        const downloadInfo = await modelDownloadService.getFileDownloadInfo(
+          data.storageKey,
+          context.organizationId,
+        );
+
+        logAuditEvent("model.file_download_requested", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          storageKey: data.storageKey,
+          ipAddress: context.ipAddress,
+        });
+
+        return downloadInfo;
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.file.download_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            storageKey: data.storageKey,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
     },
   );
 
@@ -424,13 +488,34 @@ export const downloadModelZip = createServerFn({ method: "POST" })
       data: z.infer<typeof downloadModelZipSchema>;
       context: AuthenticatedContext;
     }) => {
-      // For ZIP downloads, we need a different approach - create ZIP on server and return URL
-      // For now, return the model info so client can download files individually
-      const versions = await modelDetailService.getModelVersions(
-        data.modelId,
-        context.organizationId,
-      );
-      return { versions, modelId: data.modelId };
+      try {
+        // For ZIP downloads, we need a different approach - create ZIP on server and return URL
+        // For now, return the model info so client can download files individually
+        const versions = await modelDetailService.getModelVersions(
+          data.modelId,
+          context.organizationId,
+        );
+
+        logAuditEvent("model.zip_download_requested", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          modelId: data.modelId,
+          ipAddress: context.ipAddress,
+        });
+
+        return { versions, modelId: data.modelId };
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.model.download_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            modelId: data.modelId,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
     },
   );
 
@@ -446,13 +531,36 @@ export const downloadVersionZip = createServerFn({ method: "POST" })
       data: z.infer<typeof downloadVersionZipSchema>;
       context: AuthenticatedContext;
     }) => {
-      // Return files list so client can generate download URLs
-      const files = await modelDetailService.getModelFiles(
-        data.modelId,
-        data.versionId,
-        context.organizationId,
-      );
-      return { files, modelId: data.modelId, versionId: data.versionId };
+      try {
+        // Return files list so client can generate download URLs
+        const files = await modelDetailService.getModelFiles(
+          data.modelId,
+          data.versionId,
+          context.organizationId,
+        );
+
+        logAuditEvent("model.version_zip_download_requested", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          modelId: data.modelId,
+          versionId: data.versionId,
+          ipAddress: context.ipAddress,
+        });
+
+        return { files, modelId: data.modelId, versionId: data.versionId };
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.model.download_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            modelId: data.modelId,
+            versionId: data.versionId,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
     },
   );
 
@@ -468,10 +576,32 @@ export const getFileDownloadInfo = createServerFn({ method: "GET" })
       data: z.infer<typeof downloadFileSchema>;
       context: AuthenticatedContext;
     }) => {
-      return await modelDownloadService.getFileDownloadInfo(
-        data.storageKey,
-        context.organizationId,
-      );
+      try {
+        const downloadInfo = await modelDownloadService.getFileDownloadInfo(
+          data.storageKey,
+          context.organizationId,
+        );
+
+        logAuditEvent("model.file_download_requested", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          storageKey: data.storageKey,
+          ipAddress: context.ipAddress,
+        });
+
+        return downloadInfo;
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.file.download_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            storageKey: data.storageKey,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
     },
   );
 
@@ -487,15 +617,35 @@ export const deleteModel = createServerFn({ method: "POST" })
       data: z.infer<typeof deleteModelSchema>;
       context: AuthenticatedContext;
     }) => {
-      const result = await modelDeleteService.deleteModel({
-        modelId: data.id,
-        organizationId: context.organizationId,
-      });
+      try {
+        const result = await modelDeleteService.deleteModel({
+          modelId: data.id,
+          organizationId: context.organizationId,
+        });
 
-      return {
-        success: true,
-        deletedId: result.deletedId,
-      };
+        logAuditEvent("model.deleted", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          modelId: data.id,
+          ipAddress: context.ipAddress,
+        });
+
+        return {
+          success: true,
+          deletedId: result.deletedId,
+        };
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.model.delete_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            modelId: data.id,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
     },
   );
 
@@ -511,10 +661,32 @@ export const renameModel = createServerFn({ method: "POST" })
       data: z.infer<typeof renameModelSchema>;
       context: AuthenticatedContext;
     }) => {
-      return await modelUpdateService.renameModel({
-        modelId: data.id,
-        organizationId: context.organizationId,
-        name: data.name,
-      });
+      try {
+        const result = await modelUpdateService.renameModel({
+          modelId: data.id,
+          organizationId: context.organizationId,
+          name: data.name,
+        });
+
+        logAuditEvent("model.renamed", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          modelId: data.id,
+          ipAddress: context.ipAddress,
+        });
+
+        return result;
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          logErrorEvent("error.model.rename_failed", {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            modelId: data.id,
+            ipAddress: context.ipAddress,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
     },
   );
