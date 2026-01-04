@@ -20,22 +20,18 @@ function StatsigUserSync({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (session?.user) {
       // User logged in - update Statsig with authenticated user
+      // Note: Email intentionally omitted for GDPR/privacy compliance
       client.updateUserSync({
         userID: session.user.id,
-        email: session.user.email,
         custom: {
-          userId: session.user.id,
           organizationId: session.session.activeOrganizationId ?? undefined,
-          organizationName: activeOrg?.name ?? undefined,
           plan: activeOrg?.subscriptionTier ?? "free",
         },
       });
     }
   }, [
     session?.user?.id,
-    session?.user?.email,
     session?.session?.activeOrganizationId,
-    activeOrg?.name,
     activeOrg?.subscriptionTier,
     client,
   ]);
