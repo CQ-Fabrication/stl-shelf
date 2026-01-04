@@ -1,6 +1,7 @@
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 import type { StatsigUser } from "statsig-node";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
+import { env } from "@/lib/env";
 import type { MemberRole, SubscriptionTier, StatsigUserContext } from "./types";
 
 /**
@@ -98,10 +99,14 @@ export function buildMinimalStatsigUser(context: StatsigUserContext): StatsigUse
 
 /**
  * Hash email for privacy (send hashed version to Statsig)
- * Uses SHA-256 to create a consistent hash for the same email
+ * Uses HMAC-SHA256 with server secret as key to prevent rainbow table attacks
+ * Same email always produces the same hash for analytics consistency
  */
 function hashEmail(email: string): string {
-  return createHash("sha256").update(email.toLowerCase().trim()).digest("hex");
+  const secret = env.STATSIG_SERVER_SECRET ?? env.BETTER_AUTH_SECRET;
+  return createHmac("sha256", secret)
+    .update(email.toLowerCase().trim())
+    .digest("hex");
 }
 
 /**

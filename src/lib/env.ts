@@ -2,6 +2,11 @@ import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
 export const env = createEnv({
+  // Client-side env vars (must be prefixed with VITE_)
+  clientPrefix: "VITE_",
+  client: {
+    VITE_STATSIG_CLIENT_KEY: z.string().optional(),
+  },
   server: {
     // Database
     DATABASE_URL: z.string().url(),
