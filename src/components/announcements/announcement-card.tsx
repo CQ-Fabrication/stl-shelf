@@ -1,7 +1,9 @@
+import { useStatsigClient } from "@statsig/react-bindings";
 import { useRouter } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
 import Markdown from "react-markdown";
 import { Button } from "@/components/ui/button";
+import { trackCtaClick } from "@/lib/statsig/client-events";
 import { cn } from "@/lib/utils";
 
 type AnnouncementCardProps = {
@@ -72,11 +74,18 @@ export function AnnouncementCard({
   variant = "dropdown",
 }: AnnouncementCardProps) {
   const router = useRouter();
+  const { client } = useStatsigClient();
 
   function handleCtaClick() {
     if (!ctaUrl) return;
 
     const { type, path } = parseCtaUrl(ctaUrl);
+
+    // Track CTA click in Statsig
+    trackCtaClick(client, ctaLabel ?? "Learn more", {
+      location: "announcement",
+      variant: id,
+    });
 
     // Mark as read when CTA is clicked
     onCtaClick?.(id);

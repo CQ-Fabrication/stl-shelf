@@ -8,7 +8,13 @@
  * These are for UI-only interactions.
  */
 
-import type { StatsigClient } from "@statsig/js-client";
+import type { PrecomputedEvaluationsInterface } from "@statsig/client-core";
+
+/**
+ * Statsig client type that can log events.
+ * Works with both StatsigClient from js-client and useStatsigClient() from react-bindings.
+ */
+type StatsigClientWithEvents = PrecomputedEvaluationsInterface;
 
 /**
  * Client-side event name constants.
@@ -97,7 +103,7 @@ function cleanMetadata(
  * Track navigation link/button clicks
  */
 export function trackNavClick(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   item: string,
   context?: { from?: string; destination?: string }
 ) {
@@ -108,7 +114,7 @@ export function trackNavClick(
  * Track CTA button clicks (Get Started, Sign Up, etc.)
  */
 export function trackCtaClick(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   button: string,
   context?: { location?: string; variant?: string }
 ) {
@@ -122,7 +128,7 @@ export function trackCtaClick(
 /**
  * Track when user starts filling a form (focus on first field)
  */
-export function trackFormStart(client: StatsigClient, form: string) {
+export function trackFormStart(client: StatsigClientWithEvents, form: string) {
   client.logEvent(ClientEvent.FORM_START, form);
 }
 
@@ -130,7 +136,7 @@ export function trackFormStart(client: StatsigClient, form: string) {
  * Track form submission attempt (regardless of success)
  */
 export function trackFormSubmit(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   form: string,
   metadata?: { success?: boolean; errorType?: string }
 ) {
@@ -144,7 +150,7 @@ export function trackFormSubmit(
  * Track form validation errors
  */
 export function trackFormError(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   form: string,
   field: string,
   errorType?: string
@@ -159,7 +165,7 @@ export function trackFormError(
 /**
  * Track modal/dialog opens
  */
-export function trackModalOpen(client: StatsigClient, modal: string) {
+export function trackModalOpen(client: StatsigClientWithEvents, modal: string) {
   client.logEvent(ClientEvent.MODAL_OPEN, modal);
 }
 
@@ -167,7 +173,7 @@ export function trackModalOpen(client: StatsigClient, modal: string) {
  * Track modal/dialog closes
  */
 export function trackModalClose(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   modal: string,
   action?: "submit" | "cancel" | "dismiss"
 ) {
@@ -182,7 +188,7 @@ export function trackModalClose(
  * Track generic button clicks
  */
 export function trackButtonClick(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   button: string,
   context?: Record<string, string>
 ) {
@@ -193,7 +199,7 @@ export function trackButtonClick(
  * Track feature interaction (for feature discovery tracking)
  */
 export function trackFeatureInteraction(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   feature: string,
   action: string
 ) {
@@ -208,7 +214,7 @@ export function trackFeatureInteraction(
  * Track model card click (navigating to detail)
  */
 export function trackModelCardClick(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   modelId: string,
   context?: { source?: string; position?: number }
 ) {
@@ -225,7 +231,7 @@ export function trackModelCardClick(
 /**
  * Track tag click (for filtering)
  */
-export function trackTagClick(client: StatsigClient, tag: string, source: string) {
+export function trackTagClick(client: StatsigClientWithEvents, tag: string, source: string) {
   client.logEvent(ClientEvent.TAG_CLICK, tag, { source });
 }
 
@@ -238,7 +244,7 @@ export function trackTagClick(client: StatsigClient, tag: string, source: string
  * Indicates the first search didn't return what they wanted
  */
 export function trackSearchRefined(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   originalQuery: string,
   refinedQuery: string,
   secondsToRefine: number
@@ -255,7 +261,7 @@ export function trackSearchRefined(
  * Indicates poor search relevance
  */
 export function trackSearchAbandoned(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   query: string,
   resultsCount: number,
   secondsOnResults: number
@@ -271,7 +277,7 @@ export function trackSearchAbandoned(
  * This is a critical friction signal
  */
 export function trackFrustratedSearchSession(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   searchCount: number,
   queries: string[],
   sessionDurationSeconds: number
@@ -291,7 +297,7 @@ export function trackFrustratedSearchSession(
  * Track when upload modal/flow is initiated
  */
 export function trackUploadStarted(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   fileCount: number,
   totalSizeBytes: number
 ) {
@@ -305,7 +311,7 @@ export function trackUploadStarted(
  * Track when user abandons upload flow before completion
  */
 export function trackUploadAbandoned(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   abandonedAtStep: "file_select" | "metadata" | "processing" | "unknown",
   secondsSpent: number,
   fileCount?: number
@@ -321,7 +327,7 @@ export function trackUploadAbandoned(
  * Track upload retry after error
  */
 export function trackUploadRetry(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   attemptNumber: number,
   previousErrorType?: string
 ) {
@@ -339,7 +345,7 @@ export function trackUploadRetry(
  * Track 3D preview load completion
  */
 export function trackPreviewLoaded(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   modelId: string,
   loadTimeMs: number,
   fileFormat: string
@@ -354,7 +360,7 @@ export function trackPreviewLoaded(
  * Track 3D preview interaction
  */
 export function trackPreviewInteraction(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   modelId: string,
   action: "rotate" | "zoom" | "pan" | "reset" | "fullscreen",
   interactionCount: number
@@ -370,7 +376,7 @@ export function trackPreviewInteraction(
  * User previewed the model and then downloaded it
  */
 export function trackPreviewToDownload(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   modelId: string,
   previewDurationSeconds: number,
   interactionCount: number
@@ -389,7 +395,7 @@ export function trackPreviewToDownload(
  * Track plan selection (before checkout)
  */
 export function trackPlanSelected(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   planId: string,
   context?: { currentPlan?: string; action?: "upgrade" | "downgrade" | "initial" }
 ) {
@@ -400,7 +406,7 @@ export function trackPlanSelected(
  * Track pricing page interaction
  */
 export function trackPricingInteraction(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   action: "view_plans" | "toggle_billing" | "compare_features"
 ) {
   client.logEvent(ClientEvent.PRICING_INTERACTION, action);
@@ -410,7 +416,7 @@ export function trackPricingInteraction(
  * Track storage limit warning shown to user
  */
 export function trackStorageLimitWarning(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   usagePercent: number,
   usedBytes: number,
   limitBytes: number
@@ -430,7 +436,7 @@ export function trackStorageLimitWarning(
  * Track filter applied
  */
 export function trackFilterApplied(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   filterType: string,
   value: string
 ) {
@@ -440,7 +446,7 @@ export function trackFilterApplied(
 /**
  * Track sort changed
  */
-export function trackSortChanged(client: StatsigClient, sortBy: string, order: string) {
+export function trackSortChanged(client: StatsigClientWithEvents, sortBy: string, order: string) {
   client.logEvent(ClientEvent.SORT_CHANGED, sortBy, { order });
 }
 
@@ -451,7 +457,7 @@ export function trackSortChanged(client: StatsigClient, sortBy: string, order: s
 /**
  * Track version history viewed
  */
-export function trackVersionHistoryViewed(client: StatsigClient, modelId: string) {
+export function trackVersionHistoryViewed(client: StatsigClientWithEvents, modelId: string) {
   client.logEvent(ClientEvent.VERSION_HISTORY_VIEWED, modelId);
 }
 
@@ -459,7 +465,7 @@ export function trackVersionHistoryViewed(client: StatsigClient, modelId: string
  * Track changelog viewed
  */
 export function trackChangelogViewed(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   modelId: string,
   versionNumber: number
 ) {
@@ -476,7 +482,7 @@ export function trackChangelogViewed(
  * Track purposeful return - user came back and did something valuable
  */
 export function trackPurposefulReturn(
-  client: StatsigClient,
+  client: StatsigClientWithEvents,
   daysSinceLastVisit: number,
   action: "search" | "download" | "upload" | "view"
 ) {
