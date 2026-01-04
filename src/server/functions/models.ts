@@ -7,13 +7,7 @@ import { organization } from "@/lib/db/schema/auth";
 import { models, modelFiles, modelVersions } from "@/lib/db/schema/models";
 import type { SubscriptionTier } from "@/lib/billing/config";
 import { getTierConfig, isUnlimited } from "@/lib/billing/config";
-import {
-  buildStatsigUser,
-  trackModelUploaded,
-  trackModelViewed,
-  trackSearchPerformed,
-  type OrganizationData,
-} from "@/lib/statsig";
+import { buildStatsigUser, trackModelViewed, trackSearchPerformed } from "@/lib/statsig";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } from "@/lib/logging";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
@@ -362,60 +356,6 @@ export const createModel = createServerFn({ method: "POST" })
         }
         throw error;
       }
-
-      // Query actual storage usage from DB
-      // IMPORTANT: Exclude soft-deleted models
-      const [storageResult] = await db
-        .select({ total: sum(modelFiles.size) })
-        .from(modelFiles)
-        .innerJoin(modelVersions, eq(modelFiles.versionId, modelVersions.id))
-        .innerJoin(models, eq(modelVersions.modelId, models.id))
-        .where(and(eq(models.organizationId, context.organizationId), isNull(models.deletedAt)));
-
-      const currentStorage = Number(storageResult?.total ?? 0);
-      const totalFileSize = data.files.reduce((acc, file) => acc + file.size, 0);
-      const storageLimit = org.storageLimit ?? tierConfig.storageLimit;
-
-      // Check storage limit
-      if (currentStorage + totalFileSize > storageLimit) {
-        const limitMB = (storageLimit / 1_048_576).toFixed(0);
-        throw new Error(
-          `Storage limit exceeded. Your ${tierConfig.name} plan allows ${limitMB} MB. Upgrade for more storage.`,
-        );
-      }
-
-      const uniqueTags = Array.from(new Set(data.tags));
-
-      const result = await modelCreationService.createModel({
-        organizationId: context.organizationId,
-        ownerId: context.userId,
-        name: data.name,
-        description: data.description ?? null,
-        tags: uniqueTags,
-        files: data.files,
-        previewImage: data.previewImage ?? undefined,
-        ipAddress: context.ipAddress,
-      });
-
-      // Track model upload
-      const statsigUser = buildStatsigUser(context, org as OrganizationData);
-      trackModelUploaded(statsigUser, {
-        modelId: result.modelId,
-        fileCount: result.files.length,
-        totalSizeBytes: totalFileSize,
-        hasPreviewImage: Boolean(data.previewImage),
-      }).catch(() => {}); // Fire and forget
-
-      return {
-        modelId: result.modelId,
-        versionId: result.versionId,
-        version: result.version,
-        slug: result.slug,
-        storageRoot: result.storageRoot,
-        createdAt: result.createdAt.toISOString(),
-        tags: uniqueTags,
-        files: result.files,
-      };
     },
   );
 
