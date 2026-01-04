@@ -1,5 +1,6 @@
 import Statsig from "statsig-node";
 import { env } from "@/lib/env";
+import { logDebugEvent, logErrorEvent } from "@/lib/logging";
 import type {
   EventMetadata,
   EventName,
@@ -60,6 +61,10 @@ export async function initializeStatsig(): Promise<void> {
       registerShutdownHandlers();
     } catch (error) {
       console.error("[Statsig] Failed to initialize:", error);
+      logErrorEvent("Statsig initialization failed", {
+        error: error instanceof Error ? error.message : String(error),
+        component: "statsig",
+      });
       initState = "error";
       // Clear promise so next call can retry
       initializationPromise = null;
@@ -178,6 +183,12 @@ export async function logEvent<T extends EventName>(
 
     // After init, check if actually ready (handles init errors)
     if (!isStatsigEnabled()) {
+      if (env.NODE_ENV === "development") {
+        logDebugEvent("Statsig event dropped (not initialized)", {
+          eventName,
+          component: "statsig",
+        });
+      }
       return;
     }
 
