@@ -1,0 +1,224 @@
+import {
+  AlertTriangle,
+  Box,
+  CreditCard,
+  Crown,
+  HardDrive,
+  Loader2,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCustomerPortal } from "@/hooks/use-customer-portal";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useUsageStats } from "@/hooks/use-usage-stats";
+import {
+  formatStorage,
+  getUsageColor,
+  getUsageProgressColor,
+  getTierDisplayName,
+} from "@/lib/billing/utils";
+
+type UsageRowProps = {
+  icon: React.ReactNode;
+  label: string;
+  used: number | string;
+  limit: number | string;
+  percentage: number;
+  formatValue?: (val: number) => string;
+};
+
+function UsageRow({ icon, label, used, limit, percentage, formatValue }: UsageRowProps) {
+  const displayUsed = formatValue && typeof used === "number" ? formatValue(used) : used;
+  const displayLimit = formatValue && typeof limit === "number" ? formatValue(limit) : limit;
+  const isWarning = percentage >= 75;
+  const isCritical = percentage >= 90;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          {icon}
+          <span>{label}</span>
+        </div>
+        <span className={`font-medium tabular-nums ${getUsageColor(percentage)}`}>
+          {displayUsed} / {displayLimit}
+          {isCritical && (
+            <span className="ml-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
+          )}
+          {isWarning && !isCritical && (
+            <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-amber-500" />
+          )}
+        </span>
+      </div>
+      <Progress
+        className="h-1.5"
+        indicatorClassName={getUsageProgressColor(percentage)}
+        value={Math.min(percentage, 100)}
+      />
+    </div>
+  );
+}
+
+function SubscriptionSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-6 w-28" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-6 sm:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <Skeleton className="h-1.5 w-full" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export const SubscriptionStatusCard = () => {
+  const { subscription, isLoading: isSubLoading } = useSubscription();
+  const { usage, isLoading: isUsageLoading } = useUsageStats();
+  const { openPortal, isLoading: isPortalLoading } = useCustomerPortal();
+
+  const isLoading = isSubLoading || isUsageLoading;
+
+  if (isLoading) {
+    return <SubscriptionSkeleton />;
+  }
+
+  if (!subscription || !usage) return null;
+
+  const isActive = subscription.status === "active";
+  const isFree = subscription.tier === "free";
+  const isPro = subscription.tier === "pro";
+  const isOwner = subscription.isOwner;
+  const hasPaymentIssue = subscription.status === "past_due" || subscription.status === "unpaid";
+
+  // Check if any resource is at warning level
+  const hasWarning =
+    usage.storage.percentage >= 75 ||
+    usage.models.percentage >= 75 ||
+    usage.members.percentage >= 75;
+
+  return (
+    <Card
+      className={`${hasPaymentIssue ? "border-red-500/50" : isPro ? "border-orange-500/50" : ""} ${hasWarning && isFree ? "border-amber-500/30" : ""}`}
+    >
+      {/* Payment failure banner */}
+      {hasPaymentIssue && isOwner && (
+        <div className="rounded-t-lg border-b border-red-500/30 bg-red-50 px-6 py-3 dark:bg-red-950/30">
+          <div className="flex items-center justify-between gap-4">
+            <p className="flex items-center gap-2 font-medium text-red-800 text-sm dark:text-red-200">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>Payment failed. Update your payment method to avoid service interruption.</span>
+            </p>
+            <Button size="sm" variant="destructive" disabled={isPortalLoading} onClick={openPortal}>
+              {isPortalLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+              Fix Now
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {isPro && <Crown className="h-5 w-5 text-orange-500" />}
+            <CardTitle className="text-xl">{getTierDisplayName(subscription.tier)} Plan</CardTitle>
+            <Badge
+              variant={isActive ? "default" : hasPaymentIssue ? "destructive" : "secondary"}
+              className={isActive ? "bg-green-600 hover:bg-green-600" : ""}
+            >
+              {hasPaymentIssue ? "Payment Issue" : subscription.status}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        {/* Usage Metrics - Horizontal Grid */}
+        <div className="grid gap-6 sm:grid-cols-3">
+          <UsageRow
+            icon={<HardDrive className="h-4 w-4" />}
+            label="Storage"
+            used={usage.storage.used ?? 0}
+            limit={usage.storage.limit ?? 0}
+            percentage={usage.storage.percentage}
+            formatValue={formatStorage}
+          />
+          <UsageRow
+            icon={<Box className="h-4 w-4" />}
+            label="Models"
+            used={usage.models.used}
+            limit={usage.models.limit}
+            percentage={usage.models.percentage}
+          />
+          <UsageRow
+            icon={<Users className="h-4 w-4" />}
+            label="Members"
+            used={usage.members.used}
+            limit={usage.members.limit}
+            percentage={usage.members.percentage}
+          />
+        </div>
+
+        {/* Upgrade prompt for free users approaching limits */}
+        {isFree && hasWarning && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-50/50 p-3 dark:bg-amber-950/20">
+            <p className="flex items-center gap-2 text-amber-800 text-sm dark:text-amber-200">
+              <Sparkles className="h-4 w-4 shrink-0" />
+              <span>
+                You're approaching your plan limits. Check out the plans below for more capacity.
+              </span>
+            </p>
+          </div>
+        )}
+
+        {/* Actions - Only for paid users */}
+        {!isFree && isOwner && (
+          <div className="space-y-2 border-t pt-4">
+            <Button
+              className="w-full sm:w-auto"
+              disabled={isPortalLoading}
+              onClick={openPortal}
+              variant="outline"
+            >
+              {isPortalLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CreditCard className="mr-2 h-4 w-4" />
+              )}
+              Manage Subscription
+            </Button>
+            <p className="text-muted-foreground text-xs">
+              Update payment method, view invoices, or cancel
+            </p>
+          </div>
+        )}
+
+        {!isFree && !isOwner && (
+          <div className="border-t pt-4">
+            <p className="text-center text-muted-foreground text-sm">
+              Only the organization owner can manage billing
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

@@ -1,0 +1,80 @@
+type: http_request
+model: http_request
+id: rq_D5PqJoebPM
+createdAt: 2026-01-02T12:50:44.402544
+updatedAt: 2026-01-02T12:54:08.553906
+workspaceId: wk_kZW7qPZZ3k
+folderId: fl_kf4KHHVx9Q
+authentication: {}
+authenticationType: null
+body:
+  text: |-
+    {
+      "organizationId": "UVQaLrya1xvEUAH5LE5FB3wUzacd7yxa",
+      "email": "claudioquaglia1985+1@gmail.com",
+      "role": "member"
+    }
+bodyType: application/json
+description: ""
+headers:
+  - enabled: true
+    name: Accept
+    value: "*/*"
+    id: null
+  - enabled: true
+    name: Accept-Language
+    value: en-US,en;q=0.9,it-IT;q=0.8,it;q=0.7,de;q=0.6,es;q=0.5,fr;q=0.4,nl;q=0.3,pt;q=0.2,ru;q=0.1
+    id: null
+  - enabled: true
+    name: Connection
+    value: keep-alive
+    id: null
+  - enabled: true
+    name: Origin
+    value: http://localhost:3000
+    id: null
+  - enabled: true
+    name: Referer
+    value: http://localhost:3000/organization/members
+    id: null
+  - enabled: true
+    name: Sec-Fetch-Dest
+    value: empty
+    id: null
+  - enabled: true
+    name: Sec-Fetch-Mode
+    value: cors
+    id: null
+  - enabled: true
+    name: Sec-Fetch-Site
+    value: same-origin
+    id: null
+  - enabled: true
+    name: User-Agent
+    value: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
+    id: null
+  - enabled: true
+    name: content-type
+    value: application/json
+    id: null
+  - enabled: true
+    name: sec-ch-ua
+    value: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
+    id: null
+  - enabled: true
+    name: sec-ch-ua-mobile
+    value: ?0
+    id: null
+  - enabled: true
+    name: sec-ch-ua-platform
+    value: '"macOS"'
+    id: null
+  - enabled: true
+    name: Cookie
+    value: better-auth.session_token=VOH3hcNteMJJ8q6yEl1XcnMOJ7fbGsIa.BzX8bHvSAPCLbzMTIz9kNfomA2gD6Bniorl0JNkdTFo%3D
+    id: null
+method: POST
+name: Invite memeber
+sortPriority: -1767358244400.0
+url: ${[ host ]}/api/auth/organization/invite-member
+urlParameters: []

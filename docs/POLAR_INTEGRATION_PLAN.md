@@ -1,5 +1,7 @@
 # Polar.sh Payment Integration - Final Plan
 
+> **⚠️ Note:** This planning document was created before the migration to TanStack Start. The actual implementation uses TanStack Start server functions instead of oRPC, and the app is now a unified single app (not a monorepo with `apps/server` and `apps/web`). Code examples here are for reference only - see the actual implementation in `src/server/` for current patterns.
+
 ## STL Shelf: 1 User = 1 Organization Model
 
 ---

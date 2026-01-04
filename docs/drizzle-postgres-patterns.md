@@ -11,6 +11,7 @@ This document captures critical patterns, optimizations, and lessons learned whi
 When using Drizzle's `sql` template literals with correlated subqueries, incorrect interpolation causes PostgreSQL "column reference is ambiguous" errors.
 
 #### ❌ WRONG - Causes Ambiguity Error
+
 ```typescript
 sql`(
   SELECT COUNT(*)
@@ -20,6 +21,7 @@ sql`(
 ```
 
 #### ✅ CORRECT - Plain Column Reference
+
 ```typescript
 sql`(
   SELECT COUNT(*)
@@ -145,6 +147,7 @@ FROM models m;
 ### Myth 2: "JOINs are Always Faster than Subqueries"
 
 **Reality**: For aggregation scenarios, correlated subqueries often outperform JOINs because:
+
 - No intermediate result set creation
 - Better index utilization for each subquery
 - Cleaner execution plans
@@ -307,13 +310,13 @@ const cleanupResults = await Promise.allSettled(
 
 ### Key Metrics
 
-| Metric | Target | Action if Exceeded |
-|--------|--------|-------------------|
-| Query execution time | < 20ms | Review indexes |
-| Database round trips | 1 per request | Consolidate queries |
-| Buffer cache hit ratio | > 99% | Increase cache/optimize queries |
-| Connection pool usage | < 80% | Scale connection pool |
-| Transaction duration | < 100ms | Break into smaller transactions |
+| Metric                 | Target        | Action if Exceeded              |
+| ---------------------- | ------------- | ------------------------------- |
+| Query execution time   | < 20ms        | Review indexes                  |
+| Database round trips   | 1 per request | Consolidate queries             |
+| Buffer cache hit ratio | > 99%         | Increase cache/optimize queries |
+| Connection pool usage  | < 80%         | Scale connection pool           |
+| Transaction duration   | < 100ms       | Break into smaller transactions |
 
 ### Scaling Thresholds
 

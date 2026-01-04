@@ -1,45 +1,19 @@
 {
-  "editor.defaultFormatter": "biomejs.biome",
-  "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[css]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[graphql]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "typescript.tsdk": "node_modules/@typescript/native-preview/lib",
+  "typescript.experimental.useTsgo": true,
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
-  "emmet.showExpandedAbbreviation": "never",
   "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "explicit",
-    "source.organizeImports.biome": "explicit"
+    "source.fixAll.oxc": "explicit"
   },
+  "oxc.lint.enable": true,
+  "oxc.fmt.enable": true,
   "files.associations": {
     "*.css": "tailwindcss"
   },
   "tailwindCSS.experimental.classRegex": [
-    [
-      "(?:twMerge|twJoin|cva|cn|clsx)\\(([^\\);]*)[\\);]",
-      "[`'\"]([^'\"`,;]*)[`'\"]"
-    ]
+    ["(?:twMerge|twJoin|cva|cn|clsx)\\(([^\\);]*)[\\);]", "[`'\"]([^'\"`,;]*)[`'\"]"]
   ],
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
@@ -49,7 +23,8 @@
   "terminal.integrated.suggest.enabled": true,
   "terminal.integrated.localEchoStyle": "dim",
   "search.exclude": {
-    "**/node_modules": true
+    "**/node_modules": true,
+    "**/old": true
   },
   "typescript.referencesCodeLens.enabled": true
 }

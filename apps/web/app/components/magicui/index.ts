@@ -1,6 +1,0 @@
-export { AuroraText } from "./aurora-text"
-export { BentoCard, BentoGrid } from "./bento-grid"
-export { Highlighter } from "./highlighter"
-export { NumberTicker } from "./number-ticker"
-export { ShineBorder } from "./shine-border"
-export { TextReveal } from "./text-reveal"
