@@ -9,6 +9,8 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "@/lib/env";
+import { captureServerException } from "@/lib/error-tracking.server";
+import { getErrorDetails, logErrorEvent } from "@/lib/logging";
 
 const DEFAULT_LIST_LIMIT = 1000;
 const DEFAULT_EXPIRES_IN_MINUTES = 60;
@@ -107,6 +109,15 @@ export class StorageService {
         etag: response.ETag?.replace(/"/g, "") || "",
       };
     } catch (error) {
+      captureServerException(error, {
+        storageKey: options.key,
+        operation: "upload",
+      });
+      logErrorEvent("error.storage.upload_failed", {
+        storageKey: options.key,
+        operation: "upload",
+        ...getErrorDetails(error),
+      });
       throw new Error(
         `Failed to upload file: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -140,6 +151,15 @@ export class StorageService {
         url: this.getFileUrl(options.key),
       };
     } catch (error) {
+      captureServerException(error, {
+        storageKey: options.key,
+        operation: "generate_upload_url",
+      });
+      logErrorEvent("error.storage.upload_failed", {
+        storageKey: options.key,
+        operation: "generate_upload_url",
+        ...getErrorDetails(error),
+      });
       throw new Error(
         `Failed to generate upload URL: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -159,6 +179,15 @@ export class StorageService {
         expiresIn: expiresInMinutes * 60,
       });
     } catch (error) {
+      captureServerException(error, {
+        storageKey: key,
+        operation: "generate_download_url",
+      });
+      logErrorEvent("error.storage.download_failed", {
+        storageKey: key,
+        operation: "generate_download_url",
+        ...getErrorDetails(error),
+      });
       throw new Error(
         `Failed to generate download URL: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -196,6 +225,15 @@ export class StorageService {
         metadata: response.Metadata || {},
       };
     } catch (error) {
+      captureServerException(error, {
+        storageKey: key,
+        operation: "get_file",
+      });
+      logErrorEvent("error.storage.download_failed", {
+        storageKey: key,
+        operation: "get_file",
+        ...getErrorDetails(error),
+      });
       throw new Error(
         `Failed to get file: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -224,6 +262,15 @@ export class StorageService {
       // AWS SDK v3 returns a web-compatible ReadableStream
       return response.Body.transformToWebStream();
     } catch (error) {
+      captureServerException(error, {
+        storageKey: key,
+        operation: "get_file_stream",
+      });
+      logErrorEvent("error.storage.download_failed", {
+        storageKey: key,
+        operation: "get_file_stream",
+        ...getErrorDetails(error),
+      });
       throw new Error(
         `Failed to get file stream: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -271,6 +318,15 @@ export class StorageService {
         metadata: response.Metadata || {},
       };
     } catch (error) {
+      captureServerException(error, {
+        storageKey: key,
+        operation: "get_metadata",
+      });
+      logErrorEvent("error.storage.download_failed", {
+        storageKey: key,
+        operation: "get_metadata",
+        ...getErrorDetails(error),
+      });
       throw new Error(
         `Failed to get file metadata: ${error instanceof Error ? error.message : "Unknown error"}`,
       );

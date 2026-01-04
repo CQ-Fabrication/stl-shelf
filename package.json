@@ -21,6 +21,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",
     "@aws-sdk/s3-request-presigner": "^3.958.0",
+    "@logtail/node": "^0.5.6",
     "@polar-sh/better-auth": "^1.6.3",
     "@polar-sh/sdk": "^0.42.1",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -40,6 +41,8 @@
     "@react-email/components": "^1.0.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@sentry/bun": "^10.32.1",
+    "@sentry/react": "^10.32.1",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-form": "^1.27.7",
