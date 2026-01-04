@@ -56,7 +56,7 @@ export const env = createEnv({
     POLAR_PRODUCT_PRO: z.string().optional(),
 
     // Statsig Feature Flags & Analytics
-    STATSIG_SERVER_SECRET: z.string().optional(),
+    STATSIG_SERVER_SECRET: z.string().min(1),
 
     // Better Stack Logging
     BETTERSTACK_SOURCE_TOKEN: z.string().optional(),

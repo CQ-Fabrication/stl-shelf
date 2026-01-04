@@ -108,7 +108,7 @@ export function buildMinimalStatsigUser(context: StatsigUserContext): StatsigUse
  * Same email always produces the same hash for analytics consistency
  */
 function hashEmail(email: string): string {
-  const secret = env.STATSIG_SERVER_SECRET ?? env.BETTER_AUTH_SECRET;
+  const secret = env.STATSIG_SERVER_SECRET;
   return createHmac("sha256", secret)
     .update(email.toLowerCase().trim())
     .digest("hex");
