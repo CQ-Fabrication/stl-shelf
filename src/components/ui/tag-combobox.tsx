@@ -1,5 +1,5 @@
 import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +41,7 @@ export function TagCombobox({
 }: TagComboboxProps) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const listboxId = useId();
 
   // Normalize tags to handle both string[] and TagInfo[] formats
   const normalizedTags = useMemo(() => {
@@ -110,6 +111,7 @@ export function TagCombobox({
       <Popover onOpenChange={setOpen} open={open}>
         <PopoverTrigger asChild>
           <Button
+            aria-controls={listboxId}
             aria-expanded={open}
             className="w-full justify-between"
             disabled={disabled}
@@ -125,7 +127,7 @@ export function TagCombobox({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-full p-0">
-          <Command shouldFilter={false}>
+          <Command id={listboxId} shouldFilter={false}>
             <CommandInput
               onValueChange={setInputValue}
               placeholder="Search or create tags..."

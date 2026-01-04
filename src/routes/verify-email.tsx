@@ -37,7 +37,7 @@ function VerifyEmailPage() {
         setTimeout(() => {
           navigate({ to: "/library" });
         }, SUCCESS_REDIRECT_DELAY_MS);
-      } catch (_error) {
+      } catch {
         setState("error");
         toast.error("Failed to verify email");
       }
@@ -64,7 +64,7 @@ function VerifyEmailPage() {
       } else {
         toast.error("Please sign in to resend verification email");
       }
-    } catch (_error) {
+    } catch {
       toast.error("Failed to send verification email");
     } finally {
       setIsResending(false);

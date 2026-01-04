@@ -55,13 +55,20 @@ export function Turnstile({
 
   useEffect(() => {
     let cancelled = false;
+    const element = ref.current;
+
+    const clearElement = (el: HTMLElement) => {
+      while (el.firstChild) {
+        el.removeChild(el.firstChild);
+      }
+    };
 
     const renderWidget = () => {
-      if (cancelled || !ref.current || !window.turnstile?.render) return;
+      if (cancelled || !element || !window.turnstile?.render) return;
       // Clean any previous widget DOM
-      ref.current.innerHTML = "";
+      clearElement(element);
       // Render (idempotent via our widgetIdRef)
-      widgetIdRef.current = window.turnstile.render(ref.current, {
+      widgetIdRef.current = window.turnstile.render(element, {
         sitekey: siteKey,
         callback: (token) => !cancelled && onVerifyRef.current?.(token),
         "expired-callback": () => !cancelled && onExpireRef.current?.(),
@@ -102,7 +109,7 @@ export function Turnstile({
         } catch {}
       }
       widgetIdRef.current = null;
-      if (ref.current) ref.current.innerHTML = "";
+      if (element) clearElement(element);
     };
   }, [siteKey, theme]);
 

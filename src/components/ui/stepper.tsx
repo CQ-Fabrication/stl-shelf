@@ -214,9 +214,11 @@ function StepperIndicator({
 }
 
 // StepperTitle
-function StepperTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+function StepperTitle({ className, children, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn("font-medium text-sm", className)} data-slot="stepper-title" {...props} />
+    <h3 className={cn("font-medium text-sm", className)} data-slot="stepper-title" {...props}>
+      {children}
+    </h3>
   );
 }
 

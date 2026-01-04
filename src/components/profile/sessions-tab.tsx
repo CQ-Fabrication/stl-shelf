@@ -137,7 +137,7 @@ export function SessionsTab() {
       await authClient.revokeSession({ token });
       toast.success("Session revoked");
       await queryClient.invalidateQueries({ queryKey: ["sessions"] });
-    } catch (error) {
+    } catch {
       toast.error("Failed to revoke session");
     } finally {
       setRevokingSession(null);
@@ -150,7 +150,7 @@ export function SessionsTab() {
       await authClient.revokeSessions();
       toast.success("All other sessions have been revoked");
       await queryClient.invalidateQueries({ queryKey: ["sessions"] });
-    } catch (error) {
+    } catch {
       toast.error("Failed to revoke sessions");
     } finally {
       setIsRevokingAll(false);

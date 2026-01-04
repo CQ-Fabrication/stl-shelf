@@ -37,19 +37,10 @@ export {
 export { trackFileDownloaded, trackFileFormatPreference } from "./events";
 
 // Server event tracking - Version Control
-export {
-  trackVersionCreated,
-  trackVersionViewed,
-  trackOlderVersionDownloaded,
-} from "./events";
+export { trackVersionCreated, trackVersionViewed, trackOlderVersionDownloaded } from "./events";
 
 // Server event tracking - Tags
-export {
-  trackTagCreated,
-  trackTagApplied,
-  trackTagRemoved,
-  trackTagSearchUsed,
-} from "./events";
+export { trackTagCreated, trackTagApplied, trackTagRemoved, trackTagSearchUsed } from "./events";
 
 // Server event tracking - User Lifecycle
 export {
@@ -103,12 +94,7 @@ export { trackLibraryHealthSnapshot } from "./events";
 export { trackErrorEncountered } from "./events";
 
 // Overrides (for development/testing)
-export {
-  hasLocalOverrides,
-  getLocalOverrides,
-  getOverride,
-  clearOverrideCache,
-} from "./overrides";
+export { hasLocalOverrides, getLocalOverrides, getOverride, clearOverrideCache } from "./overrides";
 
 // Types
 export type {
@@ -138,11 +124,7 @@ export { usePageTracking, PageTracker } from "./use-page-tracking";
 export { trackNavClick, trackCtaClick } from "./client-events";
 
 // Client-side event helpers - Forms
-export {
-  trackFormStart,
-  trackFormSubmit,
-  trackFormError,
-} from "./client-events";
+export { trackFormStart, trackFormSubmit, trackFormError } from "./client-events";
 
 // Client-side event helpers - Modals
 export { trackModalOpen, trackModalClose } from "./client-events";
@@ -185,10 +167,7 @@ export {
 export { trackFilterApplied, trackSortChanged } from "./client-events";
 
 // Client-side event helpers - Version Control
-export {
-  trackVersionHistoryViewed,
-  trackChangelogViewed,
-} from "./client-events";
+export { trackVersionHistoryViewed, trackChangelogViewed } from "./client-events";
 
 // Client-side event helpers - Session Quality
 export { trackPurposefulReturn as trackPurposefulReturnClient } from "./client-events";

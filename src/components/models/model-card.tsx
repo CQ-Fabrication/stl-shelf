@@ -75,11 +75,13 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
     return `${Math.round((bytes / 1024 ** i) * 100) / 100} ${sizes[i]}`;
   };
 
+  const viewModelLabel = "View " + model.name;
+
   return (
     <Card className="group relative flex h-full cursor-pointer flex-col transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
       {/* Stretched link to make the whole card clickable */}
       <Link
-        aria-label={`View ${model.name}`}
+        aria-label={viewModelLabel}
         className="absolute inset-0 z-10"
         params={{ modelId: model.id }}
         to="/models/$modelId"
@@ -229,20 +231,26 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
           <div className="mt-auto flex min-h-[24px] items-center gap-1.5 text-xs">
             {/* Desktop: show 2 tags */}
             <div className="hidden items-center gap-1.5 sm:flex">
-              {model.tags.slice(0, 2).map((tag) => (
-                <Badge
-                  aria-label={`Filter by ${tag}`}
-                  className="relative z-20 max-w-24 cursor-pointer truncate text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
-                  key={tag}
-                  onClick={(e) => handleTagClick(tag, e)}
-                  role="button"
-                  tabIndex={0}
-                  title={tag.length > 12 ? tag : undefined}
-                  variant="secondary"
-                >
-                  {tag}
-                </Badge>
-              ))}
+              {model.tags.slice(0, 2).map((tag) => {
+                const filterLabel = "Filter by " + tag;
+                return (
+                  <button
+                    aria-label={filterLabel}
+                    className="relative z-20 max-w-24 cursor-pointer truncate"
+                    key={tag}
+                    onClick={(e) => handleTagClick(tag, e)}
+                    title={tag.length > 12 ? tag : undefined}
+                    type="button"
+                  >
+                    <Badge
+                      className="text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                      variant="secondary"
+                    >
+                      {tag}
+                    </Badge>
+                  </button>
+                );
+              })}
               {model.tags.length > 2 && (
                 <Popover>
                   <PopoverTrigger asChild>
@@ -259,19 +267,25 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
                       All tags ({model.tags.length})
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {model.tags.map((tag) => (
-                        <Badge
-                          aria-label={`Filter by ${tag}`}
-                          className="cursor-pointer text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
-                          key={tag}
-                          onClick={(e) => handleTagClick(tag, e)}
-                          role="button"
-                          tabIndex={0}
-                          variant="secondary"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
+                      {model.tags.map((tag) => {
+                        const filterLabel = "Filter by " + tag;
+                        return (
+                          <button
+                            aria-label={filterLabel}
+                            className="cursor-pointer"
+                            key={tag}
+                            onClick={(e) => handleTagClick(tag, e)}
+                            type="button"
+                          >
+                            <Badge
+                              className="text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                              variant="secondary"
+                            >
+                              {tag}
+                            </Badge>
+                          </button>
+                        );
+                      })}
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -280,20 +294,26 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
 
             {/* Mobile: show 1 tag */}
             <div className="flex items-center gap-1.5 sm:hidden">
-              {model.tags.slice(0, 1).map((tag) => (
-                <Badge
-                  aria-label={`Filter by ${tag}`}
-                  className="relative z-20 max-w-20 cursor-pointer truncate text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
-                  key={tag}
-                  onClick={(e) => handleTagClick(tag, e)}
-                  role="button"
-                  tabIndex={0}
-                  title={tag.length > 8 ? tag : undefined}
-                  variant="secondary"
-                >
-                  {tag}
-                </Badge>
-              ))}
+              {model.tags.slice(0, 1).map((tag) => {
+                const filterLabel = "Filter by " + tag;
+                return (
+                  <button
+                    aria-label={filterLabel}
+                    className="relative z-20 max-w-20 cursor-pointer truncate"
+                    key={tag}
+                    onClick={(e) => handleTagClick(tag, e)}
+                    title={tag.length > 8 ? tag : undefined}
+                    type="button"
+                  >
+                    <Badge
+                      className="text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                      variant="secondary"
+                    >
+                      {tag}
+                    </Badge>
+                  </button>
+                );
+              })}
               {model.tags.length > 1 && (
                 <Popover>
                   <PopoverTrigger asChild>
@@ -314,19 +334,25 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
                       All tags ({model.tags.length})
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {model.tags.map((tag) => (
-                        <Badge
-                          aria-label={`Filter by ${tag}`}
-                          className="cursor-pointer text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
-                          key={tag}
-                          onClick={(e) => handleTagClick(tag, e)}
-                          role="button"
-                          tabIndex={0}
-                          variant="secondary"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
+                      {model.tags.map((tag) => {
+                        const filterLabel = "Filter by " + tag;
+                        return (
+                          <button
+                            aria-label={filterLabel}
+                            className="cursor-pointer"
+                            key={tag}
+                            onClick={(e) => handleTagClick(tag, e)}
+                            type="button"
+                          >
+                            <Badge
+                              className="text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                              variant="secondary"
+                            >
+                              {tag}
+                            </Badge>
+                          </button>
+                        );
+                      })}
                     </div>
                   </PopoverContent>
                 </Popover>

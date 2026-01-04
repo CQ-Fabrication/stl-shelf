@@ -78,7 +78,7 @@ export type ClientEventName = (typeof ClientEvent)[keyof typeof ClientEvent];
 
 // Helper to filter undefined values from metadata
 function cleanMetadata(
-  obj: Record<string, string | undefined> | undefined
+  obj: Record<string, string | undefined> | undefined,
 ): Record<string, string> | undefined {
   if (!obj) return undefined;
 
@@ -105,7 +105,7 @@ function cleanMetadata(
 export function trackNavClick(
   client: StatsigClientWithEvents,
   item: string,
-  context?: { from?: string; destination?: string }
+  context?: { from?: string; destination?: string },
 ) {
   client.logEvent(ClientEvent.NAV_CLICK, item, cleanMetadata(context));
 }
@@ -116,7 +116,7 @@ export function trackNavClick(
 export function trackCtaClick(
   client: StatsigClientWithEvents,
   button: string,
-  context?: { location?: string; variant?: string }
+  context?: { location?: string; variant?: string },
 ) {
   client.logEvent(ClientEvent.CTA_CLICK, button, cleanMetadata(context));
 }
@@ -138,7 +138,7 @@ export function trackFormStart(client: StatsigClientWithEvents, form: string) {
 export function trackFormSubmit(
   client: StatsigClientWithEvents,
   form: string,
-  metadata?: { success?: boolean; errorType?: string }
+  metadata?: { success?: boolean; errorType?: string },
 ) {
   client.logEvent(ClientEvent.FORM_SUBMIT, form, {
     success: metadata?.success !== false ? "true" : "false",
@@ -153,7 +153,7 @@ export function trackFormError(
   client: StatsigClientWithEvents,
   form: string,
   field: string,
-  errorType?: string
+  errorType?: string,
 ) {
   client.logEvent(ClientEvent.FORM_ERROR, form, cleanMetadata({ field, errorType }));
 }
@@ -175,7 +175,7 @@ export function trackModalOpen(client: StatsigClientWithEvents, modal: string) {
 export function trackModalClose(
   client: StatsigClientWithEvents,
   modal: string,
-  action?: "submit" | "cancel" | "dismiss"
+  action?: "submit" | "cancel" | "dismiss",
 ) {
   client.logEvent(ClientEvent.MODAL_CLOSE, modal, cleanMetadata({ action }));
 }
@@ -190,7 +190,7 @@ export function trackModalClose(
 export function trackButtonClick(
   client: StatsigClientWithEvents,
   button: string,
-  context?: Record<string, string>
+  context?: Record<string, string>,
 ) {
   client.logEvent(ClientEvent.BUTTON_CLICK, button, context);
 }
@@ -201,7 +201,7 @@ export function trackButtonClick(
 export function trackFeatureInteraction(
   client: StatsigClientWithEvents,
   feature: string,
-  action: string
+  action: string,
 ) {
   client.logEvent(ClientEvent.FEATURE_INTERACTION, feature, { action });
 }
@@ -216,7 +216,7 @@ export function trackFeatureInteraction(
 export function trackModelCardClick(
   client: StatsigClientWithEvents,
   modelId: string,
-  context?: { source?: string; position?: number }
+  context?: { source?: string; position?: number },
 ) {
   client.logEvent(
     ClientEvent.MODEL_CARD_CLICK,
@@ -224,7 +224,7 @@ export function trackModelCardClick(
     cleanMetadata({
       source: context?.source,
       position: context?.position?.toString(),
-    })
+    }),
   );
 }
 
@@ -247,7 +247,7 @@ export function trackSearchRefined(
   client: StatsigClientWithEvents,
   originalQuery: string,
   refinedQuery: string,
-  secondsToRefine: number
+  secondsToRefine: number,
 ) {
   client.logEvent(ClientEvent.SEARCH_REFINED, refinedQuery, {
     originalQuery,
@@ -264,7 +264,7 @@ export function trackSearchAbandoned(
   client: StatsigClientWithEvents,
   query: string,
   resultsCount: number,
-  secondsOnResults: number
+  secondsOnResults: number,
 ) {
   client.logEvent(ClientEvent.SEARCH_ABANDONED, query, {
     resultsCount: resultsCount.toString(),
@@ -280,7 +280,7 @@ export function trackFrustratedSearchSession(
   client: StatsigClientWithEvents,
   searchCount: number,
   queries: string[],
-  sessionDurationSeconds: number
+  sessionDurationSeconds: number,
 ) {
   client.logEvent(ClientEvent.FRUSTRATED_SEARCH_SESSION, searchCount.toString(), {
     searchCount: searchCount.toString(),
@@ -299,7 +299,7 @@ export function trackFrustratedSearchSession(
 export function trackUploadStarted(
   client: StatsigClientWithEvents,
   fileCount: number,
-  totalSizeBytes: number
+  totalSizeBytes: number,
 ) {
   client.logEvent(ClientEvent.UPLOAD_STARTED, fileCount.toString(), {
     fileCount: fileCount.toString(),
@@ -314,7 +314,7 @@ export function trackUploadAbandoned(
   client: StatsigClientWithEvents,
   abandonedAtStep: "file_select" | "metadata" | "processing" | "unknown",
   secondsSpent: number,
-  fileCount?: number
+  fileCount?: number,
 ) {
   client.logEvent(ClientEvent.UPLOAD_ABANDONED, abandonedAtStep, {
     abandonedAtStep,
@@ -329,7 +329,7 @@ export function trackUploadAbandoned(
 export function trackUploadRetry(
   client: StatsigClientWithEvents,
   attemptNumber: number,
-  previousErrorType?: string
+  previousErrorType?: string,
 ) {
   client.logEvent(ClientEvent.UPLOAD_RETRY, attemptNumber.toString(), {
     attemptNumber: attemptNumber.toString(),
@@ -348,7 +348,7 @@ export function trackPreviewLoaded(
   client: StatsigClientWithEvents,
   modelId: string,
   loadTimeMs: number,
-  fileFormat: string
+  fileFormat: string,
 ) {
   client.logEvent(ClientEvent.PREVIEW_LOADED, modelId, {
     loadTimeMs: loadTimeMs.toString(),
@@ -363,7 +363,7 @@ export function trackPreviewInteraction(
   client: StatsigClientWithEvents,
   modelId: string,
   action: "rotate" | "zoom" | "pan" | "reset" | "fullscreen",
-  interactionCount: number
+  interactionCount: number,
 ) {
   client.logEvent(ClientEvent.PREVIEW_INTERACTED, modelId, {
     action,
@@ -379,7 +379,7 @@ export function trackPreviewToDownload(
   client: StatsigClientWithEvents,
   modelId: string,
   previewDurationSeconds: number,
-  interactionCount: number
+  interactionCount: number,
 ) {
   client.logEvent(ClientEvent.PREVIEW_TO_DOWNLOAD, modelId, {
     previewDurationSeconds: previewDurationSeconds.toString(),
@@ -397,7 +397,7 @@ export function trackPreviewToDownload(
 export function trackPlanSelected(
   client: StatsigClientWithEvents,
   planId: string,
-  context?: { currentPlan?: string; action?: "upgrade" | "downgrade" | "initial" }
+  context?: { currentPlan?: string; action?: "upgrade" | "downgrade" | "initial" },
 ) {
   client.logEvent(ClientEvent.PLAN_SELECTED, planId, cleanMetadata(context));
 }
@@ -407,7 +407,7 @@ export function trackPlanSelected(
  */
 export function trackPricingInteraction(
   client: StatsigClientWithEvents,
-  action: "view_plans" | "toggle_billing" | "compare_features"
+  action: "view_plans" | "toggle_billing" | "compare_features",
 ) {
   client.logEvent(ClientEvent.PRICING_INTERACTION, action);
 }
@@ -419,7 +419,7 @@ export function trackStorageLimitWarning(
   client: StatsigClientWithEvents,
   usagePercent: number,
   usedBytes: number,
-  limitBytes: number
+  limitBytes: number,
 ) {
   client.logEvent(ClientEvent.STORAGE_LIMIT_WARNING, usagePercent.toString(), {
     usagePercent: usagePercent.toString(),
@@ -438,7 +438,7 @@ export function trackStorageLimitWarning(
 export function trackFilterApplied(
   client: StatsigClientWithEvents,
   filterType: string,
-  value: string
+  value: string,
 ) {
   client.logEvent(ClientEvent.FILTER_APPLIED, filterType, { value });
 }
@@ -467,7 +467,7 @@ export function trackVersionHistoryViewed(client: StatsigClientWithEvents, model
 export function trackChangelogViewed(
   client: StatsigClientWithEvents,
   modelId: string,
-  versionNumber: number
+  versionNumber: number,
 ) {
   client.logEvent(ClientEvent.CHANGELOG_VIEWED, modelId, {
     versionNumber: versionNumber.toString(),
@@ -484,7 +484,7 @@ export function trackChangelogViewed(
 export function trackPurposefulReturn(
   client: StatsigClientWithEvents,
   daysSinceLastVisit: number,
-  action: "search" | "download" | "upload" | "view"
+  action: "search" | "download" | "upload" | "view",
 ) {
   client.logEvent(ClientEvent.PURPOSEFUL_RETURN, action, {
     daysSinceLastVisit: daysSinceLastVisit.toString(),

@@ -234,25 +234,28 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
       {/* Active Filters Display - Always reserve space */}
       <div className="flex min-h-[32px] flex-wrap gap-2">
         {selectedTags.length > 0 &&
-          selectedTags.map((tag) => (
-            <Badge
-              className="gap-1.5 border-brand bg-brand px-2.5 py-1 font-medium text-brand-foreground transition-colors hover:bg-brand/90"
-              key={tag}
-              variant="default"
-            >
-              {tag}
-              <Button
-                aria-label={`Remove ${tag} filter`}
-                className="-mr-1 h-4 w-4 rounded-full p-0 text-brand-foreground/70 hover:bg-brand-foreground/20 hover:text-brand-foreground"
-                onClick={() => handleTagRemove(tag)}
-                size="sm"
-                type="button"
-                variant="ghost"
+          selectedTags.map((tag) => {
+            const removeLabel = "Remove " + tag + " filter";
+            return (
+              <Badge
+                className="gap-1.5 border-brand bg-brand px-2.5 py-1 font-medium text-brand-foreground transition-colors hover:bg-brand/90"
+                key={tag}
+                variant="default"
               >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          ))}
+                {tag}
+                <Button
+                  aria-label={removeLabel}
+                  className="-mr-1 h-4 w-4 rounded-full p-0 text-brand-foreground/70 hover:bg-brand-foreground/20 hover:text-brand-foreground"
+                  onClick={() => handleTagRemove(tag)}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            );
+          })}
       </div>
     </div>
   );

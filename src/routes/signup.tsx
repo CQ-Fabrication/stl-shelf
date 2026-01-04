@@ -89,8 +89,8 @@ function SignUpPage() {
               form.handleSubmit();
             }}
           >
-            <form.Field
-              children={(field) => (
+            <form.Field name="name">
+              {(field) => (
                 <div className="flex flex-col gap-2">
                   <Label htmlFor={field.name}>
                     Name <sup className="-ml-1 text-red-600">*</sup>
@@ -111,11 +111,10 @@ function SignUpPage() {
                   )}
                 </div>
               )}
-              name="name"
-            />
+            </form.Field>
 
-            <form.Field
-              children={(field) => (
+            <form.Field name="email">
+              {(field) => (
                 <div className="flex flex-col gap-2">
                   <Label htmlFor={field.name}>
                     Email <sup className="-ml-1 text-red-600">*</sup>
@@ -137,11 +136,10 @@ function SignUpPage() {
                   )}
                 </div>
               )}
-              name="email"
-            />
+            </form.Field>
 
-            <form.Field
-              children={(field) => (
+            <form.Field name="password">
+              {(field) => (
                 <div className="flex flex-col gap-2">
                   <Label htmlFor={field.name}>
                     Password <sup className="-ml-1 text-red-600">*</sup>
@@ -163,8 +161,7 @@ function SignUpPage() {
                   )}
                 </div>
               )}
-              name="password"
-            />
+            </form.Field>
 
             <Turnstile
               className="m-2 flex justify-center"

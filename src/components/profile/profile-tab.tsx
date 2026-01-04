@@ -95,7 +95,7 @@ export function ProfileTab() {
 
       await authClient.updateUser({ image: base64 });
       toast.success("Avatar updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update avatar");
     } finally {
       setIsUploadingAvatar(false);

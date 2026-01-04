@@ -112,13 +112,12 @@ export function Navigation() {
 
       {mobileMenuOpen && (
         <>
-          <div
-            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+          <button
+            aria-label="Close menu"
+            className="fixed inset-0 z-40 cursor-default border-0 bg-background/80 backdrop-blur-sm md:hidden"
             onClick={() => setMobileMenuOpen(false)}
             onKeyDown={(e) => e.key === "Escape" && setMobileMenuOpen(false)}
-            role="button"
-            tabIndex={0}
-            aria-label="Close menu"
+            type="button"
           />
 
           <div className="fixed top-16 right-0 bottom-0 left-0 z-40 overflow-y-auto border-t bg-background md:hidden">

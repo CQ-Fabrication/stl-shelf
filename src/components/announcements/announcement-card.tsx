@@ -122,7 +122,9 @@ export function AnnouncementCard({
       {/* Header: Title + Timestamp */}
       <div className={cn("flex items-start justify-between gap-2", !isRead && "pl-3")}>
         <h4 className="line-clamp-2 font-semibold text-sm leading-tight">{title}</h4>
-        <span className="flex-shrink-0 text-muted-foreground text-xs">{formatRelativeTime(createdAt)}</span>
+        <span className="flex-shrink-0 text-muted-foreground text-xs">
+          {formatRelativeTime(createdAt)}
+        </span>
       </div>
 
       {/* Body with markdown */}

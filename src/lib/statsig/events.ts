@@ -24,7 +24,7 @@ function sanitizeQuery(query: string): string {
       // Remove email-like patterns
       .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[EMAIL]")
       // Remove phone-like patterns (various formats)
-      .replace(/[\+]?[(]?[0-9]{1,3}[)]?[-\s.]?[0-9]{3,4}[-\s.]?[0-9]{3,6}/g, "[PHONE]")
+      .replace(/[+]?[(]?[0-9]{1,3}[)]?[-\s.]?[0-9]{3,4}[-\s.]?[0-9]{3,6}/g, "[PHONE]")
       // Truncate to 200 chars max
       .slice(0, 200)
   );
@@ -49,21 +49,21 @@ async function safeTrack(fn: () => Promise<void>): Promise<void> {
 
 export async function trackModelUploaded(
   user: StatsigUser,
-  metadata: EventMetadata["model_uploaded"]
+  metadata: EventMetadata["model_uploaded"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "model_uploaded", metadata.fileCount, metadata));
 }
 
 export async function trackModelViewed(
   user: StatsigUser,
-  metadata: EventMetadata["model_viewed"]
+  metadata: EventMetadata["model_viewed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "model_viewed", undefined, metadata));
 }
 
 export async function trackModelDownloaded(
   user: StatsigUser,
-  metadata: EventMetadata["model_downloaded"]
+  metadata: EventMetadata["model_downloaded"],
 ): Promise<void> {
   await safeTrack(async () => {
     await logEvent(user, "model_downloaded", undefined, metadata);
@@ -81,7 +81,7 @@ export async function trackModelDownloaded(
 
 export async function trackSearchPerformed(
   user: StatsigUser,
-  metadata: EventMetadata["search_performed"]
+  metadata: EventMetadata["search_performed"],
 ): Promise<void> {
   // Sanitize query to remove potential PII
   const sanitizedMetadata = {
@@ -105,7 +105,7 @@ export async function trackSearchPerformed(
 // Connects search → view funnel (critical for measuring search effectiveness)
 export async function trackModelViewFromSearch(
   user: StatsigUser,
-  metadata: EventMetadata["model_view_from_search"]
+  metadata: EventMetadata["model_view_from_search"],
 ): Promise<void> {
   // Sanitize search query
   const sanitizedMetadata = {
@@ -113,14 +113,14 @@ export async function trackModelViewFromSearch(
     searchQuery: sanitizeQuery(metadata.searchQuery),
   };
   await safeTrack(() =>
-    logEvent(user, "model_view_from_search", metadata.resultPosition, sanitizedMetadata)
+    logEvent(user, "model_view_from_search", metadata.resultPosition, sanitizedMetadata),
   );
 }
 
 // Churn signal - why are they removing models?
 export async function trackModelDeleted(
   user: StatsigUser,
-  metadata: EventMetadata["model_deleted"]
+  metadata: EventMetadata["model_deleted"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "model_deleted", undefined, metadata));
 }
@@ -131,14 +131,14 @@ export async function trackModelDeleted(
 
 export async function trackFileDownloaded(
   user: StatsigUser,
-  metadata: EventMetadata["file_downloaded"]
+  metadata: EventMetadata["file_downloaded"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "file_downloaded", metadata.fileSizeBytes, metadata));
 }
 
 export async function trackFileFormatPreference(
   user: StatsigUser,
-  metadata: EventMetadata["file_format_preference"]
+  metadata: EventMetadata["file_format_preference"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "file_format_preference", metadata.downloadCount, metadata));
 }
@@ -149,21 +149,21 @@ export async function trackFileFormatPreference(
 
 export async function trackVersionCreated(
   user: StatsigUser,
-  metadata: EventMetadata["version_created"]
+  metadata: EventMetadata["version_created"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "version_created", metadata.versionNumber, metadata));
 }
 
 export async function trackVersionViewed(
   user: StatsigUser,
-  metadata: EventMetadata["version_viewed"]
+  metadata: EventMetadata["version_viewed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "version_viewed", undefined, metadata));
 }
 
 export async function trackOlderVersionDownloaded(
   user: StatsigUser,
-  metadata: EventMetadata["older_version_downloaded"]
+  metadata: EventMetadata["older_version_downloaded"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "older_version_downloaded", undefined, metadata));
 }
@@ -174,28 +174,28 @@ export async function trackOlderVersionDownloaded(
 
 export async function trackTagCreated(
   user: StatsigUser,
-  metadata: EventMetadata["tag_created"]
+  metadata: EventMetadata["tag_created"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "tag_created", metadata.totalTagCount, metadata));
 }
 
 export async function trackTagApplied(
   user: StatsigUser,
-  metadata: EventMetadata["tag_applied"]
+  metadata: EventMetadata["tag_applied"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "tag_applied", metadata.modelTagCount, metadata));
 }
 
 export async function trackTagRemoved(
   user: StatsigUser,
-  metadata: EventMetadata["tag_removed"]
+  metadata: EventMetadata["tag_removed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "tag_removed", undefined, metadata));
 }
 
 export async function trackTagSearchUsed(
   user: StatsigUser,
-  metadata: EventMetadata["tag_search_used"]
+  metadata: EventMetadata["tag_search_used"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "tag_search_used", metadata.resultsCount, metadata));
 }
@@ -206,32 +206,27 @@ export async function trackTagSearchUsed(
 
 export async function trackUserSignedUp(
   user: StatsigUser,
-  method: "email" | "magic_link" | "github" | "google"
+  method: "email" | "magic_link" | "github" | "google",
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "user_signed_up", undefined, { method }));
 }
 
-export async function trackUserOnboarded(
-  user: StatsigUser,
-  stepsCompleted: number
-): Promise<void> {
+export async function trackUserOnboarded(user: StatsigUser, stepsCompleted: number): Promise<void> {
   await safeTrack(() => logEvent(user, "user_onboarded", stepsCompleted, { stepsCompleted }));
 }
 
 export async function trackUserInvitedMember(
   user: StatsigUser,
   organizationId: string,
-  role: MemberRole
+  role: MemberRole,
 ): Promise<void> {
-  await safeTrack(() =>
-    logEvent(user, "user_invited_member", undefined, { organizationId, role })
-  );
+  await safeTrack(() => logEvent(user, "user_invited_member", undefined, { organizationId, role }));
 }
 
 export async function trackOrgCreated(
   user: StatsigUser,
   organizationId: string,
-  name: string
+  name: string,
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "org_created", undefined, { organizationId, name }));
 }
@@ -243,16 +238,16 @@ export async function trackOrgCreated(
 export async function trackActivationStepReached(
   user: StatsigUser,
   step: ActivationStep,
-  daysFromSignup: number
+  daysFromSignup: number,
 ): Promise<void> {
   await safeTrack(() =>
-    logEvent(user, "activation_step_reached", undefined, { step, daysFromSignup })
+    logEvent(user, "activation_step_reached", undefined, { step, daysFromSignup }),
   );
 }
 
 export async function trackUserActivated(
   user: StatsigUser,
-  metadata: EventMetadata["user_activated"]
+  metadata: EventMetadata["user_activated"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "user_activated", metadata.daysToActivation, metadata));
 }
@@ -264,24 +259,24 @@ export async function trackUserActivated(
 export async function trackSessionStarted(
   user: StatsigUser,
   isReturningUser: boolean,
-  daysSinceLastVisit?: number
+  daysSinceLastVisit?: number,
 ): Promise<void> {
   await safeTrack(() =>
-    logEvent(user, "session_started", undefined, { isReturningUser, daysSinceLastVisit })
+    logEvent(user, "session_started", undefined, { isReturningUser, daysSinceLastVisit }),
   );
 }
 
 // Activation signal - came back after 24+ hours
 export async function trackReturnVisit(
   user: StatsigUser,
-  metadata: EventMetadata["return_visit"]
+  metadata: EventMetadata["return_visit"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "return_visit", metadata.daysSinceLastVisit, metadata));
 }
 
 export async function trackPurposefulReturn(
   user: StatsigUser,
-  metadata: EventMetadata["purposeful_return"]
+  metadata: EventMetadata["purposeful_return"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "purposeful_return", undefined, metadata));
 }
@@ -289,7 +284,7 @@ export async function trackPurposefulReturn(
 export async function trackFeatureUsed(
   user: StatsigUser,
   featureName: string,
-  context?: string
+  context?: string,
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "feature_used", undefined, { featureName, context }));
 }
@@ -300,28 +295,28 @@ export async function trackFeatureUsed(
 
 export async function trackUploadStarted(
   user: StatsigUser,
-  metadata: EventMetadata["upload_started"]
+  metadata: EventMetadata["upload_started"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_started", metadata.fileCount, metadata));
 }
 
 export async function trackUploadAbandoned(
   user: StatsigUser,
-  metadata: EventMetadata["upload_abandoned"]
+  metadata: EventMetadata["upload_abandoned"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_abandoned", undefined, metadata));
 }
 
 export async function trackUploadError(
   user: StatsigUser,
-  metadata: EventMetadata["upload_error"]
+  metadata: EventMetadata["upload_error"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_error", undefined, metadata));
 }
 
 export async function trackUploadRetry(
   user: StatsigUser,
-  metadata: EventMetadata["upload_retry"]
+  metadata: EventMetadata["upload_retry"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_retry", metadata.attemptNumber, metadata));
 }
@@ -329,7 +324,7 @@ export async function trackUploadRetry(
 // Fixable friction - wrong format, too big
 export async function trackUploadValidationFailed(
   user: StatsigUser,
-  metadata: EventMetadata["upload_validation_failed"]
+  metadata: EventMetadata["upload_validation_failed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_validation_failed", undefined, metadata));
 }
@@ -340,14 +335,14 @@ export async function trackUploadValidationFailed(
 
 export async function trackPreviewLoaded(
   user: StatsigUser,
-  metadata: EventMetadata["preview_loaded"]
+  metadata: EventMetadata["preview_loaded"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "preview_loaded", metadata.loadTimeMs, metadata));
 }
 
 export async function trackPreviewToDownload(
   user: StatsigUser,
-  metadata: EventMetadata["preview_to_download"]
+  metadata: EventMetadata["preview_to_download"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "preview_to_download", undefined, metadata));
 }
@@ -355,7 +350,7 @@ export async function trackPreviewToDownload(
 // Preview friction - broken files or viewer issues
 export async function trackPreviewFailed(
   user: StatsigUser,
-  metadata: EventMetadata["preview_failed"]
+  metadata: EventMetadata["preview_failed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "preview_failed", undefined, metadata));
 }
@@ -367,54 +362,50 @@ export async function trackPreviewFailed(
 export async function trackPricingPageViewed(
   user: StatsigUser,
   currentTier: SubscriptionTier,
-  source?: string
+  source?: string,
 ): Promise<void> {
-  await safeTrack(() =>
-    logEvent(user, "pricing_page_viewed", undefined, { currentTier, source })
-  );
+  await safeTrack(() => logEvent(user, "pricing_page_viewed", undefined, { currentTier, source }));
 }
 
 export async function trackCheckoutStarted(
   user: StatsigUser,
   targetTier: SubscriptionTier,
   currentTier: SubscriptionTier,
-  trigger?: "storage_limit" | "feature_gate" | "organic"
+  trigger?: "storage_limit" | "feature_gate" | "organic",
 ): Promise<void> {
   await safeTrack(() =>
-    logEvent(user, "checkout_started", undefined, { targetTier, currentTier, trigger })
+    logEvent(user, "checkout_started", undefined, { targetTier, currentTier, trigger }),
   );
 }
 
 export async function trackSubscriptionActivated(
   user: StatsigUser,
   tier: SubscriptionTier,
-  previousTier?: SubscriptionTier
+  previousTier?: SubscriptionTier,
 ): Promise<void> {
   await safeTrack(() =>
-    logEvent(user, "subscription_activated", undefined, { tier, previousTier })
+    logEvent(user, "subscription_activated", undefined, { tier, previousTier }),
   );
 }
 
 export async function trackSubscriptionCanceled(
   user: StatsigUser,
   tier: SubscriptionTier,
-  reason?: string
+  reason?: string,
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "subscription_canceled", undefined, { tier, reason }));
 }
 
 export async function trackStorageLimitWarning(
   user: StatsigUser,
-  metadata: EventMetadata["storage_limit_warning"]
+  metadata: EventMetadata["storage_limit_warning"],
 ): Promise<void> {
-  await safeTrack(() =>
-    logEvent(user, "storage_limit_warning", metadata.usagePercent, metadata)
-  );
+  await safeTrack(() => logEvent(user, "storage_limit_warning", metadata.usagePercent, metadata));
 }
 
 export async function trackStorageLimitBlocked(
   user: StatsigUser,
-  metadata: EventMetadata["storage_limit_blocked"]
+  metadata: EventMetadata["storage_limit_blocked"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "storage_limit_blocked", undefined, metadata));
 }
@@ -425,11 +416,9 @@ export async function trackStorageLimitBlocked(
 
 export async function trackLibraryHealthSnapshot(
   user: StatsigUser,
-  metadata: EventMetadata["library_health_snapshot"]
+  metadata: EventMetadata["library_health_snapshot"],
 ): Promise<void> {
-  await safeTrack(() =>
-    logEvent(user, "library_health_snapshot", metadata.totalModels, metadata)
-  );
+  await safeTrack(() => logEvent(user, "library_health_snapshot", metadata.totalModels, metadata));
 }
 
 // ============================================================
@@ -441,9 +430,14 @@ export async function trackErrorEncountered(
   errorCategory: ErrorCategory,
   errorType: string,
   errorMessage: string,
-  context?: string
+  context?: string,
 ): Promise<void> {
   await safeTrack(() =>
-    logEvent(user, "error_encountered", undefined, { errorCategory, errorType, errorMessage, context })
+    logEvent(user, "error_encountered", undefined, {
+      errorCategory,
+      errorType,
+      errorMessage,
+      context,
+    }),
   );
 }

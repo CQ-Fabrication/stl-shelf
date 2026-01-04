@@ -58,29 +58,17 @@ export type FeatureGateName =
 /**
  * Experiment names
  */
-export type ExperimentName =
-  | "exp_card_layout"
-  | "exp_onboarding_flow"
-  | "exp_search_ui";
+export type ExperimentName = "exp_card_layout" | "exp_onboarding_flow" | "exp_search_ui";
 
 /**
  * Upload error types - consistent vocabulary for upload-related errors
  */
-export type UploadErrorType =
-  | "size_limit"
-  | "format"
-  | "network"
-  | "processing"
-  | "unknown";
+export type UploadErrorType = "size_limit" | "format" | "network" | "processing" | "unknown";
 
 /**
  * Preview error types - consistent vocabulary for 3D preview errors
  */
-export type PreviewErrorType =
-  | "load_error"
-  | "render_error"
-  | "timeout"
-  | "unsupported_format";
+export type PreviewErrorType = "load_error" | "render_error" | "timeout" | "unsupported_format";
 
 /**
  * Validation error types - consistent vocabulary for file validation

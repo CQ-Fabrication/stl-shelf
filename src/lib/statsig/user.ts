@@ -63,10 +63,7 @@ export function buildStatsigUser(
 /**
  * Build a Statsig user for anonymous (unauthenticated) users
  */
-export function buildAnonymousStatsigUser(
-  anonymousId: string,
-  ipAddress?: string,
-): StatsigUser {
+export function buildAnonymousStatsigUser(anonymousId: string, ipAddress?: string): StatsigUser {
   return {
     userID: anonymousId,
     ip: ipAddress,
@@ -96,9 +93,7 @@ export function buildMinimalStatsigUser(context: StatsigUserContext): StatsigUse
       memberCount: context.memberCount,
       hasCompletedOnboarding: context.hasCompletedOnboarding,
     },
-    customIDs: context.organizationId
-      ? { organizationId: context.organizationId }
-      : undefined,
+    customIDs: context.organizationId ? { organizationId: context.organizationId } : undefined,
   };
 }
 
@@ -109,9 +104,7 @@ export function buildMinimalStatsigUser(context: StatsigUserContext): StatsigUse
  */
 function hashEmail(email: string): string {
   const secret = env.STATSIG_SERVER_SECRET;
-  return createHmac("sha256", secret)
-    .update(email.toLowerCase().trim())
-    .digest("hex");
+  return createHmac("sha256", secret).update(email.toLowerCase().trim()).digest("hex");
 }
 
 /**

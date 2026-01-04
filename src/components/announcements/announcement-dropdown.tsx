@@ -105,11 +105,14 @@ export function AnnouncementDropdown() {
     }
   }, [displayedAnnouncements, markAsRead]);
 
+  const announcementsLabel =
+    unreadCount > 0 ? "Announcements, " + unreadCount + " unread" : "Announcements";
+
   return (
     <DropdownMenu onOpenChange={setIsOpen} open={isOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          aria-label={`Announcements${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+          aria-label={announcementsLabel}
           className={cn("relative", shouldBounce && "animate-bounce")}
           size="icon"
           variant="ghost"
@@ -155,7 +158,9 @@ export function AnnouncementDropdown() {
             </div>
           )}
 
-          {!isLoading && !error && displayedAnnouncements.length === 0 && <AnnouncementEmptyState variant="dropdown" />}
+          {!isLoading && !error && displayedAnnouncements.length === 0 && (
+            <AnnouncementEmptyState variant="dropdown" />
+          )}
 
           {!isLoading && !error && displayedAnnouncements.length > 0 && (
             <div className="divide-y">

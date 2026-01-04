@@ -63,10 +63,7 @@ export function getLocalOverrides(): Overrides {
 /**
  * Get a specific override value
  */
-export function getOverride<T extends OverrideValue>(
-  key: string,
-  defaultValue: T,
-): T {
+export function getOverride<T extends OverrideValue>(key: string, defaultValue: T): T {
   const overrides = getLocalOverrides();
 
   if (key in overrides) {

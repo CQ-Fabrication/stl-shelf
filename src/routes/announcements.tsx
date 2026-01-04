@@ -5,7 +5,11 @@ import { useCallback, useEffect, useRef } from "react";
 import { AnnouncementCard } from "@/components/announcements/announcement-card";
 import { AnnouncementEmptyState } from "@/components/announcements/empty-state";
 import { Button } from "@/components/ui/button";
-import { useInfiniteAnnouncements, useMarkAsRead, ANNOUNCEMENTS_QUERY_KEY } from "@/hooks/use-announcements";
+import {
+  useInfiniteAnnouncements,
+  useMarkAsRead,
+  ANNOUNCEMENTS_QUERY_KEY,
+} from "@/hooks/use-announcements";
 import { getAllAnnouncements } from "@/server/functions/announcements";
 
 const LIMIT = 20;
@@ -41,6 +45,7 @@ function AnnouncementsPage() {
 
   // Mark unread announcements as read after 3 seconds of visibility
   const unreadIds = announcements.filter((a) => !a.isRead).map((a) => a.id);
+  const unreadIdsKey = unreadIds.join(",");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -55,7 +60,8 @@ function AnnouncementsPage() {
         clearTimeout(timerRef.current);
       }
     };
-  }, [unreadIds.join(",")]); // Dependency on joined IDs to detect changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unreadIdsKey]); // Stable string key to detect changes in unread IDs
 
   // Infinite scroll observer
   useEffect(() => {
@@ -137,11 +143,7 @@ function AnnouncementsPage() {
               </div>
             )}
             {hasNextPage && !isFetchingNextPage && (
-              <Button
-                className="w-full"
-                onClick={() => fetchNextPage()}
-                variant="outline"
-              >
+              <Button className="w-full" onClick={() => fetchNextPage()} variant="outline">
                 Load more
               </Button>
             )}

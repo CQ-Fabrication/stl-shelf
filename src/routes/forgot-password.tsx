@@ -105,8 +105,8 @@ function ForgotPasswordPage() {
               form.handleSubmit();
             }}
           >
-            <form.Field
-              children={(field) => (
+            <form.Field name="email">
+              {(field) => (
                 <div className="flex flex-col gap-2">
                   <Label htmlFor={field.name}>
                     Email <sup className="-ml-1 text-red-600">*</sup>
@@ -128,8 +128,7 @@ function ForgotPasswordPage() {
                   )}
                 </div>
               )}
-              name="email"
-            />
+            </form.Field>
 
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (

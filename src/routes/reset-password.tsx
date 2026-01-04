@@ -148,8 +148,8 @@ function ResetPasswordPage() {
                 form.handleSubmit();
               }}
             >
-              <form.Field
-                children={(field) => (
+              <form.Field name="newPassword">
+                {(field) => (
                   <div className="flex flex-col gap-2">
                     <Label htmlFor={field.name}>
                       New Password <sup className="-ml-1 text-red-600">*</sup>
@@ -171,11 +171,10 @@ function ResetPasswordPage() {
                     )}
                   </div>
                 )}
-                name="newPassword"
-              />
+              </form.Field>
 
-              <form.Field
-                children={(field) => (
+              <form.Field name="confirmPassword">
+                {(field) => (
                   <div className="flex flex-col gap-2">
                     <Label htmlFor={field.name}>
                       Confirm Password <sup className="-ml-1 text-red-600">*</sup>
@@ -197,8 +196,7 @@ function ResetPasswordPage() {
                     )}
                   </div>
                 )}
-                name="confirmPassword"
-              />
+              </form.Field>
 
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
                 {([canSubmit, isSubmitting]) => (

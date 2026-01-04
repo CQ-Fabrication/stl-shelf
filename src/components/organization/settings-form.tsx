@@ -119,7 +119,7 @@ export function OrganizationSettingsForm() {
         data: { logo: base64 },
       });
       toast.success("Organization logo updated");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update logo");
     } finally {
       setIsUploadingLogo(false);

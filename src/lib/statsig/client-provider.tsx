@@ -21,12 +21,12 @@ function StatsigUserSync({ children }: { children: ReactNode }) {
   const { client } = useStatsigClient();
 
   // Derive stable key from essential identifiers to reduce re-renders
+  const user = session?.user;
+  const userId = user?.id;
+  const activeOrgId = session?.session?.activeOrganizationId;
   const userKey = useMemo(
-    () =>
-      session?.user
-        ? `${session.user.id}-${session.session.activeOrganizationId ?? "none"}`
-        : null,
-    [session?.user?.id, session?.session?.activeOrganizationId]
+    () => (userId ? `${userId}-${activeOrgId ?? "none"}` : null),
+    [userId, activeOrgId],
   );
 
   useEffect(() => {
@@ -58,12 +58,7 @@ export function StatsigClientProvider({ children }: StatsigClientProviderProps) 
   // Determine environment tier from Vite mode
   const options = useMemo<StatsigOptions>(() => {
     const mode = import.meta.env.MODE;
-    const tier =
-      mode === "production"
-        ? "production"
-        : mode === "test"
-          ? "staging"
-          : "development";
+    const tier = mode === "production" ? "production" : mode === "test" ? "staging" : "development";
 
     return {
       environment: { tier },

@@ -97,10 +97,7 @@ export function isStatsigConfigured(): boolean {
  * - gate_* → false (conservative, feature off)
  * - ops_* → true (assume healthy state)
  */
-export async function checkGate(
-  user: StatsigUser,
-  gateName: FeatureGateName,
-): Promise<boolean> {
+export async function checkGate(user: StatsigUser, gateName: FeatureGateName): Promise<boolean> {
   // Check local overrides first (for development)
   if (hasLocalOverrides()) {
     const overrides = getLocalOverrides();
@@ -239,9 +236,7 @@ export async function logEvent<T extends EventName>(
  * Convert metadata values to strings for Statsig
  * Statsig expects Record<string, string> but we have numbers/booleans/arrays
  */
-function stringifyMetadata(
-  metadata: Record<string, unknown>,
-): Record<string, string> {
+function stringifyMetadata(metadata: Record<string, unknown>): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(metadata)) {
     if (value === undefined || value === null) continue;
