@@ -280,17 +280,20 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
 
             {/* Mobile: show 1 tag */}
             <div className="flex items-center gap-1.5 sm:hidden">
-              <Badge
-                aria-label={`Filter by ${model.tags[0]}`}
-                className="relative z-20 max-w-20 cursor-pointer truncate text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
-                onClick={(e) => handleTagClick(model.tags[0], e)}
-                role="button"
-                tabIndex={0}
-                title={(model.tags[0]?.length ?? 0) > 8 ? model.tags[0] : undefined}
-                variant="secondary"
-              >
-                {model.tags[0]}
-              </Badge>
+              {model.tags.slice(0, 1).map((tag) => (
+                <Badge
+                  aria-label={`Filter by ${tag}`}
+                  className="relative z-20 max-w-20 cursor-pointer truncate text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                  key={tag}
+                  onClick={(e) => handleTagClick(tag, e)}
+                  role="button"
+                  tabIndex={0}
+                  title={tag.length > 8 ? tag : undefined}
+                  variant="secondary"
+                >
+                  {tag}
+                </Badge>
+              ))}
               {model.tags.length > 1 && (
                 <Popover>
                   <PopoverTrigger asChild>

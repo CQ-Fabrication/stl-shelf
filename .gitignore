@@ -13,3 +13,6 @@ assets/*.stl
 
 # Playwright MCP
 .playwright-mcp/
+
+# Statsig local overrides
+statsig.local.json

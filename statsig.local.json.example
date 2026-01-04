@@ -1,0 +1,6 @@
+{
+  "gate_new_upload_flow": true,
+  "gate_bulk_export": false,
+  "exp_card_layout": "variant_b",
+  "ops_maintenance_mode": false
+}

@@ -49,6 +49,9 @@ export const env = createEnv({
     POLAR_PRODUCT_FREE: z.string().optional(),
     POLAR_PRODUCT_BASIC: z.string().optional(),
     POLAR_PRODUCT_PRO: z.string().optional(),
+
+    // Statsig Feature Flags & Analytics
+    STATSIG_SERVER_SECRET: z.string().optional(),
   },
   runtimeEnv: process.env,
 });
