@@ -85,12 +85,7 @@ export function EmailLayout({ children, preview, logoUrl }: EmailLayoutProps) {
             {/* Header with logo */}
             <Section style={header}>
               {logoUrl ? (
-                <Img
-                  alt="STL Shelf"
-                  height="32"
-                  src={logoUrl}
-                  style={{ margin: "0 auto" }}
-                />
+                <Img alt="STL Shelf" height="32" src={logoUrl} style={{ margin: "0 auto" }} />
               ) : (
                 <Text style={logoText}>STL Shelf</Text>
               )}

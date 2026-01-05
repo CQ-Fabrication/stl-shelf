@@ -11,7 +11,10 @@ export type VerifyEmailTemplateProps = {
 
 export function VerifyEmailTemplate({ verificationUrl, logoUrl }: VerifyEmailTemplateProps) {
   return (
-    <EmailLayout preview="Verify your email address to complete your STL Shelf registration" logoUrl={logoUrl}>
+    <EmailLayout
+      preview="Verify your email address to complete your STL Shelf registration"
+      logoUrl={logoUrl}
+    >
       <Heading style={textStyles.heading}>Verify your email address</Heading>
 
       <Text style={textStyles.paragraph}>
