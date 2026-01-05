@@ -111,6 +111,7 @@ export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormP
               <Checkbox
                 aria-invalid={!field.state.meta.isValid}
                 checked={field.state.value as boolean}
+                className="mt-0.5"
                 id="termsPrivacyAccepted"
                 onCheckedChange={(checked: boolean) => field.handleChange(checked)}
               />
