@@ -360,6 +360,19 @@ export const reacceptConsentFn = createServerFn({ method: "POST" })
       createdAt: now,
     });
 
+    // Insert audit record for marketing preference
+    await db.insert(consentAudit).values({
+      id: crypto.randomUUID(),
+      userId: session.user.id,
+      consentType: "marketing",
+      action: data.marketingAccepted ? "accepted" : "rejected",
+      documentVersion: data.termsPrivacyVersion,
+      ipAddress,
+      userAgent,
+      fingerprint: data.fingerprint,
+      createdAt: now,
+    });
+
     // Update consent state
     await db
       .update(userConsents)
