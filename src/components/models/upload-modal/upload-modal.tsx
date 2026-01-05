@@ -5,6 +5,7 @@ import { useStore } from "@tanstack/react-store";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { errorContextActions } from "@/stores/error-context.store";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,19 @@ export function UploadModal() {
       setRaceConditionBlocked(false);
     }
   }, [isOpen]);
+
+  // Track upload action for error context
+  useEffect(() => {
+    if (isOpen) {
+      errorContextActions.setLastAction({
+        type: "upload",
+        metadata: {
+          fileCount: formData.files.length,
+          hasPreview: Boolean(formData.previewImage),
+        },
+      });
+    }
+  }, [isOpen, formData.files.length, formData.previewImage]);
 
   const { data: availableTags = [] } = useQuery({
     queryKey: ["tags", "all"],

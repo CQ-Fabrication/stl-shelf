@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { errorContextActions } from "@/stores/error-context.store";
 import { deleteModel } from "@/server/functions/models";
 
 export const MODELS_QUERY_KEY = ["models"] as const;
@@ -12,6 +13,12 @@ export const useDeleteModel = () => {
   return useMutation({
     mutationFn: (id: string) => deleteModel({ data: { id } }),
     onMutate: async (id) => {
+      // Track delete action for error context
+      errorContextActions.setLastAction({
+        type: "delete",
+        modelId: id,
+      });
+
       await queryClient.cancelQueries({
         queryKey: MODELS_QUERY_KEY,
       });

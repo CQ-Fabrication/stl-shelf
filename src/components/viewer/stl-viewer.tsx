@@ -9,6 +9,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useTheme } from "../theme-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { errorContextActions } from "@/stores/error-context.store";
 
 // Error boundary to catch Three.js/Canvas errors and prevent page crashes
 type ErrorBoundaryProps = {
@@ -165,9 +166,20 @@ function ErrorFallback({ error }: { error: Error }) {
   );
 }
 
-export function STLViewer({ filename, className = "", url }: STLViewerProps) {
+export function STLViewer({ modelId, version, filename, className = "", url }: STLViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { theme } = useTheme();
+
+  // Track 3D preview action for error context
+  useEffect(() => {
+    if (modelId) {
+      errorContextActions.setLastAction({
+        type: "preview_3d",
+        modelId,
+        metadata: { filename, version },
+      });
+    }
+  }, [modelId, filename, version]);
 
   // Use the presigned URL from server
   const modelUrl = url;

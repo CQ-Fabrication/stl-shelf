@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { errorContextActions } from "@/stores/error-context.store";
 import { ChangelogSheet } from "@/components/model-detail/changelog-sheet";
 import { ModelDetailHeader } from "@/components/model-detail/model-detail-header";
 import { ModelInfoCard } from "@/components/model-detail/model-info-card";
@@ -31,6 +32,15 @@ function ModelDetailComponent() {
   const [versionUploadModalOpen, setVersionUploadModalOpen] = useState(false);
   const [changelogSheetOpen, setChangelogSheetOpen] = useState(false);
   const [selectedVersionId, setSelectedVersionId] = useState<string>();
+
+  // Track action for error context
+  useEffect(() => {
+    errorContextActions.setLastAction({
+      type: "view_model",
+      modelId,
+      versionId: selectedVersionId ?? null,
+    });
+  }, [modelId, selectedVersionId]);
 
   const queryClient = useQueryClient();
   const deleteModel = useDeleteModel();

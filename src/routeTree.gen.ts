@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailPendingRouteImport } from './routes/verify-email-pending'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as TestErrorRouteImport } from './routes/test-error'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -45,6 +46,11 @@ const VerifyEmailPendingRoute = VerifyEmailPendingRouteImport.update({
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestErrorRoute = TestErrorRouteImport.update({
+  id: '/test-error',
+  path: '/test-error',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/test-error': typeof TestErrorRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-email-pending': typeof VerifyEmailPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/test-error': typeof TestErrorRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-email-pending': typeof VerifyEmailPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/test-error': typeof TestErrorRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-email-pending': typeof VerifyEmailPendingRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/terms'
+    | '/test-error'
     | '/verify-email'
     | '/verify-email-pending'
     | '/checkout/success'
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/terms'
+    | '/test-error'
     | '/verify-email'
     | '/verify-email-pending'
     | '/checkout/success'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/terms'
+    | '/test-error'
     | '/verify-email'
     | '/verify-email-pending'
     | '/checkout/success'
@@ -368,6 +380,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
+  TestErrorRoute: typeof TestErrorRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   VerifyEmailPendingRoute: typeof VerifyEmailPendingRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -395,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/test-error': {
+      id: '/test-error'
+      path: '/test-error'
+      fullPath: '/test-error'
+      preLoaderRoute: typeof TestErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -615,6 +635,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
+  TestErrorRoute: TestErrorRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   VerifyEmailPendingRoute: VerifyEmailPendingRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,

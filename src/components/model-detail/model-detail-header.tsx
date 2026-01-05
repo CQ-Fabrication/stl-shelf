@@ -51,6 +51,7 @@ export const ModelDetailHeader = ({
   });
 
   const { handleDownloadZip, isDownloading } = useZipDownload({
+    modelId,
     modelName: model?.name ?? "model",
     activeVersion: version,
   });

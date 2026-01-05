@@ -3,6 +3,7 @@ import { StatsigProvider, useStatsigClient } from "@statsig/react-bindings";
 import type { StatsigOptions } from "@statsig/js-client";
 import { authClient } from "@/lib/auth-client";
 import { useActiveOrganization } from "@/hooks/use-organizations";
+import { setSentryUser } from "@/lib/error-tracking.client";
 
 type StatsigClientProviderProps = {
   children: ReactNode;
@@ -30,7 +31,11 @@ function StatsigUserSync({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    if (!userKey || !session?.user) return;
+    if (!userKey || !session?.user) {
+      // User logged out - clear Sentry user context
+      setSentryUser(null, null);
+      return;
+    }
 
     // User logged in - update Statsig with authenticated user
     // Note: Email intentionally omitted for GDPR/privacy compliance
@@ -41,6 +46,9 @@ function StatsigUserSync({ children }: { children: ReactNode }) {
         plan: activeOrg?.subscriptionTier ?? "free",
       },
     });
+
+    // Also set Sentry user context for error tracking
+    setSentryUser(session.user.id, session.session.activeOrganizationId ?? null);
   }, [userKey, activeOrg?.subscriptionTier, client, session]);
 
   return <>{children}</>;

@@ -4,7 +4,6 @@ import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   HeadContent,
-  Link,
   Scripts,
   createRootRouteWithContext,
   redirect,
@@ -12,13 +11,14 @@ import {
 } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { AlertTriangle, Home, RotateCw } from "lucide-react";
+import { useMemo } from "react";
 import { GracePeriodBanner } from "@/components/billing/grace-period-banner";
 import { ConsentBanner } from "@/components/consent-banner";
+import { ErrorPage } from "@/components/error-page";
 import Header from "@/components/header";
-import { PendingConsentHandler } from "@/components/pending-consent-handler";
 import { NotFound } from "@/components/not-found";
-import { Button } from "@/components/ui/button";
+import { PendingConsentHandler } from "@/components/pending-consent-handler";
+import { generateErrorId } from "@/lib/error-id";
 import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -38,51 +38,29 @@ if (!import.meta.env.SSR) {
 }
 
 function RootErrorFallback({ error, reset }: ErrorComponentProps) {
-  const isDev = import.meta.env.DEV;
-  useErrorReporting(error);
+  const routerState = useRouterState();
+  const currentRoute = routerState.location.pathname;
 
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md space-y-6 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-          <AlertTriangle className="h-8 w-8 text-destructive" />
-        </div>
+  // Generate a stable error ID for this error instance
+  const errorId = useMemo(() => generateErrorId(), []);
 
-        <div className="space-y-2">
-          <h1 className="font-bold text-2xl tracking-tight">Something went wrong</h1>
-          <p className="text-muted-foreground">
-            We encountered an unexpected error. Please try again or go back to the home page.
-          </p>
-        </div>
+  // Try to get session info for error context (may be null if not authenticated)
+  // Note: We don't use authClient.useSession() here because hooks might fail in error boundary
+  // The session context will be null for unauthenticated users or if session fetch fails
+  const sessionContext = useMemo(() => {
+    // For now, we report without session context
+    // The action context and device context are still captured
+    return null;
+  }, []);
 
-        {isDev && error instanceof Error && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-left">
-            <p className="mb-2 font-mono font-semibold text-destructive text-sm">
-              {error.name}: {error.message}
-            </p>
-            {error.stack && (
-              <pre className="max-h-32 overflow-auto font-mono text-muted-foreground text-xs">
-                {error.stack}
-              </pre>
-            )}
-          </div>
-        )}
+  // Report error with enhanced context
+  useErrorReporting(error, {
+    errorId,
+    route: currentRoute,
+    session: sessionContext,
+  });
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Button onClick={reset} variant="default">
-            <RotateCw className="mr-2 h-4 w-4" />
-            Try Again
-          </Button>
-          <Button asChild variant="outline">
-            <Link to="/">
-              <Home className="mr-2 h-4 w-4" />
-              Go Home
-            </Link>
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+  return <ErrorPage errorId={errorId} onRetry={reset} />;
 }
 
 export type RouterAppContext = {
@@ -198,7 +176,13 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 });
 
 function RootDocument({ children }: { children: ReactNode }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const routerState = useRouterState();
+  const pathname = routerState.location.pathname;
+  const isNotFound = routerState.matches.some((match) => match.status === "notFound");
+  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+
+  // Don't show protected route UI on public routes or 404 pages
+  const showProtectedUI = !isPublicRoute && !isNotFound;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -215,7 +199,7 @@ function RootDocument({ children }: { children: ReactNode }) {
             storageKey="stl-shelf-theme"
           >
             <div className="grid h-svh grid-rows-[auto_1fr]">
-              {PUBLIC_ROUTES.includes(pathname) ? null : (
+              {showProtectedUI && (
                 <>
                   <Header />
                   <GracePeriodBanner />
