@@ -86,6 +86,17 @@ export const submitConsentFn = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(submitConsentSchema))
   .handler(async ({ data }: { data: z.infer<typeof submitConsentSchema> }) => {
     const headers = getRequestHeaders();
+    const session = await auth.api.getSession({ headers });
+
+    // CRITICAL: Verify user is authenticated and matches the userId
+    if (!session?.user?.id) {
+      throw new Error("Not authenticated");
+    }
+
+    if (session.user.id !== data.userId) {
+      throw new Error("Unauthorized: Cannot submit consent for another user");
+    }
+
     const ipAddress =
       headers.get("cf-connecting-ip") ??
       headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

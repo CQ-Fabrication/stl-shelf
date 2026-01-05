@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { FileText, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +21,13 @@ export function ConsentBanner() {
 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [marketingChecked, setMarketingChecked] = useState(marketingAccepted ?? false);
+
+  // Sync marketing state when prop changes (e.g., after initial load)
+  useEffect(() => {
+    if (marketingAccepted !== undefined) {
+      setMarketingChecked(marketingAccepted);
+    }
+  }, [marketingAccepted]);
 
   const reaccept = useMutation({
     mutationFn: async () => {
