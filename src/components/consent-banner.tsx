@@ -20,14 +20,16 @@ export function ConsentBanner() {
   const { isLoading, isValid, reason, currentVersion, marketingAccepted } = useConsentStatus();
 
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [marketingChecked, setMarketingChecked] = useState(marketingAccepted ?? false);
+  // Initialize to undefined, then sync with server value once loaded
+  const [marketingChecked, setMarketingChecked] = useState<boolean | undefined>(undefined);
 
-  // Sync marketing state when prop changes (e.g., after initial load)
+  // Sync marketing state when server value becomes available
+  // Only sync once - don't override user's changes after initial load
   useEffect(() => {
-    if (marketingAccepted !== undefined) {
+    if (marketingAccepted !== undefined && marketingChecked === undefined) {
       setMarketingChecked(marketingAccepted);
     }
-  }, [marketingAccepted]);
+  }, [marketingAccepted, marketingChecked]);
 
   const reaccept = useMutation({
     mutationFn: async () => {
@@ -40,7 +42,7 @@ export function ConsentBanner() {
       return reacceptConsentFn({
         data: {
           termsPrivacyVersion: currentVersion,
-          marketingAccepted: marketingChecked,
+          marketingAccepted: marketingChecked ?? false,
           fingerprint,
         },
       });
@@ -111,15 +113,18 @@ export function ConsentBanner() {
             </div>
           </div>
 
-          {/* Marketing - Optional */}
+          {/* Marketing - Optional, pre-checked if previously accepted */}
           <div className="flex items-start gap-3 rounded-md border p-4">
             <Checkbox
-              checked={marketingChecked}
+              checked={marketingChecked ?? false}
               id="reaccept-marketing"
               onCheckedChange={(checked) => setMarketingChecked(checked === true)}
             />
             <Label className="font-normal cursor-pointer" htmlFor="reaccept-marketing">
               Keep me updated about STL Shelf (optional)
+              {marketingAccepted && (
+                <span className="ml-1 text-muted-foreground text-xs">(previously accepted)</span>
+              )}
             </Label>
           </div>
         </div>

@@ -19,7 +19,9 @@ export function useConsentStatus() {
     reason: data?.reason ?? null,
     currentVersion: data && "currentVersion" in data ? data.currentVersion : null,
     userVersion: data && "userVersion" in data ? data.userVersion : null,
-    marketingAccepted: data && "marketingAccepted" in data ? data.marketingAccepted : false,
+    // Return undefined when not available, so components can distinguish from explicit false
+    marketingAccepted:
+      data && "marketingAccepted" in data ? (data.marketingAccepted as boolean) : undefined,
     refetch,
   };
 }

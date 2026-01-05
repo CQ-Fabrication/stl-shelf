@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle, ExternalLink, FileText, Loader2, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -27,9 +28,24 @@ export function ConsentTab() {
     queryFn: () => getConsentStatusFn(),
   });
 
+  // Local state for marketing toggle, synced with server value
+  const [marketingEnabled, setMarketingEnabled] = useState<boolean | undefined>(undefined);
+
+  // Sync local state with server value when it loads
+  const serverMarketingValue = consentStatus?.consent?.marketingAccepted;
+  useEffect(() => {
+    if (serverMarketingValue !== undefined && marketingEnabled === undefined) {
+      setMarketingEnabled(serverMarketingValue);
+    }
+  }, [serverMarketingValue, marketingEnabled]);
+
   const updateMarketing = useMutation({
     mutationFn: (marketingAccepted: boolean) =>
       updateMarketingConsentFn({ data: { marketingAccepted } }),
+    onMutate: (marketingAccepted) => {
+      // Optimistic update
+      setMarketingEnabled(marketingAccepted);
+    },
     onSuccess: (_, marketingAccepted) => {
       queryClient.invalidateQueries({ queryKey: ["consent-status"] });
       toast.success(
@@ -39,6 +55,8 @@ export function ConsentTab() {
       );
     },
     onError: () => {
+      // Revert to server value on error
+      setMarketingEnabled(serverMarketingValue);
       toast.error("Failed to update preference. Please try again.");
     },
   });
@@ -136,7 +154,7 @@ export function ConsentTab() {
               </div>
             </div>
             <Switch
-              checked={consent?.marketingAccepted ?? false}
+              checked={marketingEnabled ?? false}
               disabled={updateMarketing.isPending}
               id="marketing-toggle"
               onCheckedChange={(checked: boolean) => updateMarketing.mutate(checked)}
