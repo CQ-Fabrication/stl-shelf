@@ -1,0 +1,30 @@
+# STL Shelf robots.txt
+# https://stl-shelf.com
+
+User-agent: *
+
+# Allow public pages
+Allow: /
+Allow: /about
+Allow: /pricing
+Allow: /privacy
+Allow: /terms
+
+# Disallow private/authenticated routes
+Disallow: /library
+Disallow: /profile
+Disallow: /billing
+Disallow: /announcements
+Disallow: /organization
+Disallow: /checkout
+Disallow: /api/
+
+# Disallow auth pages (no SEO value)
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+
+# Sitemap location
+Sitemap: https://stl-shelf.com/sitemap.xml

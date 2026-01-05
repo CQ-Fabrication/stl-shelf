@@ -7,6 +7,9 @@ import { Logo } from "@/components/ui/logo";
 import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/verify-email")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: VerifyEmailPage,
   validateSearch: (search: Record<string, unknown>) => {
     return {

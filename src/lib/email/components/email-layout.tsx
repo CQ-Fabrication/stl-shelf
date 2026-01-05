@@ -12,29 +12,19 @@ import {
   Text,
 } from "@react-email/components";
 import type React from "react";
-
-const colors = {
-  brand: "#D97706",
-  foreground: "#171717",
-  muted: "#737373",
-  border: "#E5E5E5",
-  background: "#FFFFFF",
-  secondary: "#F5F5F5",
-  white: "#FFFFFF",
-};
+import { colors, fontFamily } from "../styles";
 
 const main = {
   backgroundColor: colors.secondary,
-  fontFamily:
-    "'Inter', 'Geist', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontFamily,
 };
 
 const container = {
   backgroundColor: colors.background,
   margin: "0 auto",
   padding: "0",
-  maxWidth: "600px",
-  borderRadius: "10px",
+  maxWidth: "640px",
+  borderRadius: "12px",
   overflow: "hidden" as const,
   border: `1px solid ${colors.border}`,
 };
@@ -42,6 +32,7 @@ const container = {
 const header = {
   padding: "32px 40px",
   borderBottom: `1px solid ${colors.border}`,
+  textAlign: "center" as const,
 };
 
 const content = {
@@ -50,28 +41,22 @@ const content = {
 
 const footer = {
   padding: "24px 40px",
-  backgroundColor: colors.secondary,
+  backgroundColor: colors.background,
   borderTop: `1px solid ${colors.border}`,
   textAlign: "center" as const,
 };
 
 const footerText = {
   color: colors.muted,
-  fontSize: "12px",
+  fontSize: "13px",
   lineHeight: "20px",
   margin: "0",
 };
 
 const footerLink = {
   color: colors.muted,
-  fontSize: "12px",
+  fontSize: "13px",
   textDecoration: "underline",
-};
-
-type EmailLayoutProps = {
-  children: React.ReactNode;
-  preview?: string;
-  logoUrl?: string;
 };
 
 const logoText = {
@@ -80,6 +65,13 @@ const logoText = {
   fontWeight: "700" as const,
   margin: "0",
   textDecoration: "none",
+  textAlign: "center" as const,
+};
+
+type EmailLayoutProps = {
+  children: React.ReactNode;
+  preview?: string;
+  logoUrl?: string;
 };
 
 export function EmailLayout({ children, preview, logoUrl }: EmailLayoutProps) {
@@ -90,16 +82,26 @@ export function EmailLayout({ children, preview, logoUrl }: EmailLayoutProps) {
       <Body style={main}>
         <Container style={{ padding: "40px 20px" }}>
           <Container style={container}>
+            {/* Header with logo */}
             <Section style={header}>
               {logoUrl ? (
-                <Img alt="STL Shelf" height="32" src={logoUrl} width="89" />
+                <Img
+                  alt="STL Shelf"
+                  height="32"
+                  src={logoUrl}
+                  style={{ margin: "0 auto" }}
+                />
               ) : (
                 <Text style={logoText}>STL Shelf</Text>
               )}
             </Section>
+
+            {/* Main content area */}
             <Section style={content}>{children}</Section>
+
+            {/* Footer */}
             <Section style={footer}>
-              <Text style={footerText}>STL Shelf - Your Personal 3D Model Library</Text>
+              <Text style={footerText}>STL Shelf - 3D Model Library for Makers</Text>
               <Hr
                 style={{
                   borderColor: colors.border,
@@ -107,12 +109,16 @@ export function EmailLayout({ children, preview, logoUrl }: EmailLayoutProps) {
                 }}
               />
               <Text style={footerText}>
-                <Link href="https://stl-shelf.com/help" style={footerLink}>
-                  Help Center
+                <Link href="https://stl-shelf.com" style={footerLink}>
+                  stl-shelf.com
                 </Link>
-                {" • "}
+                {" · "}
                 <Link href="https://stl-shelf.com/privacy" style={footerLink}>
-                  Privacy Policy
+                  Privacy
+                </Link>
+                {" · "}
+                <Link href="https://stl-shelf.com/terms" style={footerLink}>
+                  Terms
                 </Link>
               </Text>
             </Section>

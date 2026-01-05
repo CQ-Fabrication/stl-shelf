@@ -1,0 +1,16 @@
+{
+  "name": "STL Shelf",
+  "short_name": "STL Shelf",
+  "description": "Cloud or self-hosted 3D model library for makers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

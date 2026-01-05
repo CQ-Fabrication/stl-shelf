@@ -12,6 +12,9 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/verify-email-pending")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   validateSearch: searchSchema,
   component: VerifyEmailPendingPage,
 });

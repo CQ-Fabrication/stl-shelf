@@ -5,6 +5,9 @@ import { SubscriptionStatusCard } from "@/components/billing/subscription-status
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/billing")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: BillingPage,
 });
 

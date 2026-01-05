@@ -8,6 +8,9 @@ import { Logo } from "@/components/ui/logo";
 import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/login")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: LoginPage,
 });
 

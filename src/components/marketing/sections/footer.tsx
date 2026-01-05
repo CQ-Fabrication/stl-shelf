@@ -1,144 +1,107 @@
 import { Link } from "@tanstack/react-router";
 import { Logo } from "@/components/ui/logo";
-import { Github, Twitter } from "lucide-react";
+import { Github } from "lucide-react";
 
-const footerLinks = {
-  product: [
-    { label: "Features", href: "/#features", isExternal: false },
-    { label: "Pricing", href: "/pricing", isExternal: false },
-  ],
-  resources: [
-    { label: "Documentation", href: "https://github.com", isExternal: true },
-    { label: "GitHub", href: "https://github.com", isExternal: true },
-  ],
-  legal: [
-    { label: "Privacy", href: "/privacy", isExternal: false },
-    { label: "Terms", href: "/terms", isExternal: false },
-    { label: "About", href: "/about", isExternal: false },
-  ],
-};
+// Custom X (Twitter) icon
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+// Custom Bluesky icon
+function BlueskyIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.815 2.736 3.713 3.66 6.383 3.364.136-.02.275-.039.415-.056-.138.022-.276.04-.415.056-3.912.58-7.387 2.005-2.83 7.078 5.013 5.19 6.87-1.113 7.823-4.308.953 3.195 2.05 9.271 7.733 4.308 4.267-4.308 1.172-6.498-2.74-7.078a8.741 8.741 0 0 1-.415-.056c.14.017.279.036.415.056 2.67.297 5.568-.628 6.383-3.364.246-.828.624-5.79.624-6.478 0-.69-.139-1.861-.902-2.206-.659-.298-1.664-.62-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8Z" />
+    </svg>
+  );
+}
+
+const navLinks = [
+  { label: "Features", href: "/#features", isExternal: false },
+  { label: "Pricing", href: "/pricing", isExternal: false },
+  { label: "About", href: "/about", isExternal: false },
+];
+
+const socialLinks = [
+  {
+    label: "GitHub",
+    href: "https://github.com/CQ-Fabrication/stl-shelf",
+    icon: Github,
+  },
+  {
+    label: "X",
+    href: "https://x.com/cqfabrication",
+    icon: XIcon,
+  },
+  {
+    label: "Bluesky",
+    href: "https://bsky.app/profile/cqfabrication.com",
+    icon: BlueskyIcon,
+  },
+];
 
 export function Footer() {
   return (
-    <footer className="border-t bg-muted/30">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div className="col-span-2 md:col-span-1">
-            <Logo className="h-8 mb-4" />
-            <p className="text-sm text-muted-foreground">
-              Self-hosted 3D model library management for makers and teams.
-            </p>
-            <div className="flex gap-4 mt-4">
+    <footer className="border-t border-border/40 bg-background">
+      <div className="container mx-auto px-4">
+        {/* Main footer content */}
+        <div className="py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+          {/* Brand */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            <Logo className="h-7" />
+            <span className="hidden sm:block h-4 w-px bg-border" aria-hidden="true" />
+            <p className="text-sm text-muted-foreground">3D model library for makers</p>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                to={link.href}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <span className="hidden sm:block h-4 w-px bg-border" aria-hidden="true" />
+            {socialLinks.map((link) => (
               <a
-                href="https://github.com"
+                key={link.label}
+                href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="GitHub"
+                aria-label={link.label}
               >
-                <Github className="h-5 w-5" />
+                <link.icon className="h-4 w-4" />
               </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Product</h4>
-            <ul className="space-y-2">
-              {footerLinks.product.map((link) => (
-                <li key={link.label}>
-                  {link.isExternal ? (
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link
-                      to={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Resources</h4>
-            <ul className="space-y-2">
-              {footerLinks.resources.map((link) => (
-                <li key={link.label}>
-                  {link.isExternal ? (
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link
-                      to={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Company</h4>
-            <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
-                <li key={link.label}>
-                  {link.isExternal ? (
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link
-                      to={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
+            ))}
+          </nav>
         </div>
 
-        <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} STL Shelf. All rights reserved.</p>
-          <p>
-            Made with{" "}
+        {/* Bottom bar */}
+        <div className="border-t border-border/40 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span>&copy; {new Date().getFullYear()} STL Shelf</span>
+            <span className="hidden sm:inline">·</span>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">
+              Privacy
+            </Link>
+            <span>·</span>
+            <Link to="/terms" className="hover:text-foreground transition-colors">
+              Terms
+            </Link>
+          </div>
+          <p className="flex items-center gap-1.5">
+            Made with
             <span className="text-orange-500" aria-label="love">
               ♥
-            </span>{" "}
+            </span>
             for makers
           </p>
         </div>

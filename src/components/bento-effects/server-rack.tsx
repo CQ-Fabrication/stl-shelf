@@ -137,7 +137,7 @@ export const ServerRack = ({ className }: ServerRackProps) => {
         </div>
       </div>
 
-      {/* Self-hosted badge */}
+      {/* Data ownership badge */}
       <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1">
         <svg
           className="h-3 w-3 text-emerald-400"

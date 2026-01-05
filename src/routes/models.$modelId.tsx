@@ -23,6 +23,9 @@ import { useDeleteModel } from "@/hooks/use-delete-model";
 import { addVersion, getModel, getModelVersions } from "@/server/functions/models";
 
 export const Route = createFileRoute("/models/$modelId")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: ModelDetailComponent,
 });
 

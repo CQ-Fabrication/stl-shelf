@@ -11,7 +11,7 @@ import { HeroBackground } from "@/components/marketing/hero-background";
 const stats = [
   { value: 10000, suffix: "+", label: "Models Organized" },
   { value: 5, suffix: "", label: "File Formats" },
-  { value: 100, suffix: "%", label: "Self-Hosted" },
+  { value: 100, suffix: "%", label: "Your Data" },
 ];
 
 export function HeroSection() {
@@ -35,7 +35,7 @@ export function HeroSection() {
           <div className="animate-fade-in-up flex justify-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary backdrop-blur-sm">
               <Box className="h-3.5 w-3.5" />
-              <span>Self-Hosted 3D Model Library</span>
+              <span>3D Model Library for Makers</span>
             </div>
           </div>
 
@@ -44,8 +44,8 @@ export function HeroSection() {
           </h1>
 
           <p className="animate-fade-in-up text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto">
-            Self-hosted solution for managing your personal collection of 3D printable models.
-            Version control, preview, and organize all your STL files in one place.
+            Manage your personal collection of 3D printable models with version control, preview,
+            and smart organization. Use our cloud or self-host for complete data ownership.
           </p>
 
           <div className="animate-fade-in-up flex flex-wrap justify-center gap-2 pt-2">

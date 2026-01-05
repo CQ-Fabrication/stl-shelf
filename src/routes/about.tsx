@@ -12,7 +12,7 @@ export const Route = createFileRoute("/about")({
       {
         name: "description",
         content:
-          "Learn about STL Shelf - the self-hosted 3D model library built by makers, for makers.",
+          "Learn about STL Shelf - 3D model library built by makers, for makers. Cloud or self-hosted.",
       },
     ],
   }),
@@ -106,10 +106,9 @@ function AboutPage() {
                 that one perfect model.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                STL Shelf is our answer to the chaos. A self-hosted solution that puts you in
-                control of your 3D model library. No vendor lock-in, no subscription required for
-                basic use, no uploading your precious designs to someone else's server (unless you
-                want to).
+                STL Shelf is our answer to the chaos. A solution that puts you in control of your 3D
+                model library. Use our cloud for convenience, or self-host for complete data
+                ownership. No vendor lock-in, and a free tier to get started.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Whether you're a hobbyist with a growing collection or a print farm managing
@@ -154,7 +153,7 @@ function AboutPage() {
               </p>
               <Button variant="outline" size="lg" asChild>
                 <a
-                  href="https://github.com"
+                  href="https://github.com/CQ-Fabrication/stl-shelf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2"

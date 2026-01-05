@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
 
 export const Route = createFileRoute("/organization/members")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: OrganizationMembersPage,
 });
 

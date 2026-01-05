@@ -17,12 +17,12 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       {
-        title: "STL Shelf - Self-Hosted 3D Model Library",
+        title: "STL Shelf - 3D Model Library for Makers",
       },
       {
         name: "description",
         content:
-          "Organize, version, and share your 3D printable models. Self-hosted solution for makers and teams.",
+          "Organize, version, and share your 3D printable models. Cloud or self-hosted for makers and teams.",
       },
     ],
   }),

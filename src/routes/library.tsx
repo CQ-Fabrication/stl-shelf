@@ -56,6 +56,9 @@ export const tagsQueryOptions = () => ({
 });
 
 export const Route = createFileRoute("/library")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   validateSearch: librarySearchSchema,
   // Extract search params as loader dependencies
   loaderDeps: ({ search }) => ({

@@ -30,6 +30,9 @@ export const announcementsQueryOptions = () =>
   });
 
 export const Route = createFileRoute("/announcements")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   loader: async ({ context }) => {
     await context.queryClient.ensureInfiniteQueryData(announcementsQueryOptions());
   },

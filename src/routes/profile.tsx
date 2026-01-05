@@ -8,6 +8,9 @@ import { SecurityTab } from "@/components/profile/security-tab";
 import { SessionsTab } from "@/components/profile/sessions-tab";
 
 export const Route = createFileRoute("/profile")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: ProfilePage,
 });
 

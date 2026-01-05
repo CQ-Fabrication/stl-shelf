@@ -15,6 +15,9 @@ import { generateFingerprint } from "@/lib/fingerprint";
 import { getLatestDocumentsFn, submitConsentFn } from "@/server/functions/consent";
 
 export const Route = createFileRoute("/signup")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: SignUpPage,
 });
 

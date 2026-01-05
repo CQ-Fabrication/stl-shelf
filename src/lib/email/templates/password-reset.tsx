@@ -2,50 +2,18 @@
 import { Heading, Link, Text } from "@react-email/components";
 import { Button } from "../components/button";
 import { EmailLayout } from "../components/email-layout";
-
-const colors = {
-  brand: "#D97706",
-  foreground: "#171717",
-  muted: "#737373",
-};
-
-const heading = {
-  color: colors.foreground,
-  fontSize: "24px",
-  fontWeight: "600" as const,
-  lineHeight: "1.3",
-  margin: "0 0 24px 0",
-};
-
-const paragraph = {
-  color: colors.foreground,
-  fontSize: "16px",
-  lineHeight: "1.6",
-  margin: "0 0 16px 0",
-};
-
-const mutedText = {
-  color: colors.muted,
-  fontSize: "14px",
-  lineHeight: "1.5",
-  margin: "24px 0 0 0",
-};
-
-const linkStyle = {
-  color: colors.brand,
-  wordBreak: "break-all" as const,
-};
+import { colors, textStyles } from "../styles";
 
 const warningBox = {
-  backgroundColor: "#FEF3C7",
-  border: "1px solid #F59E0B",
-  borderRadius: "10px",
+  backgroundColor: colors.warningBg,
+  border: `1px solid ${colors.warningBorder}`,
+  borderRadius: "8px",
   padding: "16px",
   marginTop: "24px",
 };
 
 const warningText = {
-  color: "#92400E",
+  color: colors.warningText,
   fontSize: "14px",
   lineHeight: "1.5",
   margin: "0",
@@ -59,9 +27,9 @@ export type PasswordResetTemplateProps = {
 export function PasswordResetTemplate({ resetUrl, logoUrl }: PasswordResetTemplateProps) {
   return (
     <EmailLayout preview="Reset your STL Shelf password" logoUrl={logoUrl}>
-      <Heading style={heading}>Reset your password</Heading>
+      <Heading style={textStyles.heading}>Reset your password</Heading>
 
-      <Text style={paragraph}>
+      <Text style={textStyles.paragraph}>
         You requested a password reset for your STL Shelf account. Click the button below to set a
         new password:
       </Text>
@@ -70,10 +38,10 @@ export function PasswordResetTemplate({ resetUrl, logoUrl }: PasswordResetTempla
         <Button href={resetUrl}>Reset Password</Button>
       </div>
 
-      <Text style={mutedText}>
+      <Text style={textStyles.muted}>
         Or copy and paste this link into your browser:
         <br />
-        <Link href={resetUrl} style={linkStyle}>
+        <Link href={resetUrl} style={textStyles.linkMuted}>
           {resetUrl}
         </Link>
       </Text>

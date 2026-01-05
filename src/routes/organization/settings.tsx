@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { OrganizationSettingsForm } from "@/components/organization/settings-form";
 
 export const Route = createFileRoute("/organization/settings")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: OrganizationSettingsPage,
 });
 

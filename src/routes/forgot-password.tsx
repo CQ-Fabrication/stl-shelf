@@ -10,6 +10,9 @@ import { Logo } from "@/components/ui/logo";
 import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/forgot-password")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
   component: ForgotPasswordPage,
 });
 

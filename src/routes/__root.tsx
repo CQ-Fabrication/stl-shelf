@@ -96,16 +96,66 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "STL Shelf",
+        title: "STL Shelf - 3D Model Library for Makers",
       },
       {
         name: "description",
-        content: "Your personal 3D model library, organized and versioned",
+        content:
+          "Cloud or self-hosted 3D model library for makers. Version control, 3D preview, and smart organization for your STL, 3MF, and OBJ files.",
+      },
+      // Open Graph
+      {
+        property: "og:title",
+        content: "STL Shelf - 3D Model Library for Makers",
+      },
+      {
+        property: "og:description",
+        content:
+          "Cloud or self-hosted 3D model library for makers. Version control, 3D preview, and smart organization for your STL, 3MF, and OBJ files.",
+      },
+      {
+        property: "og:image",
+        content: "https://stl-shelf.com/og-image.svg",
+      },
+      {
+        property: "og:url",
+        content: "https://stl-shelf.com",
+      },
+      {
+        property: "og:type",
+        content: "website",
+      },
+      {
+        property: "og:site_name",
+        content: "STL Shelf",
+      },
+      // Twitter Card
+      {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+      {
+        name: "twitter:site",
+        content: "@cqfabrication",
+      },
+      {
+        name: "twitter:title",
+        content: "STL Shelf - 3D Model Library for Makers",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Cloud or self-hosted 3D model library for makers. Version control, 3D preview, and smart organization for your STL, 3MF, and OBJ files.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://stl-shelf.com/og-image.svg",
       },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico" },
+      { rel: "manifest", href: "/manifest.json" },
     ],
   }),
   beforeLoad: async ({ location }) => {
