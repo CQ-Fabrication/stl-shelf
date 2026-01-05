@@ -1,13 +1,18 @@
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { z } from "zod/v4";
+import { toast } from "sonner";
+import { z } from "zod";
 import { Turnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
 import { authClient } from "@/lib/auth-client";
+import { generateFingerprint } from "@/lib/fingerprint";
+import { getLatestDocumentsFn, submitConsentFn } from "@/server/functions/consent";
 
 export const Route = createFileRoute("/signup")({
   component: SignUpPage,
@@ -25,6 +30,10 @@ const signUpSchema = z.object({
       "Password must contain uppercase, lowercase, and number",
     ),
   captcha: z.string().min(1, "Captcha is required"),
+  termsPrivacyAccepted: z.boolean().refine((val) => val === true, {
+    message: "You must accept the Terms and Privacy Policy",
+  }),
+  marketingAccepted: z.boolean(),
 });
 
 type SignUpForm = z.infer<typeof signUpSchema>;
@@ -34,13 +43,29 @@ const defaultValues: SignUpForm = {
   email: "",
   password: "",
   captcha: "",
+  termsPrivacyAccepted: false,
+  marketingAccepted: false,
 };
 
 function SignUpPage() {
   const navigate = useNavigate();
 
+  // Fetch latest document versions for consent
+  const { data: documents } = useQuery({
+    queryKey: ["consent-documents"],
+    queryFn: () => getLatestDocumentsFn(),
+  });
+
   const handleSignUp = async (value: SignUpForm) => {
-    await authClient.signUp.email({
+    const termsVersion = documents?.termsAndConditions?.version;
+
+    if (!termsVersion) {
+      toast.error("Terms and conditions not available. Please try again.");
+      return;
+    }
+
+    // Sign up first
+    const result = await authClient.signUp.email({
       name: value.name,
       email: value.email,
       password: value.password,
@@ -50,6 +75,31 @@ function SignUpPage() {
         },
       },
     });
+
+    if (!result.data?.user?.id) {
+      toast.error("Failed to create account. Please try again.");
+      return;
+    }
+
+    // Generate fingerprint and submit consent
+    const fingerprint = await generateFingerprint();
+
+    try {
+      await submitConsentFn({
+        data: {
+          userId: result.data.user.id,
+          email: value.email,
+          termsPrivacyAccepted: true,
+          termsPrivacyVersion: termsVersion,
+          marketingAccepted: value.marketingAccepted,
+          fingerprint,
+        },
+      });
+    } catch {
+      // If consent fails, we must block - per spec
+      toast.error("Failed to record consent. Please try again.");
+      return;
+    }
 
     await navigate({
       to: "/verify-email-pending",
@@ -159,6 +209,70 @@ function SignUpPage() {
                       {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
                     </div>
                   )}
+                </div>
+              )}
+            </form.Field>
+
+            {/* Terms & Privacy Policy - Required */}
+            <form.Field name="termsPrivacyAccepted">
+              {(field) => (
+                <div className="space-y-1">
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      aria-invalid={!field.state.meta.isValid}
+                      checked={field.state.value as boolean}
+                      id="termsPrivacyAccepted"
+                      onCheckedChange={(checked: boolean) => field.handleChange(checked)}
+                    />
+                    <Label
+                      className="text-sm leading-relaxed font-normal cursor-pointer"
+                      htmlFor="termsPrivacyAccepted"
+                    >
+                      I accept the{" "}
+                      <Link
+                        className="text-primary underline hover:no-underline"
+                        onClick={(e) => e.stopPropagation()}
+                        target="_blank"
+                        to="/terms"
+                      >
+                        Terms
+                      </Link>{" "}
+                      and{" "}
+                      <Link
+                        className="text-primary underline hover:no-underline"
+                        onClick={(e) => e.stopPropagation()}
+                        target="_blank"
+                        to="/privacy"
+                      >
+                        Privacy Policy
+                      </Link>
+                      <sup className="ml-0.5 text-destructive">*</sup>
+                    </Label>
+                  </div>
+                  {!field.state.meta.isValid && (
+                    <div className="text-red-600 text-sm ml-6">
+                      {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
+                    </div>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
+            {/* Marketing Consent - Optional */}
+            <form.Field name="marketingAccepted">
+              {(field) => (
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    checked={field.state.value as boolean}
+                    id="marketingAccepted"
+                    onCheckedChange={(checked: boolean) => field.handleChange(checked === true)}
+                  />
+                  <Label
+                    className="text-sm leading-5 font-normal cursor-pointer"
+                    htmlFor="marketingAccepted"
+                  >
+                    Keep me updated about STL Shelf
+                  </Label>
                 </div>
               )}
             </form.Field>

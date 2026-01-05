@@ -1,11 +1,17 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useQuery } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { Link } from "@tanstack/react-router";
 import type { ChangeEvent } from "react";
 import { toast } from "sonner";
-import { z } from "zod/v4";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { AuthClient } from "@/lib/auth-client";
+import { generateFingerprint } from "@/lib/fingerprint";
+import { storePendingConsent } from "@/lib/pending-consent";
+import { getLatestDocumentsFn } from "@/server/functions/consent";
 
 type MagicLinkFormProps = {
   auth: AuthClient;
@@ -14,12 +20,31 @@ type MagicLinkFormProps = {
 };
 
 export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormProps) {
+  // Fetch latest document versions for consent
+  const { data: documents } = useQuery({
+    queryKey: ["consent-documents"],
+    queryFn: () => getLatestDocumentsFn(),
+  });
+
   const form = useForm({
     defaultValues: {
       email: "",
+      termsPrivacyAccepted: false,
+      marketingAccepted: false,
     },
     onSubmit: async ({ value }) => {
+      const termsVersion = documents?.termsAndConditions?.version;
+
+      if (!termsVersion) {
+        toast.error("Terms and conditions not available. Please try again.");
+        return;
+      }
+
       try {
+        // Generate fingerprint and store pending consent
+        const fingerprint = await generateFingerprint();
+        storePendingConsent(termsVersion, value.marketingAccepted, fingerprint);
+
         await auth.signIn.magicLink({
           email: value.email,
           callbackURL: `${window.location.origin}/library`,
@@ -34,6 +59,10 @@ export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormP
     validators: {
       onSubmit: z.object({
         email: z.email("Enter a valid email address").max(255, "Email is too long"),
+        termsPrivacyAccepted: z.boolean().refine((val) => val === true, {
+          message: "You must accept the Terms and Privacy Policy",
+        }),
+        marketingAccepted: z.boolean(),
       }),
     },
   });
@@ -72,6 +101,70 @@ export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormP
                 {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
               </div>
             )}
+          </div>
+        )}
+      </form.Field>
+
+      {/* Terms & Privacy Policy - Required */}
+      <form.Field name="termsPrivacyAccepted">
+        {(field) => (
+          <div className="space-y-1">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                aria-invalid={!field.state.meta.isValid}
+                checked={field.state.value as boolean}
+                id="termsPrivacyAccepted"
+                onCheckedChange={(checked: boolean) => field.handleChange(checked)}
+              />
+              <Label
+                className="text-sm leading-relaxed font-normal cursor-pointer"
+                htmlFor="termsPrivacyAccepted"
+              >
+                I accept the{" "}
+                <Link
+                  className="text-primary underline hover:no-underline"
+                  onClick={(e) => e.stopPropagation()}
+                  target="_blank"
+                  to="/terms"
+                >
+                  Terms
+                </Link>{" "}
+                and{" "}
+                <Link
+                  className="text-primary underline hover:no-underline"
+                  onClick={(e) => e.stopPropagation()}
+                  target="_blank"
+                  to="/privacy"
+                >
+                  Privacy Policy
+                </Link>
+                <sup className="ml-0.5 text-destructive">*</sup>
+              </Label>
+            </div>
+            {!field.state.meta.isValid && (
+              <div className="text-red-600 text-sm ml-6">
+                {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
+              </div>
+            )}
+          </div>
+        )}
+      </form.Field>
+
+      {/* Marketing Consent - Optional */}
+      <form.Field name="marketingAccepted">
+        {(field) => (
+          <div className="flex items-start gap-2">
+            <Checkbox
+              checked={field.state.value as boolean}
+              id="marketingAccepted"
+              onCheckedChange={(checked: boolean) => field.handleChange(checked === true)}
+            />
+            <Label
+              className="text-sm leading-5 font-normal cursor-pointer"
+              htmlFor="marketingAccepted"
+            >
+              Keep me updated about STL Shelf
+            </Label>
           </div>
         )}
       </form.Field>

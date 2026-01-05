@@ -38,6 +38,14 @@ import {
   userAnnouncementReads,
   userAnnouncementReadsRelations,
 } from "./schema/announcements";
+import {
+  legalDocuments,
+  legalDocumentsRelations,
+  consentAudit,
+  consentAuditRelations,
+  userConsents,
+  userConsentsRelations,
+} from "./schema/consent";
 
 export const schema = {
   // Models
@@ -53,6 +61,10 @@ export const schema = {
   // Announcements
   announcements,
   userAnnouncementReads,
+  // Consent
+  legalDocuments,
+  consentAudit,
+  userConsents,
   // Relations
   modelsRelations,
   modelVersionsRelations,
@@ -64,6 +76,9 @@ export const schema = {
   apiKeysRelations,
   announcementsRelations,
   userAnnouncementReadsRelations,
+  legalDocumentsRelations,
+  consentAuditRelations,
+  userConsentsRelations,
   // BetterAuth tables
   user: authUser,
   session: authSession,
@@ -130,3 +145,4 @@ export * from "./schema/auth";
 export * from "./schema/models";
 export * from "./schema/api-keys";
 export * from "./schema/announcements";
+export * from "./schema/consent";

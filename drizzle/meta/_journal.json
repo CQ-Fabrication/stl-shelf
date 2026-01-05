@@ -15,6 +15,13 @@
       "when": 1767546915403,
       "tag": "0001_lethal_jane_foster",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767601700534,
+      "tag": "0002_curvy_eternals",
+      "breakpoints": true
     }
   ]
 }
