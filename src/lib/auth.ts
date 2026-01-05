@@ -20,15 +20,18 @@ import {
   db,
   invitation as invitationTable,
   member as memberTable,
+  models,
   organization as organizationTable,
   session as sessionTable,
   user as userTable,
   verification as verificationTable,
 } from "@/lib/db";
+// Permission helpers available for future middleware/server function enforcement:
+// import { canChangeRole, canRemoveMember, type Role } from "@/lib/permissions";
 import { MagicLinkTemplate, PasswordResetTemplate, VerifyEmailTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
 import { captureServerException } from "@/lib/error-tracking.server";
-import { getErrorDetails, logErrorEvent } from "@/lib/logging";
+import { getErrorDetails, logAuditEvent, logErrorEvent } from "@/lib/logging";
 
 const isProd = env.NODE_ENV === "production";
 
@@ -175,6 +178,66 @@ export const auth = betterAuth({
               `Member limit reached. Your plan allows ${memberLimit} member${memberLimit > 1 ? "s" : ""}. Upgrade to invite more.`,
             );
           }
+        },
+        // RBAC: Transfer models to owner when member is removed
+        beforeRemoveMember: async ({ user, organization }) => {
+          const orgWithOwner = organization as { ownerId?: string };
+          const ownerId = orgWithOwner.ownerId;
+
+          if (!ownerId) {
+            logErrorEvent("rbac.model_transfer_failed", {
+              reason: "Organization has no ownerId",
+              organizationId: organization.id,
+              removedUserId: user.id,
+            });
+            return;
+          }
+
+          // Don't transfer if removing the owner (shouldn't happen, but safety check)
+          if (user.id === ownerId) {
+            throw new Error("Cannot remove the organization owner");
+          }
+
+          // Transfer all models owned by this user to the org owner
+          const userModels = await db
+            .select({ id: models.id })
+            .from(models)
+            .where(and(eq(models.ownerId, user.id), eq(models.organizationId, organization.id)));
+
+          if (userModels.length > 0) {
+            await db
+              .update(models)
+              .set({ ownerId: ownerId })
+              .where(and(eq(models.ownerId, user.id), eq(models.organizationId, organization.id)));
+
+            logAuditEvent("rbac.models_transferred", {
+              removedUserId: user.id,
+              newOwnerId: ownerId,
+              modelCount: userModels.length,
+              organizationId: organization.id,
+            });
+          }
+        },
+        // Audit logging for member removal
+        afterRemoveMember: async ({ member, user, organization }) => {
+          logAuditEvent("rbac.member_removed", {
+            removedUserId: user.id,
+            removedUserEmail: user.email,
+            removedMemberRole: member.role,
+            organizationId: organization.id,
+            organizationName: organization.name,
+          });
+        },
+        // Audit logging for role changes
+        afterUpdateMemberRole: async ({ member, previousRole, user, organization }) => {
+          logAuditEvent("rbac.role_changed", {
+            userId: user.id,
+            userEmail: user.email,
+            previousRole,
+            newRole: member.role,
+            organizationId: organization.id,
+            organizationName: organization.name,
+          });
         },
       },
     }),

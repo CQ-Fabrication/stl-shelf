@@ -5,6 +5,7 @@ import { lazy, Suspense, useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useActiveOrganization, useOrganizations } from "@/hooks/use-organizations";
+import { usePermissions } from "@/hooks/use-permissions";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 import { AnnouncementDropdown } from "@/components/announcements/announcement-dropdown";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
@@ -47,6 +48,7 @@ export default function Header() {
   const { data: session } = authClient.useSession();
   const { data: organizations, isPending: isLoadingOrgs } = useOrganizations();
   const { data: activeOrg } = useActiveOrganization();
+  const { permissions } = usePermissions();
 
   async function switchOrganization(orgId: string) {
     try {
@@ -150,25 +152,33 @@ export default function Header() {
                           </DropdownMenuItem>
                         );
                       })}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link to="/organization/settings">
-                          <Settings className="mr-2 h-4 w-4" />
-                          Settings
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/organization/members">
-                          <Users className="mr-2 h-4 w-4" />
-                          Members
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/billing">
-                          <CreditCard className="mr-2 h-4 w-4" />
-                          Billing
-                        </Link>
-                      </DropdownMenuItem>
+                      {/* RBAC: Only show settings/members for admins+ */}
+                      {permissions?.canAccessSettings && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link to="/organization/settings">
+                              <Settings className="mr-2 h-4 w-4" />
+                              Settings
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/organization/members">
+                              <Users className="mr-2 h-4 w-4" />
+                              Members
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {/* RBAC: Only show billing for owner */}
+                      {permissions?.canAccessBilling && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/billing">
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Billing
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleCreateOrganization}>
                         <Plus className="mr-2 h-4 w-4" />

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useActiveOrganization } from "@/hooks/use-organizations";
+import { usePermissions } from "@/hooks/use-permissions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,7 @@ export function MembersTable({ memberLimit }: MembersTableProps) {
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
   const { data: activeOrg } = useActiveOrganization();
+  const { permissions } = usePermissions();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
 
@@ -189,66 +191,111 @@ export function MembersTable({ memberLimit }: MembersTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {isOwner ? (
-                      <Badge className="gap-1" variant="default">
-                        <Crown className="h-3 w-3" />
-                        Owner
-                      </Badge>
-                    ) : (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            className="h-7 gap-1"
-                            disabled={isUpdating === member.id}
-                            size="sm"
-                            variant="outline"
-                          >
-                            {isUpdating === member.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <RoleIcon className="h-3 w-3" />
-                            )}
+                    {(() => {
+                      // Owner role is always displayed as a badge (cannot be changed)
+                      if (isOwner) {
+                        return (
+                          <Badge className="gap-1" variant="default">
+                            <Crown className="h-3 w-3" />
+                            Owner
+                          </Badge>
+                        );
+                      }
+
+                      const isTargetAdmin = member.role === "admin";
+                      // RBAC: Only owner can manage admin roles
+                      const canChangeThisRole =
+                        permissions?.canManageAdmins || (!isTargetAdmin && permissions?.isAdmin);
+
+                      if (!canChangeThisRole) {
+                        // Show role as read-only badge if user can't change it
+                        return (
+                          <Badge className="gap-1" variant="secondary">
+                            <RoleIcon className="h-3 w-3" />
                             {roleConfig.label}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                          {ROLES.filter((r) => r.value !== "owner").map((role) => (
-                            <DropdownMenuItem
-                              key={role.value}
-                              onClick={() => handleRoleChange(member.id, role.value)}
+                          </Badge>
+                        );
+                      }
+
+                      // Filter available roles based on permissions
+                      // - Owner can assign admin or member
+                      // - Admin can only assign member (not admin)
+                      const availableRoles = ROLES.filter((r) => {
+                        if (r.value === "owner") return false;
+                        if (r.value === "admin" && !permissions?.canManageAdmins) return false;
+                        return true;
+                      });
+
+                      return (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              className="h-7 gap-1"
+                              disabled={isUpdating === member.id}
+                              size="sm"
+                              variant="outline"
                             >
-                              <role.icon className="mr-2 h-4 w-4" />
-                              <div>
-                                <p className="font-medium">{role.label}</p>
-                                <p className="text-muted-foreground text-xs">{role.description}</p>
-                              </div>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                              {isUpdating === member.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <RoleIcon className="h-3 w-3" />
+                              )}
+                              {roleConfig.label}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {availableRoles.map((role) => (
+                              <DropdownMenuItem
+                                key={role.value}
+                                onClick={() => handleRoleChange(member.id, role.value)}
+                              >
+                                <role.icon className="mr-2 h-4 w-4" />
+                                <div>
+                                  <p className="font-medium">{role.label}</p>
+                                  <p className="text-muted-foreground text-xs">
+                                    {role.description}
+                                  </p>
+                                </div>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
-                    {!isOwner && !isCurrentUser && (
-                      <Button
-                        disabled={isRemoving === member.id}
-                        onClick={() =>
-                          handleRemoveMember(
-                            member.id,
-                            member.user.email,
-                            member.user.name ?? member.user.email,
-                          )
-                        }
-                        size="icon"
-                        variant="ghost"
-                      >
-                        {isRemoving === member.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                        )}
-                      </Button>
-                    )}
+                    {(() => {
+                      // Can't remove owner or yourself
+                      if (isOwner || isCurrentUser) return null;
+
+                      const isTargetAdmin = member.role === "admin";
+                      // RBAC: Only owner can remove admins, admins can remove members
+                      const canRemoveThisMember =
+                        permissions?.canManageAdmins || (!isTargetAdmin && permissions?.isAdmin);
+
+                      if (!canRemoveThisMember) return null;
+
+                      return (
+                        <Button
+                          disabled={isRemoving === member.id}
+                          onClick={() =>
+                            handleRemoveMember(
+                              member.id,
+                              member.user.email,
+                              member.user.name ?? member.user.email,
+                            )
+                          }
+                          size="icon"
+                          variant="ghost"
+                        >
+                          {isRemoving === member.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                          )}
+                        </Button>
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
               );

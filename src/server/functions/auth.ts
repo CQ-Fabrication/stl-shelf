@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import { and, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { member } from "@/lib/db/schema/auth";
+import { isAtLeast, type Role } from "@/lib/permissions";
 
 /**
  * Get session on the server with proper cookie access.
@@ -61,3 +65,45 @@ export const setActiveOrganizationFn = createServerFn({ method: "POST" })
     });
     return { success: true };
   });
+
+/**
+ * Get current user's member role and permission flags.
+ *
+ * Used for route guards and UI permission checks.
+ * Returns null if user is not authenticated or has no active organization.
+ */
+export const getMemberRoleFn = createServerFn({ method: "GET" }).handler(async () => {
+  const headers = getRequestHeaders();
+  const session = await auth.api.getSession({ headers });
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  const organizationId = session.session?.activeOrganizationId;
+  if (!organizationId) {
+    return null;
+  }
+
+  // Get member role from database
+  const [membership] = await db
+    .select({ role: member.role })
+    .from(member)
+    .where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+    .limit(1);
+
+  if (!membership) {
+    return null;
+  }
+
+  const role = membership.role as Role;
+
+  return {
+    role,
+    isOwner: role === "owner",
+    isAdmin: isAtLeast(role, "admin"),
+    canAccessSettings: isAtLeast(role, "admin"),
+    canAccessMembers: isAtLeast(role, "admin"),
+    canAccessBilling: role === "owner",
+  };
+});

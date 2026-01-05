@@ -1,12 +1,21 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OrganizationSettingsForm } from "@/components/organization/settings-form";
+import { getMemberRoleFn } from "@/server/functions/auth";
 
 export const Route = createFileRoute("/organization/settings")({
   head: () => ({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
+  beforeLoad: async () => {
+    // RBAC: Only admins and owners can access settings
+    const permissions = await getMemberRoleFn();
+    if (!permissions?.canAccessSettings) {
+      throw notFound();
+    }
+    return { permissions };
+  },
   component: OrganizationSettingsPage,
 });
 

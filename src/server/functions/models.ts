@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { organization } from "@/lib/db/schema/auth";
 import { models, modelFiles, modelVersions } from "@/lib/db/schema/models";
+import { canDeleteModel, canEditModel, type Role } from "@/lib/permissions";
 import type { SubscriptionTier } from "@/lib/billing/config";
 import { getTierConfig, isUnlimited } from "@/lib/billing/config";
 import { buildStatsigUser, trackModelViewed, trackSearchPerformed } from "@/lib/statsig";
@@ -216,7 +217,21 @@ export const updateModelTags = createServerFn({ method: "POST" })
       data: z.infer<typeof updateModelTagsSchema>;
       context: AuthenticatedContext;
     }) => {
-      await modelDetailService.getModel(data.modelId, context.organizationId);
+      // RBAC: Check edit permission (admins can edit any, members can edit own only)
+      const [model] = await db
+        .select({ ownerId: models.ownerId })
+        .from(models)
+        .where(and(eq(models.id, data.modelId), eq(models.organizationId, context.organizationId)))
+        .limit(1);
+
+      if (!model) {
+        throw new Error("Model not found");
+      }
+
+      const isOwnModel = model.ownerId === context.userId;
+      if (!canEditModel(context.memberRole as Role, isOwnModel)) {
+        throw new Error("You don't have permission to edit this model");
+      }
 
       const uniqueTags = Array.from(new Set(data.tags));
       await tagService.updateModelTags(data.modelId, uniqueTags, context.organizationId);
@@ -391,6 +406,24 @@ export const addVersion = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        // RBAC: Check edit permission (admins can edit any, members can edit own only)
+        const [existingModel] = await db
+          .select({ ownerId: models.ownerId })
+          .from(models)
+          .where(
+            and(eq(models.id, data.modelId), eq(models.organizationId, context.organizationId)),
+          )
+          .limit(1);
+
+        if (!existingModel) {
+          throw new Error("Model not found");
+        }
+
+        const isOwnModel = existingModel.ownerId === context.userId;
+        if (!canEditModel(context.memberRole as Role, isOwnModel)) {
+          throw new Error("You don't have permission to add versions to this model");
+        }
+
         // Get organization and tier for limit checking
         const org = await db.query.organization.findFirst({
           where: eq(organization.id, context.organizationId),
@@ -666,6 +699,11 @@ export const deleteModel = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        // RBAC: Only admins and owners can delete models
+        if (!canDeleteModel(context.memberRole as Role)) {
+          throw new Error("You don't have permission to delete models");
+        }
+
         const result = await modelDeleteService.deleteModel({
           modelId: data.id,
           organizationId: context.organizationId,
@@ -714,6 +752,22 @@ export const renameModel = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        // RBAC: Check edit permission (admins can edit any, members can edit own only)
+        const [model] = await db
+          .select({ ownerId: models.ownerId })
+          .from(models)
+          .where(and(eq(models.id, data.id), eq(models.organizationId, context.organizationId)))
+          .limit(1);
+
+        if (!model) {
+          throw new Error("Model not found");
+        }
+
+        const isOwnModel = model.ownerId === context.userId;
+        if (!canEditModel(context.memberRole as Role, isOwnModel)) {
+          throw new Error("You don't have permission to edit this model");
+        }
+
         const result = await modelUpdateService.renameModel({
           modelId: data.id,
           organizationId: context.organizationId,
