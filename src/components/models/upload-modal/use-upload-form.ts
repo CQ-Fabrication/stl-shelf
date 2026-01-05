@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 // Schema per validazione (usato in upload-modal.tsx)
 export const modelUploadSchema = z.object({

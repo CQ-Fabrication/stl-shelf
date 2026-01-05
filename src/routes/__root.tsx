@@ -14,7 +14,9 @@ import type { ErrorComponentProps } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { AlertTriangle, Home, RotateCw } from "lucide-react";
 import { GracePeriodBanner } from "@/components/billing/grace-period-banner";
+import { ConsentBanner } from "@/components/consent-banner";
 import Header from "@/components/header";
+import { PendingConsentHandler } from "@/components/pending-consent-handler";
 import { NotFound } from "@/components/not-found";
 import { Button } from "@/components/ui/button";
 import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
@@ -102,6 +104,9 @@ const PUBLIC_ROUTES = [
   "/terms",
 ];
 
+// Routes that authenticated users should NOT access (redirect to /library)
+const AUTH_ROUTES = ["/login", "/signup"];
+
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
@@ -126,7 +131,24 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     ],
   }),
   beforeLoad: async ({ location }) => {
-    // Skip auth check for public routes
+    // For auth routes, check if user is already logged in
+    if (AUTH_ROUTES.includes(location.pathname)) {
+      try {
+        const session = await getSessionFn();
+        if (session?.user) {
+          throw redirect({ to: "/library", replace: true });
+        }
+      } catch (error) {
+        // If it's a redirect, rethrow it
+        if (error instanceof Response || (error as { to?: string })?.to) {
+          throw error;
+        }
+        // Otherwise, let them access the auth page
+      }
+      return;
+    }
+
+    // Skip auth check for other public routes
     if (PUBLIC_ROUTES.includes(location.pathname)) {
       return;
     }
@@ -197,6 +219,8 @@ function RootDocument({ children }: { children: ReactNode }) {
                 <>
                   <Header />
                   <GracePeriodBanner />
+                  <ConsentBanner />
+                  <PendingConsentHandler />
                 </>
               )}
               {children}

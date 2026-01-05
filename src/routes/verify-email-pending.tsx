@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod/v4";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Logo } from "@/components/ui/logo";

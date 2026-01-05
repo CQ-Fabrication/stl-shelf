@@ -1,9 +1,10 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { member } from "@/lib/db/schema/auth";
+import { legalDocuments, userConsents } from "@/lib/db/schema/consent";
 
 export type AuthenticatedContext = {
   session: NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
@@ -45,6 +46,33 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(asyn
 
   if (!membership) {
     throw new Error("Not a member of this organization");
+  }
+
+  // Check consent validity
+  const [consent] = await db
+    .select({
+      termsPrivacyAccepted: userConsents.termsPrivacyAccepted,
+      termsPrivacyVersion: userConsents.termsPrivacyVersion,
+    })
+    .from(userConsents)
+    .where(eq(userConsents.userId, session.user.id))
+    .limit(1);
+
+  // Get latest T&C version
+  const [latestDoc] = await db
+    .select({ version: legalDocuments.version })
+    .from(legalDocuments)
+    .where(eq(legalDocuments.type, "terms_and_conditions"))
+    .orderBy(desc(legalDocuments.publishedAt))
+    .limit(1);
+
+  // If consent exists and is valid, or if there's no legal document yet, allow access
+  const consentValid =
+    !latestDoc?.version || // No T&C published yet
+    (consent?.termsPrivacyAccepted && consent.termsPrivacyVersion === latestDoc.version);
+
+  if (!consentValid) {
+    throw new Error("Consent required: Please accept our updated terms to continue");
   }
 
   // Get IP address from headers

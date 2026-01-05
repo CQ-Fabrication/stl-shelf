@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Shield, Smartphone, User } from "lucide-react";
+import { ArrowLeft, FileCheck, Shield, Smartphone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConsentTab } from "@/components/profile/consent-tab";
 import { ProfileTab } from "@/components/profile/profile-tab";
 import { SecurityTab } from "@/components/profile/security-tab";
 import { SessionsTab } from "@/components/profile/sessions-tab";
@@ -40,6 +41,10 @@ function ProfilePage() {
             <Smartphone className="mr-2 h-4 w-4" />
             Sessions
           </TabsTrigger>
+          <TabsTrigger value="consent">
+            <FileCheck className="mr-2 h-4 w-4" />
+            Privacy
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -52,6 +57,10 @@ function ProfilePage() {
 
         <TabsContent value="sessions">
           <SessionsTab />
+        </TabsContent>
+
+        <TabsContent value="consent">
+          <ConsentTab />
         </TabsContent>
       </Tabs>
     </div>
