@@ -81,6 +81,9 @@ export const userConsents = pgTable(
     termsPrivacyAcceptedAt: timestamp("terms_privacy_accepted_at"),
     marketingAccepted: boolean("marketing_accepted").default(false).notNull(),
     marketingUpdatedAt: timestamp("marketing_updated_at"),
+    // Post-login marketing banner tracking
+    marketingPromptDismissedAt: timestamp("marketing_prompt_dismissed_at"), // "Maybe Later" timestamp
+    marketingPromptDeclined: boolean("marketing_prompt_declined").default(false).notNull(), // X clicked = permanent decline
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

@@ -36,7 +36,6 @@ const signUpSchema = z.object({
   termsPrivacyAccepted: z.boolean().refine((val) => val === true, {
     message: "You must accept the Terms and Privacy Policy",
   }),
-  marketingAccepted: z.boolean(),
 });
 
 type SignUpForm = z.infer<typeof signUpSchema>;
@@ -47,7 +46,6 @@ const defaultValues: SignUpForm = {
   password: "",
   captcha: "",
   termsPrivacyAccepted: false,
-  marketingAccepted: false,
 };
 
 function SignUpPage() {
@@ -94,7 +92,7 @@ function SignUpPage() {
           email: value.email,
           termsPrivacyAccepted: true,
           termsPrivacyVersion: termsVersion,
-          marketingAccepted: value.marketingAccepted,
+          marketingAccepted: false, // Marketing consent collected via post-login banner
           fingerprint,
         },
       });
@@ -257,25 +255,6 @@ function SignUpPage() {
                       {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
                     </div>
                   )}
-                </div>
-              )}
-            </form.Field>
-
-            {/* Marketing Consent - Optional */}
-            <form.Field name="marketingAccepted">
-              {(field) => (
-                <div className="flex items-start gap-2">
-                  <Checkbox
-                    checked={field.state.value as boolean}
-                    id="marketingAccepted"
-                    onCheckedChange={(checked: boolean) => field.handleChange(checked === true)}
-                  />
-                  <Label
-                    className="text-sm leading-5 font-normal cursor-pointer"
-                    htmlFor="marketingAccepted"
-                  >
-                    Keep me updated about STL Shelf
-                  </Label>
                 </div>
               )}
             </form.Field>

@@ -33,7 +33,6 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
       password: "",
       captcha: "",
       termsPrivacyAccepted: false,
-      marketingAccepted: false,
     },
     onSubmit: async ({ value }) => {
       const termsVersion = documents?.termsAndConditions?.version;
@@ -46,7 +45,7 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
       try {
         // Generate fingerprint and store pending consent (for route guard to record)
         const fingerprint = await generateFingerprint();
-        storePendingConsent(termsVersion, value.marketingAccepted, fingerprint);
+        storePendingConsent(termsVersion, false, fingerprint); // Marketing consent collected via post-login banner
 
         await auth.signIn.email({
           email: value.email,
@@ -72,7 +71,6 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
         termsPrivacyAccepted: z.boolean().refine((val) => val === true, {
           message: "You must accept the Terms and Privacy Policy",
         }),
-        marketingAccepted: z.boolean(),
       }),
     },
   });
@@ -184,25 +182,6 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
                 {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
               </div>
             )}
-          </div>
-        )}
-      </form.Field>
-
-      {/* Marketing Consent - Optional */}
-      <form.Field name="marketingAccepted">
-        {(field) => (
-          <div className="flex items-start gap-2">
-            <Checkbox
-              checked={field.state.value as boolean}
-              id="marketingAccepted"
-              onCheckedChange={(checked: boolean) => field.handleChange(checked === true)}
-            />
-            <Label
-              className="text-sm leading-5 font-normal cursor-pointer"
-              htmlFor="marketingAccepted"
-            >
-              Keep me updated about STL Shelf
-            </Label>
           </div>
         )}
       </form.Field>

@@ -22,6 +22,7 @@ export function useConsentStatus() {
     // Return undefined when not available, so components can distinguish from explicit false
     marketingAccepted:
       data && "marketingAccepted" in data ? (data.marketingAccepted as boolean) : undefined,
+    shouldShowMarketingBanner: data?.shouldShowMarketingBanner ?? false,
     refetch,
   };
 }

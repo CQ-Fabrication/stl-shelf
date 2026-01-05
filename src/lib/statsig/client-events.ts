@@ -72,6 +72,12 @@ export const ClientEvent = {
 
   // Session
   PURPOSEFUL_RETURN: "purposeful_return",
+
+  // Marketing Consent Banner
+  MARKETING_BANNER_VIEWED: "marketing_banner_viewed",
+  MARKETING_BANNER_ACCEPTED: "marketing_banner_accepted",
+  MARKETING_BANNER_DECLINED: "marketing_banner_declined",
+  MARKETING_BANNER_DEFERRED: "marketing_banner_deferred",
 } as const;
 
 export type ClientEventName = (typeof ClientEvent)[keyof typeof ClientEvent];
@@ -490,4 +496,36 @@ export function trackPurposefulReturn(
     daysSinceLastVisit: daysSinceLastVisit.toString(),
     action,
   });
+}
+
+// ============================================================
+// Marketing Consent Banner Events
+// ============================================================
+
+/**
+ * Track when marketing consent banner becomes visible
+ */
+export function trackMarketingBannerViewed(client: StatsigClientWithEvents) {
+  client.logEvent(ClientEvent.MARKETING_BANNER_VIEWED, undefined);
+}
+
+/**
+ * Track when user accepts marketing consent
+ */
+export function trackMarketingBannerAccepted(client: StatsigClientWithEvents) {
+  client.logEvent(ClientEvent.MARKETING_BANNER_ACCEPTED, "accepted");
+}
+
+/**
+ * Track when user permanently declines marketing (clicks X)
+ */
+export function trackMarketingBannerDeclined(client: StatsigClientWithEvents) {
+  client.logEvent(ClientEvent.MARKETING_BANNER_DECLINED, "declined");
+}
+
+/**
+ * Track when user defers marketing decision ("Maybe Later")
+ */
+export function trackMarketingBannerDeferred(client: StatsigClientWithEvents) {
+  client.logEvent(ClientEvent.MARKETING_BANNER_DEFERRED, "deferred");
 }

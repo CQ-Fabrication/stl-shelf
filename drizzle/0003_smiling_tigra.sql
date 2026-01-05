@@ -1,0 +1,2 @@
+ALTER TABLE "user_consents" ADD COLUMN "marketing_prompt_dismissed_at" timestamp;--> statement-breakpoint
+ALTER TABLE "user_consents" ADD COLUMN "marketing_prompt_declined" boolean DEFAULT false NOT NULL;

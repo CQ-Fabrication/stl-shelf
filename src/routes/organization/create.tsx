@@ -132,7 +132,7 @@ function CreateOrganizationPage() {
     toast.success("Organization created successfully");
     setIsCreating(false);
 
-    await navigate({ to: "/" });
+    await navigate({ to: "/library" });
   }
 
   return (

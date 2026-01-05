@@ -30,7 +30,6 @@ export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormP
     defaultValues: {
       email: "",
       termsPrivacyAccepted: false,
-      marketingAccepted: false,
     },
     onSubmit: async ({ value }) => {
       const termsVersion = documents?.termsAndConditions?.version;
@@ -43,7 +42,7 @@ export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormP
       try {
         // Generate fingerprint and store pending consent
         const fingerprint = await generateFingerprint();
-        storePendingConsent(termsVersion, value.marketingAccepted, fingerprint);
+        storePendingConsent(termsVersion, false, fingerprint); // Marketing consent collected via post-login banner
 
         await auth.signIn.magicLink({
           email: value.email,
@@ -62,7 +61,6 @@ export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormP
         termsPrivacyAccepted: z.boolean().refine((val) => val === true, {
           message: "You must accept the Terms and Privacy Policy",
         }),
-        marketingAccepted: z.boolean(),
       }),
     },
   });
@@ -146,25 +144,6 @@ export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormP
                 {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
               </div>
             )}
-          </div>
-        )}
-      </form.Field>
-
-      {/* Marketing Consent - Optional */}
-      <form.Field name="marketingAccepted">
-        {(field) => (
-          <div className="flex items-start gap-2">
-            <Checkbox
-              checked={field.state.value as boolean}
-              id="marketingAccepted"
-              onCheckedChange={(checked: boolean) => field.handleChange(checked === true)}
-            />
-            <Label
-              className="text-sm leading-5 font-normal cursor-pointer"
-              htmlFor="marketingAccepted"
-            >
-              Keep me updated about STL Shelf
-            </Label>
           </div>
         )}
       </form.Field>

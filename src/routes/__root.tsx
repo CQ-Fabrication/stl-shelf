@@ -16,6 +16,7 @@ import { GracePeriodBanner } from "@/components/billing/grace-period-banner";
 import { ConsentBanner } from "@/components/consent-banner";
 import { ErrorPage } from "@/components/error-page";
 import Header from "@/components/header";
+import { MarketingConsentBanner } from "@/components/marketing-consent-banner";
 import { NotFound } from "@/components/not-found";
 import { PendingConsentHandler } from "@/components/pending-consent-handler";
 import { generateErrorId } from "@/lib/error-id";
@@ -255,6 +256,7 @@ function RootDocument({ children }: { children: ReactNode }) {
                   <GracePeriodBanner />
                   <ConsentBanner />
                   <PendingConsentHandler />
+                  <MarketingConsentBanner />
                 </>
               )}
               {children}

@@ -30,6 +30,13 @@ const reacceptConsentSchema = z.object({
   fingerprint: z.string(),
 });
 
+const updateMarketingPromptSchema = z.object({
+  action: z.enum(["accept", "decline", "defer"]),
+});
+
+// 7 days in milliseconds for "Maybe Later" re-prompt
+const DEFER_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+
 /**
  * Get the latest published documents (T&C and Privacy Policy)
  * This is a public function - no auth required
@@ -219,13 +226,14 @@ export const getConsentStatusFn = createServerFn({ method: "GET" }).handler(asyn
 
 /**
  * Check if user's consent is current (for route guards)
+ * Also determines if marketing banner should be shown
  */
 export const checkConsentValidityFn = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
   const session = await auth.api.getSession({ headers });
 
   if (!session?.user?.id) {
-    return { valid: false, reason: "no_session" };
+    return { valid: false, reason: "no_session", shouldShowMarketingBanner: false };
   }
 
   const [consent] = await db
@@ -233,17 +241,19 @@ export const checkConsentValidityFn = createServerFn({ method: "GET" }).handler(
       termsPrivacyAccepted: userConsents.termsPrivacyAccepted,
       termsPrivacyVersion: userConsents.termsPrivacyVersion,
       marketingAccepted: userConsents.marketingAccepted,
+      marketingPromptDismissedAt: userConsents.marketingPromptDismissedAt,
+      marketingPromptDeclined: userConsents.marketingPromptDeclined,
     })
     .from(userConsents)
     .where(eq(userConsents.userId, session.user.id))
     .limit(1);
 
   if (!consent) {
-    return { valid: false, reason: "no_consent" };
+    return { valid: false, reason: "no_consent", shouldShowMarketingBanner: false };
   }
 
   if (!consent.termsPrivacyAccepted) {
-    return { valid: false, reason: "not_accepted" };
+    return { valid: false, reason: "not_accepted", shouldShowMarketingBanner: false };
   }
 
   // Check if version is current
@@ -257,10 +267,26 @@ export const checkConsentValidityFn = createServerFn({ method: "GET" }).handler(
       currentVersion,
       userVersion: consent.termsPrivacyVersion,
       marketingAccepted: consent.marketingAccepted,
+      shouldShowMarketingBanner: false, // Don't show marketing banner when T&C is outdated
     };
   }
 
-  return { valid: true };
+  // Calculate if marketing banner should be shown
+  // Show if: NOT accepted AND NOT declined AND (never dismissed OR dismissed > 7 days ago)
+  let shouldShowMarketingBanner = false;
+  if (!consent.marketingAccepted && !consent.marketingPromptDeclined) {
+    if (!consent.marketingPromptDismissedAt) {
+      // Never prompted
+      shouldShowMarketingBanner = true;
+    } else {
+      // Check if 7 days have passed since dismissal
+      const dismissedAt = new Date(consent.marketingPromptDismissedAt).getTime();
+      const now = Date.now();
+      shouldShowMarketingBanner = now - dismissedAt > DEFER_DURATION_MS;
+    }
+  }
+
+  return { valid: true, shouldShowMarketingBanner };
 });
 
 /**
@@ -385,6 +411,91 @@ export const reacceptConsentFn = createServerFn({ method: "POST" })
         updatedAt: now,
       })
       .where(eq(userConsents.userId, session.user.id));
+
+    return { success: true };
+  });
+
+/**
+ * Handle marketing prompt banner actions (accept/decline/defer)
+ * Called from the post-login marketing consent banner
+ */
+export const updateMarketingPromptFn = createServerFn({ method: "POST" })
+  .inputValidator(zodValidator(updateMarketingPromptSchema))
+  .handler(async ({ data }: { data: z.infer<typeof updateMarketingPromptSchema> }) => {
+    const headers = getRequestHeaders();
+    const session = await auth.api.getSession({ headers });
+
+    if (!session?.user?.id) {
+      throw new Error("Not authenticated");
+    }
+
+    const ipAddress =
+      headers.get("cf-connecting-ip") ??
+      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      "unknown";
+    const userAgent = headers.get("user-agent") ?? "unknown";
+
+    const now = new Date();
+
+    if (data.action === "accept") {
+      // User accepted marketing - set marketingAccepted, clear prompt fields
+      await db
+        .update(userConsents)
+        .set({
+          marketingAccepted: true,
+          marketingUpdatedAt: now,
+          marketingPromptDismissedAt: null,
+          marketingPromptDeclined: false,
+          updatedAt: now,
+        })
+        .where(eq(userConsents.userId, session.user.id));
+
+      // Create audit record
+      await db.insert(consentAudit).values({
+        id: crypto.randomUUID(),
+        userId: session.user.id,
+        consentType: "marketing",
+        action: "accepted",
+        documentVersion: null,
+        ipAddress,
+        userAgent,
+        fingerprint: "marketing-banner",
+        createdAt: now,
+      });
+    } else if (data.action === "decline") {
+      // User clicked X - permanent decline, never re-prompt
+      await db
+        .update(userConsents)
+        .set({
+          marketingPromptDeclined: true,
+          marketingPromptDismissedAt: null,
+          updatedAt: now,
+        })
+        .where(eq(userConsents.userId, session.user.id));
+
+      // Create audit record
+      await db.insert(consentAudit).values({
+        id: crypto.randomUUID(),
+        userId: session.user.id,
+        consentType: "marketing",
+        action: "rejected",
+        documentVersion: null,
+        ipAddress,
+        userAgent,
+        fingerprint: "marketing-banner-decline",
+        createdAt: now,
+      });
+    } else if (data.action === "defer") {
+      // User clicked "Maybe Later" - re-prompt after 7 days
+      // No audit record for defer (not a final decision)
+      await db
+        .update(userConsents)
+        .set({
+          marketingPromptDismissedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(userConsents.userId, session.user.id));
+    }
 
     return { success: true };
   });
