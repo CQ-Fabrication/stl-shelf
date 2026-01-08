@@ -238,8 +238,6 @@ export const APIRoute = createAPIFileRoute('/api/auth/$')({
   types.ts                       // Type definitions
 ```
 
-**Remember: If Dan Abramov wouldn't approve it, don't ship it.**
-
 ### Code Quality Standards
 
 - Strict linting via oxlint (React, TypeScript, jsx-a11y plugins)
@@ -251,4 +249,3 @@ export const APIRoute = createAPIFileRoute('/api/auth/$')({
 - **NO unnecessary comments** - Code must be self-explanatory
 - **NO custom state when libraries provide it** - Check TanStack Form, Query, Router first
 - **Use derived state over useEffect** - Prefer deriving state directly from props/params
-- **NEVER commit without user approval** - ALWAYS wait for explicit approval
