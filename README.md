@@ -2,7 +2,7 @@
 
 Self-hosted 3D model library for makers and print farms.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![License](https://img.shields.io/badge/license-Polyform%20Noncommercial-blue.svg)
 ![Bun](https://img.shields.io/badge/runtime-Bun-black)
 ![TypeScript](https://img.shields.io/badge/lang-TypeScript-blue)
 
@@ -238,7 +238,9 @@ Contributions are welcome!
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+**Polyform Noncommercial 1.0.0** - Free for personal and non-commercial use. See [LICENSE](LICENSE) for details.
+
+Commercial use requires a separate license. Contact [CQ Fabrication](https://cq-fabrication.com) for inquiries.
 
 ---
 
