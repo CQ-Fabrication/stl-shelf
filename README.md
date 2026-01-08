@@ -1,10 +1,20 @@
+<img src="https://cdn.stl-shelf.com/logo-dark.svg" alt="STL Shelf" width="280">
+
 # STL Shelf
 
-Self-hosted 3D model library for makers and print farms.
+A simple home for all your 3D models. Organized, searchable, and finally under control.
 
-![License](https://img.shields.io/badge/license-Polyform%20Noncommercial-blue.svg)
-![Bun](https://img.shields.io/badge/runtime-Bun-black)
-![TypeScript](https://img.shields.io/badge/lang-TypeScript-blue)
+![License](https://img.shields.io/badge/license-Polyform%20Noncommercial-blue.svg) ![Bun](https://img.shields.io/badge/runtime-Bun-black) ![TypeScript](https://img.shields.io/badge/lang-TypeScript-blue)
+
+## Why STL Shelf?
+
+Existing solutions were either too complex or too limited. Dropbox, Google Drive, or a NAS quickly become a mess of cryptic subfolders like `final_v2_REAL_final`.
+
+STL Shelf does one thing: **organize your 3D models**. Nothing more, nothing less.
+
+Use our [hosted version](https://stl-shelf.com) or self-host it yourself.
+
+Simple. Friendly. Built for makers.
 
 ## Features
 
@@ -240,8 +250,12 @@ Contributions are welcome!
 
 **Polyform Noncommercial 1.0.0** - Free for personal and non-commercial use. See [LICENSE](LICENSE) for details.
 
-Commercial use requires a separate license. Contact [CQ Fabrication](https://cq-fabrication.com) for inquiries.
+Commercial use requires a separate license. Contact [CQ Fabrication](https://cqfabrication.com) for inquiries.
 
 ---
 
-Built with care by [CQ Fabrication](https://cq-fabrication.com)
+### Built by
+
+<a href="https://cqfabrication.com">
+    <img src="https://cdn.cqfabrication.com/logo.svg" alt="CQ Fabrication" width="160">
+</a>
