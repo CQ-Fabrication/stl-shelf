@@ -19,3 +19,6 @@ assets/*.stl
 
 # Statsig local overrides
 statsig.local.json
+
+# Yaak API collection
+yaak-collection/
