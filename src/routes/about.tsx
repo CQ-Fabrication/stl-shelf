@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Box, Github, Heart, Shield, Zap } from "lucide-react";
+import { ArrowLeft, Box, Github, Heart, Mail, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
@@ -162,6 +162,32 @@ function AboutPage() {
                   View on GitHub
                 </a>
               </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Contact */}
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            <div className="max-w-2xl mx-auto text-center">
+              <Mail className="h-12 w-12 mx-auto mb-6 text-orange-500" />
+              <h2 className="text-2xl font-bold mb-4">Get in Touch</h2>
+              <p className="text-muted-foreground mb-8">
+                Have questions, feedback, or just want to say hi? We'd love to hear from you.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button variant="default" size="lg" asChild>
+                  <a href="mailto:hello@stl-shelf.com" className="inline-flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    hello@stl-shelf.com
+                  </a>
+                </Button>
+                <Button variant="outline" size="lg" asChild>
+                  <a href="mailto:support@stl-shelf.com" className="inline-flex items-center gap-2">
+                    Need help? support@stl-shelf.com
+                  </a>
+                </Button>
+              </div>
             </div>
           </div>
         </section>

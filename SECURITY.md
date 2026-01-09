@@ -39,3 +39,9 @@ When self-hosting STL Shelf:
 - Restrict database access to the application only
 - Regularly backup your data
 - Monitor access logs for suspicious activity
+
+## Non-Security Issues
+
+For general support or bug reports, please use:
+- **Support**: support@stl-shelf.com
+- **GitHub Issues**: [github.com/CQ-Fabrication/stl-shelf/issues](https://github.com/CQ-Fabrication/stl-shelf/issues)

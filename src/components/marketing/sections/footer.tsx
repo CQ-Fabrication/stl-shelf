@@ -24,6 +24,7 @@ const navLinks = [
   { label: "Features", href: "/#features", isExternal: false },
   { label: "Pricing", href: "/pricing", isExternal: false },
   { label: "About", href: "/about", isExternal: false },
+  { label: "Contact", href: "mailto:hello@stl-shelf.com", isExternal: true },
 ];
 
 const socialLinks = [
@@ -59,15 +60,25 @@ export function Footer() {
 
           {/* Navigation */}
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                to={link.href}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) =>
+              link.isExternal ? (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.label}
+                  to={link.href}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
             <span className="hidden sm:block h-4 w-px bg-border" aria-hidden="true" />
             {socialLinks.map((link) => (
               <a
