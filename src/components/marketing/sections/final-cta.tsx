@@ -72,7 +72,7 @@ export function FinalCTA() {
 
             <Button variant="outline" size="lg" asChild>
               <a
-                href="https://github.com"
+                href="https://github.com/CQ-Fabrication/stl-shelf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2"

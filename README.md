@@ -47,7 +47,7 @@ Simple. Friendly. Built for makers.
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/cq-fabrication/stl-shelf.git
+git clone https://github.com/CQ-Fabrication/stl-shelf.git
 cd stl-shelf
 bun install
 ```

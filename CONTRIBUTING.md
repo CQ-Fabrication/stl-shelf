@@ -92,7 +92,7 @@ Include:
 
 ## Questions?
 
-Open a [Discussion](https://github.com/cq-fabrication/stl-shelf/discussions) for questions or ideas.
+Open a [Discussion](https://github.com/CQ-Fabrication/stl-shelf/discussions) for questions or ideas.
 
 ## License
 
