@@ -63,7 +63,7 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.AUTH_URL ?? `http://localhost:${env.PORT}`,
   basePath: "/api/auth",
-  trustedOrigins: ["https://app.stl-shelf.com", "http://localhost:3000"],
+  trustedOrigins: ["https://stl-shelf.com", "http://localhost:3000"],
   rateLimit: {
     window: 60, // 1 minute in seconds
     max: 15,
