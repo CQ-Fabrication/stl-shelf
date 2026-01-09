@@ -4,7 +4,7 @@
 
 A simple home for all your 3D models. Organized, searchable, and finally under control.
 
-![License](https://img.shields.io/badge/license-Polyform%20Noncommercial-blue.svg) ![Bun](https://img.shields.io/badge/runtime-Bun-black) ![TypeScript](https://img.shields.io/badge/lang-TypeScript-blue)
+![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg) ![Bun](https://img.shields.io/badge/runtime-Bun-black) ![TypeScript](https://img.shields.io/badge/lang-TypeScript-blue)
 
 ## Why STL Shelf?
 
@@ -248,9 +248,7 @@ Contributions are welcome!
 
 ## License
 
-**Polyform Noncommercial 1.0.0** - Free for personal and non-commercial use. See [LICENSE](LICENSE) for details.
-
-Commercial use requires a separate license. Contact [CQ Fabrication](https://cqfabrication.com) for inquiries.
+Licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
