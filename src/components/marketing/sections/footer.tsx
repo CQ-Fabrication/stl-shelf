@@ -93,6 +93,8 @@ export function Footer() {
             <Link to="/terms" className="hover:text-foreground transition-colors">
               Terms
             </Link>
+            <span>·</span>
+            <span className="text-muted-foreground/60">v{__APP_VERSION__}</span>
           </div>
           <p className="flex items-center gap-1.5">
             Made with
