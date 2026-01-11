@@ -1,5 +1,5 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { models, modelTags, tags } from "@/lib/db/schema/models";
 
@@ -45,7 +45,7 @@ export class TagService {
       .from(modelTags)
       .innerJoin(tags, eq(tags.id, modelTags.tagId))
       .innerJoin(models, eq(models.id, modelTags.modelId))
-      .where(eq(models.organizationId, organizationId))
+      .where(and(eq(models.organizationId, organizationId), isNull(models.deletedAt)))
       .groupBy(tags.name, tags.color)
       .orderBy(asc(tags.name));
 

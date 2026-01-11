@@ -75,6 +75,10 @@ export const useDeleteModel = () => {
       queryClient.invalidateQueries({
         queryKey: MODELS_QUERY_KEY,
       });
+      // Invalidate tags so counts reflect deleted model
+      queryClient.invalidateQueries({
+        queryKey: ["tags", "all"],
+      });
       // Invalidate upload limits so modal shows correct count
       queryClient.invalidateQueries({
         queryKey: ["upload-limits"],
