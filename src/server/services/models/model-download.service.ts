@@ -1,8 +1,8 @@
 import archiver from "archiver";
 import { Readable } from "stream";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, notInArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
+import { modelFiles, models, modelVersions, printProfiles } from "@/lib/db/schema/models";
 import { storageService } from "@/server/services/storage";
 
 type ModelFileData = {
@@ -87,6 +87,7 @@ class ModelDownloadService {
 
   /**
    * Download all files for a specific model version as a ZIP
+   * Includes print profiles in a profiles/ subdirectory
    */
   async downloadVersionAsZip(
     modelId: string,
@@ -114,13 +115,36 @@ class ModelDownloadService {
       throw new Error("Version not found or access denied");
     }
 
-    const files = await this.getVersionFilesByVersionId(versionId, organizationId);
+    // Get print profiles for this version
+    const profiles = await db.query.printProfiles.findMany({
+      where: eq(printProfiles.versionId, versionId),
+      with: {
+        file: true,
+      },
+    });
 
-    if (files.length === 0) {
+    // Get profile file IDs to exclude from source files
+    const profileFileIds = profiles.map((p) => p.fileId);
+
+    // Get source files (excluding profile files)
+    const sourceFiles = await this.getSourceFilesForVersion(
+      versionId,
+      organizationId,
+      profileFileIds,
+    );
+
+    if (sourceFiles.length === 0 && profiles.length === 0) {
       throw new Error("No files found for this version");
     }
 
-    return await this.createZipBlob(files, version.modelSlug);
+    return await this.createZipBlobWithProfiles(
+      sourceFiles,
+      profiles.map((p) => ({
+        ...p.file,
+        printerName: p.printerName,
+      })),
+      version.modelSlug,
+    );
   }
 
   private async getVersionFiles(
@@ -212,6 +236,108 @@ class ModelDownloadService {
         .then(() => archive.finalize())
         .catch(reject);
     });
+  }
+
+  private async createZipBlobWithProfiles(
+    sourceFiles: ModelFileData[],
+    profileFiles: (ModelFileData & { printerName: string })[],
+    modelSlug: string,
+  ): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const archive = archiver("zip", {
+        zlib: { level: 9 },
+      });
+
+      const chunks: Buffer[] = [];
+
+      archive.on("data", (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+
+      archive.on("end", () => {
+        const blob = new Blob(chunks as BlobPart[], { type: "application/zip" });
+        resolve(blob);
+      });
+
+      archive.on("error", (err) => {
+        reject(err);
+      });
+
+      this.addFilesAndProfilesToArchive(archive, sourceFiles, profileFiles, modelSlug)
+        .then(() => archive.finalize())
+        .catch(reject);
+    });
+  }
+
+  private async getSourceFilesForVersion(
+    versionId: string,
+    organizationId: string,
+    excludeFileIds: string[],
+  ): Promise<ModelFileData[]> {
+    const baseConditions = [
+      eq(modelFiles.versionId, versionId),
+      eq(models.organizationId, organizationId),
+      isNull(models.deletedAt),
+    ];
+
+    // Add exclusion condition only if there are files to exclude
+    const conditions =
+      excludeFileIds.length > 0
+        ? [...baseConditions, notInArray(modelFiles.id, excludeFileIds)]
+        : baseConditions;
+
+    const files = await db
+      .select({
+        id: modelFiles.id,
+        filename: modelFiles.filename,
+        originalName: modelFiles.originalName,
+        size: modelFiles.size,
+        mimeType: modelFiles.mimeType,
+        extension: modelFiles.extension,
+        storageKey: modelFiles.storageKey,
+        storageUrl: modelFiles.storageUrl,
+        storageBucket: modelFiles.storageBucket,
+      })
+      .from(modelFiles)
+      .innerJoin(modelVersions, eq(modelVersions.id, modelFiles.versionId))
+      .innerJoin(models, eq(models.id, modelVersions.modelId))
+      .where(and(...conditions))
+      .orderBy(modelFiles.filename);
+
+    return files;
+  }
+
+  private async addFilesAndProfilesToArchive(
+    archive: archiver.Archiver,
+    sourceFiles: ModelFileData[],
+    profileFiles: (ModelFileData & { printerName: string })[],
+    modelSlug: string,
+  ): Promise<void> {
+    const folderName = modelSlug;
+
+    // Add source files to root
+    for (const file of sourceFiles) {
+      try {
+        const fileData = await storageService.getFile(file.storageKey);
+        archive.append(Buffer.from(fileData.body), {
+          name: `${folderName}/${file.originalName}`,
+        });
+      } catch {
+        // Continue with other files even if one fails
+      }
+    }
+
+    // Add profile files to profiles/ subdirectory
+    for (const profile of profileFiles) {
+      try {
+        const fileData = await storageService.getFile(profile.storageKey);
+        archive.append(Buffer.from(fileData.body), {
+          name: `${folderName}/profiles/${profile.originalName}`,
+        });
+      } catch {
+        // Continue with other files even if one fails
+      }
+    }
   }
 
   private async addFilesToArchive(

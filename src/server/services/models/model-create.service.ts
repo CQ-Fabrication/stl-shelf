@@ -6,6 +6,8 @@ import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
 import { slugify } from "@/lib/slug";
 import { storageService } from "@/server/services/storage";
 import { tagService } from "@/server/services/tags/tag.service";
+import { extractThumbnailFrom3MF, is3MFFile } from "@/server/services/parsers";
+import { printProfileService } from "@/server/services/models/print-profile.service";
 
 const INITIAL_VERSION = "v1";
 const FALLBACK_FILENAME = "model-file";
@@ -125,6 +127,14 @@ export class ModelCreationService {
         await this.cleanupUploadedFiles(uploadResults);
         throw error;
       }
+    } else {
+      // Fallback: Try to extract thumbnail from 3MF file
+      thumbnailPath = await this.extractFallbackThumbnail({
+        files: input.files,
+        organizationId,
+        modelId,
+        version: versionLabel,
+      });
     }
 
     try {
@@ -214,6 +224,16 @@ export class ModelCreationService {
         organizationId,
         modelId,
         version: versionLabel,
+      });
+
+      // Auto-parse 3MF files into print profiles (non-blocking)
+      await this.autoCreatePrintProfiles({
+        uploadResults,
+        createdFiles: result.files,
+        versionId,
+        organizationId,
+        modelId,
+        versionNumber: versionLabel,
       });
 
       return {
@@ -321,6 +341,94 @@ export class ModelCreationService {
     await Promise.all(
       files.map((file) => storageService.deleteFile(file.storageKey).catch(() => {})),
     );
+  }
+
+  /**
+   * Auto-parse 3MF files into print profiles
+   * This runs after model creation and is non-blocking (errors are logged but don't fail the upload)
+   */
+  private async autoCreatePrintProfiles(options: {
+    uploadResults: PreparedFile[];
+    createdFiles: Array<{ id: string; filename: string; storageKey: string; originalName: string }>;
+    versionId: string;
+    organizationId: string;
+    modelId: string;
+    versionNumber: string;
+  }): Promise<void> {
+    const { uploadResults, createdFiles, versionId, organizationId, modelId, versionNumber } = options;
+
+    for (const uploadResult of uploadResults) {
+      if (!is3MFFile(uploadResult.originalName)) {
+        continue;
+      }
+
+      // Find the created file record by matching storage key
+      const fileRecord = createdFiles.find((f) => f.storageKey === uploadResult.storageKey);
+      if (!fileRecord) {
+        console.error(`Could not find file record for ${uploadResult.originalName}`);
+        continue;
+      }
+
+      // Create print profile from this 3MF file (downloads from R2 storage)
+      const result = await printProfileService.createProfileFromSourceFile({
+        versionId,
+        organizationId,
+        modelId,
+        versionNumber,
+        fileRecord,
+      });
+
+      if (!result.success) {
+        console.warn(`Auto-parse failed for ${uploadResult.originalName}: ${result.error}`);
+      }
+    }
+  }
+
+  /**
+   * Extract thumbnail from the first 3MF file found in the uploaded files
+   * Returns the storage key if successful, null otherwise
+   */
+  private async extractFallbackThumbnail(options: {
+    files: File[];
+    organizationId: string;
+    modelId: string;
+    version: string;
+  }): Promise<string | null> {
+    const { files, organizationId, modelId, version } = options;
+
+    // Find first 3MF file
+    const threeMFFile = files.find((file) => is3MFFile(file.name));
+    if (!threeMFFile) {
+      return null;
+    }
+
+    try {
+      const buffer = Buffer.from(await threeMFFile.arrayBuffer());
+      const thumbnail = await extractThumbnailFrom3MF(buffer);
+
+      if (!thumbnail) {
+        return null;
+      }
+
+      const previewKey = storageService.generateStorageKey({
+        organizationId,
+        modelId,
+        version,
+        filename: "preview-extracted.png",
+        kind: "artifact",
+      });
+
+      await storageService.uploadFile({
+        key: previewKey,
+        file: thumbnail,
+        contentType: "image/png",
+      });
+
+      return previewKey;
+    } catch {
+      // Silently fail - fallback is optional
+      return null;
+    }
   }
 }
 

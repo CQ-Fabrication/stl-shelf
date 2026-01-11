@@ -209,6 +209,46 @@ export const versionTags = pgTable(
   ],
 );
 
+// Print Profiles - multi-printer 3MF slicer file support
+export const printProfiles = pgTable(
+  "print_profiles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    versionId: uuid("version_id")
+      .notNull()
+      .references(() => modelVersions.id, { onDelete: "cascade" }),
+    printerName: text("printer_name").notNull(), // Extracted from 3MF or "Unknown Printer"
+    printerNameNormalized: text("printer_name_normalized").notNull(), // For fuzzy matching
+    fileId: uuid("file_id")
+      .notNull()
+      .references(() => modelFiles.id, { onDelete: "cascade" }),
+    thumbnailPath: text("thumbnail_path"), // R2 storage path (nullable)
+    slicerType: text("slicer_type"), // "bambu" | "prusa" | "orca" | "unknown"
+    metadata: jsonb("metadata").$type<{
+      printTime: number | null;
+      filamentSummary: string | null;
+      settings: {
+        layerHeight: number | null;
+        infill: number | null;
+        nozzleTemp: number | null;
+        bedTemp: number | null;
+      } | null;
+      plateInfo: {
+        count: number;
+        copiesPerPlate: number;
+      } | null;
+      filamentWeight: number | null;
+    }>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("print_profiles_version_idx").on(table.versionId),
+    index("print_profiles_printer_idx").on(table.printerNameNormalized),
+    index("print_profiles_file_idx").on(table.fileId),
+  ],
+);
+
 // Relations
 export const modelsRelations = relations(models, ({ many, one }) => ({
   versions: many(modelVersions),
@@ -226,12 +266,28 @@ export const modelVersionsRelations = relations(modelVersions, ({ many, one }) =
   }),
   files: many(modelFiles),
   tags: many(versionTags),
+  printProfiles: many(printProfiles),
 }));
 
 export const modelFilesRelations = relations(modelFiles, ({ one }) => ({
   version: one(modelVersions, {
     fields: [modelFiles.versionId],
     references: [modelVersions.id],
+  }),
+  printProfile: one(printProfiles, {
+    fields: [modelFiles.id],
+    references: [printProfiles.fileId],
+  }),
+}));
+
+export const printProfilesRelations = relations(printProfiles, ({ one }) => ({
+  version: one(modelVersions, {
+    fields: [printProfiles.versionId],
+    references: [modelVersions.id],
+  }),
+  file: one(modelFiles, {
+    fields: [printProfiles.fileId],
+    references: [modelFiles.id],
   }),
 }));
 
