@@ -125,7 +125,10 @@ export class BambuParser implements SlicerParser {
     }
   }
 
-  private extractPrinterName(projectConfig: BambuProjectConfig | null, modelSettingsContent: string): string {
+  private extractPrinterName(
+    projectConfig: BambuProjectConfig | null,
+    modelSettingsContent: string,
+  ): string {
     // 1. JSON: printer_model (cleanest - e.g., "Bambu Lab X1 Carbon")
     if (projectConfig?.printer_model) {
       return projectConfig.printer_model;
@@ -191,9 +194,15 @@ export class BambuParser implements SlicerParser {
 
     // 2. Fallback to regex on model_settings.config
     const layerHeightMatch = modelSettingsContent.match(/layer_height\s*=\s*"?([0-9.]+)"?/);
-    const infillMatch = modelSettingsContent.match(/(?:sparse_infill_density|infill_density)\s*=\s*"?([0-9.]+)"?/);
-    const nozzleTempMatch = modelSettingsContent.match(/(?:nozzle_temperature|temperature)\s*=\s*"?([0-9.]+)"?/);
-    const bedTempMatch = modelSettingsContent.match(/(?:bed_temperature|hot_plate_temp)\s*=\s*"?([0-9.]+)"?/);
+    const infillMatch = modelSettingsContent.match(
+      /(?:sparse_infill_density|infill_density)\s*=\s*"?([0-9.]+)"?/,
+    );
+    const nozzleTempMatch = modelSettingsContent.match(
+      /(?:nozzle_temperature|temperature)\s*=\s*"?([0-9.]+)"?/,
+    );
+    const bedTempMatch = modelSettingsContent.match(
+      /(?:bed_temperature|hot_plate_temp)\s*=\s*"?([0-9.]+)"?/,
+    );
 
     // Get layer height from plate_1.json if not in config
     let layerHeight = parseNumber(layerHeightMatch?.[1] ?? null);
@@ -227,9 +236,7 @@ export class BambuParser implements SlicerParser {
     }
   }
 
-  private buildFilamentSummary(
-    filaments: BambuPlateInfo["filaments"] | undefined,
-  ): string | null {
+  private buildFilamentSummary(filaments: BambuPlateInfo["filaments"] | undefined): string | null {
     if (!filaments || filaments.length === 0) return null;
 
     if (filaments.length === 1) {

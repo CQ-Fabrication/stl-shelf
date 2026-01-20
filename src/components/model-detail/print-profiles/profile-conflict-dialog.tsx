@@ -60,7 +60,9 @@ export const ProfileConflictDialog = ({
   };
 
   const handleSkipAll = () => {
-    const skipAll = new Map(conflicts.map((c) => [c.existingProfileId, "skip" as ConflictResolution]));
+    const skipAll = new Map(
+      conflicts.map((c) => [c.existingProfileId, "skip" as ConflictResolution]),
+    );
     onResolve(skipAll);
   };
 
@@ -82,14 +84,12 @@ export const ProfileConflictDialog = ({
 
         <div className="max-h-80 space-y-4 overflow-y-auto py-4">
           {conflicts.map((conflict) => (
-            <div
-              className="space-y-3 rounded-lg border p-4"
-              key={conflict.existingProfileId}
-            >
+            <div className="space-y-3 rounded-lg border p-4" key={conflict.existingProfileId}>
               <div className="space-y-1">
                 <p className="font-medium text-sm">{conflict.file.name}</p>
                 <p className="text-muted-foreground text-xs">
-                  Similar to existing: <span className="font-medium">{conflict.existingPrinterName}</span>
+                  Similar to existing:{" "}
+                  <span className="font-medium">{conflict.existingPrinterName}</span>
                 </p>
               </div>
 

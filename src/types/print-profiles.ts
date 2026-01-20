@@ -67,7 +67,7 @@ export type ConflictResolution =
 
 export type ProfileUploadResult =
   | { success: true; profile: PrintProfile }
-  | { conflict: true } & ProfileConflictInfo
+  | ({ conflict: true } & ProfileConflictInfo)
   | { success: false; reason: "unknown_format" | "parse_error"; error?: string };
 
 export type BatchUploadResult = {

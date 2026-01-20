@@ -95,7 +95,9 @@ export class OrcaParser implements SlicerParser {
 
   private extractPrintSettings(content: string): PrintProfileMetadata["settings"] {
     const layerHeightMatch = content.match(/layer_height\s*=\s*"?([0-9.]+)"?/);
-    const infillMatch = content.match(/(?:sparse_infill_density|infill_density)\s*=\s*"?([0-9.]+)"?/);
+    const infillMatch = content.match(
+      /(?:sparse_infill_density|infill_density)\s*=\s*"?([0-9.]+)"?/,
+    );
     const nozzleTempMatch = content.match(/(?:nozzle_temperature|temperature)\s*=\s*"?([0-9.]+)"?/);
     const bedTempMatch = content.match(/(?:bed_temperature|hot_plate_temp)\s*=\s*"?([0-9.]+)"?/);
 
@@ -121,9 +123,7 @@ export class OrcaParser implements SlicerParser {
     }
   }
 
-  private buildFilamentSummary(
-    filaments: OrcaPlateInfo["filaments"] | undefined,
-  ): string | null {
+  private buildFilamentSummary(filaments: OrcaPlateInfo["filaments"] | undefined): string | null {
     if (!filaments || filaments.length === 0) return null;
 
     if (filaments.length === 1) {

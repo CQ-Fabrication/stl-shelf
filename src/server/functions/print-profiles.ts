@@ -196,7 +196,12 @@ export const resolveProfileConflict = createServerFn({ method: "POST" })
       data,
       context,
     }: {
-      data: { versionId: string; existingProfileId: string; action: "replace" | "keep_both"; file: File };
+      data: {
+        versionId: string;
+        existingProfileId: string;
+        action: "replace" | "keep_both";
+        file: File;
+      };
       context: AuthenticatedContext;
     }) => {
       try {

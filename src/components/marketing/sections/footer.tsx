@@ -63,7 +63,7 @@ export function Footer() {
                 >
                   {link.label}
                 </Link>
-              )
+              ),
             )}
             <span className="hidden sm:block h-4 w-px bg-border" aria-hidden="true" />
             {socialLinks.map((link) => (

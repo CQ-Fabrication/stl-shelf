@@ -58,7 +58,10 @@ export const SourceFilesSection = ({
     }));
   }, [files]);
 
-  const completenessOptions: CompletenessOptions = useMemo(() => ({ hasThumbnail }), [hasThumbnail]);
+  const completenessOptions: CompletenessOptions = useMemo(
+    () => ({ hasThumbnail }),
+    [hasThumbnail],
+  );
 
   const completenessStatus = useMemo(
     () => getCompletenessStatus(completenessFiles, completenessOptions),
@@ -167,7 +170,10 @@ export const SourceFilesSection = ({
                         <span className="max-w-32 truncate text-sm" title={file.originalName}>
                           {file.originalName}
                         </span>
-                        <Badge className="text-xs" variant={getFileTypeBadgeVariant(file.extension)}>
+                        <Badge
+                          className="text-xs"
+                          variant={getFileTypeBadgeVariant(file.extension)}
+                        >
                           {file.extension.toUpperCase()}
                         </Badge>
                         <span className="text-muted-foreground text-xs">

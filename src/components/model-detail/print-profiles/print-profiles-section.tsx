@@ -84,9 +84,13 @@ export const PrintProfilesSection = ({ versionId }: PrintProfilesSectionProps) =
             if (reason === "not_3mf") {
               toast.error(`${file.name} is not a 3MF file`);
             } else if (reason === "unknown_format") {
-              toast.error(`${file.name}: Unsupported slicer format. We support Bambu Studio, OrcaSlicer, and PrusaSlicer.`);
+              toast.error(
+                `${file.name}: Unsupported slicer format. We support Bambu Studio, OrcaSlicer, and PrusaSlicer.`,
+              );
             } else if (reason === "parse_error") {
-              toast.error(`${file.name}: Failed to parse file${result.error ? ` - ${result.error}` : ""}`);
+              toast.error(
+                `${file.name}: Failed to parse file${result.error ? ` - ${result.error}` : ""}`,
+              );
             }
           }
         }
