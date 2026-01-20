@@ -37,6 +37,22 @@ const isProd = env.NODE_ENV === "production";
 
 const emailSchema = z.string().email().max(255);
 
+const buildTrustedOrigins = (): string[] => {
+  const configuredOrigins = env.AUTH_TRUSTED_ORIGINS?.split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
+  if (configuredOrigins && configuredOrigins.length > 0) {
+    return configuredOrigins;
+  }
+
+  if (isProd) {
+    return [env.WEB_URL];
+  }
+
+  return [env.WEB_URL, "http://localhost:3000"];
+};
+
 let resendClient: Resend | null = null;
 function getResendClient(): Resend {
   if (!resendClient) {
@@ -63,7 +79,7 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.AUTH_URL ?? `http://localhost:${env.PORT}`,
   basePath: "/api/auth",
-  trustedOrigins: ["https://stl-shelf.com", "http://localhost:3000"],
+  trustedOrigins: buildTrustedOrigins(),
   rateLimit: {
     window: 60, // 1 minute in seconds
     max: 15,
@@ -149,6 +165,19 @@ export const auth = betterAuth({
               ownerId: user.id,
             },
           };
+        },
+        // Prevent users from joining multiple organizations (enforces organizationLimit: 1)
+        beforeAcceptInvitation: async ({ user }) => {
+          const existingMemberships = await db
+            .select({ organizationId: memberTable.organizationId })
+            .from(memberTable)
+            .where(eq(memberTable.userId, user.id));
+
+          if (existingMemberships.length > 0) {
+            throw new Error(
+              "You are already a member of an organization. Leave your current organization before joining another.",
+            );
+          }
         },
         beforeCreateInvitation: async ({ organization }) => {
           // Get current member count from DB
@@ -317,6 +346,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    requireEmailVerification: true,
     resetPasswordTokenExpiresIn: 60 * 60, // 1 hour
     sendResetPassword: async ({ user, url }: { user: { email?: string }; url: string }) => {
       const validEmail = validateEmail(user.email);
