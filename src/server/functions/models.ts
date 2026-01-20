@@ -8,7 +8,7 @@ import { models, modelFiles, modelVersions } from "@/lib/db/schema/models";
 import { canDeleteModel, canEditModel, type Role } from "@/lib/permissions";
 import type { SubscriptionTier } from "@/lib/billing/config";
 import { getTierConfig, isUnlimited } from "@/lib/billing/config";
-import { buildStatsigUser, trackModelViewed, trackSearchPerformed } from "@/lib/statsig";
+import { buildOpenPanelProfile, trackModelViewed, trackSearchPerformed } from "@/lib/openpanel";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } from "@/lib/logging";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
@@ -92,8 +92,8 @@ export const listModels = createServerFn({ method: "GET" })
 
       // Track search events (only when search query is present)
       if (data.search) {
-        const statsigUser = buildStatsigUser(context, null);
-        trackSearchPerformed(statsigUser, {
+        const profile = buildOpenPanelProfile(context, null);
+        trackSearchPerformed(profile, {
           query: data.search,
           resultsCount: result.models.length,
           hasFilters: Boolean(data.tags?.length),
@@ -127,8 +127,8 @@ export const getModel = createServerFn({ method: "GET" })
       const model = await modelDetailService.getModel(data.id, context.organizationId);
 
       // Track model view
-      const statsigUser = buildStatsigUser(context, null);
-      trackModelViewed(statsigUser, {
+      const profile = buildOpenPanelProfile(context, null);
+      trackModelViewed(profile, {
         modelId: data.id,
         source: "direct",
       }).catch(() => {}); // Fire and forget

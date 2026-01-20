@@ -18,7 +18,6 @@ assets/*.stl
 .playwright-mcp/
 
 # Statsig local overrides
-statsig.local.json
 
 # Yaak API collection
 yaak-collection/

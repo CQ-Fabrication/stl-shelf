@@ -23,8 +23,8 @@ import { generateErrorId } from "@/lib/error-id";
 import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { StatsigClientProvider } from "@/lib/statsig/client-provider";
-import { PageTracker } from "@/lib/statsig/use-page-tracking";
+import { OpenPanelProvider } from "@/lib/openpanel/client-provider";
+import { PageTracker } from "@/lib/openpanel/use-page-tracking";
 import appCss from "@/styles.css?url";
 import { useErrorReporting } from "@/hooks/use-error-reporting";
 
@@ -241,7 +241,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <StatsigClientProvider>
+        <OpenPanelProvider>
           <PageTracker />
           <ThemeProvider
             attribute="class"
@@ -265,7 +265,7 @@ function RootDocument({ children }: { children: ReactNode }) {
           </ThemeProvider>
           <TanStackRouterDevtools position="bottom-left" />
           <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
-        </StatsigClientProvider>
+        </OpenPanelProvider>
         <Scripts />
       </body>
     </html>

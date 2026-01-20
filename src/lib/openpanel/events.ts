@@ -1,5 +1,5 @@
-import type { StatsigUser } from "statsig-node";
-import { logEvent } from "./client";
+import type { OpenPanelProfile } from "./user";
+import { logEvent } from "./server";
 import type {
   ActivationStep,
   ErrorCategory,
@@ -39,7 +39,7 @@ async function safeTrack(fn: () => Promise<void>): Promise<void> {
     await fn();
   } catch (error) {
     // Analytics should never break the app - log and continue
-    console.warn("[Statsig] Tracking failed:", error);
+    console.warn("[OpenPanel] Tracking failed:", error);
   }
 }
 
@@ -48,21 +48,21 @@ async function safeTrack(fn: () => Promise<void>): Promise<void> {
 // ============================================================
 
 export async function trackModelUploaded(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["model_uploaded"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "model_uploaded", metadata.fileCount, metadata));
 }
 
 export async function trackModelViewed(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["model_viewed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "model_viewed", undefined, metadata));
 }
 
 export async function trackModelDownloaded(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["model_downloaded"],
 ): Promise<void> {
   await safeTrack(async () => {
@@ -80,7 +80,7 @@ export async function trackModelDownloaded(
 }
 
 export async function trackSearchPerformed(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["search_performed"],
 ): Promise<void> {
   // Sanitize query to remove potential PII
@@ -104,7 +104,7 @@ export async function trackSearchPerformed(
 
 // Connects search → view funnel (critical for measuring search effectiveness)
 export async function trackModelViewFromSearch(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["model_view_from_search"],
 ): Promise<void> {
   // Sanitize search query
@@ -119,7 +119,7 @@ export async function trackModelViewFromSearch(
 
 // Churn signal - why are they removing models?
 export async function trackModelDeleted(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["model_deleted"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "model_deleted", undefined, metadata));
@@ -130,14 +130,14 @@ export async function trackModelDeleted(
 // ============================================================
 
 export async function trackFileDownloaded(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["file_downloaded"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "file_downloaded", metadata.fileSizeBytes, metadata));
 }
 
 export async function trackFileFormatPreference(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["file_format_preference"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "file_format_preference", metadata.downloadCount, metadata));
@@ -148,21 +148,21 @@ export async function trackFileFormatPreference(
 // ============================================================
 
 export async function trackVersionCreated(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["version_created"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "version_created", metadata.versionNumber, metadata));
 }
 
 export async function trackVersionViewed(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["version_viewed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "version_viewed", undefined, metadata));
 }
 
 export async function trackOlderVersionDownloaded(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["older_version_downloaded"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "older_version_downloaded", undefined, metadata));
@@ -173,28 +173,28 @@ export async function trackOlderVersionDownloaded(
 // ============================================================
 
 export async function trackTagCreated(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["tag_created"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "tag_created", metadata.totalTagCount, metadata));
 }
 
 export async function trackTagApplied(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["tag_applied"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "tag_applied", metadata.modelTagCount, metadata));
 }
 
 export async function trackTagRemoved(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["tag_removed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "tag_removed", undefined, metadata));
 }
 
 export async function trackTagSearchUsed(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["tag_search_used"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "tag_search_used", metadata.resultsCount, metadata));
@@ -205,18 +205,18 @@ export async function trackTagSearchUsed(
 // ============================================================
 
 export async function trackUserSignedUp(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   method: "email" | "magic_link" | "github" | "google",
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "user_signed_up", undefined, { method }));
 }
 
-export async function trackUserOnboarded(user: StatsigUser, stepsCompleted: number): Promise<void> {
+export async function trackUserOnboarded(user: OpenPanelProfile, stepsCompleted: number): Promise<void> {
   await safeTrack(() => logEvent(user, "user_onboarded", stepsCompleted, { stepsCompleted }));
 }
 
 export async function trackUserInvitedMember(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   organizationId: string,
   role: MemberRole,
 ): Promise<void> {
@@ -224,7 +224,7 @@ export async function trackUserInvitedMember(
 }
 
 export async function trackOrgCreated(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   organizationId: string,
   name: string,
 ): Promise<void> {
@@ -236,7 +236,7 @@ export async function trackOrgCreated(
 // ============================================================
 
 export async function trackActivationStepReached(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   step: ActivationStep,
   daysFromSignup: number,
 ): Promise<void> {
@@ -246,7 +246,7 @@ export async function trackActivationStepReached(
 }
 
 export async function trackUserActivated(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["user_activated"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "user_activated", metadata.daysToActivation, metadata));
@@ -257,7 +257,7 @@ export async function trackUserActivated(
 // ============================================================
 
 export async function trackSessionStarted(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   isReturningUser: boolean,
   daysSinceLastVisit?: number,
 ): Promise<void> {
@@ -268,21 +268,21 @@ export async function trackSessionStarted(
 
 // Activation signal - came back after 24+ hours
 export async function trackReturnVisit(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["return_visit"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "return_visit", metadata.daysSinceLastVisit, metadata));
 }
 
 export async function trackPurposefulReturn(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["purposeful_return"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "purposeful_return", undefined, metadata));
 }
 
 export async function trackFeatureUsed(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   featureName: string,
   context?: string,
 ): Promise<void> {
@@ -294,28 +294,28 @@ export async function trackFeatureUsed(
 // ============================================================
 
 export async function trackUploadStarted(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["upload_started"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_started", metadata.fileCount, metadata));
 }
 
 export async function trackUploadAbandoned(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["upload_abandoned"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_abandoned", undefined, metadata));
 }
 
 export async function trackUploadError(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["upload_error"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_error", undefined, metadata));
 }
 
 export async function trackUploadRetry(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["upload_retry"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_retry", metadata.attemptNumber, metadata));
@@ -323,7 +323,7 @@ export async function trackUploadRetry(
 
 // Fixable friction - wrong format, too big
 export async function trackUploadValidationFailed(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["upload_validation_failed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "upload_validation_failed", undefined, metadata));
@@ -334,14 +334,14 @@ export async function trackUploadValidationFailed(
 // ============================================================
 
 export async function trackPreviewLoaded(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["preview_loaded"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "preview_loaded", metadata.loadTimeMs, metadata));
 }
 
 export async function trackPreviewToDownload(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["preview_to_download"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "preview_to_download", undefined, metadata));
@@ -349,7 +349,7 @@ export async function trackPreviewToDownload(
 
 // Preview friction - broken files or viewer issues
 export async function trackPreviewFailed(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["preview_failed"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "preview_failed", undefined, metadata));
@@ -360,7 +360,7 @@ export async function trackPreviewFailed(
 // ============================================================
 
 export async function trackPricingPageViewed(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   currentTier: SubscriptionTier,
   source?: string,
 ): Promise<void> {
@@ -368,7 +368,7 @@ export async function trackPricingPageViewed(
 }
 
 export async function trackCheckoutStarted(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   targetTier: SubscriptionTier,
   currentTier: SubscriptionTier,
   trigger?: "storage_limit" | "feature_gate" | "organic",
@@ -379,7 +379,7 @@ export async function trackCheckoutStarted(
 }
 
 export async function trackSubscriptionActivated(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   tier: SubscriptionTier,
   previousTier?: SubscriptionTier,
 ): Promise<void> {
@@ -389,7 +389,7 @@ export async function trackSubscriptionActivated(
 }
 
 export async function trackSubscriptionCanceled(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   tier: SubscriptionTier,
   reason?: string,
 ): Promise<void> {
@@ -397,14 +397,14 @@ export async function trackSubscriptionCanceled(
 }
 
 export async function trackStorageLimitWarning(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["storage_limit_warning"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "storage_limit_warning", metadata.usagePercent, metadata));
 }
 
 export async function trackStorageLimitBlocked(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["storage_limit_blocked"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "storage_limit_blocked", undefined, metadata));
@@ -415,7 +415,7 @@ export async function trackStorageLimitBlocked(
 // ============================================================
 
 export async function trackLibraryHealthSnapshot(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   metadata: EventMetadata["library_health_snapshot"],
 ): Promise<void> {
   await safeTrack(() => logEvent(user, "library_health_snapshot", metadata.totalModels, metadata));
@@ -426,7 +426,7 @@ export async function trackLibraryHealthSnapshot(
 // ============================================================
 
 export async function trackErrorEncountered(
-  user: StatsigUser,
+  user: OpenPanelProfile,
   errorCategory: ErrorCategory,
   errorType: string,
   errorMessage: string,

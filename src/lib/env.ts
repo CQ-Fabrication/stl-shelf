@@ -5,7 +5,8 @@ export const env = createEnv({
   // Client-side env vars (must be prefixed with VITE_)
   clientPrefix: "VITE_",
   client: {
-    VITE_STATSIG_CLIENT_KEY: z.string().optional(),
+    VITE_OPENPANEL_CLIENT_ID: z.string().optional(),
+    VITE_OPENPANEL_API_URL: z.string().optional(),
   },
   server: {
     // Database
@@ -55,8 +56,10 @@ export const env = createEnv({
     POLAR_PRODUCT_BASIC: z.string().optional(),
     POLAR_PRODUCT_PRO: z.string().optional(),
 
-    // Statsig Feature Flags & Analytics
-    STATSIG_SERVER_SECRET: z.string().min(1),
+    // OpenPanel Analytics
+    OPENPANEL_CLIENT_ID: z.string().min(1),
+    OPENPANEL_CLIENT_SECRET: z.string().min(1),
+    OPENPANEL_API_URL: z.string().optional(),
 
     // Better Stack Logging
     BETTERSTACK_SOURCE_TOKEN: z.string().optional(),

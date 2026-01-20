@@ -1,5 +1,3 @@
-import type { StatsigUser } from "statsig-node";
-
 /**
  * Subscription tiers matching Polar.sh billing
  */
@@ -9,56 +7,6 @@ export type SubscriptionTier = "free" | "basic" | "pro";
  * Organization role for the current user
  */
 export type MemberRole = "owner" | "admin" | "member";
-
-/**
- * Context needed to build a Statsig user
- */
-export type StatsigUserContext = {
-  userId: string;
-  email?: string;
-  createdAt?: Date;
-  organizationId?: string;
-  organizationName?: string;
-  subscriptionTier?: SubscriptionTier;
-  subscriptionStatus?: string;
-  memberRole?: MemberRole;
-  modelsCount?: number;
-  storageUsedBytes?: number;
-  memberCount?: number;
-  hasCompletedOnboarding?: boolean;
-  ipAddress?: string;
-};
-
-/**
- * Anonymous user context (pre-authentication)
- */
-export type AnonymousUserContext = {
-  anonymousId: string;
-  ipAddress?: string;
-};
-
-/**
- * Feature gate names (type-prefixed per convention)
- * exp_ = experiment
- * gate_ = feature gate
- * ops_ = operational toggle
- */
-export type FeatureGateName =
-  // Future feature gates
-  | "gate_bulk_export"
-  | "gate_api_access"
-  | "gate_unlimited_storage"
-  | "gate_custom_branding"
-  | "gate_new_upload_flow"
-  // Operational toggles
-  | "ops_disable_processing"
-  | "ops_disable_3d_preview"
-  | "ops_maintenance_mode";
-
-/**
- * Experiment names
- */
-export type ExperimentName = "exp_card_layout" | "exp_onboarding_flow" | "exp_search_ui";
 
 /**
  * Upload error types - consistent vocabulary for upload-related errors
@@ -508,8 +456,3 @@ export type EventMetadata = {
     context?: string;
   };
 };
-
-/**
- * Re-export StatsigUser for convenience
- */
-export type { StatsigUser };

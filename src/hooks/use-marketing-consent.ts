@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useStatsigClient } from "@statsig/react-bindings";
 import { updateMarketingPromptFn } from "@/server/functions/consent";
 import {
   trackMarketingBannerAccepted,
   trackMarketingBannerDeclined,
   trackMarketingBannerDeferred,
   trackMarketingBannerViewed,
-} from "@/lib/statsig/client-events";
+} from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { useConsentStatus } from "./use-consent-status";
 
 const BANNER_DELAY_MS = 10_000; // 10 seconds
@@ -22,7 +22,7 @@ type MarketingAction = "accept" | "decline" | "defer";
  */
 export function useMarketingConsent() {
   const queryClient = useQueryClient();
-  const { client: statsigClient } = useStatsigClient();
+  const { client } = useOpenPanelClient();
   const { shouldShowMarketingBanner, refetch } = useConsentStatus();
 
   // Track if banner should be visible (after delay)
@@ -68,13 +68,13 @@ export function useMarketingConsent() {
   const handleAction = useCallback(
     (action: MarketingAction) => {
       // Track analytics event based on action
-      if (statsigClient) {
+      if (client) {
         if (action === "accept") {
-          trackMarketingBannerAccepted(statsigClient);
+          trackMarketingBannerAccepted(client);
         } else if (action === "decline") {
-          trackMarketingBannerDeclined(statsigClient);
+          trackMarketingBannerDeclined(client);
         } else if (action === "defer") {
-          trackMarketingBannerDeferred(statsigClient);
+          trackMarketingBannerDeferred(client);
         }
       }
 
@@ -82,7 +82,7 @@ export function useMarketingConsent() {
       setIsBannerVisible(false);
       mutation.mutate(action);
     },
-    [mutation, statsigClient],
+    [mutation, client],
   );
 
   // Setup BroadcastChannel for multi-tab sync
@@ -124,8 +124,8 @@ export function useMarketingConsent() {
     timerRef.current = setTimeout(() => {
       setIsBannerVisible(true);
       // Track banner viewed event
-      if (statsigClient) {
-        trackMarketingBannerViewed(statsigClient);
+      if (client) {
+        trackMarketingBannerViewed(client);
       }
     }, BANNER_DELAY_MS);
 
@@ -134,7 +134,7 @@ export function useMarketingConsent() {
         clearTimeout(timerRef.current);
       }
     };
-  }, [shouldShowMarketingBanner, hasInteracted, statsigClient]);
+  }, [shouldShowMarketingBanner, hasInteracted, client]);
 
   // Handle ESC key to dismiss (same as X click)
   useEffect(() => {
