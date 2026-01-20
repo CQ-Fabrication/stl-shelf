@@ -123,6 +123,8 @@ export const member = pgTable(
   (table) => [
     index("member_organizationId_idx").on(table.organizationId),
     index("member_userId_idx").on(table.userId),
+    // Prevent duplicate memberships - a user can only be a member of an org once
+    uniqueIndex("member_org_user_unique").on(table.organizationId, table.userId),
   ],
 );
 

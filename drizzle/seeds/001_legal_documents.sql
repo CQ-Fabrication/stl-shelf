@@ -1,12 +1,13 @@
 -- Seed initial legal documents for consent management
 -- These documents are required for the application to function
+-- Uses PostgreSQL dollar quoting for multi-line content
 
 INSERT INTO "legal_documents" ("id", "type", "version", "content", "published_at", "created_at") VALUES
 (
   gen_random_uuid(),
   'terms_and_conditions',
   '1.0',
-  '# Terms of Service
+  $body$# Terms of Service
 
 **Effective Date:** January 2025
 
@@ -82,7 +83,7 @@ These Terms are governed by the laws of the European Union and Italy.
 
 ## 13. Contact
 
-For questions about these Terms, contact us at legal@stlshelf.com.',
+For questions about these Terms, contact us at legal@stlshelf.com.$body$,
   NOW(),
   NOW()
 ),
@@ -90,7 +91,7 @@ For questions about these Terms, contact us at legal@stlshelf.com.',
   gen_random_uuid(),
   'privacy_policy',
   '1.0',
-  '# Privacy Policy
+  $body$# Privacy Policy
 
 **Effective Date:** January 2025
 
@@ -183,7 +184,7 @@ We use essential cookies only for:
 
 We do not use tracking cookies or third-party analytics that track you across websites.
 
-## Children''s Privacy
+## Children's Privacy
 
 STL Shelf is not intended for children under 16. We do not knowingly collect information from children under 16.
 
@@ -199,7 +200,7 @@ We may update this policy from time to time. We will notify you of significant c
 
 For questions about this Privacy Policy or to exercise your data rights, contact us at:
 - Email: privacy@stlshelf.com
-- Address: CQ Fabrication, Italy',
+- Address: CQ Fabrication, Italy$body$,
   NOW(),
   NOW()
 );

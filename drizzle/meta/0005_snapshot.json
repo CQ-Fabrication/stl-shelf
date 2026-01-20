@@ -1,6 +1,6 @@
 {
-  "id": "bbbc9002-99fb-4134-949b-9ca26d968ff6",
-  "prevId": "7348ae6b-96f9-4939-9728-69a838d0f80d",
+  "id": "34af042e-9f6e-4a3b-b0cc-d03f003530c2",
+  "prevId": "bbbc9002-99fb-4134-949b-9ca26d968ff6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -591,6 +591,27 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "member_org_user_unique": {
+          "name": "member_org_user_unique",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
