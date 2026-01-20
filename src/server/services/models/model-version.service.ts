@@ -27,6 +27,7 @@ type PreparedFile = UploadedFileMetadata & {
   mimeType: string;
   extension: string;
   size: number;
+  buffer: Buffer;
 };
 
 export type AddVersionInput = {
@@ -248,9 +249,12 @@ export class ModelVersionService {
       kind,
     });
 
+    // Create buffer once - used for both upload and downstream processing (e.g., 3MF parsing)
+    const buffer = Buffer.from(await file.arrayBuffer());
+
     await storageService.uploadFile({
       key: storageKey,
-      file,
+      file: buffer,
       contentType: file.type || DEFAULT_CONTENT_TYPE,
     });
 
@@ -262,6 +266,7 @@ export class ModelVersionService {
       mimeType: file.type || DEFAULT_CONTENT_TYPE,
       extension,
       size: file.size,
+      buffer,
     };
   }
 
@@ -304,7 +309,8 @@ export class ModelVersionService {
     modelId: string;
     versionNumber: string;
   }): Promise<void> {
-    const { uploadResults, createdFiles, versionId, organizationId, modelId, versionNumber } = options;
+    const { uploadResults, createdFiles, versionId, organizationId, modelId, versionNumber } =
+      options;
 
     for (const uploadResult of uploadResults) {
       if (!is3MFFile(uploadResult.originalName)) {
@@ -318,13 +324,14 @@ export class ModelVersionService {
         continue;
       }
 
-      // Create print profile from this 3MF file (downloads from R2 storage)
+      // Create print profile from this 3MF file using the buffer we already have
       const result = await printProfileService.createProfileFromSourceFile({
         versionId,
         organizationId,
         modelId,
         versionNumber,
         fileRecord,
+        buffer: uploadResult.buffer,
       });
 
       if (!result.success) {

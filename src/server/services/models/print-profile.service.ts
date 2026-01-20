@@ -253,7 +253,7 @@ class PrintProfileService {
       throw new Error("Profile not found or access denied");
     }
 
-    // Only delete from R2 if this is a dedicated slicer file, not a source file
+    // Only delete from storage if this is a dedicated slicer file, not a source file
     // Source files (auto-parsed) should remain in storage for the Source Files tab
     const isSourceFile = profile.file.storageKey.includes("/source/");
     if (!isSourceFile) {
@@ -471,8 +471,7 @@ class PrintProfileService {
    * This reuses the existing modelFiles record instead of creating a new one.
    * Errors are logged but don't throw - auto-parsing is non-blocking.
    *
-   * NOTE: We download the file from R2 storage instead of reading from the File object
-   * because the File's data is consumed during upload (file.arrayBuffer() can only be called once).
+   * The buffer is passed from the upload process to avoid re-downloading from storage.
    */
   async createProfileFromSourceFile(params: {
     versionId: string;
@@ -485,22 +484,20 @@ class PrintProfileService {
       storageKey: string;
       originalName: string;
     };
+    buffer: Buffer;
   }): Promise<{ success: boolean; profileId?: string; error?: string }> {
-    const { versionId, organizationId, modelId, versionNumber, fileRecord } = params;
+    const { versionId, organizationId, modelId, versionNumber, fileRecord, buffer } = params;
 
     try {
-      // Download file from R2 storage (File object was consumed during upload)
-      const fileData = await storageService.getFile(fileRecord.storageKey);
-      const buffer = Buffer.from(fileData.body);
-
       // Parse 3MF
       const parseResult = await parse3MFFromBuffer(buffer);
       if (!parseResult.success) {
         return {
           success: false,
-          error: parseResult.reason === "unknown_format"
-            ? "Unsupported slicer format"
-            : parseResult.error || "Failed to parse 3MF",
+          error:
+            parseResult.reason === "unknown_format"
+              ? "Unsupported slicer format"
+              : parseResult.error || "Failed to parse 3MF",
         };
       }
 
