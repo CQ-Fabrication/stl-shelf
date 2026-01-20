@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { Check, CreditCard, LogOut, Plus, Settings, User, Users } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useActiveOrganization, useOrganizations } from "@/hooks/use-organizations";
@@ -18,14 +18,6 @@ const UploadModal = lazy(() =>
   })),
 );
 
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -42,8 +34,6 @@ import {
 export default function Header() {
   const router = useRouter();
   const queryClient = useQueryClient();
-
-  const [showLimitAlert, setShowLimitAlert] = useState(false);
 
   const { data: session } = authClient.useSession();
   const { data: organizations, isPending: isLoadingOrgs } = useOrganizations();
@@ -63,11 +53,6 @@ export default function Header() {
       console.error("Failed to switch organization:", error);
       toast.error("Failed to switch organization");
     }
-  }
-
-  function handleCreateOrganization() {
-    // currently 1 organization per user
-    setShowLimitAlert(true);
   }
 
   const hasOrganizations = (organizations?.length ?? 0) > 0;
@@ -179,11 +164,6 @@ export default function Header() {
                           </Link>
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleCreateOrganization}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Create Organization
-                      </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
                   <DropdownMenuSeparator />
@@ -210,26 +190,6 @@ export default function Header() {
         </div>
       </div>
       <hr />
-
-      {/* Organization Limit Alert */}
-      <AlertDialog onOpenChange={setShowLimitAlert} open={showLimitAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Organization Limit Reached</AlertDialogTitle>
-            <AlertDialogDescription>
-              Currently, only one organization per user is supported. We're working hard to add more
-              features including multiple organizations support, enhanced collaboration tools, and
-              much more!
-              <br />
-              <br />
-              Stay tuned for updates as we continue to improve STL Shelf.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button onClick={() => setShowLimitAlert(false)}>Got it</Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Upload Modal */}
       <Suspense fallback={null}>

@@ -80,14 +80,12 @@ export function InviteModal({ open, onOpenChange, onSuccess }: InviteModalProps)
           },
           onError: (ctx) => {
             const message = ctx.error.message ?? "Failed to send invitation";
+            // Only show specific message for member limit (safe - reveals org status, not user info)
+            // All other errors use generic message to prevent email enumeration attacks
             if (message.includes("limit")) {
               toast.error("Member limit reached. Upgrade your plan to invite more members.");
-            } else if (message.includes("already")) {
-              toast.error("This email has already been invited");
-            } else if (message.includes("member")) {
-              toast.error("This user is already a member");
             } else {
-              toast.error(message);
+              toast.error("Unable to send invitation. Please verify the email and try again.");
             }
             setIsSubmitting(false);
           },
