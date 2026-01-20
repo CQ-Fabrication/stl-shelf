@@ -9,6 +9,7 @@ If you discover a security vulnerability in STL Shelf, please report it responsi
 Instead, please email us at: **security@cqfabrication.com**
 
 Include:
+
 - Description of the vulnerability
 - Steps to reproduce
 - Potential impact
@@ -22,10 +23,10 @@ Include:
 
 ## Supported Versions
 
-| Version | Supported |
-|---------|-----------|
-| Latest  | Yes       |
-| < Latest | No       |
+| Version  | Supported |
+| -------- | --------- |
+| Latest   | Yes       |
+| < Latest | No        |
 
 We only provide security updates for the latest release. Please keep your installation up to date.
 
@@ -43,5 +44,6 @@ When self-hosting STL Shelf:
 ## Non-Security Issues
 
 For general support or bug reports, please use:
+
 - **Support**: support@stl-shelf.com
 - **GitHub Issues**: [github.com/CQ-Fabrication/stl-shelf/issues](https://github.com/CQ-Fabrication/stl-shelf/issues)

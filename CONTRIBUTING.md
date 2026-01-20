@@ -27,6 +27,7 @@ Thanks for your interest in contributing! We welcome contributions from everyone
 ### Branch Naming
 
 Use descriptive branch names:
+
 - `feat/add-model-search` - New features
 - `fix/upload-timeout` - Bug fixes
 - `docs/api-examples` - Documentation
@@ -78,6 +79,7 @@ chore: update dependencies
 ### Bug Reports
 
 Include:
+
 - Steps to reproduce
 - Expected vs actual behavior
 - Environment (OS, Bun version, browser)
@@ -86,6 +88,7 @@ Include:
 ### Feature Requests
 
 Include:
+
 - Clear description of the feature
 - Use case / problem it solves
 - Any implementation ideas (optional)

@@ -59,6 +59,7 @@ docker compose up -d
 ```
 
 This starts:
+
 - **PostgreSQL** on port `5432`
 - **MinIO** on port `9000` (API) and `9001` (Console)
 
@@ -155,30 +156,30 @@ server {
 
 ### Required
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `AUTH_URL` | Auth callback URL |
-| `WEB_URL` | Public web URL |
-| `BETTER_AUTH_SECRET` | Auth secret (32+ chars) |
-| `STORAGE_ENDPOINT` | S3-compatible endpoint |
-| `STORAGE_ACCESS_KEY` | Storage access key |
-| `STORAGE_SECRET_KEY` | Storage secret key |
-| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret |
-| `RESEND_API_KEY` | Resend API key for emails |
+| Variable               | Description                  |
+| ---------------------- | ---------------------------- |
+| `DATABASE_URL`         | PostgreSQL connection string |
+| `AUTH_URL`             | Auth callback URL            |
+| `WEB_URL`              | Public web URL               |
+| `BETTER_AUTH_SECRET`   | Auth secret (32+ chars)      |
+| `STORAGE_ENDPOINT`     | S3-compatible endpoint       |
+| `STORAGE_ACCESS_KEY`   | Storage access key           |
+| `STORAGE_SECRET_KEY`   | Storage secret key           |
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret  |
+| `RESEND_API_KEY`       | Resend API key for emails    |
 
 ### Optional
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | `3000` |
-| `STORAGE_BUCKET_NAME` | S3 bucket name | `stl-models` |
-| `STORAGE_REGION` | S3 region | `auto` |
-| `POSTGRES_MAX_CONNECTIONS` | Max DB connections | `20` |
-| `GITHUB_CLIENT_ID` | GitHub OAuth | - |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth | - |
-| `GOOGLE_CLIENT_ID` | Google OAuth | - |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth | - |
+| Variable                   | Description        | Default      |
+| -------------------------- | ------------------ | ------------ |
+| `PORT`                     | Server port        | `3000`       |
+| `STORAGE_BUCKET_NAME`      | S3 bucket name     | `stl-models` |
+| `STORAGE_REGION`           | S3 region          | `auto`       |
+| `POSTGRES_MAX_CONNECTIONS` | Max DB connections | `20`         |
+| `GITHUB_CLIENT_ID`         | GitHub OAuth       | -            |
+| `GITHUB_CLIENT_SECRET`     | GitHub OAuth       | -            |
+| `GOOGLE_CLIENT_ID`         | Google OAuth       | -            |
+| `GOOGLE_CLIENT_SECRET`     | Google OAuth       | -            |
 
 ## Development Commands
 
