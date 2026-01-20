@@ -1,6 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { Link, useNavigate } from "@tanstack/react-router";
-import type { ChangeEvent } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Turnstile } from "@/components/turnstile";
@@ -15,6 +16,7 @@ type CredentialsFormProps = {
 
 export function CredentialsForm({ auth }: CredentialsFormProps) {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -97,15 +99,26 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
                 Forgot password?
               </Link>
             </div>
-            <Input
-              autoComplete="current-password"
-              id={field.name}
-              name={field.name}
-              onBlur={field.handleBlur}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => field.handleChange(e.target.value)}
-              type="password"
-              value={field.state.value}
-            />
+            <div className="relative">
+              <Input
+                autoComplete="current-password"
+                id={field.name}
+                name={field.name}
+                onBlur={field.handleBlur}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => field.handleChange(e.target.value)}
+                type={showPassword ? "text" : "password"}
+                value={field.state.value}
+              />
+              <Button
+                className="absolute top-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                onClick={() => setShowPassword(!showPassword)}
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
             {!field.state.meta.isValid && (
               <div className="text-red-600 text-sm">
                 {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}

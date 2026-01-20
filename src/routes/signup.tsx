@@ -1,6 +1,8 @@
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Turnstile } from "@/components/turnstile";
@@ -50,6 +52,7 @@ const defaultValues: SignUpForm = {
 
 function SignUpPage() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   // Fetch latest document versions for consent
   const { data: documents } = useQuery({
@@ -112,7 +115,6 @@ function SignUpPage() {
     defaultValues,
     validators: {
       onSubmit: signUpSchema,
-      onBlur: signUpSchema,
     },
     onSubmit: async ({ value }) => {
       try {
@@ -195,16 +197,27 @@ function SignUpPage() {
                   <Label htmlFor={field.name}>
                     Password <sup className="-ml-1 text-red-600">*</sup>
                   </Label>
-                  <Input
-                    autoComplete="new-password"
-                    id={field.name}
-                    name={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="Enter your password"
-                    type="password"
-                    value={field.state.value}
-                  />
+                  <div className="relative">
+                    <Input
+                      autoComplete="new-password"
+                      id={field.name}
+                      name={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Enter your password"
+                      type={showPassword ? "text" : "password"}
+                      value={field.state.value}
+                    />
+                    <Button
+                      className="absolute top-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                      size="icon"
+                      type="button"
+                      variant="ghost"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                   {!field.state.meta.isValid && (
                     <div className="text-red-600 text-sm">
                       {field.state.meta.errors.flatMap((error) => error?.message).join(", ")}
