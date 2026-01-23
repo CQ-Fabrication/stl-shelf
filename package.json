@@ -7,7 +7,7 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "bun .output/server/index.mjs",
+    "start": "bun run server.ts",
     "lint": "oxlint --fix",
     "format": "oxfmt --write .",
     "check": "oxlint && oxfmt --check .",

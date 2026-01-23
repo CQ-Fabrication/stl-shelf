@@ -25,8 +25,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { OpenPanelProvider } from "@/lib/openpanel/client-provider";
 import { PageTracker } from "@/lib/openpanel/use-page-tracking";
-import appCss from "@/styles.css?url";
 import { useErrorReporting } from "@/hooks/use-error-reporting";
+import "@/styles.css";
 
 if (!import.meta.env.SSR) {
   import("@/lib/error-tracking.client")
@@ -154,7 +154,6 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
     ],
     links: [
-      { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico" },
       { rel: "manifest", href: "/manifest.json" },
     ],
