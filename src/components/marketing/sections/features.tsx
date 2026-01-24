@@ -17,7 +17,6 @@ const features = [
     description: "Keep all your STL, OBJ, 3MF, and PLY files in one searchable, organized library.",
     icon: <FolderOpen className="h-5 w-5" />,
     className: "sm:col-span-2 lg:col-span-2 lg:row-span-2",
-    href: "#features",
     background: <FileLibrary />,
   },
   {
@@ -25,7 +24,6 @@ const features = [
     description: "Track every iteration of your designs with built-in version history.",
     icon: <GitBranch className="h-5 w-5" />,
     className: "sm:col-span-1",
-    href: "#features",
     background: <VersionTree />,
   },
   {
@@ -33,7 +31,6 @@ const features = [
     description: "Interactive preview of your models without external software.",
     icon: <Box className="h-5 w-5" />,
     className: "sm:col-span-1",
-    href: "#features",
     background: <ModelPreview />,
   },
   {
@@ -41,7 +38,6 @@ const features = [
     description: "Organize with tags, categories, and custom metadata for easy discovery.",
     icon: <Tags className="h-5 w-5" />,
     className: "sm:col-span-1",
-    href: "#features",
     background: <TagCloud />,
   },
   {
@@ -49,7 +45,6 @@ const features = [
     description: "Download individual files or ZIP entire collections with one click.",
     icon: <Download className="h-5 w-5" />,
     className: "sm:col-span-2 lg:col-span-2",
-    href: "#features",
     background: <ZipDownload />,
   },
   {
@@ -57,7 +52,6 @@ const features = [
     description: "Complete control over your data. Host it on your own server, NAS, or cloud.",
     icon: <Server className="h-5 w-5" />,
     className: "sm:col-span-2 lg:col-span-3",
-    href: "#features",
     background: <ServerRack />,
   },
 ];
@@ -98,8 +92,6 @@ export function Features() {
               icon={feature.icon}
               className={`${feature.className} animate-fade-in-up`}
               style={{ animationDelay: `${0.1 + index * 0.1}s` }}
-              href={feature.href}
-              cta="Explore"
               background={feature.background}
             />
           ))}

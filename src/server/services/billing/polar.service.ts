@@ -60,4 +60,8 @@ export const polarService = {
     });
     return checkout;
   },
+
+  async getProduct(productId: string) {
+    return polarClient.products.get({ id: productId });
+  },
 };

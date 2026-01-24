@@ -1,10 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import { Check, Sparkles, Zap } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { cn } from "@/lib/utils";
+import { getPublicPricing } from "@/server/functions/pricing";
 
 type PricingTier = {
   name: string;
@@ -18,13 +21,35 @@ type PricingTier = {
   highlighted?: boolean;
 };
 
-const tiers: PricingTier[] = [
-  {
+const tierUiConfig = {
+  free: {
     name: "Free",
-    price: "$0",
-    period: "forever",
     description: "Perfect for getting started",
     badge: "Free Forever",
+    cta: "Get Started",
+  },
+  basic: {
+    name: "Basic",
+    description: "For growing collections",
+    badge: "Most Popular",
+    badgeVariant: "popular" as const,
+    highlighted: true,
+    cta: "Start Free Trial",
+  },
+  pro: {
+    name: "Pro",
+    description: "For power users & teams",
+    cta: "Start Free Trial",
+  },
+};
+
+const fallbackTiers: PricingTier[] = [
+  {
+    name: tierUiConfig.free.name,
+    price: "$0",
+    period: "forever",
+    description: tierUiConfig.free.description,
+    badge: tierUiConfig.free.badge,
     features: [
       "1 user",
       "200 MB storage",
@@ -33,16 +58,16 @@ const tiers: PricingTier[] = [
       "Basic organization",
       "Community support",
     ],
-    cta: "Get Started",
+    cta: tierUiConfig.free.cta,
   },
   {
-    name: "Basic",
+    name: tierUiConfig.basic.name,
     price: "$4.99",
     period: "/month",
-    description: "For growing collections",
-    badge: "Most Popular",
-    badgeVariant: "popular",
-    highlighted: true,
+    description: tierUiConfig.basic.description,
+    badge: tierUiConfig.basic.badge,
+    badgeVariant: tierUiConfig.basic.badgeVariant,
+    highlighted: tierUiConfig.basic.highlighted,
     features: [
       "Up to 3 team members",
       "10 GB storage",
@@ -51,13 +76,13 @@ const tiers: PricingTier[] = [
       "Advanced organization",
       "Priority email support",
     ],
-    cta: "Start Free Trial",
+    cta: tierUiConfig.basic.cta,
   },
   {
-    name: "Pro",
+    name: tierUiConfig.pro.name,
     price: "$12.99",
     period: "/month",
-    description: "For power users & teams",
+    description: tierUiConfig.pro.description,
     features: [
       "Up to 10 team members",
       "50 GB storage",
@@ -66,9 +91,23 @@ const tiers: PricingTier[] = [
       "Custom integrations",
       "Premium support",
     ],
-    cta: "Start Free Trial",
+    cta: tierUiConfig.pro.cta,
   },
 ];
+
+const formatPeriod = (interval: string | null, intervalCount: number | null) => {
+  if (!interval) return "forever";
+  if (intervalCount && intervalCount > 1) {
+    return `/${intervalCount} ${interval}s`;
+  }
+  return `/${interval}`;
+};
+
+const fallbackBySlug = {
+  free: fallbackTiers[0],
+  basic: fallbackTiers[1],
+  pro: fallbackTiers[2],
+};
 
 function PricingCard({ tier, index }: { tier: PricingTier; index: number }) {
   return (
@@ -146,6 +185,45 @@ function PricingCard({ tier, index }: { tier: PricingTier; index: number }) {
 }
 
 export function Pricing() {
+  const { data } = useQuery({
+    queryKey: ["public-pricing"],
+    queryFn: () => getPublicPricing(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const tiers = useMemo(() => {
+    if (!data?.tiers?.length) return fallbackTiers;
+
+    return data.tiers.map((tier) => {
+      const ui =
+        tier.slug === "free"
+          ? tierUiConfig.free
+          : tier.slug === "basic"
+            ? tierUiConfig.basic
+            : tierUiConfig.pro;
+      const fallbackTier = fallbackBySlug[tier.slug];
+      const amount = tier.priceAmount ?? 0;
+      const currency = tier.priceCurrency || "USD";
+      const price = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: amount % 100 === 0 ? 0 : 2,
+      }).format(amount / 100);
+
+      return {
+        name: ui.name,
+        price,
+        period: formatPeriod(tier.interval, tier.intervalCount),
+        description: ui.description,
+        badge: ui.badge,
+        badgeVariant: ui.badgeVariant,
+        highlighted: ui.highlighted,
+        features: tier.benefits.length ? tier.benefits : fallbackTier.features,
+        cta: ui.cta,
+      } satisfies PricingTier;
+    });
+  }, [data]);
+
   return (
     <section id="pricing" className="relative py-24 overflow-hidden">
       <div

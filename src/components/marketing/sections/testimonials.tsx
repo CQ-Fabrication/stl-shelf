@@ -252,8 +252,7 @@ export function Testimonials() {
             </div>
             <div className="h-4 w-px bg-border/50" />
             <div className="flex items-center gap-1.5">
-              <span className="text-sm text-muted-foreground">Trusted by</span>
-              <span className="text-sm font-semibold text-orange-500">500+ makers</span>
+              <span className="text-sm text-muted-foreground">Trusted by makers</span>
             </div>
           </div>
         </div>
