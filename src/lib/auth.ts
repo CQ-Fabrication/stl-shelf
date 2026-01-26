@@ -30,28 +30,14 @@ import {
 // import { canChangeRole, canRemoveMember, type Role } from "@/lib/permissions";
 import { MagicLinkTemplate, PasswordResetTemplate, VerifyEmailTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
+import { getTrustedOrigins } from "@/lib/trusted-origins";
+import { syncResendSegments } from "@/server/services/marketing/resend-segments";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent } from "@/lib/logging";
 
 const isProd = env.NODE_ENV === "production";
 
 const emailSchema = z.string().email().max(255);
-
-const buildTrustedOrigins = (): string[] => {
-  const configuredOrigins = env.AUTH_TRUSTED_ORIGINS?.split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
-
-  if (configuredOrigins && configuredOrigins.length > 0) {
-    return configuredOrigins;
-  }
-
-  if (isProd) {
-    return [env.WEB_URL];
-  }
-
-  return [env.WEB_URL, "http://localhost:3000"];
-};
 
 let resendClient: Resend | null = null;
 function getResendClient(): Resend {
@@ -79,7 +65,7 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.AUTH_URL ?? `http://localhost:${env.PORT}`,
   basePath: "/api/auth",
-  trustedOrigins: buildTrustedOrigins(),
+  trustedOrigins: (request) => getTrustedOrigins(request),
   rateLimit: {
     window: 60, // 1 minute in seconds
     max: 15,
@@ -425,6 +411,17 @@ export const auth = betterAuth({
   },
 
   databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          await syncResendSegments({
+            email: user.email,
+            name: user.name,
+            marketingAccepted: false,
+          });
+        },
+      },
+    },
     session: {
       create: {
         before: async (session) => {

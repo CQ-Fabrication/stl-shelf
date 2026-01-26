@@ -26,7 +26,7 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
     },
     onSubmit: async ({ value }) => {
       try {
-        await auth.signIn.email({
+        const result = await auth.signIn.email({
           email: value.email,
           password: value.password,
           fetchOptions: {
@@ -35,11 +35,22 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
             },
           },
         });
+        if (result.error) {
+          throw result.error;
+        }
         toast.success("Welcome back!");
         await navigate({ to: "/library" });
       } catch (error) {
-        const err = error as { error?: { message?: string } };
-        toast.error(err.error?.message || "Invalid email or password");
+        const errorMessage =
+          typeof error === "object" &&
+          error &&
+          "error" in error &&
+          typeof (error as { error?: { message?: string } }).error?.message === "string"
+            ? (error as { error?: { message?: string } }).error?.message
+            : error instanceof Error
+              ? error.message
+              : undefined;
+        toast.error(errorMessage || "Invalid email or password");
       }
     },
     validators: {

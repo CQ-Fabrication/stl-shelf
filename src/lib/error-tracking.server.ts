@@ -4,10 +4,11 @@ import { env } from "@/lib/env";
 type ErrorContext = Record<string, unknown>;
 
 let initialized = false;
+const hasBunRuntime = typeof (globalThis as { Bun?: unknown }).Bun !== "undefined";
 
 const initServerErrorTracking = () => {
   if (initialized) return;
-  if (!env.SENTRY_DSN) return;
+  if (!env.SENTRY_DSN || !hasBunRuntime) return;
   Sentry.init({
     dsn: env.SENTRY_DSN,
     environment: env.NODE_ENV,
@@ -16,7 +17,7 @@ const initServerErrorTracking = () => {
 };
 
 export const captureServerException = (error: unknown, context?: ErrorContext) => {
-  if (!env.SENTRY_DSN) return;
+  if (!env.SENTRY_DSN || !hasBunRuntime) return;
   initServerErrorTracking();
   Sentry.withScope((scope) => {
     if (context) scope.setExtras(context);

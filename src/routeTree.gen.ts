@@ -33,6 +33,8 @@ import { Route as ApiV1UploadRouteImport } from './routes/api/v1/upload'
 import { Route as ApiV1ModelsRouteImport } from './routes/api/v1/models'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiV1ModelsModelIdRouteImport } from './routes/api/v1/models.$modelId'
+import { Route as ApiDownloadPrintProfileProfileIdRouteImport } from './routes/api/download/print-profile/$profileId'
+import { Route as ApiDownloadFileFileIdRouteImport } from './routes/api/download/file/$fileId'
 import { Route as ApiV1ModelsModelIdVersionsRouteImport } from './routes/api/v1/models.$modelId.versions'
 import { Route as ApiDownloadVersionVersionIdZipRouteImport } from './routes/api/download/version/$versionId.zip'
 import { Route as ApiV1ModelsModelIdFilesFileIdDownloadRouteImport } from './routes/api/v1/models.$modelId.files.$fileId.download'
@@ -157,6 +159,17 @@ const ApiV1ModelsModelIdRoute = ApiV1ModelsModelIdRouteImport.update({
   path: '/$modelId',
   getParentRoute: () => ApiV1ModelsRoute,
 } as any)
+const ApiDownloadPrintProfileProfileIdRoute =
+  ApiDownloadPrintProfileProfileIdRouteImport.update({
+    id: '/api/download/print-profile/$profileId',
+    path: '/api/download/print-profile/$profileId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDownloadFileFileIdRoute = ApiDownloadFileFileIdRouteImport.update({
+  id: '/api/download/file/$fileId',
+  path: '/api/download/file/$fileId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1ModelsModelIdVersionsRoute =
   ApiV1ModelsModelIdVersionsRouteImport.update({
     id: '/versions',
@@ -200,6 +213,8 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
+  '/api/download/file/$fileId': typeof ApiDownloadFileFileIdRoute
+  '/api/download/print-profile/$profileId': typeof ApiDownloadPrintProfileProfileIdRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
@@ -229,6 +244,8 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
+  '/api/download/file/$fileId': typeof ApiDownloadFileFileIdRoute
+  '/api/download/print-profile/$profileId': typeof ApiDownloadPrintProfileProfileIdRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
@@ -259,6 +276,8 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
+  '/api/download/file/$fileId': typeof ApiDownloadFileFileIdRoute
+  '/api/download/print-profile/$profileId': typeof ApiDownloadPrintProfileProfileIdRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
@@ -290,6 +309,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/v1/models'
     | '/api/v1/upload'
+    | '/api/download/file/$fileId'
+    | '/api/download/print-profile/$profileId'
     | '/api/v1/models/$modelId'
     | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
@@ -319,6 +340,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/v1/models'
     | '/api/v1/upload'
+    | '/api/download/file/$fileId'
+    | '/api/download/print-profile/$profileId'
     | '/api/v1/models/$modelId'
     | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
@@ -348,6 +371,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/v1/models'
     | '/api/v1/upload'
+    | '/api/download/file/$fileId'
+    | '/api/download/print-profile/$profileId'
     | '/api/v1/models/$modelId'
     | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
@@ -378,6 +403,8 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1ModelsRoute: typeof ApiV1ModelsRouteWithChildren
   ApiV1UploadRoute: typeof ApiV1UploadRoute
+  ApiDownloadFileFileIdRoute: typeof ApiDownloadFileFileIdRoute
+  ApiDownloadPrintProfileProfileIdRoute: typeof ApiDownloadPrintProfileProfileIdRoute
   ApiDownloadVersionVersionIdZipRoute: typeof ApiDownloadVersionVersionIdZipRoute
 }
 
@@ -551,6 +578,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ModelsModelIdRouteImport
       parentRoute: typeof ApiV1ModelsRoute
     }
+    '/api/download/print-profile/$profileId': {
+      id: '/api/download/print-profile/$profileId'
+      path: '/api/download/print-profile/$profileId'
+      fullPath: '/api/download/print-profile/$profileId'
+      preLoaderRoute: typeof ApiDownloadPrintProfileProfileIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/download/file/$fileId': {
+      id: '/api/download/file/$fileId'
+      path: '/api/download/file/$fileId'
+      fullPath: '/api/download/file/$fileId'
+      preLoaderRoute: typeof ApiDownloadFileFileIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/models/$modelId/versions': {
       id: '/api/v1/models/$modelId/versions'
       path: '/versions'
@@ -625,6 +666,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1ModelsRoute: ApiV1ModelsRouteWithChildren,
   ApiV1UploadRoute: ApiV1UploadRoute,
+  ApiDownloadFileFileIdRoute: ApiDownloadFileFileIdRoute,
+  ApiDownloadPrintProfileProfileIdRoute: ApiDownloadPrintProfileProfileIdRoute,
   ApiDownloadVersionVersionIdZipRoute: ApiDownloadVersionVersionIdZipRoute,
 }
 export const routeTree = rootRouteImport

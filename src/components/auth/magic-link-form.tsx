@@ -46,7 +46,7 @@ export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormP
 
         await auth.signIn.magicLink({
           email: value.email,
-          callbackURL: `${window.location.origin}/library`,
+          callbackURL: "/library",
         });
         onSuccess();
         toast.success("Check your email for a magic link");

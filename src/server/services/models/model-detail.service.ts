@@ -75,12 +75,8 @@ class ModelDetailService {
       files.map(async (file) => {
         let fileUrl = file.storageUrl;
 
-        if (file.storageKey && viewableExtensions.includes(file.extension.toLowerCase())) {
-          try {
-            fileUrl = await storageService.generateDownloadUrl(file.storageKey, 60);
-          } catch {
-            // Keep original URL if presigned fails
-          }
+        if (viewableExtensions.includes(file.extension.toLowerCase())) {
+          fileUrl = `/api/download/file/${file.id}?disposition=inline`;
         }
 
         return {

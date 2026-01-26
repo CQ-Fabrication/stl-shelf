@@ -127,10 +127,7 @@ export function trackFormError(
   field: string,
   errorType?: string,
 ) {
-  client?.track(
-    ClientEvent.FORM_ERROR,
-    cleanProperties({ form, field, errorType }),
-  );
+  client?.track(ClientEvent.FORM_ERROR, cleanProperties({ form, field, errorType }));
 }
 
 // ============================================================
@@ -181,11 +178,7 @@ export function trackModelCardClick(
   client?.track(ClientEvent.MODEL_CARD_CLICK, cleanProperties({ modelId, ...context }));
 }
 
-export function trackTagClick(
-  client: OpenPanelClient | null,
-  tag: string,
-  source: string,
-) {
+export function trackTagClick(client: OpenPanelClient | null, tag: string, source: string) {
   client?.track(ClientEvent.TAG_CLICK, cleanProperties({ tag, source }));
 }
 
@@ -205,10 +198,7 @@ export function trackSearchAbandoned(
   client?.track(ClientEvent.SEARCH_ABANDONED, { query, resultsCount });
 }
 
-export function trackFrustratedSearchSession(
-  client: OpenPanelClient | null,
-  queryCount: number,
-) {
+export function trackFrustratedSearchSession(client: OpenPanelClient | null, queryCount: number) {
   client?.track(ClientEvent.FRUSTRATED_SEARCH_SESSION, { queryCount });
 }
 
@@ -252,10 +242,7 @@ export function trackPlanSelected(client: OpenPanelClient | null, plan: string) 
   client?.track(ClientEvent.PLAN_SELECTED, { plan });
 }
 
-export function trackPricingInteraction(
-  client: OpenPanelClient | null,
-  action: string,
-) {
+export function trackPricingInteraction(client: OpenPanelClient | null, action: string) {
   client?.track(ClientEvent.PRICING_INTERACTION, { action });
 }
 
@@ -275,11 +262,7 @@ export function trackFilterApplied(
   client?.track(ClientEvent.FILTER_APPLIED, { filterType, value });
 }
 
-export function trackSortChanged(
-  client: OpenPanelClient | null,
-  sortBy: string,
-  order: string,
-) {
+export function trackSortChanged(client: OpenPanelClient | null, sortBy: string, order: string) {
   client?.track(ClientEvent.SORT_CHANGED, { sortBy, order });
 }
 

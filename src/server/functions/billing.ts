@@ -10,6 +10,7 @@ import { getTierConfig, isUnlimited } from "@/lib/billing/config";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { polarService } from "@/server/services/billing/polar.service";
+import { getEgressUsageSnapshot, getEgressLimits } from "@/server/services/billing/egress.service";
 
 const createCheckoutSchema = z.object({
   productSlug: z.enum(["free", "basic", "pro"]),
@@ -93,6 +94,12 @@ export const getUsageStats = createServerFn({ method: "GET" })
     const modelCountLimit = org.modelCountLimit ?? tierConfig.modelCountLimit;
     const currentMemberCount = memberCountResult?.count ?? 0;
     const memberLimit = org.memberLimit ?? tierConfig.maxMembers;
+    const egressUsage = await getEgressUsageSnapshot(context.organizationId);
+    const egressLimits = getEgressLimits(currentStorage);
+    const egressLimit = egressLimits.softLimit;
+    const egressPercentage = egressLimit
+      ? Math.min((egressUsage.bytes / egressLimit) * 100, 100)
+      : 0;
 
     return {
       storage: {
@@ -109,6 +116,13 @@ export const getUsageStats = createServerFn({ method: "GET" })
         used: currentMemberCount,
         limit: memberLimit,
         percentage: Math.min((currentMemberCount / memberLimit) * 100, 100),
+      },
+      egress: {
+        used: egressUsage.bytes,
+        limit: egressLimit,
+        hardLimit: egressLimits.hardLimit,
+        downloads: egressUsage.downloads,
+        percentage: egressPercentage,
       },
     };
   });

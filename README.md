@@ -93,6 +93,23 @@ Open [http://localhost:3000](http://localhost:3000)
 
 - **MinIO Console**: [http://localhost:9001](http://localhost:9001) (user: `stlshelf`, password: `stlshelf_minio_dev_password`)
 
+### 7. Optional: Start ngrok (public HTTPS for Polar webhooks)
+
+```bash
+bun run ngrok
+```
+
+Set these in `.env` when using ngrok:
+
+- `NGROK_DOMAIN=yourname.ngrok-free.app`
+- `NGROK_PORT=3000` (optional; defaults to `PORT` or `3000`)
+- `AUTH_URL=https://yourname.ngrok-free.app`
+- `WEB_URL=https://yourname.ngrok-free.app`
+
+Polar webhook endpoint for local testing:
+
+- `https://yourname.ngrok-free.app/api/auth/polar/webhooks`
+
 ## Production Deployment
 
 ### Build & Run

@@ -1,6 +1,7 @@
-import { Box, HardDrive, Loader2, Users } from "lucide-react";
+import { Box, Download, HardDrive, Loader2, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUsageStats } from "@/hooks/use-usage-stats";
 import {
   formatPercentage,
@@ -24,6 +25,10 @@ export const UsageCard = () => {
 
   if (!usage) return null;
 
+  const egressUsage = usage.egress;
+  const egressWarning = egressUsage?.percentage >= 80;
+  const egressCritical = egressUsage?.percentage >= 100;
+
   return (
     <Card>
       <CardHeader>
@@ -31,6 +36,17 @@ export const UsageCard = () => {
         <CardDescription>Track your organization's current usage</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {egressWarning && egressUsage && (
+          <Alert className={egressCritical ? "border-red-500/40" : "border-yellow-500/40"}>
+            <AlertTitle>
+              {egressCritical ? "Bandwidth limit reached" : "Bandwidth warning"}
+            </AlertTitle>
+            <AlertDescription>
+              {formatStorage(egressUsage.used)} of {formatStorage(egressUsage.limit)} used this
+              month. Consider upgrading or adding storage to avoid download interruptions.
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Storage Usage */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
@@ -93,6 +109,29 @@ export const UsageCard = () => {
             {formatPercentage(usage.members.percentage)} used
           </p>
         </div>
+
+        {/* Bandwidth Usage */}
+        {egressUsage && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <Download className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Bandwidth</span>
+              </div>
+              <span className={getUsageColor(egressUsage.percentage)}>
+                {formatStorage(egressUsage.used)} / {formatStorage(egressUsage.limit)}
+              </span>
+            </div>
+            <Progress
+              className="h-2"
+              indicatorClassName={getUsageProgressColor(egressUsage.percentage)}
+              value={egressUsage.percentage}
+            />
+            <p className="text-muted-foreground text-xs">
+              {formatPercentage(egressUsage.percentage)} used • {egressUsage.downloads} downloads
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

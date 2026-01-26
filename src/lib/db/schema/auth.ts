@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  bigint,
   pgTable,
   text,
   timestamp,
@@ -103,6 +104,11 @@ export const organization = pgTable(
     currentModelCount: integer("current_model_count"),
     currentMemberCount: integer("current_member_count"),
     graceDeadline: timestamp("grace_deadline"),
+    egressBytesThisMonth: bigint("egress_bytes_this_month", { mode: "number" }).default(0),
+    egressDownloadsThisMonth: integer("egress_downloads_this_month").default(0),
+    egressPeriodStart: timestamp("egress_period_start"),
+    egressWarning80SentAt: timestamp("egress_warning_80_sent_at"),
+    egressWarning100SentAt: timestamp("egress_warning_100_sent_at"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );

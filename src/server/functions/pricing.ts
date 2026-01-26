@@ -9,7 +9,7 @@ const tierOrder = ["free", "basic", "pro"] as const;
 
 type TierSlug = (typeof tierOrder)[number];
 
-type PricingTier = {
+export type PricingTier = {
   slug: TierSlug;
   name: string;
   description: string | null;
@@ -20,7 +20,7 @@ type PricingTier = {
   benefits: string[];
 };
 
-type PublicPricingResponse = {
+export type PublicPricingResponse = {
   updatedAt: string;
   source: "polar" | "fallback";
   tiers: PricingTier[];

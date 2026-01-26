@@ -4,10 +4,15 @@ import { ArrowLeft } from "lucide-react";
 import Markdown from "react-markdown";
 import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
+import { getSessionFn } from "@/server/functions/auth";
 import { getDocumentByTypeFn } from "@/server/functions/consent";
 
 export const Route = createFileRoute("/terms")({
   component: TermsPage,
+  loader: async () => {
+    const session = await getSessionFn();
+    return { session };
+  },
   head: () => ({
     meta: [
       { title: "Terms of Service - STL Shelf" },
@@ -29,6 +34,7 @@ function formatDate(date: Date | string): string {
 }
 
 function TermsPage() {
+  const { session } = Route.useLoaderData();
   const { data: document } = useSuspenseQuery({
     queryKey: ["legal-document", "terms_and_conditions"],
     queryFn: () => getDocumentByTypeFn({ data: { type: "terms_and_conditions" } }),
@@ -36,7 +42,7 @@ function TermsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navigation />
+      <Navigation session={session} />
       <main className="flex-1 pt-24">
         {/* Hero */}
         <section className="relative py-16 overflow-hidden">

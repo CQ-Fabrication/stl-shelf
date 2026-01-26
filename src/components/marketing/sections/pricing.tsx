@@ -1,13 +1,9 @@
-"use client";
-
-import { useMemo } from "react";
 import { Check, Sparkles, Zap } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { cn } from "@/lib/utils";
-import { getPublicPricing } from "@/server/functions/pricing";
+import type { PublicPricingResponse } from "@/server/functions/pricing";
 
 type PricingTier = {
   name: string;
@@ -21,75 +17,61 @@ type PricingTier = {
   highlighted?: boolean;
 };
 
-const tierUiConfig = {
+type PricingProps = {
+  pricing?: PublicPricingResponse | null;
+};
+
+type TierUiConfig = {
+  name: string;
+  description: string;
+  badge: string;
+  cta: string;
+  badgeVariant?: "default" | "popular";
+  highlighted?: boolean;
+};
+
+const tierUiConfig: Record<"free" | "pro", TierUiConfig> = {
   free: {
     name: "Free",
     description: "Perfect for getting started",
     badge: "Free Forever",
     cta: "Get Started",
   },
-  basic: {
-    name: "Basic",
-    description: "For growing collections",
-    badge: "Most Popular",
-    badgeVariant: "popular" as const,
-    highlighted: true,
-    cta: "Start Free Trial",
-  },
   pro: {
     name: "Pro",
-    description: "For power users & teams",
-    cta: "Start Free Trial",
+    description: "For serious collections and teams",
+    badge: "Best Value",
+    badgeVariant: "popular" as const,
+    highlighted: true,
+    cta: "Upgrade to Pro",
   },
 };
 
 const fallbackTiers: PricingTier[] = [
   {
     name: tierUiConfig.free.name,
-    price: "$0",
+    price: "€0",
     period: "forever",
     description: tierUiConfig.free.description,
     badge: tierUiConfig.free.badge,
-    features: [
-      "1 user",
-      "200 MB storage",
-      "10 models",
-      "3D model preview",
-      "Basic organization",
-      "Community support",
-    ],
+    features: ["1 user", "200 MB storage", "10 models", "3D model preview"],
     cta: tierUiConfig.free.cta,
   },
   {
-    name: tierUiConfig.basic.name,
-    price: "$4.99",
-    period: "/month",
-    description: tierUiConfig.basic.description,
-    badge: tierUiConfig.basic.badge,
-    badgeVariant: tierUiConfig.basic.badgeVariant,
-    highlighted: tierUiConfig.basic.highlighted,
-    features: [
-      "Up to 3 team members",
-      "10 GB storage",
-      "200 models",
-      "Version history",
-      "Advanced organization",
-      "Priority email support",
-    ],
-    cta: tierUiConfig.basic.cta,
-  },
-  {
     name: tierUiConfig.pro.name,
-    price: "$12.99",
+    price: "€6.99",
     period: "/month",
     description: tierUiConfig.pro.description,
+    badge: tierUiConfig.pro.badge,
+    badgeVariant: tierUiConfig.pro.badgeVariant,
+    highlighted: tierUiConfig.pro.highlighted,
     features: [
-      "Up to 10 team members",
-      "50 GB storage",
+      "10 GB storage included",
       "Unlimited models",
-      "Full API access",
-      "Custom integrations",
-      "Premium support",
+      "Team access",
+      "Version history",
+      "Priority support",
+      "Expandable storage",
     ],
     cta: tierUiConfig.pro.cta,
   },
@@ -103,10 +85,42 @@ const formatPeriod = (interval: string | null, intervalCount: number | null) => 
   return `/${interval}`;
 };
 
-const fallbackBySlug = {
-  free: fallbackTiers[0],
-  basic: fallbackTiers[1],
-  pro: fallbackTiers[2],
+const fallbackBySlug: Record<"free" | "pro", PricingTier> = {
+  free: fallbackTiers[0]!,
+  pro: fallbackTiers[1]!,
+};
+
+const buildPricingTiers = (pricing?: PublicPricingResponse | null): PricingTier[] => {
+  if (!pricing?.tiers?.length) return fallbackTiers;
+
+  const isDisplayTier = (
+    tier: PublicPricingResponse["tiers"][number],
+  ): tier is PublicPricingResponse["tiers"][number] & { slug: "free" | "pro" } =>
+    tier.slug === "free" || tier.slug === "pro";
+
+  return pricing.tiers.filter(isDisplayTier).map((tier) => {
+    const ui = tierUiConfig[tier.slug];
+    const fallbackTier = fallbackBySlug[tier.slug];
+    const amount = tier.priceAmount ?? 0;
+    const currency = tier.priceCurrency || "USD";
+    const price = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: amount % 100 === 0 ? 0 : 2,
+    }).format(amount / 100);
+
+    return {
+      name: ui.name,
+      price,
+      period: formatPeriod(tier.interval, tier.intervalCount),
+      description: ui.description,
+      badge: ui.badge,
+      badgeVariant: ui.badgeVariant,
+      highlighted: ui.highlighted,
+      features: tier.benefits.length ? tier.benefits : fallbackTier.features,
+      cta: ui.cta,
+    } satisfies PricingTier;
+  });
 };
 
 function PricingCard({ tier, index }: { tier: PricingTier; index: number }) {
@@ -184,45 +198,8 @@ function PricingCard({ tier, index }: { tier: PricingTier; index: number }) {
   );
 }
 
-export function Pricing() {
-  const { data } = useQuery({
-    queryKey: ["public-pricing"],
-    queryFn: () => getPublicPricing(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const tiers = useMemo(() => {
-    if (!data?.tiers?.length) return fallbackTiers;
-
-    return data.tiers.map((tier) => {
-      const ui =
-        tier.slug === "free"
-          ? tierUiConfig.free
-          : tier.slug === "basic"
-            ? tierUiConfig.basic
-            : tierUiConfig.pro;
-      const fallbackTier = fallbackBySlug[tier.slug];
-      const amount = tier.priceAmount ?? 0;
-      const currency = tier.priceCurrency || "USD";
-      const price = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency,
-        maximumFractionDigits: amount % 100 === 0 ? 0 : 2,
-      }).format(amount / 100);
-
-      return {
-        name: ui.name,
-        price,
-        period: formatPeriod(tier.interval, tier.intervalCount),
-        description: ui.description,
-        badge: ui.badge,
-        badgeVariant: ui.badgeVariant,
-        highlighted: ui.highlighted,
-        features: tier.benefits.length ? tier.benefits : fallbackTier.features,
-        cta: ui.cta,
-      } satisfies PricingTier;
-    });
-  }, [data]);
+export function Pricing({ pricing }: PricingProps) {
+  const tiers = buildPricingTiers(pricing);
 
   return (
     <section id="pricing" className="relative py-24 overflow-hidden">
@@ -252,14 +229,15 @@ export function Pricing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-start">
           {tiers.map((tier, index) => (
             <PricingCard key={tier.name} tier={tier} index={index} />
           ))}
         </div>
 
-        <div className="animate-fade-in-up text-center mt-12 text-sm text-muted-foreground">
-          All plans include 3D model preview, file organization, and secure storage.
+        <div className="animate-fade-in-up text-center mt-12 text-sm text-muted-foreground space-y-3">
+          <div>All plans include 3D model preview, file organization, and secure storage.</div>
+          <div>Fair‑use bandwidth included (up to 3× stored data per month).</div>
         </div>
       </div>
     </section>

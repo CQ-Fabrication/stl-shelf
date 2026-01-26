@@ -15,7 +15,13 @@ export function useOpenPanelClient() {
   return useContext(OpenPanelContext);
 }
 
-function OpenPanelUserSync({ client, children }: { client: OpenPanel | null; children: ReactNode }) {
+function OpenPanelUserSync({
+  client,
+  children,
+}: {
+  client: OpenPanel | null;
+  children: ReactNode;
+}) {
   const { data: session } = authClient.useSession();
   const { data: activeOrg } = useActiveOrganization();
 

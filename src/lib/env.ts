@@ -44,10 +44,13 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     EMAIL_FROM: z.string().optional().default("STL Shelf <noreply@mail.stl-shelf.com>"),
     EMAIL_LOGO_URL: z.url().optional(),
+    RESEND_SEGMENT_USERS: z.string().optional(),
+    RESEND_SEGMENT_MARKETING_OPT_IN: z.string().optional(),
 
     // Server Configuration
     NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
     PORT: z.coerce.number().min(1).default(3000),
+    NGROK_DOMAIN: z.string().optional(),
 
     // Polar.sh Billing
     POLAR_ACCESS_TOKEN: z.string().min(1).default("polar_placeholder"),
