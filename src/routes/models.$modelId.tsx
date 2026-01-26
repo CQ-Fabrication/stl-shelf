@@ -3,11 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { errorContextActions } from "@/stores/error-context.store";
-import { ChangelogSheet } from "@/components/model-detail/changelog-sheet";
 import { ModelDetailHeader } from "@/components/model-detail/model-detail-header";
+import { ModelFilesPanel } from "@/components/model-detail/model-files-panel";
 import { ModelInfoCard } from "@/components/model-detail/model-info-card";
 import { ModelPreviewCard } from "@/components/model-detail/model-preview-card";
 import { ModelVersionHistory } from "@/components/model-detail/model-version-history";
+import { PrintProfilesSection } from "@/components/model-detail/print-profiles";
 import { VersionUploadModal } from "@/components/model-detail/version-upload-modal";
 import {
   AlertDialog,
@@ -19,6 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDeleteModel } from "@/hooks/use-delete-model";
 import { addVersion, getModel, getModelVersions } from "@/server/functions/models";
 
@@ -33,8 +36,10 @@ function ModelDetailComponent() {
   const { modelId } = Route.useParams();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [versionUploadModalOpen, setVersionUploadModalOpen] = useState(false);
-  const [changelogSheetOpen, setChangelogSheetOpen] = useState(false);
   const [selectedVersionId, setSelectedVersionId] = useState<string>();
+  const [activeTab, setActiveTab] = useState<"overview" | "files" | "versions" | "profiles">(
+    "overview",
+  );
 
   // Track action for error context
   useEffect(() => {
@@ -97,6 +102,10 @@ function ModelDetailComponent() {
     setSelectedVersionId(versionId);
   };
 
+  const handleChangelogClick = () => {
+    setActiveTab("versions");
+  };
+
   const handleDelete = () => {
     if (model) {
       deleteModel.mutate(model.id);
@@ -108,34 +117,66 @@ function ModelDetailComponent() {
   };
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-6">
-      <ModelDetailHeader
-        activeVersion={activeVersion}
-        modelId={modelId}
-        onChangelogClick={() => setChangelogSheetOpen(true)}
-        onDeleteClick={() => setDeleteDialogOpen(true)}
-        onUploadVersionClick={() => setVersionUploadModalOpen(true)}
-      />
+    <div className="bg-background">
+      <div className="container mx-auto max-w-6xl px-4 py-8">
+        <ModelDetailHeader
+          activeVersion={activeVersion}
+          modelId={modelId}
+          onChangelogClick={handleChangelogClick}
+          onDeleteClick={() => setDeleteDialogOpen(true)}
+          onUploadVersionClick={() => setVersionUploadModalOpen(true)}
+        />
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left column */}
-        <div className="space-y-6">
-          {/* 3D Viewer */}
-          <ModelPreviewCard modelId={modelId} versionId={activeVersion} />
-          {/* Version History */}
-          <ModelVersionHistory
-            activeVersion={activeVersion}
-            modelId={modelId}
-            onVersionSelect={handleVersionSelect}
-          />
-        </div>
+        <Tabs
+          className="mt-6"
+          onValueChange={(value) =>
+            setActiveTab(value as "overview" | "files" | "versions" | "profiles")
+          }
+          value={activeTab}
+        >
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="files">Files</TabsTrigger>
+            <TabsTrigger value="versions">Versions</TabsTrigger>
+            <TabsTrigger value="profiles">Print Profiles</TabsTrigger>
+          </TabsList>
 
-        {/* Right column */}
-        <div className="space-y-6">
-          {/* Model Info */}
-          <ModelInfoCard modelId={modelId} versionId={activeVersion} />
-        </div>
+          <TabsContent value="overview">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+              <ModelPreviewCard modelId={modelId} versionId={activeVersion} />
+              <ModelInfoCard modelId={modelId} versionId={activeVersion} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="files">
+            <ModelFilesPanel modelId={modelId} versionId={activeVersion} />
+          </TabsContent>
+
+          <TabsContent value="versions">
+            <ModelVersionHistory
+              activeVersion={activeVersion}
+              modelId={modelId}
+              onVersionSelect={handleVersionSelect}
+            />
+          </TabsContent>
+
+          <TabsContent value="profiles">
+            <Card className="border-border/60 bg-card shadow-sm">
+              <CardHeader className="border-border/60 border-b">
+                <CardTitle className="text-base font-semibold">Print Profiles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activeVersion ? (
+                  <PrintProfilesSection versionId={activeVersion} />
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+                    Upload a version to add print profiles.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Version Upload Modal */}
@@ -145,14 +186,6 @@ function ModelDetailComponent() {
         modelId={modelId}
         onClose={() => setVersionUploadModalOpen(false)}
         onSubmit={handleVersionUpload}
-      />
-
-      {/* Changelog Sheet */}
-      <ChangelogSheet
-        activeVersionId={activeVersion}
-        isOpen={changelogSheetOpen}
-        modelId={modelId}
-        onClose={() => setChangelogSheetOpen(false)}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -27,6 +27,12 @@ Git:
 
 If a command fails due to insufficient permissions, you must elevate the command to the user for approval.
 
+UI/UX Redesigns:
+
+- Preserve brand colors + fonts; don’t re-theme.
+- Prefer task-based IA (Overview / Files / Versions / Print Profiles) to avoid deep scroll.
+- Avoid redundant surfaces (no separate sheet if inline history exists).
+
 More details:
 
 - [Architecture](docs/agents/architecture.md)

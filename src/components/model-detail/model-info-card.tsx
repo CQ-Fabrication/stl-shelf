@@ -3,18 +3,9 @@ import { Calendar, HardDrive, ImageIcon, PenLine } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TagEditor } from "@/components/model-detail/tag-editor";
-import { SourceFilesSection } from "@/components/model-detail/source-files-section";
-import { PrintProfilesSection } from "@/components/model-detail/print-profiles";
 import { formatDate, formatFileSize } from "@/utils/formatters";
-import {
-  getModel,
-  getModelStatistics,
-  getModelTags,
-  getModelFiles,
-  getModelVersions,
-} from "@/server/functions/models";
+import { getModel, getModelTags, getModelVersions } from "@/server/functions/models";
 
 type ModelInfoCardProps = {
   modelId: string;
@@ -26,18 +17,9 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
     queryKey: ["model", modelId],
     queryFn: () => getModel({ data: { id: modelId } }),
   });
-  const { isLoading: statsLoading } = useQuery({
-    queryKey: ["model", modelId, "statistics"],
-    queryFn: () => getModelStatistics({ data: { id: modelId } }),
-  });
   const { data: tags } = useQuery({
     queryKey: ["model", modelId, "tags"],
     queryFn: () => getModelTags({ data: { id: modelId } }),
-  });
-  const { data: files, refetch: refetchFiles } = useQuery({
-    queryKey: ["model", modelId, "files", versionId],
-    queryFn: () => getModelFiles({ data: { modelId, versionId: versionId! } }),
-    enabled: !!versionId,
   });
   const { data: versions } = useQuery({
     queryKey: ["model", modelId, "versions"],
@@ -46,11 +28,11 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
 
   const activeVersion = versionId ? versions?.find((v) => v.id === versionId) : versions?.[0];
 
-  if (statsLoading || !model) {
+  if (!model) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Model Information</CardTitle>
+      <Card className="border-border/60 bg-card shadow-sm">
+        <CardHeader className="border-border/60 border-b">
+          <CardTitle className="text-base font-semibold">Model Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -64,9 +46,9 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
     );
   }
   return (
-    <Card className="shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <Card className="border-border/60 bg-card shadow-sm">
+      <CardHeader className="border-border/60 border-b">
+        <CardTitle className="flex items-center justify-between text-base font-semibold">
           <span>Model Information</span>
           {activeVersion && (
             <Badge className="font-normal text-brand" variant="outline">
@@ -135,29 +117,6 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
               </p>
             </div>
           </div>
-        )}
-
-        {/* Files and Profiles Tabs */}
-        {versionId && (
-          <Tabs className="w-full" defaultValue="files">
-            <TabsList>
-              <TabsTrigger value="files">Source Files</TabsTrigger>
-              <TabsTrigger value="profiles">Print Profiles</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="files">
-              <SourceFilesSection
-                files={files ?? []}
-                hasThumbnail={!!activeVersion?.thumbnailUrl}
-                onFilesChanged={() => refetchFiles()}
-                versionId={versionId}
-              />
-            </TabsContent>
-
-            <TabsContent value="profiles">
-              <PrintProfilesSection versionId={versionId} />
-            </TabsContent>
-          </Tabs>
         )}
 
         {/* Tags */}

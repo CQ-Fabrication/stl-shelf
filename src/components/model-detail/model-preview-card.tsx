@@ -33,10 +33,10 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>3D Preview</CardTitle>
-          <CardDescription>
+      <Card className="border-border/60 bg-card shadow-sm">
+        <CardHeader className="border-border/60 border-b">
+          <CardTitle className="text-base font-semibold">3D Preview</CardTitle>
+          <CardDescription className="text-muted-foreground text-xs uppercase tracking-wide">
             <Skeleton className="h-4 w-32" />
           </CardDescription>
         </CardHeader>
@@ -49,13 +49,15 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
 
   if (!activeVersion) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>3D Preview</CardTitle>
-          <CardDescription>No version available</CardDescription>
+      <Card className="border-border/60 bg-card shadow-sm">
+        <CardHeader className="border-border/60 border-b">
+          <CardTitle className="text-base font-semibold">3D Preview</CardTitle>
+          <CardDescription className="text-muted-foreground text-xs uppercase tracking-wide">
+            No version available
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="flex aspect-video items-center justify-center rounded-b-lg bg-muted">
+          <div className="flex aspect-video items-center justify-center rounded-b-lg bg-muted/40">
             <div className="text-center text-muted-foreground">
               <FileText className="mx-auto mb-2 h-12 w-12" />
               <div>No version selected</div>
@@ -66,14 +68,16 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
     );
   }
   return (
-    <Card className="pb-0 shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
-      <CardHeader>
-        <CardTitle>3D Preview</CardTitle>
-        <CardDescription>Interactive 3D view of {activeVersion.version}</CardDescription>
+    <Card className="border-border/60 bg-card shadow-sm">
+      <CardHeader className="border-border/60 border-b">
+        <CardTitle className="text-base font-semibold">3D Preview</CardTitle>
+        <CardDescription className="text-muted-foreground text-xs uppercase tracking-wide">
+          Interactive view · {activeVersion.version}
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         {mainModelFile?.storageUrl ? (
-          <div className="aspect-video">
+          <div className="aspect-video bg-muted/20">
             <STLViewerWithSuspense
               className="h-full w-full overflow-hidden rounded-b-lg"
               filename={mainModelFile.filename}
@@ -83,7 +87,7 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
             />
           </div>
         ) : (
-          <div className="flex aspect-video items-center justify-center rounded-b-lg bg-muted">
+          <div className="flex aspect-video items-center justify-center rounded-b-lg bg-muted/40">
             <div className="text-center text-muted-foreground">
               <FileText className="mx-auto mb-2 h-12 w-12" />
               {has3DFiles ? (
