@@ -79,6 +79,9 @@ function ModelDetailComponent() {
       queryClient.invalidateQueries({
         queryKey: ["models", modelId, "versions"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["billing", "usage"],
+      });
       setVersionUploadModalOpen(false);
       setSelectedVersionId(data.versionId);
     },

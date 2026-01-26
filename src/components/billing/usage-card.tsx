@@ -1,4 +1,4 @@
-import { Box, Download, HardDrive, Loader2, Users } from "lucide-react";
+import { Box, Download, HardDrive, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -86,27 +86,6 @@ export const UsageCard = () => {
           />
           <p className="text-muted-foreground text-xs">
             {formatPercentage(usage.models.percentage)} used
-          </p>
-        </div>
-
-        {/* Members Usage */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">Team Members</span>
-            </div>
-            <span className={getUsageColor(usage.members.percentage)}>
-              {usage.members.used} / {usage.members.limit}
-            </span>
-          </div>
-          <Progress
-            className="h-2"
-            indicatorClassName={getUsageProgressColor(usage.members.percentage)}
-            value={usage.members.percentage}
-          />
-          <p className="text-muted-foreground text-xs">
-            {formatPercentage(usage.members.percentage)} used
           </p>
         </div>
 

@@ -166,33 +166,8 @@ export const auth = betterAuth({
           }
         },
         beforeCreateInvitation: async ({ organization }) => {
-          // Get current member count from DB
-          const memberCount = await db
-            .select({ count: memberTable.id })
-            .from(memberTable)
-            .where(eq(memberTable.organizationId, organization.id))
-            .then((rows) => rows.length);
-
-          // Get pending invitation count
-          const pendingInvitationCount = await db
-            .select({ count: invitationTable.id })
-            .from(invitationTable)
-            .where(
-              and(
-                eq(invitationTable.organizationId, organization.id),
-                eq(invitationTable.status, "pending"),
-              ),
-            )
-            .then((rows) => rows.length);
-
-          const totalSlotsTaken = memberCount + pendingInvitationCount;
-          const memberLimit = (organization as { memberLimit?: number }).memberLimit ?? 1;
-
-          if (totalSlotsTaken >= memberLimit) {
-            throw new Error(
-              `Member limit reached. Your plan allows ${memberLimit} member${memberLimit > 1 ? "s" : ""}. Upgrade to invite more.`,
-            );
-          }
+          // Member limits are disabled for now.
+          void organization;
         },
         // RBAC: Transfer models to owner when member is removed
         beforeRemoveMember: async ({ user, organization }) => {

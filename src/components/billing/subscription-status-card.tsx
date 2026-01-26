@@ -1,13 +1,4 @@
-import {
-  AlertTriangle,
-  Box,
-  CreditCard,
-  Crown,
-  HardDrive,
-  Loader2,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { AlertTriangle, Box, CreditCard, Crown, HardDrive, Loader2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,12 +31,12 @@ function UsageRow({ icon, label, used, limit, percentage, formatValue }: UsageRo
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex flex-col gap-1 text-sm">
         <div className="flex items-center gap-2 text-muted-foreground">
           {icon}
           <span>{label}</span>
         </div>
-        <span className={`font-medium tabular-nums ${getUsageColor(percentage)}`}>
+        <span className={`whitespace-nowrap font-medium tabular-nums ${getUsageColor(percentage)}`}>
           {displayUsed} / {displayLimit}
           {isCritical && (
             <span className="ml-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
@@ -74,7 +65,7 @@ function SubscriptionSkeleton() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-6 sm:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="space-y-2">
               <div className="flex items-center justify-between">
@@ -110,14 +101,13 @@ export const SubscriptionStatusCard = () => {
   const hasPaymentIssue = subscription.status === "past_due" || subscription.status === "unpaid";
 
   // Check if any resource is at warning level
-  const hasWarning =
-    usage.storage.percentage >= 75 ||
-    usage.models.percentage >= 75 ||
-    usage.members.percentage >= 75;
+  const hasWarning = usage.storage.percentage >= 75 || usage.models.percentage >= 75;
+
+  const statusLabel = hasPaymentIssue ? "Payment Issue" : subscription.status;
 
   return (
     <Card
-      className={`${hasPaymentIssue ? "border-red-500/50" : isPro ? "border-orange-500/50" : ""} ${hasWarning && isFree ? "border-amber-500/30" : ""}`}
+      className={`${hasPaymentIssue ? "border-red-500/50" : isPro ? "border-brand/50" : ""} ${hasWarning && isFree ? "border-amber-500/30" : ""}`}
     >
       {/* Payment failure banner */}
       {hasPaymentIssue && isOwner && (
@@ -138,14 +128,16 @@ export const SubscriptionStatusCard = () => {
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {isPro && <Crown className="h-5 w-5 text-orange-500" />}
+            {isPro && <Crown className="h-5 w-5 text-brand" />}
             <CardTitle className="text-xl">{getTierDisplayName(subscription.tier)} Plan</CardTitle>
-            <Badge
-              variant={isActive ? "default" : hasPaymentIssue ? "destructive" : "secondary"}
-              className={isActive ? "bg-green-600 hover:bg-green-600" : ""}
-            >
-              {hasPaymentIssue ? "Payment Issue" : subscription.status}
-            </Badge>
+            {statusLabel && (
+              <Badge
+                variant={isActive ? "default" : hasPaymentIssue ? "destructive" : "secondary"}
+                className={isActive ? "bg-green-600 hover:bg-green-600" : ""}
+              >
+                {statusLabel}
+              </Badge>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -167,13 +159,6 @@ export const SubscriptionStatusCard = () => {
             used={usage.models.used}
             limit={usage.models.limit}
             percentage={usage.models.percentage}
-          />
-          <UsageRow
-            icon={<Users className="h-4 w-4" />}
-            label="Members"
-            used={usage.members.used}
-            limit={usage.members.limit}
-            percentage={usage.members.percentage}
           />
         </div>
 

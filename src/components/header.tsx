@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
-import { Check, CreditCard, LogOut, Plus, Settings, User, Users } from "lucide-react";
+import { Check, CreditCard, LogOut, Plus, Settings, User } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
@@ -137,7 +137,7 @@ export default function Header() {
                           </DropdownMenuItem>
                         );
                       })}
-                      {/* RBAC: Only show settings/members for admins+ */}
+                      {/* RBAC: Only show settings for admins+ */}
                       {permissions?.canAccessSettings && (
                         <>
                           <DropdownMenuSeparator />
@@ -145,12 +145,6 @@ export default function Header() {
                             <Link to="/organization/settings">
                               <Settings className="mr-2 h-4 w-4" />
                               Settings
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to="/organization/members">
-                              <Users className="mr-2 h-4 w-4" />
-                              Members
                             </Link>
                           </DropdownMenuItem>
                         </>

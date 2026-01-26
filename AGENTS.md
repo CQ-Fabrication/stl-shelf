@@ -1,3 +1,5 @@
+READ ~/CQ\ Fabrication/agent-scripts/AGENTS.MD BEFORE ANYTHING (skip if missing).
+
 # AGENTS.md
 
 STL Shelf is a unified full-stack TypeScript app (TanStack Start) for managing a personal library of 3D printable models (STL, 3MF, OBJ).
@@ -21,7 +23,9 @@ Database:
 
 Git:
 
-- Always run git commands directly; never touch or create `.git/index.lock`. If git operations fail due to permissions, ask the user to run the git commands locally.
+- Always run git commands directly; never touch or create `.git/index.lock`.
+
+If a command fails due to insufficient permissions, you must elevate the command to the user for approval.
 
 More details:
 

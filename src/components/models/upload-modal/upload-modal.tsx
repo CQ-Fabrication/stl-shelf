@@ -103,6 +103,7 @@ export function UploadModal() {
       toast.success(`Successfully created model: ${data.slug}`);
       queryClient.invalidateQueries({ queryKey: MODELS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["tags", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
       uploadModalActions.resetForm();
       navigate({
         to: "/models/$modelId",

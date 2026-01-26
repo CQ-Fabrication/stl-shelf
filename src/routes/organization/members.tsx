@@ -4,19 +4,13 @@ import { InvitationsTable } from "@/components/organization/invitations-table";
 import { MembersTable } from "@/components/organization/members-table";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
-import { getMemberRoleFn } from "@/server/functions/auth";
 
 export const Route = createFileRoute("/organization/members")({
   head: () => ({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
   beforeLoad: async () => {
-    // RBAC: Only admins and owners can access team members
-    const permissions = await getMemberRoleFn();
-    if (!permissions?.canAccessMembers) {
-      throw notFound();
-    }
-    return { permissions };
+    throw notFound();
   },
   component: OrganizationMembersPage,
 });
