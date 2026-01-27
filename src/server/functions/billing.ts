@@ -5,15 +5,30 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { member, organization } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
+import { env } from "@/lib/env";
 import type { SubscriptionTier } from "@/lib/billing/config";
-import { getTierConfig, isUnlimited } from "@/lib/billing/config";
+import {
+  SUBSCRIPTION_PRODUCT_SLUG_OPTIONS,
+  getTierConfig,
+  isUnlimited,
+} from "@/lib/billing/config";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { polarService } from "@/server/services/billing/polar.service";
 import { getEgressUsageSnapshot, getEgressLimits } from "@/server/services/billing/egress.service";
+import { getErrorDetails, logErrorEvent } from "@/lib/logging";
+
+const SUPPORT_MESSAGE =
+  "We couldn't start checkout due to a customer reconciliation issue. Please contact support and share reference: ";
+
+const isPolarCustomerConflict = (error: unknown) => {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return message.includes("customer with this email address already exists");
+};
 
 const createCheckoutSchema = z.object({
-  productSlug: z.enum(["free", "basic", "pro"]),
+  productSlug: z.enum(SUBSCRIPTION_PRODUCT_SLUG_OPTIONS),
 });
 
 // Get current subscription info
@@ -214,26 +229,51 @@ export const createCheckout = createServerFn({ method: "POST" })
         throw new Error("Only organization owner can manage billing");
       }
 
-      // Create Polar customer if doesn't exist
-      let customerId = org.polarCustomerId;
-      if (!customerId) {
-        const customer = await polarService.createCustomer(
-          org.id,
-          org.name,
-          context.session.user.email,
+      const supportRef = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`;
+
+      try {
+        // Create Polar customer if doesn't exist
+        let customerId = org.polarCustomerId;
+        if (!customerId) {
+          const customer = await polarService.createCustomer(
+            org.id,
+            org.name,
+            context.session.user.email,
+          );
+          customerId = customer.id;
+
+          await db
+            .update(organization)
+            .set({ polarCustomerId: customerId })
+            .where(eq(organization.id, org.id));
+        }
+
+        // Create checkout session
+        const checkout = await polarService.createCheckoutSession(customerId, data.productSlug);
+
+        return { checkoutUrl: checkout.url };
+      } catch (error) {
+        if (isPolarCustomerConflict(error)) {
+          logErrorEvent("billing.checkout.customer_conflict", {
+            supportRef,
+            organizationId: org.id,
+            userId: context.session.user.id,
+            email: context.session.user.email,
+            ...getErrorDetails(error),
+          });
+          throw new Error(`${SUPPORT_MESSAGE}${supportRef}`);
+        }
+
+        logErrorEvent("billing.checkout.failed", {
+          supportRef,
+          organizationId: org.id,
+          userId: context.session.user.id,
+          ...getErrorDetails(error),
+        });
+        throw new Error(
+          `Unable to start checkout. Please contact support with reference: ${supportRef}`,
         );
-        customerId = customer.id;
-
-        await db
-          .update(organization)
-          .set({ polarCustomerId: customerId })
-          .where(eq(organization.id, org.id));
       }
-
-      // Create checkout session
-      const checkout = await polarService.createCheckoutSession(customerId, data.productSlug);
-
-      return { checkoutUrl: checkout.url };
     },
   );
 
@@ -254,13 +294,13 @@ export const getPortalUrl = createServerFn({ method: "GET" })
       throw new Error("Only organization owner can access billing portal");
     }
 
-    if (!org.polarCustomerId) {
-      throw new Error("No subscription found");
-    }
+    const portalSession = await polarService.createCustomerPortalSession(
+      org.id,
+      `${env.WEB_URL}/billing`,
+    );
 
-    // Return Better Auth portal URL
     return {
-      portalUrl: `/api/auth/portal?customerId=${org.polarCustomerId}`,
+      portalUrl: portalSession.customerPortalUrl,
     };
   });
 

@@ -1,6 +1,6 @@
 import { Polar } from "@polar-sh/sdk";
 import { env } from "@/lib/env";
-import type { SubscriptionTier } from "@/lib/billing/config";
+import type { SubscriptionProductSlug } from "@/lib/billing/config";
 
 const polarClient = new Polar({
   accessToken: env.POLAR_ACCESS_TOKEN,
@@ -10,14 +10,18 @@ const polarClient = new Polar({
 /**
  * Get Polar product ID from tier slug
  */
-function getProductIdFromSlug(slug: SubscriptionTier): string | undefined {
+function getProductIdFromSlug(slug: SubscriptionProductSlug): string | undefined {
   switch (slug) {
     case "free":
       return env.POLAR_PRODUCT_FREE;
-    case "basic":
-      return env.POLAR_PRODUCT_BASIC;
-    case "pro":
-      return env.POLAR_PRODUCT_PRO;
+    case "basic_month":
+      return env.POLAR_PRODUCT_BASIC_MONTH ?? env.POLAR_PRODUCT_BASIC;
+    case "basic_year":
+      return env.POLAR_PRODUCT_BASIC_YEAR;
+    case "pro_month":
+      return env.POLAR_PRODUCT_PRO_MONTH ?? env.POLAR_PRODUCT_PRO;
+    case "pro_year":
+      return env.POLAR_PRODUCT_PRO_YEAR;
     default:
       return undefined;
   }
@@ -47,11 +51,11 @@ export const polarService = {
   /**
    * Create checkout session
    */
-  async createCheckoutSession(customerId: string, tierSlug: SubscriptionTier) {
-    const productId = getProductIdFromSlug(tierSlug);
+  async createCheckoutSession(customerId: string, productSlug: SubscriptionProductSlug) {
+    const productId = getProductIdFromSlug(productSlug);
 
     if (!productId) {
-      throw new Error(`Product not configured for tier: ${tierSlug}`);
+      throw new Error(`Product not configured for slug: ${productSlug}`);
     }
 
     const checkout = await polarClient.checkouts.create({
@@ -65,5 +69,12 @@ export const polarService = {
 
   async getProduct(productId: string) {
     return polarClient.products.get({ id: productId });
+  },
+
+  async createCustomerPortalSession(externalCustomerId: string, returnUrl?: string) {
+    return polarClient.customerSessions.create({
+      externalCustomerId,
+      returnUrl,
+    });
   },
 };

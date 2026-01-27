@@ -37,8 +37,8 @@ export function Pricing({ pricing }: PricingProps) {
         <PricingCards pricing={pricing} />
 
         <div className="animate-fade-in-up text-center mt-12 text-sm text-muted-foreground space-y-3">
-          <div>All plans include 3D model preview, file organization, and secure storage.</div>
-          <div>Fair‑use bandwidth included (up to 3× stored data per month).</div>
+          <div>All plans include 3D model preview, organization, and private storage.</div>
+          <div>Save 10% with annual billing. Bandwidth includes a generous monthly allowance.</div>
         </div>
       </div>
     </section>

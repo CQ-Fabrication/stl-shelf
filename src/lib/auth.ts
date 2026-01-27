@@ -270,8 +270,22 @@ export const auth = betterAuth({
         checkout({
           products: [
             env.POLAR_PRODUCT_FREE && { productId: env.POLAR_PRODUCT_FREE, slug: "free" },
-            env.POLAR_PRODUCT_BASIC && { productId: env.POLAR_PRODUCT_BASIC, slug: "basic" },
-            env.POLAR_PRODUCT_PRO && { productId: env.POLAR_PRODUCT_PRO, slug: "pro" },
+            (env.POLAR_PRODUCT_BASIC_MONTH ?? env.POLAR_PRODUCT_BASIC) && {
+              productId: env.POLAR_PRODUCT_BASIC_MONTH ?? env.POLAR_PRODUCT_BASIC ?? "",
+              slug: "basic_month",
+            },
+            env.POLAR_PRODUCT_BASIC_YEAR && {
+              productId: env.POLAR_PRODUCT_BASIC_YEAR,
+              slug: "basic_year",
+            },
+            (env.POLAR_PRODUCT_PRO_MONTH ?? env.POLAR_PRODUCT_PRO) && {
+              productId: env.POLAR_PRODUCT_PRO_MONTH ?? env.POLAR_PRODUCT_PRO ?? "",
+              slug: "pro_month",
+            },
+            env.POLAR_PRODUCT_PRO_YEAR && {
+              productId: env.POLAR_PRODUCT_PRO_YEAR,
+              slug: "pro_year",
+            },
           ].filter(Boolean) as { productId: string; slug: string }[],
           successUrl: `${env.WEB_URL}/checkout/success?checkout_id={CHECKOUT_ID}`,
           authenticatedUsersOnly: true,

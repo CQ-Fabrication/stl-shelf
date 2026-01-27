@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { SUBSCRIPTION_TIERS } from "@/lib/billing/config";
+import { BILLING_INTERVALS, SUBSCRIPTION_TIERS, type BillingInterval } from "@/lib/billing/config";
 import { env } from "@/lib/env";
 import { polarService } from "@/server/services/billing/polar.service";
 
@@ -13,11 +13,15 @@ export type PricingTier = {
   slug: TierSlug;
   name: string;
   description: string | null;
-  priceAmount: number;
-  priceCurrency: string;
-  interval: string | null;
-  intervalCount: number | null;
   benefits: string[];
+  prices: Record<BillingInterval, PricingTierPrice>;
+};
+
+export type PricingTierPrice = {
+  amount: number;
+  currency: string;
+  interval: BillingInterval | null;
+  intervalCount: number | null;
 };
 
 export type PublicPricingResponse = {
@@ -33,15 +37,27 @@ let cachedPricing: { data: PublicPricingResponse | null; expiresAt: number } = {
 
 function buildFallbackTier(slug: TierSlug): PricingTier {
   const fallback = SUBSCRIPTION_TIERS[slug];
+  const buildPrice = (interval: BillingInterval): PricingTierPrice => {
+    const basePrice = interval === "year" ? fallback.priceYearly : fallback.priceMonthly;
+    if (basePrice === 0) {
+      return { amount: 0, currency: "USD", interval: null, intervalCount: null };
+    }
+    return {
+      amount: Math.round(basePrice * 100),
+      currency: "USD",
+      interval,
+      intervalCount: 1,
+    };
+  };
   return {
     slug,
     name: fallback.name,
     description: null,
-    priceAmount: Math.round(fallback.price * 100),
-    priceCurrency: "USD",
-    interval: fallback.price === 0 ? null : "month",
-    intervalCount: fallback.price === 0 ? null : 1,
     benefits: fallback.features,
+    prices: {
+      month: buildPrice("month"),
+      year: buildPrice("year"),
+    },
   };
 }
 
@@ -72,6 +88,28 @@ function extractPrice(product: {
   return null;
 }
 
+function buildPriceDetails({
+  amount,
+  currency,
+  interval,
+  intervalCount,
+}: {
+  amount: number;
+  currency: string;
+  interval: BillingInterval;
+  intervalCount: number | null;
+}): PricingTierPrice {
+  if (amount === 0) {
+    return { amount, currency, interval: null, intervalCount: null };
+  }
+  return {
+    amount,
+    currency,
+    interval,
+    intervalCount: intervalCount ?? 1,
+  };
+}
+
 export const getPublicPricing = createServerFn({ method: "GET" }).handler(
   async (): Promise<PublicPricingResponse> => {
     const now = Date.now();
@@ -82,35 +120,79 @@ export const getPublicPricing = createServerFn({ method: "GET" }).handler(
     const fallbackTiers = tierOrder.map(buildFallbackTier);
 
     try {
-      const productIds: Record<TierSlug, string | undefined> = {
-        free: env.POLAR_PRODUCT_FREE,
-        basic: env.POLAR_PRODUCT_BASIC,
-        pro: env.POLAR_PRODUCT_PRO,
+      const productIds: Record<TierSlug, Record<BillingInterval, string | undefined>> = {
+        free: {
+          month: env.POLAR_PRODUCT_FREE,
+          year: env.POLAR_PRODUCT_FREE,
+        },
+        basic: {
+          month: env.POLAR_PRODUCT_BASIC_MONTH ?? env.POLAR_PRODUCT_BASIC,
+          year: env.POLAR_PRODUCT_BASIC_YEAR,
+        },
+        pro: {
+          month: env.POLAR_PRODUCT_PRO_MONTH ?? env.POLAR_PRODUCT_PRO,
+          year: env.POLAR_PRODUCT_PRO_YEAR,
+        },
       };
 
       const tiers = await Promise.all(
         tierOrder.map(async (slug) => {
-          const productId = productIds[slug];
-          if (!productId) {
-            return buildFallbackTier(slug);
-          }
-
-          const product = await polarService.getProduct(productId);
-          const price = extractPrice({ prices: product.prices as Array<Record<string, unknown>> });
           const fallback = buildFallbackTier(slug);
-          const benefits = product.benefits?.length
-            ? product.benefits.map((benefit) => benefit.description).filter(Boolean)
-            : fallback.benefits;
+          const intervalResults = await Promise.all(
+            BILLING_INTERVALS.map(async (interval) => {
+              const intervalKey = interval as BillingInterval;
+              const productId = productIds[slug][intervalKey];
+              if (!productId) return null;
+              const product = await polarService.getProduct(productId);
+              const price = extractPrice({
+                prices: product.prices as Array<Record<string, unknown>>,
+              });
+              return { interval: intervalKey, product, price };
+            }),
+          );
+
+          let name = fallback.name;
+          let description = fallback.description;
+          let benefits = fallback.benefits;
+          const prices = { ...fallback.prices };
+
+          intervalResults.forEach((result) => {
+            if (!result) return;
+            const { interval, product, price } = result;
+            if (price) {
+              prices[interval] = buildPriceDetails({
+                amount: price.amount,
+                currency: price.currency,
+                interval,
+                intervalCount: product.recurringIntervalCount ?? 1,
+              });
+            }
+
+            const productBenefits = product.benefits?.length
+              ? product.benefits.map((benefit) => benefit.description).filter(Boolean)
+              : null;
+
+            if (interval === "month") {
+              name = product.name ?? name;
+              description = product.description ?? description;
+              benefits = productBenefits?.length ? productBenefits : benefits;
+              return;
+            }
+
+            if (name === fallback.name && product.name) name = product.name;
+            if (description === fallback.description && product.description)
+              description = product.description;
+            if (benefits === fallback.benefits && productBenefits?.length) {
+              benefits = productBenefits;
+            }
+          });
 
           return {
             slug,
-            name: product.name ?? fallback.name,
-            description: product.description ?? null,
-            priceAmount: price?.amount ?? fallback.priceAmount,
-            priceCurrency: price?.currency ?? fallback.priceCurrency,
-            interval: product.recurringInterval ?? fallback.interval,
-            intervalCount: product.recurringIntervalCount ?? fallback.intervalCount,
+            name,
+            description,
             benefits,
+            prices,
           } satisfies PricingTier;
         }),
       );

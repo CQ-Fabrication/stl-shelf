@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCheckout } from "@/hooks/use-checkout";
 import type { UploadLimitsResult } from "@/hooks/use-upload-limits";
-import { SUBSCRIPTION_TIERS, type SubscriptionTier } from "@/lib/billing/config";
+import {
+  SUBSCRIPTION_TIERS,
+  getProductSlugForTier,
+  getTierPrice,
+  type BillingInterval,
+  type SubscriptionTier,
+} from "@/lib/billing/config";
 import { formatStorage } from "@/lib/billing/utils";
 
 type UploadBlockedStateProps = {
@@ -25,8 +31,9 @@ const getRecommendedTier = (currentTier: SubscriptionTier): SubscriptionTier => 
 };
 
 export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps) {
-  const { startCheckout, loadingTier, isLoading } = useCheckout();
+  const { startCheckout, loadingProductSlug, isLoading } = useCheckout();
   const recommendedTier = getRecommendedTier(limits.tier);
+  const billingInterval: BillingInterval = "month";
 
   const blockMessage =
     limits.blockReason === "model_limit"
@@ -41,7 +48,8 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
 
   const handleUpgradeClick = (tier: SubscriptionTier) => {
     console.log("limit_upgrade_clicked", { from: limits.tier, to: tier });
-    startCheckout(tier);
+    const productSlug = getProductSlugForTier(tier, billingInterval);
+    startCheckout(productSlug);
   };
 
   const handleDismiss = () => {
@@ -71,6 +79,13 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
           const config = SUBSCRIPTION_TIERS[tierKey];
           const isCurrent = limits.tier === tierKey;
           const isRecommended = tierKey === recommendedTier && !isCurrent;
+          const productSlug = getProductSlugForTier(tierKey, billingInterval);
+          let actionLabel = `Upgrade to ${config.name}`;
+          if (loadingProductSlug === productSlug) {
+            actionLabel = "Loading...";
+          } else if (isCurrent) {
+            actionLabel = "Current Plan";
+          }
 
           return (
             <Card
@@ -91,7 +106,7 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">{config.name}</CardTitle>
                 <p className="font-bold text-2xl">
-                  ${config.price}
+                  ${getTierPrice(tierKey, billingInterval)}
                   <span className="font-normal text-muted-foreground text-sm">/mo</span>
                 </p>
               </CardHeader>
@@ -116,11 +131,7 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
                   disabled={isCurrent || tierKey === "free" || isLoading}
                   onClick={() => handleUpgradeClick(tierKey)}
                 >
-                  {loadingTier === tierKey
-                    ? "Loading..."
-                    : isCurrent
-                      ? "Current Plan"
-                      : `Upgrade to ${config.name}`}
+                  {actionLabel}
                 </Button>
               </CardContent>
             </Card>

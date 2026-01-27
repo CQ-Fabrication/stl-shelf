@@ -8,41 +8,53 @@ export const SUBSCRIPTION_TIERS = {
   free: {
     slug: "free",
     name: "Free",
-    price: 0,
+    priceMonthly: 0,
+    priceYearly: 0,
     maxMembers: 1,
-    storageLimit: 209_715_200, // 200 MB in bytes
+    storageLimit: 536_870_912, // 0.5 GB in bytes
     modelCountLimit: 10,
-    features: ["1 user (you)", "200 MB storage", "10 models", "3D preview", "Community support"],
+    features: [
+      "1 seat",
+      "0.5 GB storage",
+      "10 models",
+      "3D preview",
+      "Search & tags",
+      "Basic versioning",
+    ],
   },
   basic: {
     slug: "basic",
     name: "Basic",
-    price: 4.99,
-    maxMembers: 3,
-    storageLimit: 10_737_418_240, // 10 GB in bytes
-    modelCountLimit: 200,
+    priceMonthly: 10.99,
+    priceYearly: 118.99,
+    maxMembers: 1,
+    storageLimit: 26_843_545_600, // 25 GB in bytes
+    modelCountLimit: 300,
     features: [
-      "Up to 3 team members",
-      "10 GB storage",
-      "200 models",
-      "Version history",
-      "Priority email support",
+      "1 seat",
+      "25 GB storage",
+      "300 models",
+      "Full search, tags & versioning",
+      "ZIP downloads",
+      "PrintPulse connection (soon)",
     ],
   },
   pro: {
     slug: "pro",
     name: "Pro",
-    price: 12.99,
-    maxMembers: 10,
-    storageLimit: 53_687_091_200, // 50 GB in bytes
+    priceMonthly: 35.99,
+    priceYearly: 388.99,
+    maxMembers: 5,
+    storageLimit: 214_748_364_800, // 200 GB in bytes
     modelCountLimit: -1, // Unlimited (-1 = no limit)
     features: [
-      "Up to 10 team members",
-      "50 GB storage",
+      "Up to 5 seats",
+      "200 GB storage",
       "Unlimited models",
-      "API access",
-      "Premium support",
-      "All features",
+      "Team collaboration & permissions",
+      "Activity & audit basics",
+      "Priority support",
+      "PrintPulse connection (soon)",
     ],
   },
 } as const satisfies Record<
@@ -50,7 +62,8 @@ export const SUBSCRIPTION_TIERS = {
   {
     slug: string;
     name: string;
-    price: number;
+    priceMonthly: number;
+    priceYearly: number;
     maxMembers: number;
     storageLimit: number;
     modelCountLimit: number;
@@ -65,3 +78,32 @@ export const getTierConfig = (tier: SubscriptionTier) => {
 };
 
 export const isUnlimited = (limit: number) => limit === -1;
+
+export const BILLING_INTERVALS = ["month", "year"] as const;
+
+export type BillingInterval = (typeof BILLING_INTERVALS)[number];
+
+export const SUBSCRIPTION_PRODUCT_SLUGS = {
+  free: { month: "free", year: "free" },
+  basic: { month: "basic_month", year: "basic_year" },
+  pro: { month: "pro_month", year: "pro_year" },
+} as const;
+
+export const SUBSCRIPTION_PRODUCT_SLUG_OPTIONS = [
+  SUBSCRIPTION_PRODUCT_SLUGS.free.month,
+  SUBSCRIPTION_PRODUCT_SLUGS.basic.month,
+  SUBSCRIPTION_PRODUCT_SLUGS.basic.year,
+  SUBSCRIPTION_PRODUCT_SLUGS.pro.month,
+  SUBSCRIPTION_PRODUCT_SLUGS.pro.year,
+] as const;
+
+export type SubscriptionProductSlug = (typeof SUBSCRIPTION_PRODUCT_SLUG_OPTIONS)[number];
+
+export const getProductSlugForTier = (tier: SubscriptionTier, interval: BillingInterval) => {
+  return SUBSCRIPTION_PRODUCT_SLUGS[tier][interval];
+};
+
+export const getTierPrice = (tier: SubscriptionTier, interval: BillingInterval) => {
+  const config = SUBSCRIPTION_TIERS[tier];
+  return interval === "year" ? config.priceYearly : config.priceMonthly;
+};

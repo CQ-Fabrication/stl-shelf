@@ -18,7 +18,11 @@ import { SUBSCRIPTION_TIERS } from "./config";
 function getTierFromProductId(productId: string): SubscriptionTier | undefined {
   if (env.POLAR_PRODUCT_FREE && productId === env.POLAR_PRODUCT_FREE) return "free";
   if (env.POLAR_PRODUCT_BASIC && productId === env.POLAR_PRODUCT_BASIC) return "basic";
+  if (env.POLAR_PRODUCT_BASIC_MONTH && productId === env.POLAR_PRODUCT_BASIC_MONTH) return "basic";
+  if (env.POLAR_PRODUCT_BASIC_YEAR && productId === env.POLAR_PRODUCT_BASIC_YEAR) return "basic";
   if (env.POLAR_PRODUCT_PRO && productId === env.POLAR_PRODUCT_PRO) return "pro";
+  if (env.POLAR_PRODUCT_PRO_MONTH && productId === env.POLAR_PRODUCT_PRO_MONTH) return "pro";
+  if (env.POLAR_PRODUCT_PRO_YEAR && productId === env.POLAR_PRODUCT_PRO_YEAR) return "pro";
   return undefined;
 }
 

@@ -1,11 +1,17 @@
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useCheckout } from "@/hooks/use-checkout";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useSubscription } from "@/hooks/use-subscription";
-import type { SubscriptionTier } from "@/lib/billing/config";
-import { PricingCards, type TierSlug } from "@/components/pricing/pricing-cards";
+import {
+  getProductSlugForTier,
+  type BillingInterval,
+  type SubscriptionTier,
+} from "@/lib/billing/config";
+import { PricingCards } from "@/components/pricing/pricing-cards";
+import type { TierSlug } from "@/components/pricing/pricing-utils";
 import type { PublicPricingResponse } from "@/server/functions/pricing";
 import { cn } from "@/lib/utils";
 
@@ -14,56 +20,87 @@ type PlanSelectorProps = {
   className?: string;
 };
 
+const tierRank: Record<SubscriptionTier, number> = {
+  free: 0,
+  basic: 1,
+  pro: 2,
+};
+
+const getActionLabel = ({
+  isCurrentPlan,
+  isOwner,
+  isFreeTier,
+  isDowngrade,
+  tierName,
+}: {
+  isCurrentPlan: boolean;
+  isOwner: boolean;
+  isFreeTier: boolean;
+  isDowngrade: boolean;
+  tierName: string;
+}) => {
+  if (isCurrentPlan) return "Current Plan";
+  if (!isOwner) return "Owner Only";
+  if (isDowngrade && isFreeTier) return "Downgrade to Free";
+  if (isDowngrade) return "Downgrade in Portal";
+  return `Upgrade to ${tierName}`;
+};
+
 export const PlanSelector = ({ pricing, className }: PlanSelectorProps) => {
-  const { startCheckout, loadingTier, isLoading: isCheckoutLoading } = useCheckout();
+  const { startCheckout, loadingProductSlug, isLoading: isCheckoutLoading } = useCheckout();
   const { openPortal, isLoading: isPortalLoading } = useCustomerPortal();
   const { subscription } = useSubscription();
   const currentTier = subscription?.tier ?? "free";
-  const visibleSlugs: TierSlug[] =
-    currentTier === "basic" ? ["free", "basic", "pro"] : ["free", "pro"];
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
+  const visibleSlugs: TierSlug[] = ["free", "basic", "pro"];
 
   const handleSelectPlan = (tier: SubscriptionTier) => {
-    if (tier === "free") {
-      if (subscription?.isOwner && currentTier !== "free") {
-        openPortal();
-      }
-      return;
-    }
-    if (!subscription?.isOwner) {
+    const isOwner = subscription?.isOwner ?? false;
+    const isDowngrade = tierRank[tier] < tierRank[currentTier];
+
+    if (!isOwner) {
       toast.error("Only the organization owner can upgrade");
       return;
     }
-    startCheckout(tier);
+
+    if (isDowngrade) {
+      openPortal();
+      return;
+    }
+
+    if (tier === currentTier) return;
+
+    const productSlug = getProductSlugForTier(tier, billingInterval);
+    startCheckout(productSlug);
   };
 
   return (
     <PricingCards
       pricing={pricing}
       visibleSlugs={visibleSlugs}
+      billingInterval={billingInterval}
+      onIntervalChange={setBillingInterval}
       className={className}
       renderCta={(tier) => {
         const slug = tier.slug as SubscriptionTier;
+        const productSlug = getProductSlugForTier(slug, billingInterval);
         const isCurrentPlan = subscription?.tier === slug;
         const isOwner = subscription?.isOwner ?? false;
         const isFreeTier = slug === "free";
-        const isDowngrade = isOwner && isFreeTier && currentTier !== "free";
+        const isDowngrade = isOwner && tierRank[slug] < tierRank[currentTier];
         const isBusy =
-          (isCheckoutLoading && loadingTier === slug) || (isPortalLoading && isDowngrade);
+          (isCheckoutLoading && loadingProductSlug === productSlug) ||
+          (isPortalLoading && isDowngrade);
 
-        const label = isCurrentPlan
-          ? "Current Plan"
-          : !isOwner
-            ? "Owner Only"
-            : isFreeTier
-              ? "Downgrade to Free"
-              : "Upgrade to Pro";
+        const label = getActionLabel({
+          isCurrentPlan,
+          isOwner,
+          isFreeTier,
+          isDowngrade,
+          tierName: tier.name,
+        });
 
-        const disabled =
-          isCurrentPlan ||
-          !isOwner ||
-          isCheckoutLoading ||
-          (isFreeTier && !isDowngrade) ||
-          isPortalLoading;
+        const disabled = isCurrentPlan || !isOwner || isCheckoutLoading || isPortalLoading;
 
         const handleClick = () => handleSelectPlan(slug);
 

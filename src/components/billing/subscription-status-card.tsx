@@ -1,4 +1,13 @@
-import { AlertTriangle, Box, CreditCard, Crown, HardDrive, Loader2, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  Box,
+  CreditCard,
+  Crown,
+  HardDrive,
+  Loader2,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +22,7 @@ import {
   getUsageProgressColor,
   getTierDisplayName,
 } from "@/lib/billing/utils";
+import { cn } from "@/lib/utils";
 
 type UsageRowProps = {
   icon: React.ReactNode;
@@ -81,7 +91,11 @@ function SubscriptionSkeleton() {
   );
 }
 
-export const SubscriptionStatusCard = () => {
+type SubscriptionStatusCardProps = {
+  className?: string;
+};
+
+export const SubscriptionStatusCard = ({ className }: SubscriptionStatusCardProps) => {
   const { subscription, isLoading: isSubLoading } = useSubscription();
   const { usage, isLoading: isUsageLoading } = useUsageStats();
   const { openPortal, isLoading: isPortalLoading } = useCustomerPortal();
@@ -107,7 +121,11 @@ export const SubscriptionStatusCard = () => {
 
   return (
     <Card
-      className={`${hasPaymentIssue ? "border-red-500/50" : isPro ? "border-brand/50" : ""} ${hasWarning && isFree ? "border-amber-500/30" : ""}`}
+      className={cn(
+        hasPaymentIssue ? "border-red-500/50" : isPro ? "border-brand/50" : "",
+        hasWarning && isFree ? "border-amber-500/30" : "",
+        className,
+      )}
     >
       {/* Payment failure banner */}
       {hasPaymentIssue && isOwner && (
@@ -159,6 +177,13 @@ export const SubscriptionStatusCard = () => {
             used={usage.models.used}
             limit={usage.models.limit}
             percentage={usage.models.percentage}
+          />
+          <UsageRow
+            icon={<Users className="h-4 w-4" />}
+            label="Seats"
+            used={usage.members.used}
+            limit={usage.members.limit}
+            percentage={usage.members.percentage}
           />
         </div>
 

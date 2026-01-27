@@ -3,10 +3,9 @@ import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useSubscription } from "@/hooks/use-subscription";
 
 const STORAGE_ADDONS = [
-  { label: "+10 GB", price: "EUR 2.99" },
-  { label: "+25 GB", price: "EUR 4.99" },
-  { label: "+50 GB", price: "EUR 7.99" },
-  { label: "+100 GB", price: "EUR 10.00" },
+  { label: "+100 GB", price: "$4.99" },
+  { label: "+500 GB", price: "$20.99" },
+  { label: "+1 TB", price: "$35.99" },
 ];
 
 export const StorageAddonsCard = () => {
@@ -32,7 +31,7 @@ export const StorageAddonsCard = () => {
         </Button>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
         {STORAGE_ADDONS.map((addon) => (
           <div
             className="rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm"
