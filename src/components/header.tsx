@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
-import { Check, CreditCard, LogOut, Plus, Settings, User } from "lucide-react";
+import { Check, CreditCard, LogOut, Plus, Settings, User, Users } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
@@ -138,15 +138,25 @@ export default function Header() {
                         );
                       })}
                       {/* RBAC: Only show settings for admins+ */}
-                      {permissions?.canAccessSettings && (
+                      {(permissions?.canAccessSettings || permissions?.canAccessMembers) && (
                         <>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <Link to="/organization/settings">
-                              <Settings className="mr-2 h-4 w-4" />
-                              Settings
-                            </Link>
-                          </DropdownMenuItem>
+                          {permissions?.canAccessMembers && (
+                            <DropdownMenuItem asChild>
+                              <Link to="/organization/members">
+                                <Users className="mr-2 h-4 w-4" />
+                                Team Members
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
+                          {permissions?.canAccessSettings && (
+                            <DropdownMenuItem asChild>
+                              <Link to="/organization/settings">
+                                <Settings className="mr-2 h-4 w-4" />
+                                Settings
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
                         </>
                       )}
                       {/* RBAC: Only show billing for owner */}

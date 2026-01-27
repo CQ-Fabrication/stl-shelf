@@ -19,7 +19,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "for f in drizzle/seeds/*.sql; do psql $DATABASE_URL -f $f; done",
-    "docs:list": "node scripts/docs-list.ts"
+    "docs:list": "bun run scripts/docs-list.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.971.0",

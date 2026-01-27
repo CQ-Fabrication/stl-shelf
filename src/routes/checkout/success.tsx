@@ -12,7 +12,7 @@ export const Route = createFileRoute("/checkout/success")({
   }),
   component: CheckoutSuccessPage,
   validateSearch: z.object({
-    checkout_id: z.string(),
+    checkout_id: z.string().optional(),
   }),
 });
 
@@ -40,11 +40,13 @@ function CheckoutSuccessPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg bg-muted p-4">
-            <p className="text-center text-muted-foreground text-sm">
-              Checkout ID: <code className="font-mono text-xs">{checkout_id}</code>
-            </p>
-          </div>
+          {checkout_id ? (
+            <div className="rounded-lg bg-muted p-4">
+              <p className="text-center text-muted-foreground text-sm">
+                Checkout ID: <code className="font-mono text-xs">{checkout_id}</code>
+              </p>
+            </div>
+          ) : null}
 
           <div className="flex gap-4">
             <Button

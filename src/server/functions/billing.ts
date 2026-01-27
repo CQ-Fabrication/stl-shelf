@@ -263,3 +263,5 @@ export const getPortalUrl = createServerFn({ method: "GET" })
       portalUrl: `/api/auth/portal?customerId=${org.polarCustomerId}`,
     };
   });
+
+// Manual subscription sync (owner only)

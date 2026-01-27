@@ -57,6 +57,8 @@ export const polarService = {
     const checkout = await polarClient.checkouts.create({
       customerId,
       products: [productId],
+      successUrl: `${env.WEB_URL}/checkout/success?checkout_id={CHECKOUT_ID}`,
+      returnUrl: `${env.WEB_URL}/billing`,
     });
     return checkout;
   },
