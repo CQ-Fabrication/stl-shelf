@@ -102,10 +102,6 @@ function ModelDetailComponent() {
     setSelectedVersionId(versionId);
   };
 
-  const handleChangelogClick = () => {
-    setActiveTab("versions");
-  };
-
   const handleDelete = () => {
     if (model) {
       deleteModel.mutate(model.id);
@@ -122,7 +118,6 @@ function ModelDetailComponent() {
         <ModelDetailHeader
           activeVersion={activeVersion}
           modelId={modelId}
-          onChangelogClick={handleChangelogClick}
           onDeleteClick={() => setDeleteDialogOpen(true)}
           onUploadVersionClick={() => setVersionUploadModalOpen(true)}
         />
