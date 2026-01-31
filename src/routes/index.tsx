@@ -6,6 +6,7 @@ import {
   Features,
   HowItWorks,
   UseCases,
+  Resources,
   Pricing,
   Testimonials,
   FinalCTA,
@@ -46,6 +47,7 @@ function LandingPage() {
         <Features />
         <HowItWorks />
         <UseCases />
+        <Resources />
         <Pricing pricing={pricing} />
         <Testimonials />
         <FinalCTA />

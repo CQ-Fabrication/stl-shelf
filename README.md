@@ -26,6 +26,31 @@ Simple. Friendly. Built for makers.
 - **Bulk Downloads** - Download individual files or ZIP archives
 - **Self-Hosted** - Your data stays on your infrastructure
 
+## SEO Plan (Marketing)
+
+Guardrails (copy must respect):
+
+- No import/sync from other services
+- No sharing or social features
+- Personal archive: your files, your drive
+- Self-hosting only via Docker (Postgres required; Redis later)
+
+Phase 1 landing pages:
+
+- `/organize-stl-files` — STL/3MF/OBJ organizer, searchable library, tags, preview, version history
+- `/self-hosted-3d-model-library` — Docker-only, private, your data on your server
+
+Phase 2 (post Search Console data):
+
+- `/3d-model-version-control` — version history + iterations
+
+On-page requirements:
+
+- Exact-match H1 per page
+- 4–6 FAQs + FAQ schema
+- Canonical + JSON-LD (SoftwareApplication, FAQPage)
+- Internal links from home + footer + sitemap entry
+
 ## Tech Stack
 
 - **Framework**: [TanStack Start](https://tanstack.com/start) (React 19, SSR)

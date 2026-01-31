@@ -3,6 +3,7 @@ export { TextRevealSection } from "./text-reveal-section";
 export { Features } from "./features";
 export { HowItWorks } from "./how-it-works";
 export { UseCases } from "./use-cases";
+export { Resources } from "./resources";
 export { Pricing } from "./pricing";
 export { Testimonials } from "./testimonials";
 export { FinalCTA } from "./final-cta";

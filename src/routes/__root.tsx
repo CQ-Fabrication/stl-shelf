@@ -82,6 +82,8 @@ const PUBLIC_ROUTES = [
   "/pricing",
   "/privacy",
   "/terms",
+  "/organize-stl-files",
+  "/self-hosted-3d-model-library",
 ];
 
 // Routes that authenticated users should NOT access (redirect to /library)

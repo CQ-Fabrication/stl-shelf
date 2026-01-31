@@ -7,6 +7,7 @@ import type { AuthClient } from "@/lib/auth-client";
 
 const navItems = [
   { label: "Features", href: "/#features", scrollTo: "#features" },
+  { label: "Guides", href: "/#guides", scrollTo: "#guides" },
   { label: "Pricing", href: "/pricing", scrollTo: null },
   { label: "About", href: "/about", scrollTo: null },
 ];

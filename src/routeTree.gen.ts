@@ -13,10 +13,12 @@ import { Route as VerifyEmailPendingRouteImport } from './routes/verify-email-pe
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SelfHosted3dModelLibraryRouteImport } from './routes/self-hosted-3d-model-library'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as OrganizeStlFilesRouteImport } from './routes/organize-stl-files'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -60,6 +62,12 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SelfHosted3dModelLibraryRoute =
+  SelfHosted3dModelLibraryRouteImport.update({
+    id: '/self-hosted-3d-model-library',
+    path: '/self-hosted-3d-model-library',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -78,6 +86,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizeStlFilesRoute = OrganizeStlFilesRouteImport.update({
+  id: '/organize-stl-files',
+  path: '/organize-stl-files',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -203,10 +216,12 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -235,10 +250,12 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -268,10 +285,12 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -302,10 +321,12 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/library'
     | '/login'
+    | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
     | '/profile'
     | '/reset-password'
+    | '/self-hosted-3d-model-library'
     | '/signup'
     | '/terms'
     | '/verify-email'
@@ -334,10 +355,12 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/library'
     | '/login'
+    | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
     | '/profile'
     | '/reset-password'
+    | '/self-hosted-3d-model-library'
     | '/signup'
     | '/terms'
     | '/verify-email'
@@ -366,10 +389,12 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/library'
     | '/login'
+    | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
     | '/profile'
     | '/reset-password'
+    | '/self-hosted-3d-model-library'
     | '/signup'
     | '/terms'
     | '/verify-email'
@@ -399,10 +424,12 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
+  OrganizeStlFilesRoute: typeof OrganizeStlFilesRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SelfHosted3dModelLibraryRoute: typeof SelfHosted3dModelLibraryRoute
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -451,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/self-hosted-3d-model-library': {
+      id: '/self-hosted-3d-model-library'
+      path: '/self-hosted-3d-model-library'
+      fullPath: '/self-hosted-3d-model-library'
+      preLoaderRoute: typeof SelfHosted3dModelLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -477,6 +511,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organize-stl-files': {
+      id: '/organize-stl-files'
+      path: '/organize-stl-files'
+      fullPath: '/organize-stl-files'
+      preLoaderRoute: typeof OrganizeStlFilesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -670,10 +711,12 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
+  OrganizeStlFilesRoute: OrganizeStlFilesRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SelfHosted3dModelLibraryRoute: SelfHosted3dModelLibraryRoute,
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
   VerifyEmailRoute: VerifyEmailRoute,
