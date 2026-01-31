@@ -6,25 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { getSessionFn } from "@/server/functions/auth";
 
-export const Route = createFileRoute("/organize-stl-files")({
-  component: OrganizeStlFilesPage,
-  loader: async () => {
-    const session = await getSessionFn();
-    return { session };
-  },
-  head: () => ({
-    meta: [
-      { title: "Organize STL Files - STL Shelf" },
-      {
-        name: "description",
-        content:
-          "Organize STL, 3MF, OBJ, and PLY files in a searchable 3D model library. Tag, preview, and version your personal archive with STL Shelf.",
-      },
-    ],
-    links: [{ rel: "canonical", href: "https://stl-shelf.com/organize-stl-files" }],
-  }),
-});
-
 const highlights = [
   {
     title: "Searchable library",
@@ -80,6 +61,41 @@ const faqs = [
     answer: "No. STL Shelf is not a marketplace. It is your personal 3D model library.",
   },
 ];
+
+const faqStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+};
+
+export const Route = createFileRoute("/organize-stl-files")({
+  component: OrganizeStlFilesPage,
+  loader: async () => {
+    const session = await getSessionFn();
+    return { session };
+  },
+  head: () => ({
+    meta: [
+      { title: "Organize STL Files - STL Shelf" },
+      {
+        name: "description",
+        content:
+          "Organize STL, 3MF, OBJ, and PLY files in a searchable 3D model library. Tag, preview, and version your personal archive with STL Shelf.",
+      },
+      {
+        "script:ld+json": faqStructuredData,
+      },
+    ],
+    links: [{ rel: "canonical", href: "https://stl-shelf.com/organize-stl-files" }],
+  }),
+});
 
 function OrganizeStlFilesPage() {
   const { session } = Route.useLoaderData();

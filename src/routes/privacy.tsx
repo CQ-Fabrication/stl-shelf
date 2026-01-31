@@ -21,6 +21,7 @@ export const Route = createFileRoute("/privacy")({
         content: "Privacy policy for STL Shelf - how we handle your data.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://stl-shelf.com/privacy" }],
   }),
 });
 

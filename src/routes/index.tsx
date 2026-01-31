@@ -32,7 +32,32 @@ export const Route = createFileRoute("/")({
         content:
           "Organize, version, and share your 3D printable models. Cloud or self-hosted for makers and teams.",
       },
+      {
+        "script:ld+json": {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "STL Shelf",
+          applicationCategory: "DesignApplication",
+          operatingSystem: "Web",
+          url: "https://stl-shelf.com/",
+          description:
+            "Personal 3D model library to organize, preview, and version STL, 3MF, OBJ, and PLY files.",
+          featureList: [
+            "3D model library",
+            "Version history",
+            "3D preview",
+            "Tags and metadata",
+            "Self-hosted option",
+          ],
+          creator: {
+            "@type": "Organization",
+            name: "CQ Fabrication",
+            url: "https://cqfabrication.com",
+          },
+        },
+      },
     ],
+    links: [{ rel: "canonical", href: "https://stl-shelf.com/" }],
   }),
 });
 

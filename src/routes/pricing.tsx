@@ -21,6 +21,7 @@ export const Route = createFileRoute("/pricing")({
           "Simple, transparent pricing for STL Shelf. Start free, upgrade when you need more.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://stl-shelf.com/pricing" }],
   }),
 });
 

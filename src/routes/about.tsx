@@ -20,6 +20,7 @@ export const Route = createFileRoute("/about")({
           "Learn about STL Shelf - 3D model library built by makers, for makers. Cloud or self-hosted.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://stl-shelf.com/about" }],
   }),
 });
 

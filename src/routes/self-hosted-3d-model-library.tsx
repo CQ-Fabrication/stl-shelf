@@ -6,30 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { getSessionFn } from "@/server/functions/auth";
 
-export const Route = createFileRoute("/self-hosted-3d-model-library")({
-  component: SelfHostedLibraryPage,
-  loader: async () => {
-    const session = await getSessionFn();
-    return { session };
-  },
-  head: () => ({
-    meta: [
-      { title: "Self-Hosted 3D Model Library - STL Shelf" },
-      {
-        name: "description",
-        content:
-          "Self-host STL Shelf with Docker and PostgreSQL. Keep STL, 3MF, OBJ, and PLY files on your server with a private 3D model library.",
-      },
-    ],
-    links: [
-      {
-        rel: "canonical",
-        href: "https://stl-shelf.com/self-hosted-3d-model-library",
-      },
-    ],
-  }),
-});
-
 const pillars = [
   {
     title: "Docker-only",
@@ -73,6 +49,46 @@ const faqs = [
     answer: "STL, 3MF, OBJ, and PLY are supported.",
   },
 ];
+
+const faqStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+};
+
+export const Route = createFileRoute("/self-hosted-3d-model-library")({
+  component: SelfHostedLibraryPage,
+  loader: async () => {
+    const session = await getSessionFn();
+    return { session };
+  },
+  head: () => ({
+    meta: [
+      { title: "Self-Hosted 3D Model Library - STL Shelf" },
+      {
+        name: "description",
+        content:
+          "Self-host STL Shelf with Docker and PostgreSQL. Keep STL, 3MF, OBJ, and PLY files on your server with a private 3D model library.",
+      },
+      {
+        "script:ld+json": faqStructuredData,
+      },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: "https://stl-shelf.com/self-hosted-3d-model-library",
+      },
+    ],
+  }),
+});
 
 function SelfHostedLibraryPage() {
   const { session } = Route.useLoaderData();

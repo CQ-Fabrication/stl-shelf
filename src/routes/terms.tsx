@@ -21,6 +21,7 @@ export const Route = createFileRoute("/terms")({
         content: "Terms of service for STL Shelf.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://stl-shelf.com/terms" }],
   }),
 });
 
