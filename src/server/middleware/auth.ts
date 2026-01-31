@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { member } from "@/lib/db/schema/auth";
 import { legalDocuments, userConsents } from "@/lib/db/schema/consent";
+import { env } from "@/lib/env";
 
 export type AuthenticatedContext = {
   session: NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
@@ -24,6 +25,20 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(asyn
 
   if (!headers) {
     throw new Error("Request headers not available");
+  }
+
+  if (request && request.method && !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+    const allowedOrigins = buildTrustedOrigins();
+    const originHeader = headers.get("origin");
+    const refererHeader = headers.get("referer");
+    const origin = originHeader || refererHeader;
+
+    if (origin) {
+      const requestOrigin = safeOrigin(origin);
+      if (!requestOrigin || !allowedOrigins.includes(requestOrigin)) {
+        throw new Error("Invalid origin");
+      }
+    }
   }
 
   const session = await auth.api.getSession({ headers });
@@ -89,3 +104,27 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(asyn
     } satisfies AuthenticatedContext,
   });
 });
+
+const buildTrustedOrigins = (): string[] => {
+  const configuredOrigins = env.AUTH_TRUSTED_ORIGINS?.split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
+  if (configuredOrigins && configuredOrigins.length > 0) {
+    return configuredOrigins;
+  }
+
+  if (env.NODE_ENV === "production") {
+    return [env.WEB_URL];
+  }
+
+  return [env.WEB_URL, "http://localhost:3000"];
+};
+
+const safeOrigin = (value: string): string | null => {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+};

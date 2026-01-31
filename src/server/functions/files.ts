@@ -12,6 +12,7 @@ import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } f
 import {
   canRemoveFile,
   formatGracePeriodRemaining,
+  getCategoryFromExtension,
   getCompletenessStatus,
 } from "@/lib/files/completeness";
 import { getFileSizeLimit, formatBytes } from "@/lib/files/limits";
@@ -64,6 +65,11 @@ export const addFileToVersion = createServerFn({ method: "POST" })
         }
 
         const extension = data.file.name.split(".").pop()?.toLowerCase() || "";
+        const category = getCategoryFromExtension(extension);
+
+        if (!category) {
+          throw new Error(`File type .${extension} is not supported for this operation`);
+        }
         const maxSize = getFileSizeLimit(extension);
 
         if (data.file.size > maxSize) {

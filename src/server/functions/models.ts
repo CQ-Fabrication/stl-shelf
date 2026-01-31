@@ -11,6 +11,13 @@ import { getTierConfig, isUnlimited } from "@/lib/billing/config";
 import { buildOpenPanelProfile, trackModelViewed, trackSearchPerformed } from "@/lib/openpanel";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } from "@/lib/logging";
+import {
+  MAX_FILES_PER_UPLOAD,
+  MAX_TOTAL_IMAGE_SIZE,
+  MODEL_UPLOAD_EXTENSIONS,
+  formatBytes,
+  getFileSizeLimit,
+} from "@/lib/files/limits";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { modelCreationService } from "@/server/services/models/model-create.service";
@@ -69,6 +76,59 @@ const renameModelSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "Name is required").max(100, "Name must be 100 characters or less"),
 });
+
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
+const ALLOWED_EXTENSIONS = new Set(MODEL_UPLOAD_EXTENSIONS);
+
+const getFileExtension = (filename: string): string =>
+  filename.split(".").pop()?.toLowerCase() ?? "";
+
+const validateUploadFiles = (files: File[], previewImage?: File | null) => {
+  if (files.length > MAX_FILES_PER_UPLOAD) {
+    throw new Error(`Too many files. Maximum allowed is ${MAX_FILES_PER_UPLOAD}.`);
+  }
+
+  let totalImageSize = 0;
+
+  for (const file of files) {
+    const extension = getFileExtension(file.name);
+
+    if (!ALLOWED_EXTENSIONS.has(extension)) {
+      throw new Error(`File type .${extension} is not supported.`);
+    }
+
+    const maxSize = getFileSizeLimit(extension);
+    if (file.size > maxSize) {
+      throw new Error(
+        `File too large. ${formatBytes(file.size)} exceeds the ${formatBytes(maxSize)} limit for .${extension} files`,
+      );
+    }
+
+    if (IMAGE_EXTENSIONS.has(extension)) {
+      totalImageSize += file.size;
+    }
+  }
+
+  if (previewImage) {
+    const extension = getFileExtension(previewImage.name);
+    if (!IMAGE_EXTENSIONS.has(extension)) {
+      throw new Error(`Preview image type .${extension} is not supported.`);
+    }
+    const maxSize = getFileSizeLimit(extension);
+    if (previewImage.size > maxSize) {
+      throw new Error(
+        `Preview image too large. ${formatBytes(previewImage.size)} exceeds the ${formatBytes(maxSize)} limit for .${extension} files`,
+      );
+    }
+    totalImageSize += previewImage.size;
+  }
+
+  if (totalImageSize > MAX_TOTAL_IMAGE_SIZE) {
+    throw new Error(
+      `Total image size exceeds limit. ${formatBytes(totalImageSize)} exceeds the ${formatBytes(MAX_TOTAL_IMAGE_SIZE)} limit.`,
+    );
+  }
+};
 
 // List models with pagination
 export const listModels = createServerFn({ method: "GET" })
@@ -275,6 +335,8 @@ export const createModel = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        validateUploadFiles(data.files, data.previewImage);
+
         const org = await db.query.organization.findFirst({
           where: eq(organization.id, context.organizationId),
         });
@@ -406,6 +468,8 @@ export const addVersion = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        validateUploadFiles(data.files, data.previewImage);
+
         // RBAC: Check edit permission (admins can edit any, members can edit own only)
         const [existingModel] = await db
           .select({ ownerId: models.ownerId })

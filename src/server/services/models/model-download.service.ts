@@ -1,4 +1,5 @@
 import archiver from "archiver";
+import path from "node:path";
 import { Readable } from "stream";
 import { and, eq, isNull, notInArray } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -15,6 +16,15 @@ type ModelFileData = {
   storageKey: string;
   storageUrl: string | null;
   storageBucket: string;
+};
+
+const FALLBACK_ARCHIVE_NAME = "file";
+
+const sanitizeArchiveName = (name: string): string => {
+  const normalized = name.replace(/\\/g, "/");
+  const base = path.posix.basename(normalized);
+  const cleaned = base.replace(/[/\\]/g, "_").replace(/^\.+$/, "");
+  return cleaned || FALLBACK_ARCHIVE_NAME;
 };
 
 class ModelDownloadService {
@@ -320,7 +330,7 @@ class ModelDownloadService {
       try {
         const fileData = await storageService.getFile(file.storageKey);
         archive.append(Buffer.from(fileData.body), {
-          name: `${folderName}/${file.originalName}`,
+          name: `${folderName}/${sanitizeArchiveName(file.originalName)}`,
         });
       } catch {
         // Continue with other files even if one fails
@@ -332,7 +342,7 @@ class ModelDownloadService {
       try {
         const fileData = await storageService.getFile(profile.storageKey);
         archive.append(Buffer.from(fileData.body), {
-          name: `${folderName}/profiles/${profile.originalName}`,
+          name: `${folderName}/profiles/${sanitizeArchiveName(profile.originalName)}`,
         });
       } catch {
         // Continue with other files even if one fails
@@ -352,7 +362,7 @@ class ModelDownloadService {
         const fileData = await storageService.getFile(file.storageKey);
 
         archive.append(Buffer.from(fileData.body), {
-          name: `${folderName}/${file.originalName}`,
+          name: `${folderName}/${sanitizeArchiveName(file.originalName)}`,
         });
       } catch {
         // Continue with other files even if one fails
@@ -426,7 +436,7 @@ class ModelDownloadService {
         // Convert web ReadableStream to Node.js Readable for archiver
         const nodeStream = this.webStreamToNodeStream(stream);
 
-        archive.append(nodeStream, { name: file.originalName });
+        archive.append(nodeStream, { name: sanitizeArchiveName(file.originalName) });
       } catch (error) {
         // Log error but continue with other files
         console.error(`Failed to stream file ${file.originalName}:`, error);

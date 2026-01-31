@@ -1,11 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { randomUUID } from "node:crypto";
 import { db, models, modelVersions, modelFiles } from "@/lib/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { formatBytes, getFileSizeLimit, MIME_TYPES, MODEL_EXTENSIONS } from "@/lib/files/limits";
+import { slugify } from "@/lib/slug";
 import { validateApiKey, hasScope } from "@/server/middleware/api-key";
 import { storageService } from "@/server/services/storage";
 
 const ALLOWED_EXTENSIONS = new Set<string>(MODEL_EXTENSIONS);
+const FALLBACK_FILENAME = "model-file";
+
+const createStoredFilename = (
+  originalName: string,
+): { storedFilename: string; extension: string } => {
+  const trimmedName = originalName.trim() || FALLBACK_FILENAME;
+  const lastDotIndex = trimmedName.lastIndexOf(".");
+  const hasExtension = lastDotIndex > 0 && lastDotIndex < trimmedName.length - 1;
+  const extension = hasExtension ? trimmedName.slice(lastDotIndex + 1).toLowerCase() : "";
+  const baseName = hasExtension ? trimmedName.slice(0, lastDotIndex) : trimmedName;
+  const safeBase = slugify(baseName || FALLBACK_FILENAME);
+  const uniqueSuffix = randomUUID().split("-")[0];
+  const storedFilename = extension
+    ? `${safeBase}-${uniqueSuffix}.${extension}`
+    : `${safeBase}-${uniqueSuffix}`;
+
+  return {
+    storedFilename,
+    extension: extension || "bin",
+  };
+};
 
 export const Route = createFileRoute("/api/v1/upload")({
   server: {
@@ -145,11 +168,12 @@ export const Route = createFileRoute("/api/v1/upload")({
           }
 
           // Generate storage key and upload file
+          const { storedFilename } = createStoredFilename(file.name);
           const storageKey = storageService.generateStorageKey({
             organizationId: validation.organizationId,
             modelId,
             version: versionNumber,
-            filename: file.name,
+            filename: storedFilename,
             kind: "source",
           });
 
@@ -166,7 +190,7 @@ export const Route = createFileRoute("/api/v1/upload")({
           await db.insert(modelFiles).values({
             id: fileId,
             versionId,
-            filename: file.name,
+            filename: storedFilename,
             originalName: file.name,
             size: file.size,
             mimeType,

@@ -116,6 +116,18 @@ export const ALL_EXTENSIONS = [
 ] as const;
 
 /**
+ * Extensions allowed for model uploads in the UI/server flows.
+ */
+export const MODEL_UPLOAD_EXTENSIONS = [
+  ...MODEL_EXTENSIONS,
+  "jpg",
+  "jpeg",
+  "png",
+  "webp",
+  "gif",
+] as const;
+
+/**
  * Get the file size limit for a given extension
  */
 export function getFileSizeLimit(extension: string): number {
