@@ -113,6 +113,16 @@ export const SubscriptionStatusCard = ({ className }: SubscriptionStatusCardProp
   const isPro = subscription.tier === "pro";
   const isOwner = subscription.isOwner;
   const hasPaymentIssue = subscription.status === "past_due" || subscription.status === "unpaid";
+  const isCancelScheduled = Boolean(subscription.cancelAtPeriodEnd);
+  const hasTopBanner = hasPaymentIssue || isCancelScheduled;
+  const periodEnd = subscription.periodEnd ? new Date(subscription.periodEnd) : null;
+  const formattedPeriodEnd = periodEnd
+    ? periodEnd.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
 
   // Check if any resource is at warning level
   const hasWarning = usage.storage.percentage >= 75 || usage.models.percentage >= 75;
@@ -124,6 +134,7 @@ export const SubscriptionStatusCard = ({ className }: SubscriptionStatusCardProp
       className={cn(
         hasPaymentIssue ? "border-red-500/50" : isPro ? "border-brand/50" : "",
         hasWarning && isFree ? "border-amber-500/30" : "",
+        hasTopBanner ? "py-0 overflow-hidden" : "",
         className,
       )}
     >
@@ -143,7 +154,21 @@ export const SubscriptionStatusCard = ({ className }: SubscriptionStatusCardProp
         </div>
       )}
 
-      <CardHeader className="pb-4">
+      {isCancelScheduled && isOwner && (
+        <div className="rounded-t-xl border-b border-amber-500/30 bg-amber-50 px-6 py-3 dark:bg-amber-950/30">
+          <p className="flex items-center gap-2 font-medium text-amber-800 text-sm dark:text-amber-200">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>
+              Your subscription will end{" "}
+              {formattedPeriodEnd ? `on ${formattedPeriodEnd}` : "at the end of the billing period"}
+              . If your usage is above free limits, your account will enter read-only for 7 days and
+              older files may be removed.
+            </span>
+          </p>
+        </div>
+      )}
+
+      <CardHeader className={cn("pb-4", hasTopBanner ? "pt-6" : "")}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {isPro && <Crown className="h-5 w-5 text-brand" />}
@@ -160,7 +185,7 @@ export const SubscriptionStatusCard = ({ className }: SubscriptionStatusCardProp
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className={cn("space-y-6", hasTopBanner ? "pb-6" : "")}>
         {/* Usage Metrics - Horizontal Grid */}
         <div className="grid gap-6 sm:grid-cols-3">
           <UsageRow

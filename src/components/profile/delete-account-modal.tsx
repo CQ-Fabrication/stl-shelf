@@ -1,9 +1,10 @@
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { authClient } from "@/lib/auth-client";
+import { requestAccountDeletion } from "@/server/functions/account-deletion";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -22,7 +23,7 @@ type DeleteAccountModalProps = {
 };
 
 const deleteSchema = z.object({
-  confirmation: z.string().refine((val) => val === "DELETE", {
+  confirmation: z.string().refine((val) => val.trim().toUpperCase() === "DELETE", {
     message: 'Please type "DELETE" to confirm',
   }),
   password: z.string().min(1, "Password is required"),
@@ -30,6 +31,7 @@ const deleteSchema = z.object({
 
 export function DeleteAccountModal({ open, onOpenChange }: DeleteAccountModalProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const form = useForm({
     defaultValues: {
@@ -42,17 +44,30 @@ export function DeleteAccountModal({ open, onOpenChange }: DeleteAccountModalPro
     onSubmit: async ({ value }) => {
       try {
         // Delete account with password verification
-        await authClient.deleteUser({
-          password: value.password,
-        });
+        const result = await requestAccountDeletion({ data: { password: value.password } });
 
-        toast.success("Account deleted successfully");
+        const deletionDate = result.deadline
+          ? new Date(result.deadline).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })
+          : null;
 
-        // Redirect to home page
-        await router.navigate({ to: "/" });
+        toast.success(
+          deletionDate
+            ? `Account deletion scheduled for ${deletionDate}.`
+            : "Account deletion scheduled.",
+        );
+
+        await queryClient.invalidateQueries({ queryKey: ["account-deletion"] });
+        await queryClient.invalidateQueries({ queryKey: ["upload-limits"] });
+        await router.invalidate();
+        handleOpenChange(false);
       } catch (error) {
         if (error instanceof Error) {
-          if (error.message.includes("password")) {
+          const message = error.message.toLowerCase();
+          if (message.includes("password") || message.includes("invalid_password")) {
             toast.error("Incorrect password");
           } else {
             toast.error(error.message);
@@ -81,7 +96,7 @@ export function DeleteAccountModal({ open, onOpenChange }: DeleteAccountModalPro
           </div>
           <AlertDialogTitle className="text-center">Delete Account</AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            This action is permanent and cannot be undone.
+            This schedules deletion of your account and all data in 7 days.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -153,15 +168,19 @@ export function DeleteAccountModal({ open, onOpenChange }: DeleteAccountModalPro
             >
               Cancel
             </Button>
-            <Button
-              className="w-full sm:w-auto"
-              disabled={form.state.isSubmitting || form.state.values.confirmation !== "DELETE"}
-              type="submit"
-              variant="destructive"
-            >
-              {form.state.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Delete Account Forever
-            </Button>
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+              {([canSubmit, isSubmitting]) => (
+                <Button
+                  className="w-full sm:w-auto"
+                  disabled={!canSubmit || isSubmitting}
+                  type="submit"
+                  variant="destructive"
+                >
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Schedule Account Deletion
+                </Button>
+              )}
+            </form.Subscribe>
           </AlertDialogFooter>
         </form>
       </AlertDialogContent>

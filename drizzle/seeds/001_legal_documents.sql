@@ -9,7 +9,7 @@ INSERT INTO "legal_documents" ("id", "type", "version", "content", "published_at
   '1.0',
   $body$# Terms of Service
 
-**Effective Date:** January 2025
+**Effective Date:** January 27, 2026
 
 ## 1. Acceptance of Terms
 
@@ -46,6 +46,9 @@ You agree NOT to:
 ## 6. Storage and Data
 
 - Storage limits are determined by your subscription tier
+- If your subscription ends or downgrades and your usage exceeds free limits, your account enters read-only mode for 7 days ("Grace Period")
+- During the Grace Period you may download data but cannot upload or modify content
+- After the Grace Period, we may remove content above free limits (oldest first) and complete removal within 7 days unless you upgrade
 - We use industry-standard encryption for data at rest and in transit
 - You are responsible for maintaining backups of your important files
 - We may delete content from inactive accounts after 12 months of inactivity
@@ -67,7 +70,7 @@ You agree NOT to:
 
 - You may delete your account at any time
 - We may suspend or terminate accounts that violate these Terms
-- Upon termination, your data will be deleted within 30 days
+- Upon termination, your data will be deleted within 7 days
 
 ## 10. Limitation of Liability
 
@@ -93,7 +96,7 @@ For questions about these Terms, contact us at legal@stlshelf.com.$body$,
   '1.0',
   $body$# Privacy Policy
 
-**Effective Date:** January 2025
+**Effective Date:** January 27, 2026
 
 ## Overview
 
@@ -172,9 +175,10 @@ To exercise these rights, visit your Profile Settings or contact us at privacy@s
 ## Data Retention
 
 - Account data is retained while your account is active
-- Upon account deletion, personal data is removed within 30 days
+- Upon account deletion, personal data is removed within 7 days
 - Consent audit logs are retained for 7 years for legal compliance
 - Anonymized usage analytics may be retained indefinitely
+- Content above free limits may be removed according to the Grace Period and retention rules described in the Terms of Service
 
 ## Cookies
 

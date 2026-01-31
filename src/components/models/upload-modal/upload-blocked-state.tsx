@@ -35,6 +35,40 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
   const recommendedTier = getRecommendedTier(limits.tier);
   const billingInterval: BillingInterval = "month";
 
+  const handleDismiss = () => {
+    console.log("limit_block_dismissed", {
+      reason: limits.blockReason,
+      tier: limits.tier,
+    });
+    onClose();
+  };
+
+  if (limits.blockReason === "account_deletion") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+          <AlertCircle className="h-5 w-5 shrink-0 text-destructive" />
+          <div>
+            <p className="font-medium text-destructive">Account scheduled for deletion</p>
+            <p className="text-muted-foreground text-sm">
+              Uploads are disabled while your account is pending deletion. Cancel the deletion to
+              restore full access.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between border-t pt-4">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Trash2 className="h-4 w-4" />
+            <span className="text-sm">Manage account deletion in settings</span>
+          </div>
+          <Button variant="outline" asChild onClick={handleDismiss}>
+            <Link to="/profile">Go to Settings</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const blockMessage =
     limits.blockReason === "model_limit"
       ? `Model limit reached (${limits.models.current}/${limits.models.limit})`
@@ -50,14 +84,6 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
     console.log("limit_upgrade_clicked", { from: limits.tier, to: tier });
     const productSlug = getProductSlugForTier(tier, billingInterval);
     startCheckout(productSlug);
-  };
-
-  const handleDismiss = () => {
-    console.log("limit_block_dismissed", {
-      reason: limits.blockReason,
-      tier: limits.tier,
-    });
-    onClose();
   };
 
   return (

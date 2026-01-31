@@ -23,3 +23,27 @@ export {
   default as VerifyEmailTemplate,
   VerifyEmailTemplate as VerifyEmail,
 } from "./templates/verify-email";
+
+export type { SubscriptionCanceledTemplateProps } from "./templates/subscription-canceled";
+export {
+  default as SubscriptionCanceledTemplate,
+  default as SubscriptionCanceled,
+} from "./templates/subscription-canceled";
+
+export type { SubscriptionGraceTemplateProps } from "./templates/subscription-grace";
+export {
+  default as SubscriptionGraceTemplate,
+  default as SubscriptionGrace,
+} from "./templates/subscription-grace";
+
+export type { AccountDeletionRequestedTemplateProps } from "./templates/account-deletion-requested";
+export {
+  default as AccountDeletionRequestedTemplate,
+  default as AccountDeletionRequested,
+} from "./templates/account-deletion-requested";
+
+export type { AccountDeletionCompletedTemplateProps } from "./templates/account-deletion-completed";
+export {
+  default as AccountDeletionCompletedTemplate,
+  default as AccountDeletionCompleted,
+} from "./templates/account-deletion-completed";

@@ -12,6 +12,7 @@ import {
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useMemo } from "react";
+import { AccountDeletionBanner } from "@/components/account-deletion-banner";
 import { GracePeriodBanner } from "@/components/billing/grace-period-banner";
 import { ConsentBanner } from "@/components/consent-banner";
 import { ErrorPage } from "@/components/error-page";
@@ -252,6 +253,7 @@ function RootDocument({ children }: { children: ReactNode }) {
               {showProtectedUI && (
                 <>
                   <Header />
+                  <AccountDeletionBanner />
                   <GracePeriodBanner />
                   <ConsentBanner />
                   <PendingConsentHandler />

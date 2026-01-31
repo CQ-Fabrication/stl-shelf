@@ -31,6 +31,7 @@ import {
 import { MagicLinkTemplate, PasswordResetTemplate, VerifyEmailTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
 import { getTrustedOrigins } from "@/lib/trusted-origins";
+import { recordWebhookPayload } from "@/server/services/billing/webhook-audit.service";
 import { syncResendSegments } from "@/server/services/marketing/resend-segments";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent } from "@/lib/logging";
@@ -293,6 +294,7 @@ export const auth = betterAuth({
         portal(),
         webhooks({
           secret: env.POLAR_WEBHOOK_SECRET,
+          onPayload: recordWebhookPayload,
           onOrderPaid: handleOrderPaid,
           onSubscriptionCreated: handleSubscriptionCreated,
           onSubscriptionCanceled: handleSubscriptionCanceled,

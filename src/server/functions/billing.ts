@@ -12,11 +12,15 @@ import {
   getTierConfig,
   isUnlimited,
 } from "@/lib/billing/config";
+import { getRetentionDeadline } from "@/lib/billing/grace";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { polarService } from "@/server/services/billing/polar.service";
 import { getEgressUsageSnapshot, getEgressLimits } from "@/server/services/billing/egress.service";
+import { enforceRetentionForOrganization } from "@/server/services/billing/retention.service";
 import { getErrorDetails, logErrorEvent } from "@/lib/logging";
+import { handleCustomerStateChanged } from "@/lib/billing/webhook-handlers";
+import type { WebhookCustomerStateChangedPayload } from "@polar-sh/sdk/models/components/webhookcustomerstatechangedpayload.js";
 
 const SUPPORT_MESSAGE =
   "We couldn't start checkout due to a customer reconciliation issue. Please contact support and share reference: ";
@@ -35,12 +39,26 @@ const createCheckoutSchema = z.object({
 export const getSubscription = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }: { context: AuthenticatedContext }) => {
-    const org = await db.query.organization.findFirst({
+    let org = await db.query.organization.findFirst({
       where: eq(organization.id, context.organizationId),
     });
 
     if (!org) {
       throw new Error("Organization not found");
+    }
+
+    if (org.graceDeadline) {
+      const retentionDeadline = getRetentionDeadline(org.graceDeadline);
+      if (new Date().getTime() > retentionDeadline.getTime()) {
+        await enforceRetentionForOrganization(org.id);
+        org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+      }
     }
 
     const tier = (org.subscriptionTier as SubscriptionTier) ?? "free";
@@ -50,6 +68,8 @@ export const getSubscription = createServerFn({ method: "GET" })
       tier,
       status: org.subscriptionStatus,
       isOwner: org.ownerId === context.session.user.id,
+      periodEnd: org.subscriptionPeriodEnd?.toISOString() ?? null,
+      cancelAtPeriodEnd: org.subscriptionCancelAtPeriodEnd ?? false,
 
       // Limits
       storageLimit: org.storageLimit,
@@ -179,6 +199,8 @@ export const checkUploadLimits = createServerFn({ method: "GET" })
     const modelLimitIsUnlimited = isUnlimited(modelLimit);
     const modelBlocked = !modelLimitIsUnlimited && currentModelCount >= modelLimit;
     const storageBlocked = currentStorage >= storageLimit;
+    const accountDeletionDeadline = org.accountDeletionDeadline ?? context.accountDeletionDeadline;
+    const accountDeletionBlocked = Boolean(accountDeletionDeadline);
 
     return {
       tier,
@@ -195,12 +217,15 @@ export const checkUploadLimits = createServerFn({ method: "GET" })
         blocked: storageBlocked,
       },
       graceDeadline: org.graceDeadline?.toISOString() ?? null,
-      blocked: modelBlocked || storageBlocked,
-      blockReason: modelBlocked
-        ? ("model_limit" as const)
-        : storageBlocked
-          ? ("storage_limit" as const)
-          : null,
+      accountDeletionDeadline: accountDeletionDeadline?.toISOString() ?? null,
+      blocked: accountDeletionBlocked || modelBlocked || storageBlocked,
+      blockReason: accountDeletionBlocked
+        ? ("account_deletion" as const)
+        : modelBlocked
+          ? ("model_limit" as const)
+          : storageBlocked
+            ? ("storage_limit" as const)
+            : null,
     };
   });
 
@@ -276,6 +301,34 @@ export const createCheckout = createServerFn({ method: "POST" })
       }
     },
   );
+
+export const syncCustomerState = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }: { context: AuthenticatedContext }) => {
+    const org = await db.query.organization.findFirst({
+      where: eq(organization.id, context.organizationId),
+    });
+
+    if (!org) {
+      throw new Error("Organization not found");
+    }
+
+    if (!org.polarCustomerId) {
+      throw new Error("No Polar customer on this organization");
+    }
+
+    const state = await polarService.getCustomerState(org.polarCustomerId);
+
+    const payload: WebhookCustomerStateChangedPayload = {
+      type: "customer.state_changed",
+      timestamp: new Date(),
+      data: state,
+    };
+
+    await handleCustomerStateChanged(payload);
+
+    return { success: true };
+  });
 
 // Get customer portal URL (owner only)
 export const getPortalUrl = createServerFn({ method: "GET" })

@@ -1,48 +1,42 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { CheckCircle, Clock, CreditCard, Sparkles } from "lucide-react";
+import { AlertTriangle, CreditCard, LifeBuoy, ShieldCheck } from "lucide-react";
 import { useCallback } from "react";
-import { z } from "zod";
 import { FileStackEffect } from "@/components/empty-state/file-stack-effect";
 import { Button } from "@/components/ui/button";
-import { useCheckoutSuccess } from "@/hooks/use-checkout-success";
+import { useRedirectCountdown } from "@/hooks/use-redirect-countdown";
 
 const REDIRECT_SECONDS = 5;
 const PROGRESS_MAX = 100;
-const successHighlights = [
+const failureHighlights = [
   {
-    title: "Plan activated",
-    description: "Your new plan is live and ready to use.",
-    icon: Sparkles,
+    title: "No charge made",
+    description: "Your payment wasn’t captured.",
+    icon: ShieldCheck,
   },
   {
-    title: "Billing ready",
-    description: "Manage invoices and details anytime.",
+    title: "Try again",
+    description: "Pick a different method in billing.",
     icon: CreditCard,
   },
   {
-    title: "Limits updated",
-    description: "Your workspace reflects the new tier.",
-    icon: CheckCircle,
+    title: "Need a hand?",
+    description: "We’re here if you need support.",
+    icon: LifeBuoy,
   },
 ] as const;
 
-export const Route = createFileRoute("/checkout/success")({
+export const Route = createFileRoute("/checkout/failed")({
   head: () => ({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
-  component: CheckoutSuccessPage,
-  validateSearch: z.object({
-    checkout_id: z.string().optional(),
-  }),
+  component: CheckoutFailedPage,
 });
 
-function CheckoutSuccessPage() {
-  const { checkout_id } = Route.useSearch();
+function CheckoutFailedPage() {
   const navigate = useNavigate();
   const handleRedirect = useCallback(() => navigate({ to: "/billing" }), [navigate]);
-  const { secondsLeft, progress } = useCheckoutSuccess({
-    checkoutId: checkout_id,
-    redirectSeconds: REDIRECT_SECONDS,
+  const { secondsLeft, progress } = useRedirectCountdown({
+    seconds: REDIRECT_SECONDS,
     onRedirect: handleRedirect,
   });
   const progressPercent = Math.min(PROGRESS_MAX, Math.max(0, progress * PROGRESS_MAX));
@@ -66,20 +60,20 @@ function CheckoutSuccessPage() {
           <section className="rounded-2xl border border-border/60 bg-card/80 p-8 shadow-xl backdrop-blur-sm">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs text-muted-foreground">
-                <CheckCircle className="h-4 w-4 text-primary" />
-                Payment confirmed
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                Payment not completed
               </div>
               <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-                You&apos;re all set!
+                Let&apos;s try that again
               </h1>
               <p className="text-muted-foreground">
-                Thanks for upgrading. We&apos;re updating your workspace now and will take you to
-                billing to review your plan details.
+                No charge was made. We&apos;ll take you back to billing so you can choose a
+                different method or retry.
               </p>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              {successHighlights.map((item) => (
+              {failureHighlights.map((item) => (
                 <div
                   key={item.title}
                   className="rounded-xl border border-border/50 bg-background/70 p-4 text-left"
@@ -97,7 +91,7 @@ function CheckoutSuccessPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <p className="flex items-center gap-2 font-medium text-sm text-foreground">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                     <span aria-live="polite">Redirecting to billing in {secondsLeft}s</span>
                   </p>
                   <p className="text-muted-foreground text-xs">
@@ -115,24 +109,18 @@ function CheckoutSuccessPage() {
                 />
               </div>
             </div>
-
-            {checkout_id ? (
-              <div className="mt-4 rounded-lg border border-border/40 bg-background/70 px-3 py-2 text-xs text-muted-foreground">
-                Reference ID: <span className="font-mono text-foreground">{checkout_id}</span>
-              </div>
-            ) : null}
           </section>
 
           <section className="relative flex flex-col items-center gap-6">
             <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-primary/10 blur-xl motion-safe:animate-pulse" />
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-primary/30 bg-background/80 shadow-lg">
-                <CheckCircle className="h-10 w-10 text-primary" />
+              <div className="absolute inset-0 rounded-full bg-amber-500/15 blur-xl motion-safe:animate-pulse" />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-amber-500/30 bg-background/80 shadow-lg">
+                <AlertTriangle className="h-10 w-10 text-amber-500" />
               </div>
             </div>
             <FileStackEffect className="h-44 w-52" />
             <div className="rounded-full border border-border/50 bg-background/70 px-4 py-2 text-center text-xs text-muted-foreground">
-              Library updates are ready to sync with your new plan.
+              Your library is safe while we finish the update.
             </div>
           </section>
         </div>

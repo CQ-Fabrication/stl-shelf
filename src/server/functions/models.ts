@@ -13,6 +13,7 @@ import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent, shouldLogServerError } from "@/lib/logging";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
+import { assertWriteAllowed } from "@/server/services/billing/retention.service";
 import { modelCreationService } from "@/server/services/models/model-create.service";
 import { modelDeleteService } from "@/server/services/models/model-delete.service";
 import { modelUpdateService } from "@/server/services/models/model-update.service";
@@ -217,6 +218,19 @@ export const updateModelTags = createServerFn({ method: "POST" })
       data: z.infer<typeof updateModelTagsSchema>;
       context: AuthenticatedContext;
     }) => {
+      const org = await db.query.organization.findFirst({
+        where: eq(organization.id, context.organizationId),
+      });
+
+      if (!org) {
+        throw new Error("Organization not found");
+      }
+
+      assertWriteAllowed({
+        graceDeadline: org.graceDeadline,
+        accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+      });
+
       // RBAC: Check edit permission (admins can edit any, members can edit own only)
       const [model] = await db
         .select({ ownerId: models.ownerId })
@@ -282,6 +296,11 @@ export const createModel = createServerFn({ method: "POST" })
         if (!org) {
           throw new Error("Organization not found");
         }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
 
         // Default to 'free' tier if subscriptionTier is null (new organizations)
         const tier = (org.subscriptionTier as SubscriptionTier) || "free";
@@ -432,6 +451,11 @@ export const addVersion = createServerFn({ method: "POST" })
         if (!org) {
           throw new Error("Organization not found");
         }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
 
         const tier = (org.subscriptionTier as SubscriptionTier) || "free";
         const tierConfig = getTierConfig(tier);
@@ -699,6 +723,19 @@ export const deleteModel = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
         // RBAC: Only admins and owners can delete models
         if (!canDeleteModel(context.memberRole as Role)) {
           throw new Error("You don't have permission to delete models");
@@ -752,6 +789,19 @@ export const renameModel = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
         // RBAC: Check edit permission (admins can edit any, members can edit own only)
         const [model] = await db
           .select({ ownerId: models.ownerId })

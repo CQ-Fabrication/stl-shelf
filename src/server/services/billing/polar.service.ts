@@ -44,7 +44,7 @@ export const polarService = {
    * Get customer subscription state
    */
   async getCustomerState(customerId: string) {
-    const state = await polarClient.customers.get({ id: customerId });
+    const state = await polarClient.customers.getState({ id: customerId });
     return state;
   },
 
@@ -62,7 +62,7 @@ export const polarService = {
       customerId,
       products: [productId],
       successUrl: `${env.WEB_URL}/checkout/success?checkout_id={CHECKOUT_ID}`,
-      returnUrl: `${env.WEB_URL}/billing`,
+      returnUrl: `${env.WEB_URL}/checkout/failed`,
     });
     return checkout;
   },
@@ -76,5 +76,13 @@ export const polarService = {
       externalCustomerId,
       returnUrl,
     });
+  },
+
+  async revokeSubscription(subscriptionId: string) {
+    return polarClient.subscriptions.revoke({ id: subscriptionId });
+  },
+
+  async deleteCustomer(customerId: string) {
+    return polarClient.customers.delete({ id: customerId });
   },
 };

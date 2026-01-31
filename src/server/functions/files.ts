@@ -17,6 +17,7 @@ import {
 import { getFileSizeLimit, formatBytes } from "@/lib/files/limits";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
+import { assertWriteAllowed } from "@/server/services/billing/retention.service";
 import { modelFileService } from "@/server/services/models/model-file.service";
 
 const removeFileFromVersionSchema = z.object({
@@ -62,6 +63,11 @@ export const addFileToVersion = createServerFn({ method: "POST" })
         if (!org) {
           throw new Error("Organization not found");
         }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
 
         const extension = data.file.name.split(".").pop()?.toLowerCase() || "";
         const maxSize = getFileSizeLimit(extension);
@@ -154,6 +160,19 @@ export const removeFileFromVersion = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
         const result = await modelFileService.removeFileFromVersion({
           fileId: data.fileId,
           organizationId: context.organizationId,
