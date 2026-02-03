@@ -14,7 +14,42 @@ export const Route = createFileRoute("/about")({
         content:
           "Learn about STL Shelf - 3D model library built by makers, for makers. Cloud or self-hosted.",
       },
+      {
+        property: "og:title",
+        content: "About STL Shelf",
+      },
+      {
+        property: "og:description",
+        content:
+          "Learn about STL Shelf - the 3D model library built by makers, for makers. Cloud or self-hosted.",
+      },
+      {
+        property: "og:image",
+        content: "https://stl-shelf.com/og-image.svg",
+      },
+      {
+        property: "og:url",
+        content: "https://stl-shelf.com/about",
+      },
+      {
+        property: "og:type",
+        content: "website",
+      },
+      {
+        name: "twitter:title",
+        content: "About STL Shelf",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Learn about STL Shelf - the 3D model library built by makers, for makers. Cloud or self-hosted.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://stl-shelf.com/og-image.svg",
+      },
     ],
+    links: [{ rel: "canonical", href: "https://stl-shelf.com/about" }],
   }),
 });
 

@@ -230,6 +230,35 @@ function RootDocument({ children }: { children: ReactNode }) {
   const pathname = routerState.location.pathname;
   const isNotFound = routerState.matches.some((match) => match.status === "notFound");
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+  const jsonLd =
+    pathname === "/"
+      ? {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "STL Shelf",
+              url: "https://stl-shelf.com",
+              logo: "https://stl-shelf.com/og-image.svg",
+              sameAs: ["https://github.com/CQ-Fabrication/stl-shelf"],
+            },
+            {
+              "@type": "SoftwareApplication",
+              name: "STL Shelf",
+              applicationCategory: "DesignApplication",
+              operatingSystem: "Web",
+              url: "https://stl-shelf.com/",
+              description:
+                "Cloud or self-hosted 3D model library for makers with version control, 3D preview, and smart organization.",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "USD",
+              },
+            },
+          ],
+        }
+      : null;
 
   // Don't show protected route UI on public routes or 404 pages
   const showProtectedUI = !isPublicRoute && !isNotFound;
@@ -238,6 +267,12 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {jsonLd ? (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+        ) : null}
       </head>
       <body>
         <OpenPanelProvider>

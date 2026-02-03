@@ -15,7 +15,40 @@ export const Route = createFileRoute("/terms")({
         name: "description",
         content: "Terms of service for STL Shelf.",
       },
+      {
+        property: "og:title",
+        content: "STL Shelf Terms of Service",
+      },
+      {
+        property: "og:description",
+        content: "Terms of service for STL Shelf.",
+      },
+      {
+        property: "og:image",
+        content: "https://stl-shelf.com/og-image.svg",
+      },
+      {
+        property: "og:url",
+        content: "https://stl-shelf.com/terms",
+      },
+      {
+        property: "og:type",
+        content: "article",
+      },
+      {
+        name: "twitter:title",
+        content: "STL Shelf Terms of Service",
+      },
+      {
+        name: "twitter:description",
+        content: "Terms of service for STL Shelf.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://stl-shelf.com/og-image.svg",
+      },
     ],
+    links: [{ rel: "canonical", href: "https://stl-shelf.com/terms" }],
   }),
 });
 
