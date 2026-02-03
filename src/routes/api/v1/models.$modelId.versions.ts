@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { db, models, modelVersions, modelFiles } from "@/lib/db";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { validateApiKey } from "@/server/middleware/api-key";
 
 export const Route = createFileRoute("/api/v1/models/$modelId/versions")({
@@ -32,41 +32,43 @@ export const Route = createFileRoute("/api/v1/models/$modelId/versions")({
             return Response.json({ error: "Model not found" }, { status: 404 });
           }
 
-          // Get all versions
-          const versions = await db
+          const versionsWithFiles = await db
             .select({
               id: modelVersions.id,
               version: modelVersions.version,
               name: modelVersions.name,
               description: modelVersions.description,
               createdAt: modelVersions.createdAt,
+              files: sql<
+                Array<{
+                  id: string;
+                  filename: string;
+                  extension: string;
+                  size: number;
+                  mimeType: string;
+                  createdAt: string;
+                }>
+              >`(
+                SELECT COALESCE(
+                  json_agg(
+                    json_build_object(
+                      'id', mf.id,
+                      'filename', mf.filename,
+                      'extension', mf.extension,
+                      'size', mf.size,
+                      'mimeType', mf.mime_type,
+                      'createdAt', mf.created_at
+                    ) ORDER BY mf.filename
+                  ),
+                  '[]'::json
+                )
+                FROM ${modelFiles} mf
+                WHERE mf.version_id = ${modelVersions.id}
+              )`,
             })
             .from(modelVersions)
             .where(eq(modelVersions.modelId, modelId))
             .orderBy(desc(modelVersions.createdAt));
-
-          // Get files for each version
-          const versionsWithFiles = await Promise.all(
-            versions.map(async (version) => {
-              const files = await db
-                .select({
-                  id: modelFiles.id,
-                  filename: modelFiles.filename,
-                  extension: modelFiles.extension,
-                  size: modelFiles.size,
-                  mimeType: modelFiles.mimeType,
-                  createdAt: modelFiles.createdAt,
-                })
-                .from(modelFiles)
-                .where(eq(modelFiles.versionId, version.id))
-                .orderBy(modelFiles.filename);
-
-              return {
-                ...version,
-                files,
-              };
-            }),
-          );
 
           return Response.json({
             modelId,
