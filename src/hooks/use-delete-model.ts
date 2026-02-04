@@ -87,6 +87,10 @@ export const useDeleteModel = () => {
       queryClient.invalidateQueries({
         queryKey: ["grace-period"],
       });
+      // Invalidate usage stats so billing reflects changes
+      queryClient.invalidateQueries({
+        queryKey: ["billing", "usage"],
+      });
     },
   });
 };

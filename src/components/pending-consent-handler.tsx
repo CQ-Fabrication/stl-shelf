@@ -1,6 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { consumePendingConsent } from "@/lib/pending-consent";
+import { clearPendingConsent, getPendingConsent } from "@/lib/pending-consent";
 import { submitConsentFn } from "@/server/functions/consent";
 import { authClient } from "@/lib/auth-client";
 
@@ -10,6 +10,7 @@ import { authClient } from "@/lib/auth-client";
  * This runs on protected routes after magic link authentication.
  */
 export function PendingConsentHandler() {
+  const queryClient = useQueryClient();
   const hasRun = useRef(false);
 
   const submitConsent = useMutation({
@@ -45,8 +46,8 @@ export function PendingConsentHandler() {
     hasRun.current = true;
 
     const handlePendingConsent = async () => {
-      // Check for pending consent from magic link flow
-      const pending = consumePendingConsent();
+      // Check for pending consent from auth flows
+      const pending = getPendingConsent();
       if (!pending) return;
 
       // Get current session
@@ -64,6 +65,8 @@ export function PendingConsentHandler() {
           marketingAccepted: pending.marketingAccepted,
           fingerprint: pending.fingerprint,
         });
+        await queryClient.invalidateQueries({ queryKey: ["consent-validity"] });
+        clearPendingConsent();
       } catch (error) {
         // Silently fail - the consent banner will catch outdated consent
         console.error("Failed to submit pending consent:", error);

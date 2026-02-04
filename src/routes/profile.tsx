@@ -31,7 +31,7 @@ function ProfilePage() {
 
       {/* Tabbed interface */}
       <Tabs className="w-full" defaultValue="profile">
-        <TabsList className="mb-2 overflow-x-auto">
+        <TabsList className="mb-2 overflow-x-auto scrollbar-hide">
           <TabsTrigger value="profile">
             <User className="mr-2 h-4 w-4" />
             Profile

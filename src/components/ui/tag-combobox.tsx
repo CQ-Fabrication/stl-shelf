@@ -136,9 +136,11 @@ export function TagCombobox({
             <CommandList>
               <CommandEmpty>
                 {inputValue.trim() ? (
-                  <div className="py-2 text-muted-foreground text-sm">No tags found.</div>
+                  <div className="px-3 py-2 text-left text-muted-foreground text-sm">
+                    No tags found.
+                  </div>
                 ) : (
-                  <div className="py-2 text-muted-foreground text-sm">
+                  <div className="px-3 py-2 text-left text-muted-foreground text-sm">
                     Start typing to search or create tags.
                   </div>
                 )}

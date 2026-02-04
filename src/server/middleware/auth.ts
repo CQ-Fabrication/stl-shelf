@@ -3,7 +3,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { and, eq, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { member } from "@/lib/db/schema/auth";
+import { member, user } from "@/lib/db/schema/auth";
 import { legalDocuments, userConsents } from "@/lib/db/schema/consent";
 import { env } from "@/lib/env";
 
@@ -13,6 +13,8 @@ export type AuthenticatedContext = {
   userId: string;
   memberRole: string;
   ipAddress: string | null;
+  accountDeletionRequestedAt: Date | null;
+  accountDeletionDeadline: Date | null;
 };
 
 /**
@@ -63,6 +65,15 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(asyn
     throw new Error("Not a member of this organization");
   }
 
+  const [accountState] = await db
+    .select({
+      accountDeletionRequestedAt: user.accountDeletionRequestedAt,
+      accountDeletionDeadline: user.accountDeletionDeadline,
+    })
+    .from(user)
+    .where(eq(user.id, session.user.id))
+    .limit(1);
+
   // Check consent validity
   const [consent] = await db
     .select({
@@ -101,6 +112,8 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(asyn
       userId: session.user.id,
       memberRole: membership.role,
       ipAddress,
+      accountDeletionRequestedAt: accountState?.accountDeletionRequestedAt ?? null,
+      accountDeletionDeadline: accountState?.accountDeletionDeadline ?? null,
     } satisfies AuthenticatedContext,
   });
 });

@@ -26,6 +26,31 @@ Simple. Friendly. Built for makers.
 - **Bulk Downloads** - Download individual files or ZIP archives
 - **Self-Hosted** - Your data stays on your infrastructure
 
+## SEO Plan (Marketing)
+
+Guardrails (copy must respect):
+
+- No import/sync from other services
+- No sharing or social features
+- Personal archive: your files, your drive
+- Self-hosting only via Docker (Postgres required; Redis later)
+
+Phase 1 landing pages:
+
+- `/organize-stl-files` — STL/3MF/OBJ organizer, searchable library, tags, preview, version history
+- `/self-hosted-3d-model-library` — Docker-only, private, your data on your server
+
+Phase 2 (post Search Console data):
+
+- `/3d-model-version-control` — version history + iterations
+
+On-page requirements:
+
+- Exact-match H1 per page
+- 4–6 FAQs + FAQ schema
+- Canonical + JSON-LD (SoftwareApplication, FAQPage)
+- Internal links from home + footer + sitemap entry
+
 ## Tech Stack
 
 - **Framework**: [TanStack Start](https://tanstack.com/start) (React 19, SSR)
@@ -92,6 +117,23 @@ bun dev
 Open [http://localhost:3000](http://localhost:3000)
 
 - **MinIO Console**: [http://localhost:9001](http://localhost:9001) (user: `stlshelf`, password: `stlshelf_minio_dev_password`)
+
+### 7. Optional: Start ngrok (public HTTPS for Polar webhooks)
+
+```bash
+bun run ngrok
+```
+
+Set these in `.env` when using ngrok:
+
+- `NGROK_DOMAIN=yourname.ngrok-free.app`
+- `NGROK_PORT=3000` (optional; defaults to `PORT` or `3000`)
+- `AUTH_URL=https://yourname.ngrok-free.app`
+- `WEB_URL=https://yourname.ngrok-free.app`
+
+Polar webhook endpoint for local testing:
+
+- `https://yourname.ngrok-free.app/api/auth/polar/webhooks`
 
 ## Production Deployment
 

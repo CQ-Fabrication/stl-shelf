@@ -5,6 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db, legalDocuments, consentAudit, userConsents } from "@/lib/db";
+import { syncResendSegments } from "@/server/services/marketing/resend-segments";
 
 // Schema definitions
 const getDocumentByTypeSchema = z.object({
@@ -191,6 +192,13 @@ export const submitConsentFn = createServerFn({ method: "POST" })
       });
     }
 
+    const email = session.user.email ?? data.email;
+    await syncResendSegments({
+      email,
+      name: session.user.name,
+      marketingAccepted: data.marketingAccepted,
+    });
+
     return { success: true };
   });
 
@@ -333,6 +341,12 @@ export const updateMarketingConsentFn = createServerFn({ method: "POST" })
       createdAt: now,
     });
 
+    await syncResendSegments({
+      email: session.user.email,
+      name: session.user.name,
+      marketingAccepted: data.marketingAccepted,
+    });
+
     return { success: true };
   });
 
@@ -412,6 +426,12 @@ export const reacceptConsentFn = createServerFn({ method: "POST" })
       })
       .where(eq(userConsents.userId, session.user.id));
 
+    await syncResendSegments({
+      email: session.user.email,
+      name: session.user.name,
+      marketingAccepted: data.marketingAccepted,
+    });
+
     return { success: true };
   });
 
@@ -462,6 +482,12 @@ export const updateMarketingPromptFn = createServerFn({ method: "POST" })
         fingerprint: "marketing-banner",
         createdAt: now,
       });
+
+      await syncResendSegments({
+        email: session.user.email,
+        name: session.user.name,
+        marketingAccepted: true,
+      });
     } else if (data.action === "decline") {
       // User clicked X - permanent decline, never re-prompt
       await db
@@ -484,6 +510,12 @@ export const updateMarketingPromptFn = createServerFn({ method: "POST" })
         userAgent,
         fingerprint: "marketing-banner-decline",
         createdAt: now,
+      });
+
+      await syncResendSegments({
+        email: session.user.email,
+        name: session.user.name,
+        marketingAccepted: false,
       });
     } else if (data.action === "defer") {
       // User clicked "Maybe Later" - re-prompt after 7 days

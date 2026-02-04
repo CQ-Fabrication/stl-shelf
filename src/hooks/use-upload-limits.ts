@@ -17,8 +17,9 @@ export type UploadLimitsResult = {
     blocked: boolean;
   };
   graceDeadline: string | null;
+  accountDeletionDeadline: string | null;
   blocked: boolean;
-  blockReason: "model_limit" | "storage_limit" | null;
+  blockReason: "model_limit" | "storage_limit" | "account_deletion" | null;
 };
 
 type UseUploadLimitsOptions = {

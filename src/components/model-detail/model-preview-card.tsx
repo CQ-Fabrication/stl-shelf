@@ -1,6 +1,14 @@
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { STLViewerWithSuspense } from "@/components/viewer/stl-viewer";
 import { getModelVersions, getModelFiles } from "@/server/functions/models";
@@ -23,8 +31,30 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
     enabled: !!activeVersion,
   });
 
-  // Only find STL or OBJ files since the viewer only supports these formats
-  const mainModelFile = files?.find((f) => ["stl", "obj"].includes(f.extension.toLowerCase()));
+  const previewFiles = useMemo(() => {
+    if (!files) return [];
+    const viewable = files.filter((file) => ["stl", "obj"].includes(file.extension.toLowerCase()));
+    if (viewable.length === 0) return [];
+    const sourceViewable = viewable.filter((file) => file.storageKey?.includes("/sources/"));
+    return sourceViewable.length > 0 ? sourceViewable : viewable;
+  }, [files]);
+
+  const [activeFileId, setActiveFileId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (previewFiles.length === 0) {
+      setActiveFileId(null);
+      return;
+    }
+
+    if (activeFileId && previewFiles.some((file) => file.id === activeFileId)) {
+      return;
+    }
+
+    setActiveFileId(previewFiles[0]?.id ?? null);
+  }, [activeFileId, previewFiles]);
+
+  const activeFile = previewFiles.find((file) => file.id === activeFileId) ?? previewFiles[0];
 
   // Check if there are any 3D files at all (including unsupported ones)
   const has3DFiles = files?.some((f) =>
@@ -33,10 +63,10 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>3D Preview</CardTitle>
-          <CardDescription>
+      <Card className="border-border/60 bg-card shadow-sm">
+        <CardHeader className="border-border/60 border-b">
+          <CardTitle className="text-base font-semibold">3D Preview</CardTitle>
+          <CardDescription className="text-muted-foreground text-xs uppercase tracking-wide">
             <Skeleton className="h-4 w-32" />
           </CardDescription>
         </CardHeader>
@@ -49,13 +79,15 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
 
   if (!activeVersion) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>3D Preview</CardTitle>
-          <CardDescription>No version available</CardDescription>
+      <Card className="border-border/60 bg-card shadow-sm">
+        <CardHeader className="border-border/60 border-b">
+          <CardTitle className="text-base font-semibold">3D Preview</CardTitle>
+          <CardDescription className="text-muted-foreground text-xs uppercase tracking-wide">
+            No version available
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="flex aspect-video items-center justify-center rounded-b-lg bg-muted">
+          <div className="flex aspect-video items-center justify-center rounded-b-lg bg-muted/40">
             <div className="text-center text-muted-foreground">
               <FileText className="mx-auto mb-2 h-12 w-12" />
               <div>No version selected</div>
@@ -66,24 +98,53 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
     );
   }
   return (
-    <Card className="pb-0 shadow-sm transition-all duration-200 hover:shadow-[var(--shadow-brand)]">
-      <CardHeader>
-        <CardTitle>3D Preview</CardTitle>
-        <CardDescription>Interactive 3D view of {activeVersion.version}</CardDescription>
+    <Card className="border-border/60 bg-card shadow-sm">
+      <CardHeader className="border-border/60 border-b">
+        <CardTitle className="text-base font-semibold">3D Preview</CardTitle>
+        <CardDescription className="text-muted-foreground text-xs uppercase tracking-wide">
+          Interactive view · {activeVersion.version}
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
-        {mainModelFile?.storageUrl ? (
-          <div className="aspect-video">
-            <STLViewerWithSuspense
-              className="h-full w-full overflow-hidden rounded-b-lg"
-              filename={mainModelFile.filename}
-              modelId={modelId}
-              url={mainModelFile.storageUrl}
-              version={activeVersion.version}
-            />
+        {activeFile?.storageUrl ? (
+          <div className="rounded-b-lg bg-muted/20">
+            {previewFiles.length > 1 ? (
+              <div className="border-border/60 border-b px-4 py-3">
+                <div className="flex items-center justify-between text-muted-foreground text-xs uppercase tracking-wide">
+                  <span>Plates</span>
+                  <span>{previewFiles.length} total</span>
+                </div>
+                <div className="mt-2">
+                  <Select onValueChange={(value) => setActiveFileId(value)} value={activeFile?.id}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select plate" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {previewFiles.map((file, index) => {
+                        const name = file.originalName || file.filename;
+                        return (
+                          <SelectItem key={file.id} value={file.id}>
+                            Plate {index + 1} · {name}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : null}
+            <div className="aspect-video">
+              <STLViewerWithSuspense
+                className="h-full w-full overflow-hidden rounded-b-lg"
+                filename={activeFile.filename}
+                modelId={modelId}
+                url={activeFile.storageUrl}
+                version={activeVersion.version}
+              />
+            </div>
           </div>
         ) : (
-          <div className="flex aspect-video items-center justify-center rounded-b-lg bg-muted">
+          <div className="flex aspect-video items-center justify-center rounded-b-lg bg-muted/40">
             <div className="text-center text-muted-foreground">
               <FileText className="mx-auto mb-2 h-12 w-12" />
               {has3DFiles ? (

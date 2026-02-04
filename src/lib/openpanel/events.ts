@@ -211,7 +211,10 @@ export async function trackUserSignedUp(
   await safeTrack(() => logEvent(user, "user_signed_up", undefined, { method }));
 }
 
-export async function trackUserOnboarded(user: OpenPanelProfile, stepsCompleted: number): Promise<void> {
+export async function trackUserOnboarded(
+  user: OpenPanelProfile,
+  stepsCompleted: number,
+): Promise<void> {
   await safeTrack(() => logEvent(user, "user_onboarded", stepsCompleted, { stepsCompleted }));
 }
 

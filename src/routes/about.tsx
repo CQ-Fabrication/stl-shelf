@@ -3,9 +3,14 @@ import { ArrowLeft, Box, Github, Heart, Mail, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
+import { getSessionFn } from "@/server/functions/auth";
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
+  loader: async () => {
+    const session = await getSessionFn();
+    return { session };
+  },
   head: () => ({
     meta: [
       { title: "About - STL Shelf" },
@@ -15,6 +20,7 @@ export const Route = createFileRoute("/about")({
           "Learn about STL Shelf - 3D model library built by makers, for makers. Cloud or self-hosted.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://stl-shelf.com/about" }],
   }),
 });
 
@@ -40,9 +46,10 @@ const values = [
 ];
 
 function AboutPage() {
+  const { session } = Route.useLoaderData();
   return (
     <div className="flex min-h-screen flex-col">
-      <Navigation />
+      <Navigation session={session} />
       <main className="flex-1 pt-24">
         {/* Hero */}
         <section className="relative py-16 overflow-hidden">

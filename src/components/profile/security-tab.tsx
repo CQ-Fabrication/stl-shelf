@@ -1,14 +1,17 @@
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Eye, EyeOff, Key, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useAccountDeletion } from "@/hooks/use-account-deletion";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DeleteAccountModal } from "./delete-account-modal";
+import { cancelAccountDeletion } from "@/server/functions/account-deletion";
 
 const passwordSchema = z
   .object({
@@ -26,6 +29,29 @@ export function SecurityTab() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { status, deadline } = useAccountDeletion();
+
+  const cancelDeletionMutation = useMutation({
+    mutationFn: () => cancelAccountDeletion(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["account-deletion"] });
+      await queryClient.invalidateQueries({ queryKey: ["upload-limits"] });
+      toast.success("Account deletion canceled");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to cancel account deletion");
+    },
+  });
+
+  const deletionScheduled = status === "scheduled";
+  const deletionDate = deadline
+    ? deadline.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
 
   const passwordForm = useForm({
     defaultValues: {
@@ -229,18 +255,30 @@ export function SecurityTab() {
               <div className="flex-1">
                 <p className="font-medium text-destructive text-sm">Delete Account</p>
                 <p className="mt-1 text-muted-foreground text-sm">
-                  This will permanently delete your account, all your sessions, organization
-                  memberships, and if you're an owner, your entire organization including all models
-                  and files.
+                  {deletionScheduled
+                    ? `Your account is scheduled for deletion on ${deletionDate}. You can cancel this before the date.`
+                    : "This will schedule deletion of your account, all your sessions, organization memberships, and if you're an owner, your entire organization including all models and files."}
                 </p>
-                <Button
-                  className="mt-4"
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  size="sm"
-                  variant="destructive"
-                >
-                  Delete My Account
-                </Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    size="sm"
+                    variant="destructive"
+                    disabled={deletionScheduled}
+                  >
+                    {deletionScheduled ? "Deletion Scheduled" : "Delete My Account"}
+                  </Button>
+                  {deletionScheduled ? (
+                    <Button
+                      onClick={() => cancelDeletionMutation.mutate()}
+                      size="sm"
+                      variant="outline"
+                      disabled={cancelDeletionMutation.isPending}
+                    >
+                      Cancel deletion
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>

@@ -24,5 +24,6 @@
 - `bun test` - Run tests with Vitest
 
 Constraints:
+
 - Never run formatters on the entire repository; only format files you modified.
 - When using `bun check`, only focus on errors in files you changed.

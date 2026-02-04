@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,41 @@ function VerifyEmailPendingPage() {
   const { email } = useSearch({ from: "/verify-email-pending" });
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const didInitCooldownRef = useRef(false);
+
+  const startCooldown = (durationSeconds: number) => {
+    if (cooldownTimerRef.current) {
+      clearInterval(cooldownTimerRef.current);
+    }
+
+    setResendCooldown(durationSeconds);
+    cooldownTimerRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (cooldownTimerRef.current) {
+            clearInterval(cooldownTimerRef.current);
+            cooldownTimerRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    if (!email || didInitCooldownRef.current) return;
+    didInitCooldownRef.current = true;
+    startCooldown(60);
+
+    return () => {
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
+      }
+    };
+  }, [email]);
 
   const handleResendEmail = async () => {
     if (!email || resendCooldown > 0) return;
@@ -31,19 +66,10 @@ function VerifyEmailPendingPage() {
     try {
       await authClient.sendVerificationEmail({
         email,
-        callbackURL: `${window.location.origin}/library`,
+        callbackURL: "/login?view=credentials",
       });
       toast.success("Verification email sent!");
-      setResendCooldown(60);
-      const interval = setInterval(() => {
-        setResendCooldown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      startCooldown(60);
     } catch {
       toast.error("Failed to resend email. Please try again.");
     } finally {

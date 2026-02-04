@@ -38,7 +38,7 @@ function VerifyEmailPage() {
         toast.success("Email verified successfully!");
 
         setTimeout(() => {
-          navigate({ to: "/library" });
+          navigate({ to: "/login", search: { view: "credentials" } });
         }, SUCCESS_REDIRECT_DELAY_MS);
       } catch {
         setState("error");
@@ -61,7 +61,7 @@ function VerifyEmailPage() {
       if (session?.user?.email) {
         await authClient.sendVerificationEmail({
           email: session.user.email,
-          callbackURL: `${window.location.origin}/verify-email`,
+          callbackURL: "/login?view=credentials",
         });
         toast.success("Verification email sent!");
       } else {
@@ -178,13 +178,13 @@ function SuccessState() {
         <div className="space-y-2">
           <h3 className="font-semibold text-lg">Email verified!</h3>
           <p className="text-muted-foreground text-sm">
-            Your email has been verified successfully. Redirecting you to the app...
+            Your email has been verified successfully. Redirecting you to sign in...
           </p>
         </div>
       </div>
 
-      <Link to="/library">
-        <Button className="w-full">Go to app</Button>
+      <Link to="/login" search={{ view: "credentials" }}>
+        <Button className="w-full">Go to sign in</Button>
       </Link>
     </>
   );

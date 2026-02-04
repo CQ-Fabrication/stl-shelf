@@ -2,6 +2,10 @@ import archiver from "archiver";
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@/lib/auth";
 import { modelDownloadService } from "@/server/services/models/model-download.service";
+import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import { checkRateLimit, getClientIp } from "@/server/utils/rate-limit";
+
+const RATE_LIMIT = { windowMs: 60_000, max: 20 };
 
 export const Route = createFileRoute("/api/download/version/$versionId/zip")({
   server: {
@@ -18,6 +22,15 @@ export const Route = createFileRoute("/api/download/version/$versionId/zip")({
 
         const { versionId } = params;
         const organizationId = session.session.activeOrganizationId;
+        const ip = getClientIp(request);
+        const rate = checkRateLimit(`zip-download:${organizationId}:${ip}`, RATE_LIMIT);
+
+        if (!rate.allowed) {
+          return Response.json(
+            { error: "Too many downloads. Try again shortly." },
+            { status: 429 },
+          );
+        }
 
         // 2. Get version info and validate access
         const versionInfo = await modelDownloadService.getVersionInfo(versionId, organizationId);
@@ -28,6 +41,23 @@ export const Route = createFileRoute("/api/download/version/$versionId/zip")({
 
         if (versionInfo.files.length === 0) {
           return new Response("No files in this version", { status: 404 });
+        }
+
+        const totalBytes = versionInfo.files.reduce((sum, file) => sum + file.size, 0);
+        const egress = await checkAndTrackEgress({
+          organizationId,
+          bytes: totalBytes,
+          downloadType: "zip",
+          versionId,
+          modelId: versionInfo.modelId,
+          ip,
+        });
+
+        if (!egress.allowed) {
+          return Response.json(
+            { error: "Bandwidth limit reached. Upgrade or add storage to continue." },
+            { status: 429 },
+          );
         }
 
         // 3. Create streaming response via TransformStream

@@ -137,22 +137,26 @@ export default function Header() {
                           </DropdownMenuItem>
                         );
                       })}
-                      {/* RBAC: Only show settings/members for admins+ */}
-                      {permissions?.canAccessSettings && (
+                      {/* RBAC: Only show settings for admins+ */}
+                      {(permissions?.canAccessSettings || permissions?.canAccessMembers) && (
                         <>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <Link to="/organization/settings">
-                              <Settings className="mr-2 h-4 w-4" />
-                              Settings
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to="/organization/members">
-                              <Users className="mr-2 h-4 w-4" />
-                              Members
-                            </Link>
-                          </DropdownMenuItem>
+                          {permissions?.canAccessMembers && (
+                            <DropdownMenuItem asChild>
+                              <Link to="/organization/members">
+                                <Users className="mr-2 h-4 w-4" />
+                                Team Members
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
+                          {permissions?.canAccessSettings && (
+                            <DropdownMenuItem asChild>
+                              <Link to="/organization/settings">
+                                <Settings className="mr-2 h-4 w-4" />
+                                Settings
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
                         </>
                       )}
                       {/* RBAC: Only show billing for owner */}

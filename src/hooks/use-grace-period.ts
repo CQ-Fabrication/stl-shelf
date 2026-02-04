@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
+import { getRetentionDeadline } from "@/lib/billing/grace";
 import { checkUploadLimits } from "@/server/functions/billing";
 
 type GracePeriodResult = {
-  inGracePeriod: boolean;
-  deadline: Date | null;
+  status: "none" | "grace" | "retention" | "expired";
+  graceDeadline: Date | null;
+  retentionDeadline: Date | null;
   daysRemaining: number;
-  expired: boolean;
 };
 
 export const useGracePeriod = () => {
@@ -25,10 +26,10 @@ export const useGracePeriod = () => {
 
   return {
     gracePeriod: query.data ?? {
-      inGracePeriod: false,
-      deadline: null,
+      status: "none",
+      graceDeadline: null,
+      retentionDeadline: null,
       daysRemaining: 0,
-      expired: false,
     },
     isLoading: !session?.user || query.isLoading,
     error: query.error,
@@ -39,23 +40,41 @@ export const useGracePeriod = () => {
 function calculateGracePeriod(graceDeadline: string | null): GracePeriodResult {
   if (!graceDeadline) {
     return {
-      inGracePeriod: false,
-      deadline: null,
+      status: "none",
+      graceDeadline: null,
+      retentionDeadline: null,
       daysRemaining: 0,
-      expired: false,
     };
   }
 
-  const deadline = new Date(graceDeadline);
+  const graceDate = new Date(graceDeadline);
+  const retentionDate = getRetentionDeadline(graceDate);
   const now = new Date();
-  const msRemaining = deadline.getTime() - now.getTime();
-  const daysRemaining = Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
-  const expired = msRemaining <= 0;
+
+  if (now.getTime() <= graceDate.getTime()) {
+    const msRemaining = graceDate.getTime() - now.getTime();
+    return {
+      status: "grace",
+      graceDeadline: graceDate,
+      retentionDeadline: retentionDate,
+      daysRemaining: Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24))),
+    };
+  }
+
+  if (now.getTime() <= retentionDate.getTime()) {
+    const msRemaining = retentionDate.getTime() - now.getTime();
+    return {
+      status: "retention",
+      graceDeadline: graceDate,
+      retentionDeadline: retentionDate,
+      daysRemaining: Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24))),
+    };
+  }
 
   return {
-    inGracePeriod: true,
-    deadline,
-    daysRemaining,
-    expired,
+    status: "expired",
+    graceDeadline: graceDate,
+    retentionDeadline: retentionDate,
+    daysRemaining: 0,
   };
 }

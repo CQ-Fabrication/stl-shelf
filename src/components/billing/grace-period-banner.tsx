@@ -9,28 +9,32 @@ export function GracePeriodBanner() {
   const [isDismissed, setIsDismissed] = useState(false);
 
   // Don't show if not in grace period, loading, or dismissed
-  if (isLoading || !gracePeriod.inGracePeriod || isDismissed) {
+  if (isLoading || gracePeriod.status === "none" || isDismissed) {
     return null;
   }
 
-  const formattedDeadline = gracePeriod.deadline
-    ? gracePeriod.deadline.toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "";
+  const formatDate = (date: Date | null) =>
+    date
+      ? date.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "";
 
-  // Show expired state with stronger urgency
-  if (gracePeriod.expired) {
+  const formattedGraceDeadline = formatDate(gracePeriod.graceDeadline);
+  const formattedRetentionDeadline = formatDate(gracePeriod.retentionDeadline);
+
+  // Cleanup overdue
+  if (gracePeriod.status === "expired") {
     return (
       <div className="bg-destructive text-destructive-foreground">
         <div className="container flex items-center justify-between gap-4 py-3">
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             <p className="text-sm font-medium">
-              Your grace period has expired. Your account is now in read-only mode. Please upgrade
-              or reduce usage to restore full access.
+              We are finalizing automatic cleanup. Your account remains in read-only mode until the
+              cleanup completes. Upgrade to restore full access immediately.
             </p>
           </div>
           <Button
@@ -45,11 +49,34 @@ export function GracePeriodBanner() {
     );
   }
 
-  // Active grace period - show countdown
   const daysText =
     gracePeriod.daysRemaining === 1
       ? "1 day remaining"
       : `${gracePeriod.daysRemaining} days remaining`;
+
+  // Cleanup window
+  if (gracePeriod.status === "retention") {
+    return (
+      <div className="bg-destructive text-destructive-foreground">
+        <div className="container flex items-center justify-between gap-4 py-3">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <p className="text-sm font-medium">
+              Cleanup window active. Older files will be removed to reach free limits by{" "}
+              {formattedRetentionDeadline} ({daysText}). Upgrade to stop deletion.
+            </p>
+          </div>
+          <Button
+            asChild
+            className="bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90"
+            size="sm"
+          >
+            <Link to="/billing">View Plans</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-amber-500 text-amber-950">
@@ -57,8 +84,11 @@ export function GracePeriodBanner() {
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <p className="text-sm">
-            <span className="font-medium">Your current usage exceeds your plan limits.</span> Please
-            upgrade or reduce usage by {formattedDeadline} ({daysText}) to avoid read-only mode.
+            <span className="font-medium">
+              Your usage exceeds free limits, so your account is in read-only mode.
+            </span>{" "}
+            Upgrade by {formattedGraceDeadline} ({daysText}) to keep all files. Older files will be
+            removed after {formattedGraceDeadline} and no later than {formattedRetentionDeadline}.
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -40,6 +40,34 @@ export function storePendingConsent(
 }
 
 /**
+ * Peek pending consent without clearing it.
+ * Returns null if expired or not found.
+ */
+export function getPendingConsent(): Omit<PendingConsent, "expiresAt"> | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+
+    const data = JSON.parse(raw) as PendingConsent;
+
+    if (Date.now() > data.expiresAt) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+
+    return {
+      termsPrivacyVersion: data.termsPrivacyVersion,
+      marketingAccepted: data.marketingAccepted,
+      fingerprint: data.fingerprint,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Retrieve and clear pending consent preferences
  * Returns null if expired or not found
  */

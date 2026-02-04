@@ -3,6 +3,10 @@ import { db, models, modelVersions, modelFiles } from "@/lib/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { validateApiKey, hasScope } from "@/server/middleware/api-key";
 import { storageService } from "@/server/services/storage";
+import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import { checkRateLimit, getClientIp } from "@/server/utils/rate-limit";
+
+const RATE_LIMIT = { windowMs: 60_000, max: 120 };
 
 export const Route = createFileRoute("/api/v1/models/$modelId/files/$fileId/download")({
   server: {
@@ -17,6 +21,15 @@ export const Route = createFileRoute("/api/v1/models/$modelId/files/$fileId/down
         const validation = await validateApiKey(request);
         if (!validation.valid) {
           return Response.json({ error: validation.error }, { status: validation.status });
+        }
+
+        const ip = getClientIp(request);
+        const rate = checkRateLimit(`api-download:${validation.organizationId}:${ip}`, RATE_LIMIT);
+        if (!rate.allowed) {
+          return Response.json(
+            { error: "Too many downloads. Try again shortly." },
+            { status: 429 },
+          );
         }
 
         // Check scope
@@ -65,14 +78,30 @@ export const Route = createFileRoute("/api/v1/models/$modelId/files/$fileId/down
             return Response.json({ error: "File not found" }, { status: 404 });
           }
 
-          // Generate signed download URL (1 hour expiry)
-          const downloadUrl = await storageService.generateDownloadUrl(file.storageKey, 60);
+          const egress = await checkAndTrackEgress({
+            organizationId: validation.organizationId,
+            bytes: file.size,
+            downloadType: "file",
+            fileId: file.id,
+            modelId,
+            ip,
+          });
+
+          if (!egress.allowed) {
+            return Response.json(
+              { error: "Bandwidth limit reached. Upgrade or add storage to continue." },
+              { status: 429 },
+            );
+          }
+
+          // Generate signed download URL (short expiry)
+          const downloadUrl = await storageService.generateDownloadUrl(file.storageKey, 5);
 
           return Response.json({
             downloadUrl,
             filename: file.filename,
             size: file.size,
-            expiresIn: 3600, // 1 hour
+            expiresIn: 300, // 5 minutes
           });
         } catch (error) {
           console.error("API v1 file download error:", error);
