@@ -8,10 +8,13 @@ Package manager: Bun (`bun@1.3.5`). Use `bun` commands, not npm/yarn.
 
 Non-standard commands:
 
-- Dev server: `bun dev` (runs on port 3001)
+- Dev server: `bun dev` (runs on port 3000)
 - Type check: `bun check-types` (tsgo)
 - Lint/format checks: `bun check` (oxlint + oxfmt, no autofix)
 - Build: `bun build` (do not run if the dev server is already running)
+- Preview build: `bun preview`
+- Production server: `bun start`
+- Tests: `bun test` (vitest run)
 
 Quality gate:
 
@@ -20,6 +23,7 @@ Quality gate:
 Database:
 
 - PSQL connection: `psql "postgresql://stlshelf:stlshelf_dev_password@localhost:5432/stlshelf"`
+- Drizzle commands: `bun db:generate`, `bun db:migrate`, `bun db:push`, `bun db:studio`, `bun db:seed`
 
 Git:
 
