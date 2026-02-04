@@ -1,78 +1,32 @@
-<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background with subtle grid pattern -->
-  <rect width="1200" height="630" fill="#09090b"/>
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <rect width="1200" height="630" fill="#ffffff"/>
 
-  <!-- Isometric grid pattern -->
   <defs>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(9,9,11,0.05)" stroke-width="1"/>
     </pattern>
   </defs>
+
   <rect width="1200" height="630" fill="url(#grid)"/>
 
-  <!-- Orange gradient accent -->
-  <defs>
-    <linearGradient id="orangeGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#f97316;stop-opacity:0.15"/>
-      <stop offset="100%" style="stop-color:#f97316;stop-opacity:0"/>
-    </linearGradient>
-  </defs>
-  <ellipse cx="900" cy="315" rx="400" ry="300" fill="url(#orangeGlow)"/>
+  <!-- Left: Logo block (match CQ landing offsets) -->
+  <image
+    x="40"
+    y="30"
+    width="420"
+    height="170"
+    href="https://cdn.stl-shelf.com/logo-dark.svg"
+    preserveAspectRatio="xMinYMin meet"
+  />
 
-  <!-- 3D Box Icon (simplified STL Shelf logo concept) -->
-  <g transform="translate(100, 180)">
-    <!-- Box faces -->
-    <path d="M60 30 L120 0 L120 80 L60 110 Z" fill="#f97316" opacity="0.9"/>
-    <path d="M0 30 L60 0 L60 80 L0 110 Z" fill="#ea580c" opacity="0.9"/>
-    <path d="M0 30 L60 0 L120 30 L60 60 Z" fill="#fb923c" opacity="0.9"/>
-
-    <!-- Shelf lines -->
-    <line x1="10" y1="55" x2="110" y2="55" stroke="#09090b" stroke-width="2" opacity="0.3"/>
-    <line x1="10" y1="80" x2="110" y2="80" stroke="#09090b" stroke-width="2" opacity="0.3"/>
+  <!-- Right: Headline (match CQ landing offsets) -->
+  <g transform="translate(1120, 400)" font-family="system-ui, -apple-system, sans-serif" text-anchor="end">
+    <text y="0" font-size="72" font-weight="300" fill="#3f3f46" opacity="0.9">3D Model Library.</text>
+    <text y="90" font-size="72" font-weight="700" fill="#0f0f13">Built for Makers.</text>
   </g>
 
-  <!-- Main text -->
-  <text x="100" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="#fafafa">
-    STL Shelf
-  </text>
+  <rect x="1000" y="520" width="120" height="3" fill="#f97316" rx="1"/>
 
-  <!-- Tagline -->
-  <text x="100" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#a1a1aa">
-    3D Model Library for Makers
-  </text>
-
-  <!-- Features badges -->
-  <g transform="translate(100, 480)">
-    <rect x="0" y="0" width="120" height="32" rx="16" fill="rgba(249,115,22,0.15)" stroke="rgba(249,115,22,0.3)" stroke-width="1"/>
-    <text x="60" y="21" font-family="monospace" font-size="12" fill="#f97316" text-anchor="middle">Version Control</text>
-
-    <rect x="140" y="0" width="100" height="32" rx="16" fill="rgba(249,115,22,0.15)" stroke="rgba(249,115,22,0.3)" stroke-width="1"/>
-    <text x="190" y="21" font-family="monospace" font-size="12" fill="#f97316" text-anchor="middle">3D Preview</text>
-
-    <rect x="260" y="0" width="100" height="32" rx="16" fill="rgba(249,115,22,0.15)" stroke="rgba(249,115,22,0.3)" stroke-width="1"/>
-    <text x="310" y="21" font-family="monospace" font-size="12" fill="#f97316" text-anchor="middle">Smart Tags</text>
-  </g>
-
-  <!-- File format badges on right side -->
-  <g transform="translate(850, 250)">
-    <rect x="0" y="0" width="70" height="28" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <text x="35" y="19" font-family="monospace" font-size="14" fill="#71717a" text-anchor="middle">.stl</text>
-
-    <rect x="80" y="0" width="70" height="28" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <text x="115" y="19" font-family="monospace" font-size="14" fill="#71717a" text-anchor="middle">.3mf</text>
-
-    <rect x="160" y="0" width="70" height="28" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <text x="195" y="19" font-family="monospace" font-size="14" fill="#71717a" text-anchor="middle">.obj</text>
-
-    <rect x="40" y="40" width="70" height="28" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <text x="75" y="59" font-family="monospace" font-size="14" fill="#71717a" text-anchor="middle">.ply</text>
-
-    <rect x="120" y="40" width="80" height="28" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <text x="160" y="59" font-family="monospace" font-size="14" fill="#71717a" text-anchor="middle">.gcode</text>
-  </g>
-
-  <!-- Domain -->
-  <text x="100" y="580" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#52525b">
-    stl-shelf.com
-  </text>
+  <!-- URL (match CQ landing offsets) -->
+  <text x="1120" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="500" fill="#71717a" text-anchor="end">stl-shelf.com</text>
 </svg>
