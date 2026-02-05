@@ -20,6 +20,38 @@ export const Route = createFileRoute("/privacy")({
         name: "description",
         content: "Privacy policy for STL Shelf - how we handle your data.",
       },
+      {
+        property: "og:title",
+        content: "STL Shelf Privacy Policy",
+      },
+      {
+        property: "og:description",
+        content: "Privacy policy for STL Shelf - how we handle your data.",
+      },
+      {
+        property: "og:image",
+        content: "https://stl-shelf.com/og-image.svg",
+      },
+      {
+        property: "og:url",
+        content: "https://stl-shelf.com/privacy",
+      },
+      {
+        property: "og:type",
+        content: "article",
+      },
+      {
+        name: "twitter:title",
+        content: "STL Shelf Privacy Policy",
+      },
+      {
+        name: "twitter:description",
+        content: "Privacy policy for STL Shelf - how we handle your data.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://stl-shelf.com/og-image.svg",
+      },
     ],
     links: [{ rel: "canonical", href: "https://stl-shelf.com/privacy" }],
   }),

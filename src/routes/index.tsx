@@ -33,28 +33,38 @@ export const Route = createFileRoute("/")({
           "Organize, version, and share your 3D printable models. Cloud or self-hosted for makers and teams.",
       },
       {
-        "script:ld+json": {
-          "@context": "https://schema.org",
-          "@type": "SoftwareApplication",
-          name: "STL Shelf",
-          applicationCategory: "DesignApplication",
-          operatingSystem: "Web",
-          url: "https://stl-shelf.com/",
-          description:
-            "Personal 3D model library to organize, preview, and version STL, 3MF, OBJ, and PLY files.",
-          featureList: [
-            "3D model library",
-            "Version history",
-            "3D preview",
-            "Tags and metadata",
-            "Self-hosted option",
-          ],
-          creator: {
-            "@type": "Organization",
-            name: "CQ Fabrication",
-            url: "https://cqfabrication.com",
-          },
-        },
+        property: "og:title",
+        content: "STL Shelf - 3D Model Library for Makers",
+      },
+      {
+        property: "og:description",
+        content:
+          "Organize, version, and share your 3D printable models. Cloud or self-hosted for makers and teams.",
+      },
+      {
+        property: "og:image",
+        content: "https://stl-shelf.com/og-image.svg",
+      },
+      {
+        property: "og:url",
+        content: "https://stl-shelf.com/",
+      },
+      {
+        property: "og:type",
+        content: "website",
+      },
+      {
+        name: "twitter:title",
+        content: "STL Shelf - 3D Model Library for Makers",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Organize, version, and share your 3D printable models. Cloud or self-hosted for makers and teams.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://stl-shelf.com/og-image.svg",
       },
     ],
     links: [{ rel: "canonical", href: "https://stl-shelf.com/" }],
