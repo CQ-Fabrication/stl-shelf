@@ -11,7 +11,6 @@ export const Route = createFileRoute("/organization/members")({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
   beforeLoad: async () => {
-    // RBAC: Only admins and owners can access team members
     const permissions = await getMemberRoleFn();
     if (!permissions?.canAccessMembers) {
       throw notFound();

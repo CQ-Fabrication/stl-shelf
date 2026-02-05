@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Download, History, MoreVertical, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Download, MoreVertical, Trash2, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FileCompleteness } from "@/components/model-detail/file-completeness";
 import { InlineNameEditor } from "@/components/model-detail/inline-name-editor";
@@ -24,7 +24,6 @@ type ModelDetailHeaderProps = {
   activeVersion?: string;
   onDeleteClick: () => void;
   onUploadVersionClick: () => void;
-  onChangelogClick: () => void;
 };
 
 export const ModelDetailHeader = ({
@@ -32,7 +31,6 @@ export const ModelDetailHeader = ({
   activeVersion,
   onDeleteClick,
   onUploadVersionClick,
-  onChangelogClick,
 }: ModelDetailHeaderProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
 
@@ -169,10 +167,6 @@ export const ModelDetailHeader = ({
                 <DropdownMenuItem onClick={onUploadVersionClick}>
                   <Upload className="mr-2 h-4 w-4" />
                   Upload New Version
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onChangelogClick}>
-                  <History className="mr-2 h-4 w-4" />
-                  Version History
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive" onClick={onDeleteClick}>
                   <Trash2 className="mr-2 h-4 w-4" />

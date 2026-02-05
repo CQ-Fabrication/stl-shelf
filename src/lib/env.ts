@@ -44,10 +44,13 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     EMAIL_FROM: z.string().optional().default("STL Shelf <noreply@mail.stl-shelf.com>"),
     EMAIL_LOGO_URL: z.url().optional(),
+    RESEND_SEGMENT_USERS: z.string().optional(),
+    RESEND_SEGMENT_MARKETING_OPT_IN: z.string().optional(),
 
     // Server Configuration
     NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
     PORT: z.coerce.number().min(1).default(3000),
+    NGROK_DOMAIN: z.string().optional(),
 
     // Polar.sh Billing
     POLAR_ACCESS_TOKEN: z.string().min(1).default("polar_placeholder"),
@@ -55,7 +58,11 @@ export const env = createEnv({
     POLAR_SERVER: z.enum(["sandbox", "production"]).default("sandbox"),
     POLAR_PRODUCT_FREE: z.string().optional(),
     POLAR_PRODUCT_BASIC: z.string().optional(),
+    POLAR_PRODUCT_BASIC_MONTH: z.string().optional(),
+    POLAR_PRODUCT_BASIC_YEAR: z.string().optional(),
     POLAR_PRODUCT_PRO: z.string().optional(),
+    POLAR_PRODUCT_PRO_MONTH: z.string().optional(),
+    POLAR_PRODUCT_PRO_YEAR: z.string().optional(),
 
     // OpenPanel Analytics
     OPENPANEL_CLIENT_ID: z.string().min(1),

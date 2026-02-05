@@ -12,6 +12,7 @@ import {
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useMemo } from "react";
+import { AccountDeletionBanner } from "@/components/account-deletion-banner";
 import { GracePeriodBanner } from "@/components/billing/grace-period-banner";
 import { ConsentBanner } from "@/components/consent-banner";
 import { ErrorPage } from "@/components/error-page";
@@ -81,6 +82,8 @@ const PUBLIC_ROUTES = [
   "/pricing",
   "/privacy",
   "/terms",
+  "/organize-stl-files",
+  "/self-hosted-3d-model-library",
 ];
 
 // Routes that authenticated users should NOT access (redirect to /library)
@@ -287,6 +290,7 @@ function RootDocument({ children }: { children: ReactNode }) {
               {showProtectedUI && (
                 <>
                   <Header />
+                  <AccountDeletionBanner />
                   <GracePeriodBanner />
                   <ConsentBanner />
                   <PendingConsentHandler />

@@ -41,6 +41,13 @@ import {
   userAnnouncementReadsRelations,
 } from "./schema/announcements";
 import {
+  billingRetentionRunItems,
+  billingRetentionRuns,
+  billingWebhookEvents,
+  accountDeletionRunItems,
+  accountDeletionRuns,
+} from "./schema/billing";
+import {
   legalDocuments,
   legalDocumentsRelations,
   consentAudit,
@@ -64,6 +71,12 @@ export const schema = {
   // Announcements
   announcements,
   userAnnouncementReads,
+  // Billing webhooks
+  billingWebhookEvents,
+  billingRetentionRuns,
+  billingRetentionRunItems,
+  accountDeletionRuns,
+  accountDeletionRunItems,
   // Consent
   legalDocuments,
   consentAudit,
@@ -149,4 +162,5 @@ export * from "./schema/auth";
 export * from "./schema/models";
 export * from "./schema/api-keys";
 export * from "./schema/announcements";
+export * from "./schema/billing";
 export * from "./schema/consent";

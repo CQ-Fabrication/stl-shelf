@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
+    "ngrok": "bash -lc 'set -a; [ -f .env ] && . ./.env; set +a; if [ -z \"$NGROK_DOMAIN\" ]; then echo \"Set NGROK_DOMAIN in .env\"; exit 1; fi; PORT_RESOLVED=\"${NGROK_PORT:-${PORT:-3000}}\"; ngrok http \"$PORT_RESOLVED\" --domain=\"$NGROK_DOMAIN\"'",
     "build": "vite build",
     "preview": "vite preview",
     "start": "bun run server.ts",
@@ -17,12 +18,17 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "for f in drizzle/seeds/*.sql; do psql $DATABASE_URL -f $f; done"
+    "db:seed": "for f in drizzle/seeds/*.sql; do psql $DATABASE_URL -f $f; done",
+    "docs:list": "bun run scripts/docs-list.ts",
+    "retention:sweep": "bun run scripts/retention-sweep.ts",
+    "account-deletion:sweep": "bun run scripts/account-deletion-sweep.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.971.0",
     "@aws-sdk/s3-request-presigner": "^3.971.0",
     "@logtail/node": "^0.5.6",
+    "@openpanel/sdk": "^1.0.4",
+    "@openpanel/web": "^1.0.7",
     "@polar-sh/better-auth": "^1.6.4",
     "@polar-sh/sdk": "^0.42.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -45,8 +51,6 @@
     "@react-three/fiber": "^9.5.0",
     "@sentry/bun": "^10.35.0",
     "@sentry/react": "^10.35.0",
-    "@openpanel/sdk": "^1.0.4",
-    "@openpanel/web": "^1.0.7",
     "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-form": "^1.27.7",

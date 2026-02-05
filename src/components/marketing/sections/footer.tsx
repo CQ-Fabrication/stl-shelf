@@ -15,6 +15,8 @@ const navLinks = [
   { label: "Features", href: "/#features", isExternal: false },
   { label: "Pricing", href: "/pricing", isExternal: false },
   { label: "About", href: "/about", isExternal: false },
+  { label: "Organize STL Files", href: "/organize-stl-files", isExternal: false },
+  { label: "Self-Hosted Library", href: "/self-hosted-3d-model-library", isExternal: false },
   { label: "Contact", href: "mailto:hello@stl-shelf.com", isExternal: true },
 ];
 

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
 import { authClient } from "@/lib/auth-client";
 import { generateFingerprint } from "@/lib/fingerprint";
+import { clearPendingConsent, storePendingConsent } from "@/lib/pending-consent";
 import { getLatestDocumentsFn, submitConsentFn } from "@/server/functions/consent";
 
 export const Route = createFileRoute("/signup")({
@@ -73,6 +74,7 @@ function SignUpPage() {
       name: value.name,
       email: value.email,
       password: value.password,
+      callbackURL: "/login?view=credentials",
       fetchOptions: {
         headers: {
           "x-captcha-response": value.captcha,
@@ -85,24 +87,30 @@ function SignUpPage() {
       return;
     }
 
-    // Generate fingerprint and submit consent
+    // Store consent for submission after authentication
     const fingerprint = await generateFingerprint();
 
-    try {
-      await submitConsentFn({
-        data: {
-          userId: result.data.user.id,
-          email: value.email,
-          termsPrivacyAccepted: true,
-          termsPrivacyVersion: termsVersion,
-          marketingAccepted: false, // Marketing consent collected via post-login banner
-          fingerprint,
-        },
-      });
-    } catch {
-      // If consent fails, we must block - per spec
-      toast.error("Failed to record consent. Please try again.");
-      return;
+    storePendingConsent(termsVersion, false, fingerprint); // Marketing consent collected via post-login banner
+
+    const session = await authClient.getSession();
+    if (session?.data?.user?.id && session.data.user.email) {
+      try {
+        await submitConsentFn({
+          data: {
+            userId: result.data.user.id,
+            email: value.email,
+            termsPrivacyAccepted: true,
+            termsPrivacyVersion: termsVersion,
+            marketingAccepted: false,
+            fingerprint,
+          },
+        });
+        clearPendingConsent();
+      } catch {
+        // If consent fails, we must block - per spec
+        toast.error("Failed to record consent. Please try again.");
+        return;
+      }
     }
 
     await navigate({

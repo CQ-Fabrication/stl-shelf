@@ -293,13 +293,11 @@ class PrintProfileService {
       throw new Error("Profile not found or access denied");
     }
 
-    const downloadUrl = await storageService.generateDownloadUrl(profile.file.storageKey, 60);
-
     return {
       filename: profile.file.originalName,
       size: profile.file.size,
       mimeType: profile.file.mimeType || "application/octet-stream",
-      downloadUrl,
+      downloadUrl: `/api/download/print-profile/${profileId}`,
     };
   }
 

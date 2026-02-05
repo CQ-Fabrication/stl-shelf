@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCheckout } from "@/hooks/use-checkout";
 import type { UploadLimitsResult } from "@/hooks/use-upload-limits";
-import { SUBSCRIPTION_TIERS, type SubscriptionTier } from "@/lib/billing/config";
+import {
+  SUBSCRIPTION_TIERS,
+  getProductSlugForTier,
+  getTierPrice,
+  type BillingInterval,
+  type SubscriptionTier,
+} from "@/lib/billing/config";
 import { formatStorage } from "@/lib/billing/utils";
 
 type UploadBlockedStateProps = {
@@ -25,8 +31,43 @@ const getRecommendedTier = (currentTier: SubscriptionTier): SubscriptionTier => 
 };
 
 export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps) {
-  const { startCheckout, loadingTier, isLoading } = useCheckout();
+  const { startCheckout, loadingProductSlug, isLoading } = useCheckout();
   const recommendedTier = getRecommendedTier(limits.tier);
+  const billingInterval: BillingInterval = "month";
+
+  const handleDismiss = () => {
+    console.log("limit_block_dismissed", {
+      reason: limits.blockReason,
+      tier: limits.tier,
+    });
+    onClose();
+  };
+
+  if (limits.blockReason === "account_deletion") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+          <AlertCircle className="h-5 w-5 shrink-0 text-destructive" />
+          <div>
+            <p className="font-medium text-destructive">Account scheduled for deletion</p>
+            <p className="text-muted-foreground text-sm">
+              Uploads are disabled while your account is pending deletion. Cancel the deletion to
+              restore full access.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between border-t pt-4">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Trash2 className="h-4 w-4" />
+            <span className="text-sm">Manage account deletion in settings</span>
+          </div>
+          <Button variant="outline" asChild onClick={handleDismiss}>
+            <Link to="/profile">Go to Settings</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const blockMessage =
     limits.blockReason === "model_limit"
@@ -41,15 +82,8 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
 
   const handleUpgradeClick = (tier: SubscriptionTier) => {
     console.log("limit_upgrade_clicked", { from: limits.tier, to: tier });
-    startCheckout(tier);
-  };
-
-  const handleDismiss = () => {
-    console.log("limit_block_dismissed", {
-      reason: limits.blockReason,
-      tier: limits.tier,
-    });
-    onClose();
+    const productSlug = getProductSlugForTier(tier, billingInterval);
+    startCheckout(productSlug);
   };
 
   return (
@@ -71,6 +105,13 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
           const config = SUBSCRIPTION_TIERS[tierKey];
           const isCurrent = limits.tier === tierKey;
           const isRecommended = tierKey === recommendedTier && !isCurrent;
+          const productSlug = getProductSlugForTier(tierKey, billingInterval);
+          let actionLabel = `Upgrade to ${config.name}`;
+          if (loadingProductSlug === productSlug) {
+            actionLabel = "Loading...";
+          } else if (isCurrent) {
+            actionLabel = "Current Plan";
+          }
 
           return (
             <Card
@@ -91,7 +132,7 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">{config.name}</CardTitle>
                 <p className="font-bold text-2xl">
-                  ${config.price}
+                  ${getTierPrice(tierKey, billingInterval)}
                   <span className="font-normal text-muted-foreground text-sm">/mo</span>
                 </p>
               </CardHeader>
@@ -116,11 +157,7 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
                   disabled={isCurrent || tierKey === "free" || isLoading}
                   onClick={() => handleUpgradeClick(tierKey)}
                 >
-                  {loadingTier === tierKey
-                    ? "Loading..."
-                    : isCurrent
-                      ? "Current Plan"
-                      : `Upgrade to ${config.name}`}
+                  {actionLabel}
                 </Button>
               </CardContent>
             </Card>

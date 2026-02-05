@@ -90,6 +90,7 @@ export function ModelUpload() {
       toast.success(`Successfully created model: ${data.slug}`);
       queryClient.invalidateQueries({ queryKey: MODELS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["tags", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["billing", "usage"] });
       navigate({
         to: "/models/$modelId",
         params: { modelId: data.modelId },

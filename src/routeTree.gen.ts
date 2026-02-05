@@ -13,10 +13,12 @@ import { Route as VerifyEmailPendingRouteImport } from './routes/verify-email-pe
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SelfHosted3dModelLibraryRouteImport } from './routes/self-hosted-3d-model-library'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as OrganizeStlFilesRouteImport } from './routes/organize-stl-files'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -29,10 +31,13 @@ import { Route as OrganizationMembersRouteImport } from './routes/organization/m
 import { Route as OrganizationCreateRouteImport } from './routes/organization/create'
 import { Route as ModelsModelIdRouteImport } from './routes/models.$modelId'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
+import { Route as CheckoutFailedRouteImport } from './routes/checkout/failed'
 import { Route as ApiV1UploadRouteImport } from './routes/api/v1/upload'
 import { Route as ApiV1ModelsRouteImport } from './routes/api/v1/models'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiV1ModelsModelIdRouteImport } from './routes/api/v1/models.$modelId'
+import { Route as ApiDownloadPrintProfileProfileIdRouteImport } from './routes/api/download/print-profile/$profileId'
+import { Route as ApiDownloadFileFileIdRouteImport } from './routes/api/download/file/$fileId'
 import { Route as ApiV1ModelsModelIdVersionsRouteImport } from './routes/api/v1/models.$modelId.versions'
 import { Route as ApiDownloadVersionVersionIdZipRouteImport } from './routes/api/download/version/$versionId.zip'
 import { Route as ApiV1ModelsModelIdFilesFileIdDownloadRouteImport } from './routes/api/v1/models.$modelId.files.$fileId.download'
@@ -57,6 +62,12 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SelfHosted3dModelLibraryRoute =
+  SelfHosted3dModelLibraryRouteImport.update({
+    id: '/self-hosted-3d-model-library',
+    path: '/self-hosted-3d-model-library',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -75,6 +86,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizeStlFilesRoute = OrganizeStlFilesRouteImport.update({
+  id: '/organize-stl-files',
+  path: '/organize-stl-files',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -137,6 +153,11 @@ const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   path: '/checkout/success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutFailedRoute = CheckoutFailedRouteImport.update({
+  id: '/checkout/failed',
+  path: '/checkout/failed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1UploadRoute = ApiV1UploadRouteImport.update({
   id: '/api/v1/upload',
   path: '/api/v1/upload',
@@ -156,6 +177,17 @@ const ApiV1ModelsModelIdRoute = ApiV1ModelsModelIdRouteImport.update({
   id: '/$modelId',
   path: '/$modelId',
   getParentRoute: () => ApiV1ModelsRoute,
+} as any)
+const ApiDownloadPrintProfileProfileIdRoute =
+  ApiDownloadPrintProfileProfileIdRouteImport.update({
+    id: '/api/download/print-profile/$profileId',
+    path: '/api/download/print-profile/$profileId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDownloadFileFileIdRoute = ApiDownloadFileFileIdRouteImport.update({
+  id: '/api/download/file/$fileId',
+  path: '/api/download/file/$fileId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1ModelsModelIdVersionsRoute =
   ApiV1ModelsModelIdVersionsRouteImport.update({
@@ -184,14 +216,17 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-email-pending': typeof VerifyEmailPendingRoute
+  '/checkout/failed': typeof CheckoutFailedRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
@@ -200,6 +235,8 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
+  '/api/download/file/$fileId': typeof ApiDownloadFileFileIdRoute
+  '/api/download/print-profile/$profileId': typeof ApiDownloadPrintProfileProfileIdRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
@@ -213,14 +250,17 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-email-pending': typeof VerifyEmailPendingRoute
+  '/checkout/failed': typeof CheckoutFailedRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
@@ -229,6 +269,8 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
+  '/api/download/file/$fileId': typeof ApiDownloadFileFileIdRoute
+  '/api/download/print-profile/$profileId': typeof ApiDownloadPrintProfileProfileIdRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
@@ -243,14 +285,17 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-email-pending': typeof VerifyEmailPendingRoute
+  '/checkout/failed': typeof CheckoutFailedRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
   '/organization/create': typeof OrganizationCreateRoute
@@ -259,6 +304,8 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/models': typeof ApiV1ModelsRouteWithChildren
   '/api/v1/upload': typeof ApiV1UploadRoute
+  '/api/download/file/$fileId': typeof ApiDownloadFileFileIdRoute
+  '/api/download/print-profile/$profileId': typeof ApiDownloadPrintProfileProfileIdRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
@@ -274,14 +321,17 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/library'
     | '/login'
+    | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
     | '/profile'
     | '/reset-password'
+    | '/self-hosted-3d-model-library'
     | '/signup'
     | '/terms'
     | '/verify-email'
     | '/verify-email-pending'
+    | '/checkout/failed'
     | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
@@ -290,6 +340,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/v1/models'
     | '/api/v1/upload'
+    | '/api/download/file/$fileId'
+    | '/api/download/print-profile/$profileId'
     | '/api/v1/models/$modelId'
     | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
@@ -303,14 +355,17 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/library'
     | '/login'
+    | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
     | '/profile'
     | '/reset-password'
+    | '/self-hosted-3d-model-library'
     | '/signup'
     | '/terms'
     | '/verify-email'
     | '/verify-email-pending'
+    | '/checkout/failed'
     | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
@@ -319,6 +374,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/v1/models'
     | '/api/v1/upload'
+    | '/api/download/file/$fileId'
+    | '/api/download/print-profile/$profileId'
     | '/api/v1/models/$modelId'
     | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
@@ -332,14 +389,17 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/library'
     | '/login'
+    | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
     | '/profile'
     | '/reset-password'
+    | '/self-hosted-3d-model-library'
     | '/signup'
     | '/terms'
     | '/verify-email'
     | '/verify-email-pending'
+    | '/checkout/failed'
     | '/checkout/success'
     | '/models/$modelId'
     | '/organization/create'
@@ -348,6 +408,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/v1/models'
     | '/api/v1/upload'
+    | '/api/download/file/$fileId'
+    | '/api/download/print-profile/$profileId'
     | '/api/v1/models/$modelId'
     | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
@@ -362,14 +424,17 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
+  OrganizeStlFilesRoute: typeof OrganizeStlFilesRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SelfHosted3dModelLibraryRoute: typeof SelfHosted3dModelLibraryRoute
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   VerifyEmailPendingRoute: typeof VerifyEmailPendingRoute
+  CheckoutFailedRoute: typeof CheckoutFailedRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   ModelsModelIdRoute: typeof ModelsModelIdRoute
   OrganizationCreateRoute: typeof OrganizationCreateRoute
@@ -378,6 +443,8 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1ModelsRoute: typeof ApiV1ModelsRouteWithChildren
   ApiV1UploadRoute: typeof ApiV1UploadRoute
+  ApiDownloadFileFileIdRoute: typeof ApiDownloadFileFileIdRoute
+  ApiDownloadPrintProfileProfileIdRoute: typeof ApiDownloadPrintProfileProfileIdRoute
   ApiDownloadVersionVersionIdZipRoute: typeof ApiDownloadVersionVersionIdZipRoute
 }
 
@@ -411,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/self-hosted-3d-model-library': {
+      id: '/self-hosted-3d-model-library'
+      path: '/self-hosted-3d-model-library'
+      fullPath: '/self-hosted-3d-model-library'
+      preLoaderRoute: typeof SelfHosted3dModelLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -437,6 +511,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organize-stl-files': {
+      id: '/organize-stl-files'
+      path: '/organize-stl-files'
+      fullPath: '/organize-stl-files'
+      preLoaderRoute: typeof OrganizeStlFilesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -523,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/failed': {
+      id: '/checkout/failed'
+      path: '/checkout/failed'
+      fullPath: '/checkout/failed'
+      preLoaderRoute: typeof CheckoutFailedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/upload': {
       id: '/api/v1/upload'
       path: '/api/v1/upload'
@@ -550,6 +638,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/models/$modelId'
       preLoaderRoute: typeof ApiV1ModelsModelIdRouteImport
       parentRoute: typeof ApiV1ModelsRoute
+    }
+    '/api/download/print-profile/$profileId': {
+      id: '/api/download/print-profile/$profileId'
+      path: '/api/download/print-profile/$profileId'
+      fullPath: '/api/download/print-profile/$profileId'
+      preLoaderRoute: typeof ApiDownloadPrintProfileProfileIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/download/file/$fileId': {
+      id: '/api/download/file/$fileId'
+      path: '/api/download/file/$fileId'
+      fullPath: '/api/download/file/$fileId'
+      preLoaderRoute: typeof ApiDownloadFileFileIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/v1/models/$modelId/versions': {
       id: '/api/v1/models/$modelId/versions'
@@ -609,14 +711,17 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
+  OrganizeStlFilesRoute: OrganizeStlFilesRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SelfHosted3dModelLibraryRoute: SelfHosted3dModelLibraryRoute,
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   VerifyEmailPendingRoute: VerifyEmailPendingRoute,
+  CheckoutFailedRoute: CheckoutFailedRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   ModelsModelIdRoute: ModelsModelIdRoute,
   OrganizationCreateRoute: OrganizationCreateRoute,
@@ -625,6 +730,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1ModelsRoute: ApiV1ModelsRouteWithChildren,
   ApiV1UploadRoute: ApiV1UploadRoute,
+  ApiDownloadFileFileIdRoute: ApiDownloadFileFileIdRoute,
+  ApiDownloadPrintProfileProfileIdRoute: ApiDownloadPrintProfileProfileIdRoute,
   ApiDownloadVersionVersionIdZipRoute: ApiDownloadVersionVersionIdZipRoute,
 }
 export const routeTree = rootRouteImport

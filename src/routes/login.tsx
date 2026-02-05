@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
 import { CredentialsForm } from "@/components/auth/credentials-form";
 import { MagicLinkForm } from "@/components/auth/magic-link-form";
 import { Button } from "@/components/ui/button";
@@ -11,13 +12,17 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
+  validateSearch: z.object({
+    view: z.enum(["magic-link", "credentials"]).optional(),
+  }),
   component: LoginPage,
 });
 
 type LoginView = "magic-link" | "credentials";
 
 function LoginPage() {
-  const [view, setView] = useState<LoginView>("magic-link");
+  const { view: viewParam } = Route.useSearch();
+  const [view, setView] = useState<LoginView>(viewParam ?? "magic-link");
   const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   return (

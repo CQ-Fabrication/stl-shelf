@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  bigint,
   pgTable,
   text,
   timestamp,
@@ -20,6 +21,16 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  accountDeletionRequestedAt: timestamp("account_deletion_requested_at", { withTimezone: true }),
+  accountDeletionDeadline: timestamp("account_deletion_deadline", { withTimezone: true }),
+  accountDeletionCanceledAt: timestamp("account_deletion_canceled_at", { withTimezone: true }),
+  accountDeletionCompletedAt: timestamp("account_deletion_completed_at", { withTimezone: true }),
+  accountDeletionNoticeSentAt: timestamp("account_deletion_notice_sent_at", {
+    withTimezone: true,
+  }),
+  accountDeletionFinalNoticeSentAt: timestamp("account_deletion_final_notice_sent_at", {
+    withTimezone: true,
+  }),
 });
 
 export const session = pgTable(
@@ -96,13 +107,26 @@ export const organization = pgTable(
     subscriptionTier: text("subscription_tier"),
     subscriptionStatus: text("subscription_status"),
     subscriptionId: text("subscription_id"),
-    storageLimit: integer("storage_limit"),
+    subscriptionPeriodEnd: timestamp("subscription_period_end"),
+    subscriptionCancelAtPeriodEnd: boolean("subscription_cancel_at_period_end").default(false),
+    storageLimit: bigint("storage_limit", { mode: "number" }),
     modelCountLimit: integer("model_count_limit"),
     memberLimit: integer("member_limit"),
-    currentStorage: integer("current_storage"),
+    currentStorage: bigint("current_storage", { mode: "number" }),
     currentModelCount: integer("current_model_count"),
     currentMemberCount: integer("current_member_count"),
     graceDeadline: timestamp("grace_deadline"),
+    egressBytesThisMonth: bigint("egress_bytes_this_month", { mode: "number" }).default(0),
+    egressDownloadsThisMonth: integer("egress_downloads_this_month").default(0),
+    egressPeriodStart: timestamp("egress_period_start"),
+    egressWarning80SentAt: timestamp("egress_warning_80_sent_at"),
+    egressWarning100SentAt: timestamp("egress_warning_100_sent_at"),
+    billingCancelNoticeSentAt: timestamp("billing_cancel_notice_sent_at"),
+    billingGraceNoticeSentAt: timestamp("billing_grace_notice_sent_at"),
+    accountDeletionRequestedAt: timestamp("account_deletion_requested_at", { withTimezone: true }),
+    accountDeletionDeadline: timestamp("account_deletion_deadline", { withTimezone: true }),
+    accountDeletionCanceledAt: timestamp("account_deletion_canceled_at", { withTimezone: true }),
+    accountDeletionCompletedAt: timestamp("account_deletion_completed_at", { withTimezone: true }),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
 );

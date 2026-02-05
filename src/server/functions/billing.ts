@@ -5,26 +5,60 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { member, organization } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
+import { env } from "@/lib/env";
 import type { SubscriptionTier } from "@/lib/billing/config";
-import { getTierConfig, isUnlimited } from "@/lib/billing/config";
+import {
+  SUBSCRIPTION_PRODUCT_SLUG_OPTIONS,
+  getTierConfig,
+  isUnlimited,
+} from "@/lib/billing/config";
+import { getRetentionDeadline } from "@/lib/billing/grace";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { polarService } from "@/server/services/billing/polar.service";
+import { getEgressUsageSnapshot, getEgressLimits } from "@/server/services/billing/egress.service";
+import { enforceRetentionForOrganization } from "@/server/services/billing/retention.service";
+import { getErrorDetails, logErrorEvent } from "@/lib/logging";
+import { handleCustomerStateChanged } from "@/lib/billing/webhook-handlers";
+import type { WebhookCustomerStateChangedPayload } from "@polar-sh/sdk/models/components/webhookcustomerstatechangedpayload.js";
+
+const SUPPORT_MESSAGE =
+  "We couldn't start checkout due to a customer reconciliation issue. Please contact support and share reference: ";
+
+const isPolarCustomerConflict = (error: unknown) => {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return message.includes("customer with this email address already exists");
+};
 
 const createCheckoutSchema = z.object({
-  productSlug: z.enum(["free", "basic", "pro"]),
+  productSlug: z.enum(SUBSCRIPTION_PRODUCT_SLUG_OPTIONS),
 });
 
 // Get current subscription info
 export const getSubscription = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }: { context: AuthenticatedContext }) => {
-    const org = await db.query.organization.findFirst({
+    let org = await db.query.organization.findFirst({
       where: eq(organization.id, context.organizationId),
     });
 
     if (!org) {
       throw new Error("Organization not found");
+    }
+
+    if (org.graceDeadline) {
+      const retentionDeadline = getRetentionDeadline(org.graceDeadline);
+      if (new Date().getTime() > retentionDeadline.getTime()) {
+        await enforceRetentionForOrganization(org.id);
+        org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+      }
     }
 
     const tier = (org.subscriptionTier as SubscriptionTier) ?? "free";
@@ -34,6 +68,8 @@ export const getSubscription = createServerFn({ method: "GET" })
       tier,
       status: org.subscriptionStatus,
       isOwner: org.ownerId === context.session.user.id,
+      periodEnd: org.subscriptionPeriodEnd?.toISOString() ?? null,
+      cancelAtPeriodEnd: org.subscriptionCancelAtPeriodEnd ?? false,
 
       // Limits
       storageLimit: org.storageLimit,
@@ -93,6 +129,12 @@ export const getUsageStats = createServerFn({ method: "GET" })
     const modelCountLimit = org.modelCountLimit ?? tierConfig.modelCountLimit;
     const currentMemberCount = memberCountResult?.count ?? 0;
     const memberLimit = org.memberLimit ?? tierConfig.maxMembers;
+    const egressUsage = await getEgressUsageSnapshot(context.organizationId);
+    const egressLimits = getEgressLimits(currentStorage);
+    const egressLimit = egressLimits.softLimit;
+    const egressPercentage = egressLimit
+      ? Math.min((egressUsage.bytes / egressLimit) * 100, 100)
+      : 0;
 
     return {
       storage: {
@@ -109,6 +151,13 @@ export const getUsageStats = createServerFn({ method: "GET" })
         used: currentMemberCount,
         limit: memberLimit,
         percentage: Math.min((currentMemberCount / memberLimit) * 100, 100),
+      },
+      egress: {
+        used: egressUsage.bytes,
+        limit: egressLimit,
+        hardLimit: egressLimits.hardLimit,
+        downloads: egressUsage.downloads,
+        percentage: egressPercentage,
       },
     };
   });
@@ -150,6 +199,8 @@ export const checkUploadLimits = createServerFn({ method: "GET" })
     const modelLimitIsUnlimited = isUnlimited(modelLimit);
     const modelBlocked = !modelLimitIsUnlimited && currentModelCount >= modelLimit;
     const storageBlocked = currentStorage >= storageLimit;
+    const accountDeletionDeadline = org.accountDeletionDeadline ?? context.accountDeletionDeadline;
+    const accountDeletionBlocked = Boolean(accountDeletionDeadline);
 
     return {
       tier,
@@ -166,12 +217,15 @@ export const checkUploadLimits = createServerFn({ method: "GET" })
         blocked: storageBlocked,
       },
       graceDeadline: org.graceDeadline?.toISOString() ?? null,
-      blocked: modelBlocked || storageBlocked,
-      blockReason: modelBlocked
-        ? ("model_limit" as const)
-        : storageBlocked
-          ? ("storage_limit" as const)
-          : null,
+      accountDeletionDeadline: accountDeletionDeadline?.toISOString() ?? null,
+      blocked: accountDeletionBlocked || modelBlocked || storageBlocked,
+      blockReason: accountDeletionBlocked
+        ? ("account_deletion" as const)
+        : modelBlocked
+          ? ("model_limit" as const)
+          : storageBlocked
+            ? ("storage_limit" as const)
+            : null,
     };
   });
 
@@ -200,28 +254,81 @@ export const createCheckout = createServerFn({ method: "POST" })
         throw new Error("Only organization owner can manage billing");
       }
 
-      // Create Polar customer if doesn't exist
-      let customerId = org.polarCustomerId;
-      if (!customerId) {
-        const customer = await polarService.createCustomer(
-          org.id,
-          org.name,
-          context.session.user.email,
+      const supportRef = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`;
+
+      try {
+        // Create Polar customer if doesn't exist
+        let customerId = org.polarCustomerId;
+        if (!customerId) {
+          const customer = await polarService.createCustomer(
+            org.id,
+            org.name,
+            context.session.user.email,
+          );
+          customerId = customer.id;
+
+          await db
+            .update(organization)
+            .set({ polarCustomerId: customerId })
+            .where(eq(organization.id, org.id));
+        }
+
+        // Create checkout session
+        const checkout = await polarService.createCheckoutSession(customerId, data.productSlug);
+
+        return { checkoutUrl: checkout.url };
+      } catch (error) {
+        if (isPolarCustomerConflict(error)) {
+          logErrorEvent("billing.checkout.customer_conflict", {
+            supportRef,
+            organizationId: org.id,
+            userId: context.session.user.id,
+            email: context.session.user.email,
+            ...getErrorDetails(error),
+          });
+          throw new Error(`${SUPPORT_MESSAGE}${supportRef}`);
+        }
+
+        logErrorEvent("billing.checkout.failed", {
+          supportRef,
+          organizationId: org.id,
+          userId: context.session.user.id,
+          ...getErrorDetails(error),
+        });
+        throw new Error(
+          `Unable to start checkout. Please contact support with reference: ${supportRef}`,
         );
-        customerId = customer.id;
-
-        await db
-          .update(organization)
-          .set({ polarCustomerId: customerId })
-          .where(eq(organization.id, org.id));
       }
-
-      // Create checkout session
-      const checkout = await polarService.createCheckoutSession(customerId, data.productSlug);
-
-      return { checkoutUrl: checkout.url };
     },
   );
+
+export const syncCustomerState = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }: { context: AuthenticatedContext }) => {
+    const org = await db.query.organization.findFirst({
+      where: eq(organization.id, context.organizationId),
+    });
+
+    if (!org) {
+      throw new Error("Organization not found");
+    }
+
+    if (!org.polarCustomerId) {
+      throw new Error("No Polar customer on this organization");
+    }
+
+    const state = await polarService.getCustomerState(org.polarCustomerId);
+
+    const payload: WebhookCustomerStateChangedPayload = {
+      type: "customer.state_changed",
+      timestamp: new Date(),
+      data: state,
+    };
+
+    await handleCustomerStateChanged(payload);
+
+    return { success: true };
+  });
 
 // Get customer portal URL (owner only)
 export const getPortalUrl = createServerFn({ method: "GET" })
@@ -240,12 +347,14 @@ export const getPortalUrl = createServerFn({ method: "GET" })
       throw new Error("Only organization owner can access billing portal");
     }
 
-    if (!org.polarCustomerId) {
-      throw new Error("No subscription found");
-    }
+    const portalSession = await polarService.createCustomerPortalSession(
+      org.id,
+      `${env.WEB_URL}/billing`,
+    );
 
-    // Return Better Auth portal URL
     return {
-      portalUrl: `/api/auth/portal?customerId=${org.polarCustomerId}`,
+      portalUrl: portalSession.customerPortalUrl,
     };
   });
+
+// Manual subscription sync (owner only)

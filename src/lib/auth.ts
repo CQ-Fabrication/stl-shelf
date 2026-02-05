@@ -30,28 +30,15 @@ import {
 // import { canChangeRole, canRemoveMember, type Role } from "@/lib/permissions";
 import { MagicLinkTemplate, PasswordResetTemplate, VerifyEmailTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
+import { getTrustedOrigins } from "@/lib/trusted-origins";
+import { recordWebhookPayload } from "@/server/services/billing/webhook-audit.service";
+import { syncResendSegments } from "@/server/services/marketing/resend-segments";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent } from "@/lib/logging";
 
 const isProd = env.NODE_ENV === "production";
 
 const emailSchema = z.string().email().max(255);
-
-const buildTrustedOrigins = (): string[] => {
-  const configuredOrigins = env.AUTH_TRUSTED_ORIGINS?.split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
-
-  if (configuredOrigins && configuredOrigins.length > 0) {
-    return configuredOrigins;
-  }
-
-  if (isProd) {
-    return [env.WEB_URL];
-  }
-
-  return [env.WEB_URL, "http://localhost:3000"];
-};
 
 let resendClient: Resend | null = null;
 function getResendClient(): Resend {
@@ -79,7 +66,7 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.AUTH_URL ?? `http://localhost:${env.PORT}`,
   basePath: "/api/auth",
-  trustedOrigins: buildTrustedOrigins(),
+  trustedOrigins: (request) => getTrustedOrigins(request),
   rateLimit: {
     window: 60, // 1 minute in seconds
     max: 15,
@@ -180,33 +167,8 @@ export const auth = betterAuth({
           }
         },
         beforeCreateInvitation: async ({ organization }) => {
-          // Get current member count from DB
-          const memberCount = await db
-            .select({ count: memberTable.id })
-            .from(memberTable)
-            .where(eq(memberTable.organizationId, organization.id))
-            .then((rows) => rows.length);
-
-          // Get pending invitation count
-          const pendingInvitationCount = await db
-            .select({ count: invitationTable.id })
-            .from(invitationTable)
-            .where(
-              and(
-                eq(invitationTable.organizationId, organization.id),
-                eq(invitationTable.status, "pending"),
-              ),
-            )
-            .then((rows) => rows.length);
-
-          const totalSlotsTaken = memberCount + pendingInvitationCount;
-          const memberLimit = (organization as { memberLimit?: number }).memberLimit ?? 1;
-
-          if (totalSlotsTaken >= memberLimit) {
-            throw new Error(
-              `Member limit reached. Your plan allows ${memberLimit} member${memberLimit > 1 ? "s" : ""}. Upgrade to invite more.`,
-            );
-          }
+          // Member limits are disabled for now.
+          void organization;
         },
         // RBAC: Transfer models to owner when member is removed
         beforeRemoveMember: async ({ user, organization }) => {
@@ -309,8 +271,22 @@ export const auth = betterAuth({
         checkout({
           products: [
             env.POLAR_PRODUCT_FREE && { productId: env.POLAR_PRODUCT_FREE, slug: "free" },
-            env.POLAR_PRODUCT_BASIC && { productId: env.POLAR_PRODUCT_BASIC, slug: "basic" },
-            env.POLAR_PRODUCT_PRO && { productId: env.POLAR_PRODUCT_PRO, slug: "pro" },
+            (env.POLAR_PRODUCT_BASIC_MONTH ?? env.POLAR_PRODUCT_BASIC) && {
+              productId: env.POLAR_PRODUCT_BASIC_MONTH ?? env.POLAR_PRODUCT_BASIC ?? "",
+              slug: "basic_month",
+            },
+            env.POLAR_PRODUCT_BASIC_YEAR && {
+              productId: env.POLAR_PRODUCT_BASIC_YEAR,
+              slug: "basic_year",
+            },
+            (env.POLAR_PRODUCT_PRO_MONTH ?? env.POLAR_PRODUCT_PRO) && {
+              productId: env.POLAR_PRODUCT_PRO_MONTH ?? env.POLAR_PRODUCT_PRO ?? "",
+              slug: "pro_month",
+            },
+            env.POLAR_PRODUCT_PRO_YEAR && {
+              productId: env.POLAR_PRODUCT_PRO_YEAR,
+              slug: "pro_year",
+            },
           ].filter(Boolean) as { productId: string; slug: string }[],
           successUrl: `${env.WEB_URL}/checkout/success?checkout_id={CHECKOUT_ID}`,
           authenticatedUsersOnly: true,
@@ -318,6 +294,7 @@ export const auth = betterAuth({
         portal(),
         webhooks({
           secret: env.POLAR_WEBHOOK_SECRET,
+          onPayload: recordWebhookPayload,
           onOrderPaid: handleOrderPaid,
           onSubscriptionCreated: handleSubscriptionCreated,
           onSubscriptionCanceled: handleSubscriptionCanceled,
@@ -425,6 +402,17 @@ export const auth = betterAuth({
   },
 
   databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          await syncResendSegments({
+            email: user.email,
+            name: user.name,
+            marketingAccepted: false,
+          });
+        },
+      },
+    },
     session: {
       create: {
         before: async (session) => {

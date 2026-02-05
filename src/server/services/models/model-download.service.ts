@@ -471,6 +471,7 @@ class ModelDownloadService {
   }> {
     const [file] = await db
       .select({
+        id: modelFiles.id,
         filename: modelFiles.filename,
         originalName: modelFiles.originalName,
         size: modelFiles.size,
@@ -492,13 +493,11 @@ class ModelDownloadService {
       throw new Error("File not found or access denied");
     }
 
-    const downloadUrl = await storageService.generateDownloadUrl(storageKey, 60);
-
     return {
       filename: file.originalName,
       size: file.size,
       mimeType: file.mimeType || "application/octet-stream",
-      downloadUrl,
+      downloadUrl: `/api/download/file/${file.id}`,
     };
   }
 }

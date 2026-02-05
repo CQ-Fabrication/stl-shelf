@@ -1,31 +1,37 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { SubscriptionTier } from "@/lib/billing/config";
+import type { SubscriptionProductSlug } from "@/lib/billing/config";
 import { createCheckout } from "@/server/functions/billing";
 
 export const useCheckout = () => {
-  const [loadingTier, setLoadingTier] = useState<SubscriptionTier | null>(null);
+  const [loadingProductSlug, setLoadingProductSlug] = useState<SubscriptionProductSlug | null>(
+    null,
+  );
 
   const mutation = useMutation({
-    mutationFn: (productSlug: SubscriptionTier) => createCheckout({ data: { productSlug } }),
+    mutationFn: (productSlug: SubscriptionProductSlug) => createCheckout({ data: { productSlug } }),
     onSuccess: (data) => {
       window.location.href = data.checkoutUrl;
     },
-    onError: () => {
-      setLoadingTier(null);
+    onError: (error) => {
+      setLoadingProductSlug(null);
+      if (error instanceof Error && error.message) {
+        toast.error(error.message);
+        return;
+      }
       toast.error("Unable to start checkout. Please try again later.");
     },
   });
 
-  const startCheckout = (productSlug: SubscriptionTier) => {
-    setLoadingTier(productSlug);
+  const startCheckout = (productSlug: SubscriptionProductSlug) => {
+    setLoadingProductSlug(productSlug);
     mutation.mutate(productSlug);
   };
 
   return {
     startCheckout,
-    loadingTier,
+    loadingProductSlug,
     isLoading: mutation.isPending,
   };
 };

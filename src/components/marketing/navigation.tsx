@@ -1,32 +1,30 @@
-"use client";
-
 import { Link, useLocation } from "@tanstack/react-router";
 import { ArrowRight, Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
-import { authClient } from "@/lib/auth-client";
+import type { AuthClient } from "@/lib/auth-client";
 
 const navItems = [
   { label: "Features", href: "/#features", scrollTo: "#features" },
+  { label: "Guides", href: "/#guides", scrollTo: "#guides" },
   { label: "Pricing", href: "/pricing", scrollTo: null },
   { label: "About", href: "/about", scrollTo: null },
 ];
 
-export function Navigation() {
+type Session = AuthClient["$Infer"]["Session"];
+
+type NavigationProps = {
+  session?: Session | null;
+};
+
+export function Navigation({ session }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const location = useLocation();
-  const { data: session, isPending } = authClient.useSession();
   const isHomePage = location.pathname === "/";
 
-  // Prevent hydration mismatch by only showing auth state after mount
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const showLoading = !isMounted || isPending;
-  const isAuthenticated = isMounted && !isPending && session?.user;
+  const isAuthenticated = Boolean(session?.user);
+  const showDashboardCta = isAuthenticated;
 
   const handleNavClick = (item: (typeof navItems)[0]) => {
     setMobileMenuOpen(false);
@@ -77,13 +75,10 @@ export function Navigation() {
 
           {/* Auth Buttons - Right */}
           <div className="hidden md:flex items-center justify-end gap-3">
-            {showLoading ? (
-              /* Skeleton placeholder to prevent layout shift and hydration mismatch */
-              <div className="h-9 w-28 animate-pulse rounded-md bg-muted" />
-            ) : isAuthenticated ? (
+            {showDashboardCta ? (
               <Button asChild className="animate-in fade-in duration-200">
                 <Link to="/library">
-                  Go to Library
+                  Go to Dashboard
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -145,12 +140,10 @@ export function Navigation() {
               )}
 
               <div className="pt-4 space-y-3">
-                {showLoading ? (
-                  <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
-                ) : isAuthenticated ? (
+                {showDashboardCta ? (
                   <Button className="w-full" asChild>
                     <Link to="/library" onClick={() => setMobileMenuOpen(false)}>
-                      Go to Library
+                      Go to Dashboard
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>

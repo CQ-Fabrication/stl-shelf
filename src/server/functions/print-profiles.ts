@@ -6,9 +6,13 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { db } from "@/lib/db";
+import { organization } from "@/lib/db/schema/auth";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
+import { assertWriteAllowed } from "@/server/services/billing/retention.service";
 import { printProfileService } from "@/server/services/models/print-profile.service";
 import { logAuditEvent, logErrorEvent, getErrorDetails, shouldLogServerError } from "@/lib/logging";
 import { captureServerException } from "@/lib/error-tracking.server";
@@ -102,6 +106,19 @@ export const uploadPrintProfile = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
         const result = await printProfileService.uploadProfile({
           versionId: data.versionId,
           organizationId: context.organizationId,
@@ -147,6 +164,19 @@ export const deletePrintProfile = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
         await printProfileService.deleteProfile(data.profileId, context.organizationId);
 
         logAuditEvent("print_profile_deleted", {
@@ -205,6 +235,19 @@ export const resolveProfileConflict = createServerFn({ method: "POST" })
       context: AuthenticatedContext;
     }) => {
       try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
         const profile = await printProfileService.resolveConflict({
           versionId: data.versionId,
           organizationId: context.organizationId,

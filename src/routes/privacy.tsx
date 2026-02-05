@@ -4,10 +4,15 @@ import { ArrowLeft } from "lucide-react";
 import Markdown from "react-markdown";
 import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
+import { getSessionFn } from "@/server/functions/auth";
 import { getDocumentByTypeFn } from "@/server/functions/consent";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
+  loader: async () => {
+    const session = await getSessionFn();
+    return { session };
+  },
   head: () => ({
     meta: [
       { title: "Privacy Policy - STL Shelf" },
@@ -62,6 +67,7 @@ function formatDate(date: Date | string): string {
 }
 
 function PrivacyPage() {
+  const { session } = Route.useLoaderData();
   const { data: document } = useSuspenseQuery({
     queryKey: ["legal-document", "privacy_policy"],
     queryFn: () => getDocumentByTypeFn({ data: { type: "privacy_policy" } }),
@@ -69,7 +75,7 @@ function PrivacyPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navigation />
+      <Navigation session={session} />
       <main className="flex-1 pt-24">
         {/* Hero */}
         <section className="relative py-16 overflow-hidden">
