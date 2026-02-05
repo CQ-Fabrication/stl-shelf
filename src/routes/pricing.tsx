@@ -74,7 +74,7 @@ function PricingPage() {
             storage.
           </p>
         </header>
-        <PricingSection />
+        <PricingSection pricing={pricing} />
         <Footer />
       </main>
     </>

@@ -6,10 +6,10 @@ INSERT INTO "legal_documents" ("id", "type", "version", "content", "published_at
 (
   gen_random_uuid(),
   'terms_and_conditions',
-  '1.0',
+  '2026-02-05',
   $body$# Terms of Service
 
-**Effective Date:** January 27, 2026
+**Effective Date:** February 5, 2026
 
 ## 1. Acceptance of Terms
 
@@ -17,14 +17,15 @@ By accessing or using STL Shelf ("Service"), you agree to be bound by these Term
 
 ## 2. Description of Service
 
-STL Shelf is a personal library management application for 3D printable models. The Service allows you to upload, organize, version, and manage your 3D model files.
+STL Shelf is a personal and team library for 3D printable models. The Service allows you to upload, organize, tag, version, preview, and manage your 3D model files and related metadata (including print profiles and changelogs). We offer a cloud-hosted service and may also offer a self-hosted option.
 
 ## 3. User Accounts
 
 - You must provide accurate information when creating an account
 - You are responsible for maintaining the security of your account credentials
 - You must notify us immediately of any unauthorized access to your account
-- One person or entity may not maintain more than one account
+- You may not share your account credentials with others
+- Organization, seat, and membership limits may apply by plan
 
 ## 4. Acceptable Use
 
@@ -33,25 +34,26 @@ You agree NOT to:
 - Upload malicious files or content
 - Attempt to gain unauthorized access to the Service
 - Use the Service for any illegal purpose
-- Share your account credentials with others
 - Resell or redistribute the Service without authorization
 
 ## 5. Content Ownership
 
 - You retain all ownership rights to content you upload
-- By uploading content, you grant us a limited license to store and display your content to you
+- By uploading content, you grant us a limited license to store, process, and display your content solely to provide the Service (including generating previews, thumbnails, and extracting metadata)
 - We do not claim ownership of your 3D models or files
 - We will never use your content for training AI models
 
-## 6. Storage and Data
+## 6. Storage, Usage Limits, and Retention
 
 - Storage limits are determined by your subscription tier
 - If your subscription ends or downgrades and your usage exceeds free limits, your account enters read-only mode for 7 days ("Grace Period")
 - During the Grace Period you may download data but cannot upload or modify content
 - After the Grace Period, we may remove content above free limits (oldest first) and complete removal within 7 days unless you upgrade
-- We use industry-standard encryption for data at rest and in transit
-- You are responsible for maintaining backups of your important files
-- We may delete content from inactive accounts after 12 months of inactivity
+- For our cloud-hosted service, data is stored on servers in Europe
+- We use industry-standard security controls, including encryption in transit and at rest where supported by our storage providers
+- STL Shelf is not a backup service. Do not rely on the Service as your sole storage.
+- You are responsible for maintaining independent backups of important files, and we are not liable for loss, corruption, or deletion of content
+- If you self-host the Service, you are responsible for your hosting environment and data storage
 
 ## 7. Payment and Subscriptions
 
@@ -70,7 +72,8 @@ You agree NOT to:
 
 - You may delete your account at any time
 - We may suspend or terminate accounts that violate these Terms
-- Upon termination, your data will be deleted within 7 days
+- Upon account deletion, your data will be scheduled for removal within 7 days
+- If you own an organization, deleting your account deletes the organization and all associated models and files
 
 ## 10. Limitation of Liability
 
@@ -93,10 +96,10 @@ For questions about these Terms, contact us at legal@stlshelf.com.$body$,
 (
   gen_random_uuid(),
   'privacy_policy',
-  '1.0',
+  '2026-02-05',
   $body$# Privacy Policy
 
-**Effective Date:** January 27, 2026
+**Effective Date:** February 5, 2026
 
 ## Overview
 
@@ -110,14 +113,23 @@ STL Shelf ("we", "our", or "us") is committed to protecting your privacy. This P
 
 When you create an account, we collect:
 - Email address
-- Name (optional)
+- Name
 - Password (hashed, never stored in plain text)
+- Profile image/avatar (optional)
+
+### Organization Information
+
+When you create or manage an organization, we collect:
+- Organization name and slug
+- Organization website (optional)
+- Organization logo (optional)
+- Membership role and invitations (including invitee email)
 
 ### Usage Data
 
 We automatically collect:
 - Storage usage and model counts
-- Feature usage patterns (anonymized)
+- Feature usage patterns (product analytics when enabled)
 - Error logs for debugging purposes
 
 ### Consent Audit Data
@@ -130,10 +142,23 @@ When you accept our Terms of Service or update your consent preferences, we coll
 
 ### Your 3D Models
 
-Your uploaded 3D models are stored securely and are never:
-- Shared with third parties
-- Used for training AI models
-- Accessed by our staff without explicit permission
+Your uploaded 3D models and related metadata (tags, descriptions, changelogs, print profiles, preview images, and thumbnails) are stored securely and are:
+- Used only to provide the Service
+- Never used for training AI models
+- Not accessed by our staff without explicit permission, except as required to provide support or ensure service reliability
+
+### Technical and Security Data
+
+We collect:
+- Session and authentication data (session tokens, login timestamps)
+- IP address and user agent for security, rate limiting, and abuse prevention
+
+### Billing Data
+
+If you subscribe to a paid plan, we collect:
+- Subscription tier and status
+- Customer and subscription IDs from our payment processor
+- Billing webhook records needed for reconciliation and support
 
 ## How We Use Your Information
 
@@ -147,18 +172,22 @@ We use your information to:
 
 ## Data Storage & Security
 
-Your data is stored on secure cloud servers. We implement industry-standard security measures including:
-- TLS 1.3 for all data transmission
-- AES-256 encryption for stored files
-- Regular security audits
+For our cloud-hosted service, your data is stored on servers located in Europe. We implement industry-standard security measures including:
+- Encryption in transit and at rest (where supported by our storage providers)
 - Access logging and monitoring
+
+If you self-host STL Shelf, you control your data storage location and security configuration.
 
 ## Third-Party Services
 
 We use the following third-party services:
 - **Polar.sh:** Payment processing
-- **Cloudflare:** CDN and DDoS protection
+- **Cloudflare:** CDN, DDoS protection, and Turnstile (captcha)
 - **Resend:** Transactional emails
+- **OpenPanel:** Product analytics (when enabled)
+- **Sentry / Better Stack:** Error tracking and server logs
+
+If you use third-party login providers (e.g., Google or GitHub), we receive basic profile information (such as your email and name) from that provider.
 
 ## Your Rights
 
@@ -175,18 +204,18 @@ To exercise these rights, visit your Profile Settings or contact us at privacy@s
 ## Data Retention
 
 - Account data is retained while your account is active
-- Upon account deletion, personal data is removed within 7 days
-- Consent audit logs are retained for 7 years for legal compliance
-- Anonymized usage analytics may be retained indefinitely
+- Upon account deletion, personal data is scheduled for removal within 7 days
+- Consent audit logs are retained for legal compliance and may be retained indefinitely
+- Billing records and audit logs are retained as required by law or for dispute resolution
 - Content above free limits may be removed according to the Grace Period and retention rules described in the Terms of Service
 
 ## Cookies
 
-We use essential cookies only for:
+We use essential cookies and local storage only for:
 - Authentication and session management
-- Remembering your preferences (theme, etc.)
+- Remembering your preferences and consent state
 
-We do not use tracking cookies or third-party analytics that track you across websites.
+We do not use advertising cookies or track you across unrelated websites.
 
 ## Children's Privacy
 
@@ -194,7 +223,7 @@ STL Shelf is not intended for children under 16. We do not knowingly collect inf
 
 ## International Transfers
 
-Your data may be processed in countries outside your residence. We ensure appropriate safeguards are in place for any international transfers.
+Your data is stored in Europe for our cloud-hosted service. Some third-party processors may process data outside your residence. We ensure appropriate safeguards are in place for any international transfers.
 
 ## Changes to This Policy
 
