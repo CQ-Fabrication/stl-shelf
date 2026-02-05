@@ -119,29 +119,8 @@ export const Route = createFileRoute("/api/v1/upload")({
             versionNumber = existingVersion.version;
           } else {
             // Create new version
-            const newVersionNumber = `v${model.totalVersions + 1}`;
-            const newVersionId = crypto.randomUUID();
-
-            await db.insert(modelVersions).values({
-              id: newVersionId,
-              modelId,
-              version: newVersionNumber,
-              name: versionName,
-              description,
-            });
-
-            // Update model
-            await db
-              .update(models)
-              .set({
-                currentVersion: newVersionNumber,
-                totalVersions: sql`${models.totalVersions} + 1`,
-                updatedAt: new Date(),
-              })
-              .where(eq(models.id, modelId));
-
-            versionId = newVersionId;
-            versionNumber = newVersionNumber;
+            versionNumber = `v${model.totalVersions + 1}`;
+            versionId = crypto.randomUUID();
           }
 
           // Generate storage key and upload file
@@ -153,27 +132,62 @@ export const Route = createFileRoute("/api/v1/upload")({
             kind: "source",
           });
 
+          const [existingStorageKey] = await db
+            .select({ id: modelFiles.id })
+            .from(modelFiles)
+            .where(eq(modelFiles.storageKey, storageKey))
+            .limit(1);
+
+          const storageKeyAlreadyExists = Boolean(existingStorageKey);
+
           await storageService.uploadFile({
             key: storageKey,
             file,
             contentType: file.type || MIME_TYPES[extension] || "application/octet-stream",
           });
 
-          // Create file record
           const fileId = crypto.randomUUID();
           const mimeType = file.type || MIME_TYPES[extension] || "application/octet-stream";
 
-          await db.insert(modelFiles).values({
-            id: fileId,
-            versionId,
-            filename: file.name,
-            originalName: file.name,
-            size: file.size,
-            mimeType,
-            extension,
-            storageKey,
-            storageBucket: storageService.defaultBucket,
-          });
+          try {
+            await db.transaction(async (tx) => {
+              if (!versionParam) {
+                await tx.insert(modelVersions).values({
+                  id: versionId,
+                  modelId,
+                  version: versionNumber,
+                  name: versionName,
+                  description,
+                });
+
+                await tx
+                  .update(models)
+                  .set({
+                    currentVersion: versionNumber,
+                    totalVersions: sql`${models.totalVersions} + 1`,
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(models.id, modelId));
+              }
+
+              await tx.insert(modelFiles).values({
+                id: fileId,
+                versionId,
+                filename: file.name,
+                originalName: file.name,
+                size: file.size,
+                mimeType,
+                extension,
+                storageKey,
+                storageBucket: storageService.defaultBucket,
+              });
+            });
+          } catch (error) {
+            if (!storageKeyAlreadyExists) {
+              await storageService.deleteFile(storageKey).catch(() => {});
+            }
+            throw error;
+          }
 
           return Response.json({
             success: true,
