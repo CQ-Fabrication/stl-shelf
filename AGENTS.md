@@ -9,6 +9,8 @@ Package manager: Bun (`bun@1.3.5`). Use `bun` commands, not npm/yarn.
 Non-standard commands:
 
 - Dev server: `bun dev` (runs on port 3000)
+- Lint: `bun lint` (oxlint --fix)
+- Format: `bun format` (oxfmt --write .)
 - Type check: `bun check-types` (tsgo)
 - Lint/format checks: `bun check` (oxlint + oxfmt, no autofix)
 - Build: `bun build` (do not run if the dev server is already running)
@@ -24,6 +26,13 @@ Database:
 
 - PSQL connection: `psql "postgresql://stlshelf:stlshelf_dev_password@localhost:5432/stlshelf"`
 - Drizzle commands: `bun db:generate`, `bun db:migrate`, `bun db:push`, `bun db:studio`, `bun db:seed`
+- Seed data: `bun db:seed` (runs `drizzle/seeds/*.sql`)
+- Docker services: `docker compose up -d`, `docker compose down`, `docker compose logs -f`
+
+Maintenance scripts:
+
+- `bun retention:sweep`
+- `bun account-deletion:sweep`
 
 Git:
 
