@@ -24,8 +24,15 @@ import { modelVersionService } from "@/server/services/models/model-version.serv
 import { tagService } from "@/server/services/tags/tag.service";
 
 // Zod validators
+const listModelsCursorSchema = z.object({
+  updatedAt: z.string().datetime(),
+  id: z.string().uuid(),
+});
+
+export type ModelListCursor = z.infer<typeof listModelsCursorSchema>;
+
 const listModelsSchema = z.object({
-  cursor: z.number().min(0).optional(),
+  cursor: listModelsCursorSchema.optional(),
   limit: z.number().min(1).max(100).default(12),
   search: z.string().max(100).optional(),
   tags: z.array(z.string()).optional(),

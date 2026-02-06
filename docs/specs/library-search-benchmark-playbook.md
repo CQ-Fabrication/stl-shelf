@@ -32,7 +32,8 @@ FROM models m
 WHERE m.organization_id = 'org_alpha_layerworks'
   AND m.deleted_at IS NULL
 ORDER BY m.updated_at DESC
-LIMIT 13 OFFSET 0;
+       , m.id DESC
+LIMIT 13;
 ```
 
 Expected:
@@ -50,7 +51,8 @@ WHERE m.organization_id = 'org_alpha_layerworks'
   AND m.deleted_at IS NULL
   AND (m.name ILIKE '%0999%' OR COALESCE(m.description, '') ILIKE '%0999%')
 ORDER BY m.updated_at DESC
-LIMIT 13 OFFSET 0;
+       , m.id DESC
+LIMIT 13;
 ```
 
 Expected:
@@ -75,7 +77,8 @@ WHERE m.organization_id = 'org_alpha_layerworks'
       AND t.name IN ('support-heavy')
   )
 ORDER BY m.updated_at DESC
-LIMIT 13 OFFSET 0;
+       , m.id DESC
+LIMIT 13;
 ```
 
 Expected:
@@ -83,7 +86,19 @@ Expected:
 1. `model_tags_tag_id_idx` usage for tag narrowing.
 2. No pathological row explosion in nested loops.
 
-## Optional Stress Query (Offset Depth)
+## Optional Stress Query (Keyset Depth)
+
+```sql
+-- Step 1: get a real cursor from the first page (last row)
+SELECT m.id, m.updated_at
+FROM models m
+WHERE m.organization_id = 'org_alpha_layerworks'
+  AND m.deleted_at IS NULL
+ORDER BY m.updated_at DESC, m.id DESC
+LIMIT 13;
+```
+
+Copy `updated_at` + `id` from row 13 and run:
 
 ```sql
 EXPLAIN (ANALYZE, BUFFERS)
@@ -91,11 +106,12 @@ SELECT m.id, m.updated_at
 FROM models m
 WHERE m.organization_id = 'org_alpha_layerworks'
   AND m.deleted_at IS NULL
-ORDER BY m.updated_at DESC
-LIMIT 13 OFFSET 960;
+  AND (m.updated_at, m.id) < (TIMESTAMPTZ '2026-01-01T00:00:00Z', '00000000-0000-0000-0000-000000000000'::uuid)
+ORDER BY m.updated_at DESC, m.id DESC
+LIMIT 13;
 ```
 
-Use this to monitor deep pagination cost while the app still uses `OFFSET`.
+This verifies keyset pagination performance without scanning/discarding deep offsets.
 
 ## Benchmark Checklist
 

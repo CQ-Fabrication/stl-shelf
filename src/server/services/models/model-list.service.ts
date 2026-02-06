@@ -6,10 +6,15 @@ import { storageService } from "@/server/services/storage";
 
 export type ListModelsInput = {
   organizationId: string;
-  cursor?: number;
+  cursor?: ModelsListCursor;
   limit?: number;
   search?: string;
   tags?: string[];
+};
+
+export type ModelsListCursor = {
+  updatedAt: string;
+  id: string;
 };
 
 export type ModelOwner = {
@@ -41,7 +46,7 @@ export type ModelListItem = {
 
 export type ListModelsOutput = {
   models: ModelListItem[];
-  nextCursor: number | null;
+  nextCursor: ModelsListCursor | null;
 };
 
 /**
@@ -50,15 +55,24 @@ export type ListModelsOutput = {
  */
 export async function listModels({
   organizationId,
-  cursor = 0,
+  cursor,
   limit = 12,
   search,
   tags: filterTags,
 }: ListModelsInput): Promise<ListModelsOutput> {
   const safeLimit = Math.min(100, Math.max(1, limit));
-  const offset = Math.max(0, cursor);
 
   const conditions = [eq(models.organizationId, organizationId), isNull(models.deletedAt)];
+
+  if (cursor) {
+    if (!Number.isNaN(Date.parse(cursor.updatedAt))) {
+      const keysetCondition = sql<boolean>`
+        ROW(${models.updatedAt}, ${models.id})
+        < ROW(CAST(${cursor.updatedAt} AS timestamptz), CAST(${cursor.id} AS uuid))
+      `;
+      conditions.push(keysetCondition);
+    }
+  }
 
   if (search?.trim()) {
     const searchPattern = `%${search.trim()}%`;
@@ -149,12 +163,19 @@ export async function listModels({
     .from(models)
     .innerJoin(user, eq(models.ownerId, user.id))
     .where(and(...conditions))
-    .orderBy(desc(models.updatedAt))
-    .limit(safeLimit + 1)
-    .offset(offset);
+    .orderBy(desc(models.updatedAt), desc(models.id))
+    .limit(safeLimit + 1);
 
   const hasMore = modelsWithData.length > safeLimit;
   const items = hasMore ? modelsWithData.slice(0, safeLimit) : modelsWithData;
+  const lastItem = items.at(-1);
+  const nextCursor =
+    hasMore && lastItem
+      ? {
+          updatedAt: lastItem.updatedAt.toISOString(),
+          id: lastItem.id,
+        }
+      : null;
 
   const modelList = await Promise.all(
     items.map(async (row) => {
@@ -198,8 +219,6 @@ export async function listModels({
       };
     }),
   );
-
-  const nextCursor = hasMore ? offset + safeLimit : null;
 
   return {
     models: modelList,

@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { listModels } from "@/server/functions/models";
+import { listModels, type ModelListCursor } from "@/server/functions/models";
 import { MODELS_QUERY_KEY } from "./use-delete-model";
 
 type UseInfiniteModelsParams = {
@@ -32,7 +32,7 @@ export const useInfiniteModels = ({ search, tagsString, limit = 12 }: UseInfinit
             tags,
           },
         }),
-      initialPageParam: undefined as number | undefined,
+      initialPageParam: undefined as ModelListCursor | undefined,
       getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     });
 

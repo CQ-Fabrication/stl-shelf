@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { listModels, getAllTags } from "@/server/functions/models";
+import { listModels, getAllTags, type ModelListCursor } from "@/server/functions/models";
 import { ModelGrid } from "@/components/models/model-grid";
 import { SearchFilterBar } from "@/components/models/search-filter-bar";
 import { useHasModels, hasModelsQueryOptions } from "@/hooks/use-has-models";
@@ -44,7 +44,7 @@ export const modelsQueryOptions = (search?: string, tagsString?: string) => {
           tags,
         },
       }),
-    initialPageParam: undefined as number | undefined,
+    initialPageParam: undefined as ModelListCursor | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 };
