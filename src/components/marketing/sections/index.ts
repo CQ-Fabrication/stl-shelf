@@ -6,5 +6,6 @@ export { UseCases } from "./use-cases";
 export { Resources } from "./resources";
 export { Pricing } from "./pricing";
 export { Testimonials } from "./testimonials";
+export { FAQ } from "./faq";
 export { FinalCTA } from "./final-cta";
 export { Footer } from "./footer";

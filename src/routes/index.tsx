@@ -9,6 +9,7 @@ import {
   Resources,
   Pricing,
   Testimonials,
+  FAQ,
   FinalCTA,
   Footer,
 } from "@/components/marketing/sections";
@@ -85,6 +86,7 @@ function LandingPage() {
         <Resources />
         <Pricing pricing={pricing} />
         <Testimonials />
+        <FAQ />
         <FinalCTA />
         <Footer />
       </main>
