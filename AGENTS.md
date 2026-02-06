@@ -17,6 +17,8 @@ Non-standard commands:
 - Preview build: `bun preview`
 - Production server: `bun start`
 - Tests: `bun test` (vitest run)
+- Ngrok tunnel (Polar webhooks): `bun run ngrok`
+- Docs list: `bun docs:list`
 
 Quality gate:
 
