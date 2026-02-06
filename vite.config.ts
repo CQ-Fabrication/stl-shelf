@@ -9,6 +9,9 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
+  test: {
+    environment: "jsdom",
+  },
   server: {
     port: 3000,
     allowedHosts: [".ngrok-free.app", ".ngrok-free.dev", ".ngrok.io"],

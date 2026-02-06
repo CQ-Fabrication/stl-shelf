@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { user } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelTags, modelVersions, tags } from "@/lib/db/schema/models";
@@ -62,10 +62,10 @@ export async function listModels({
 
   if (search?.trim()) {
     const searchPattern = `%${search.trim()}%`;
-    const searchCondition = or(
-      ilike(models.name, searchPattern),
-      ilike(models.description, searchPattern),
-    );
+    const searchCondition = sql<boolean>`(
+      ${ilike(models.name, searchPattern)}
+      OR COALESCE(${models.description}, '') ILIKE ${searchPattern}
+    )`;
     if (searchCondition) {
       conditions.push(searchCondition);
     }

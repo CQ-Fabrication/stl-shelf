@@ -21,48 +21,173 @@ type SearchFilterBarProps = {
   className?: string;
 };
 
+export type SearchDraft = {
+  q: string;
+  tags: string[];
+};
+
+type CommitMode = "debounced" | "immediate";
+export const SEARCH_DEBOUNCE_MS = 300;
+
 // Parse tags string to array
 const parseTags = (tagsString?: string): string[] => {
   if (!tagsString) return [];
   return tagsString.split(",").filter(Boolean);
 };
 
+export const buildDraft = (q?: string, tagsString?: string): SearchDraft => ({
+  q: q ?? "",
+  tags: parseTags(tagsString),
+});
+
+export const buildSearch = (draft: SearchDraft) => ({
+  q: draft.q || undefined,
+  tags: draft.tags.length > 0 ? draft.tags.join(",") : undefined,
+});
+
+export const isSameDraft = (a: SearchDraft, b: SearchDraft): boolean =>
+  a.q === b.q &&
+  a.tags.length === b.tags.length &&
+  a.tags.every((tag, index) => tag === b.tags[index]);
+
+export const setDraftQuery = (draft: SearchDraft, q: string): SearchDraft => ({
+  ...draft,
+  q,
+});
+
+export const toggleDraftTag = (draft: SearchDraft, tagName: string): SearchDraft => ({
+  ...draft,
+  tags: draft.tags.includes(tagName)
+    ? draft.tags.filter((tag) => tag !== tagName)
+    : [...draft.tags, tagName],
+});
+
+export const removeDraftTag = (draft: SearchDraft, tagName: string): SearchDraft => ({
+  ...draft,
+  tags: draft.tags.filter((tag) => tag !== tagName),
+});
+
+export const clearDraftTags = (draft: SearchDraft): SearchDraft => ({
+  ...draft,
+  tags: [],
+});
+
+export function createDebouncedDraftCommit(
+  commit: (draft: SearchDraft, replace: boolean) => void,
+  delayMs = SEARCH_DEBOUNCE_MS,
+) {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+
+  return {
+    schedule(draft: SearchDraft) {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(() => {
+        timeout = null;
+        commit(draft, true);
+      }, delayMs);
+    },
+    flush(draft: SearchDraft) {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+      commit(draft, false);
+    },
+    cancel() {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+    },
+    hasPending() {
+      return timeout !== null;
+    },
+  };
+}
+
 export function SearchFilterBar({ className }: SearchFilterBarProps) {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
 
-  // Local state for instant input feedback
-  const [localSearch, setLocalSearch] = useState(search.q ?? "");
+  // Local draft is the single source of truth for UI state
+  const [draft, setDraft] = useState<SearchDraft>(() => buildDraft(search.q, search.tags));
   const [isPending, setIsPending] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftRef = useRef(draft);
+  const isSyncingLocalRef = useRef(false);
 
-  // Sync URL -> local state (for direct URL access, back/forward navigation)
   useEffect(() => {
-    setLocalSearch(search.q ?? "");
-  }, [search.q]);
+    draftRef.current = draft;
+  }, [draft]);
+
+  // Sync URL -> local draft only when there are no local commits pending
+  useEffect(() => {
+    const nextDraft = buildDraft(search.q, search.tags);
+
+    if (timeoutRef.current || isSyncingLocalRef.current) {
+      if (isSameDraft(draftRef.current, nextDraft)) {
+        isSyncingLocalRef.current = false;
+      }
+      return;
+    }
+
+    if (!isSameDraft(draftRef.current, nextDraft)) {
+      draftRef.current = nextDraft;
+      setDraft(nextDraft);
+    }
+  }, [search.q, search.tags]);
 
   const { tags: allTags } = useAllTags();
-  const selectedTags = parseTags(search.tags);
+  const selectedTags = draft.tags;
+  const localSearch = draft.q;
 
-  // Debounced navigation for search input
-  const debouncedNavigate = useCallback(
-    (value: string) => {
+  const commitDraft = useCallback(
+    (nextDraft: SearchDraft, mode: CommitMode) => {
+      const runNavigate = (replace: boolean) => {
+        isSyncingLocalRef.current = true;
+        void navigate({
+          search: buildSearch(nextDraft),
+          replace,
+        });
+      };
+
+      if (mode === "debounced") {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        setIsPending(true);
+
+        timeoutRef.current = setTimeout(() => {
+          timeoutRef.current = null;
+          setIsPending(false);
+          runNavigate(true);
+        }, SEARCH_DEBOUNCE_MS);
+        return;
+      }
+
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
-      setIsPending(true);
-
-      timeoutRef.current = setTimeout(() => {
-        setIsPending(false);
-        navigate({
-          search: {
-            q: value || undefined,
-            tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,
-          },
-        });
-      }, 300);
+      setIsPending(false);
+      runNavigate(false);
     },
-    [navigate, selectedTags],
+    [navigate],
+  );
+
+  const updateDraft = useCallback(
+    (updater: (current: SearchDraft) => SearchDraft, mode: CommitMode) => {
+      const nextDraft = updater(draftRef.current);
+      if (isSameDraft(draftRef.current, nextDraft)) {
+        return;
+      }
+      draftRef.current = nextDraft;
+      setDraft(nextDraft);
+      commitDraft(nextDraft, mode);
+    },
+    [commitDraft],
   );
 
   // Cleanup timeout on unmount
@@ -75,55 +200,26 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
   }, []);
 
   const handleSearchChange = (value: string) => {
-    setLocalSearch(value);
-    debouncedNavigate(value);
+    updateDraft((current) => setDraftQuery(current, value), "debounced");
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      setIsPending(false);
-      navigate({
-        search: {
-          q: localSearch || undefined,
-          tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,
-        },
-      });
+      e.preventDefault();
+      commitDraft(draftRef.current, "immediate");
     }
   };
 
   const handleTagToggle = (tagName: string) => {
-    const newTags = selectedTags.includes(tagName)
-      ? selectedTags.filter((t) => t !== tagName)
-      : [...selectedTags, tagName];
-
-    navigate({
-      search: {
-        q: search.q || undefined,
-        tags: newTags.length > 0 ? newTags.join(",") : undefined,
-      },
-    });
+    updateDraft((current) => toggleDraftTag(current, tagName), "immediate");
   };
 
   const handleTagRemove = (tagName: string) => {
-    const newTags = selectedTags.filter((t) => t !== tagName);
-    navigate({
-      search: {
-        q: search.q || undefined,
-        tags: newTags.length > 0 ? newTags.join(",") : undefined,
-      },
-    });
+    updateDraft((current) => removeDraftTag(current, tagName), "immediate");
   };
 
   const clearSelectedTags = () => {
-    navigate({
-      search: {
-        q: search.q || undefined,
-        tags: undefined,
-      },
-    });
+    updateDraft((current) => clearDraftTags(current), "immediate");
   };
 
   return (

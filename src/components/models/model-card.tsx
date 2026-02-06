@@ -28,6 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type ModelCardProps = {
+  searchQuery?: string;
   model: {
     id: string;
     slug: string;
@@ -54,7 +55,12 @@ type ModelCardProps = {
   };
 };
 
-const ModelCard = memo(({ model }: ModelCardProps) => {
+export const buildLibraryTagSearch = (tag: string, searchQuery?: string) => ({
+  q: searchQuery || undefined,
+  tags: tag,
+});
+
+const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const deleteModel = useDeleteModel();
@@ -63,7 +69,7 @@ const ModelCard = memo(({ model }: ModelCardProps) => {
   const handleTagClick = (tag: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    navigate({ to: "/library", search: { tags: tag } });
+    navigate({ to: "/library", search: buildLibraryTagSearch(tag, searchQuery) });
   };
 
   const formatFileSize = (bytes: number) => {
