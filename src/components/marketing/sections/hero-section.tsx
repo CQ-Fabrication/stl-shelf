@@ -9,9 +9,9 @@ import { NumberTicker } from "@/components/marketing/magicui/number-ticker";
 import { HeroBackground } from "@/components/marketing/hero-background";
 
 const stats = [
-  { value: 10000, suffix: "+", label: "Models Organized" },
-  { value: 5, suffix: "", label: "File Formats" },
-  { value: 100, suffix: "%", label: "Your Data" },
+  { value: 2, suffix: "", label: "Deploy Modes" },
+  { value: 3, suffix: "", label: "Core Workflows" },
+  { value: 4, suffix: "", label: "File Types" },
 ];
 
 export function HeroSection() {
@@ -49,7 +49,7 @@ export function HeroSection() {
           </p>
 
           <div className="animate-fade-in-up flex flex-wrap justify-center gap-2 pt-2">
-            {["STL", "OBJ", "3MF", "PLY", "GCODE"].map((format) => (
+            {["STL", "OBJ", "3MF", "PLY"].map((format) => (
               <span
                 key={format}
                 className="inline-flex items-center rounded-md border border-border/50 bg-muted/50 px-3 py-1 font-mono text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:border-primary/30 hover:text-foreground"

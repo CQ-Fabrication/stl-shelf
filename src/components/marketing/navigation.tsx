@@ -47,12 +47,19 @@ export function Navigation({ session }: NavigationProps) {
     return false;
   };
 
+  const handleLogoClick = () => {
+    if (isHomePage) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    setMobileMenuOpen(false);
+  };
+
   return (
     <>
       <nav className="fixed top-0 right-0 left-0 z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto grid h-16 grid-cols-3 items-center px-4">
           {/* Logo - Left */}
-          <Link className="flex items-center" to="/">
+          <Link className="flex items-center" onClick={handleLogoClick} to="/">
             <Logo className="h-8" />
           </Link>
 
