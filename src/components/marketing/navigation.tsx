@@ -5,11 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import type { AuthClient } from "@/lib/auth-client";
 
-const navItems = [
-  { label: "Features", href: "/#features", scrollTo: "#features" },
-  { label: "Guides", href: "/#guides", scrollTo: "#guides" },
-  { label: "Pricing", href: "/pricing", scrollTo: null },
-  { label: "About", href: "/about", scrollTo: null },
+type NavItem = {
+  label: string;
+  to: string;
+  hash?: string;
+  scrollTo?: string;
+};
+
+const navItems: NavItem[] = [
+  { label: "Features", to: "/", hash: "features", scrollTo: "#features" },
+  { label: "Guides", to: "/", hash: "guides", scrollTo: "#guides" },
+  { label: "Pricing", to: "/", hash: "pricing", scrollTo: "#pricing" },
+  { label: "About", to: "/about" },
 ];
 
 type Session = AuthClient["$Infer"]["Session"];
@@ -26,7 +33,7 @@ export function Navigation({ session }: NavigationProps) {
   const isAuthenticated = Boolean(session?.user);
   const showDashboardCta = isAuthenticated;
 
-  const handleNavClick = (item: (typeof navItems)[0]) => {
+  const handleNavClick = (item: NavItem) => {
     setMobileMenuOpen(false);
 
     // If on homepage and item has scrollTo, scroll to section
@@ -55,7 +62,7 @@ export function Navigation({ session }: NavigationProps) {
               isHomePage && item.scrollTo ? (
                 <button
                   className="font-medium text-muted-foreground text-sm transition-colors hover:text-foreground"
-                  key={item.href}
+                  key={item.label}
                   onClick={() => handleNavClick(item)}
                   type="button"
                 >
@@ -64,8 +71,9 @@ export function Navigation({ session }: NavigationProps) {
               ) : (
                 <Link
                   className="font-medium text-muted-foreground text-sm transition-colors hover:text-foreground"
-                  key={item.href}
-                  to={item.href}
+                  hash={item.hash}
+                  key={item.label}
+                  to={item.to}
                 >
                   {item.label}
                 </Link>
@@ -121,7 +129,7 @@ export function Navigation({ session }: NavigationProps) {
                 isHomePage && item.scrollTo ? (
                   <button
                     className="block w-full py-3 text-left font-medium text-lg transition-colors hover:text-primary"
-                    key={item.href}
+                    key={item.label}
                     onClick={() => handleNavClick(item)}
                     type="button"
                   >
@@ -130,8 +138,9 @@ export function Navigation({ session }: NavigationProps) {
                 ) : (
                   <Link
                     className="block w-full py-3 text-left font-medium text-lg transition-colors hover:text-primary"
-                    key={item.href}
-                    to={item.href}
+                    hash={item.hash}
+                    key={item.label}
+                    to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {item.label}
