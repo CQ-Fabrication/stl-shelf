@@ -129,6 +129,16 @@ export const getUsageStats = createServerFn({ method: "GET" })
     const modelCountLimit = org.modelCountLimit ?? tierConfig.modelCountLimit;
     const currentMemberCount = memberCountResult?.count ?? 0;
     const memberLimit = org.memberLimit ?? tierConfig.maxMembers;
+
+    const modelLimitIsUnlimited = isUnlimited(modelCountLimit);
+    const storagePercentage =
+      storageLimit && storageLimit > 0 ? Math.min((currentStorage / storageLimit) * 100, 100) : 0;
+    const modelPercentage =
+      modelLimitIsUnlimited || modelCountLimit <= 0
+        ? 0
+        : Math.min((currentModelCount / modelCountLimit) * 100, 100);
+    const memberPercentage =
+      memberLimit && memberLimit > 0 ? Math.min((currentMemberCount / memberLimit) * 100, 100) : 0;
     const egressUsage = await getEgressUsageSnapshot(context.organizationId);
     const egressLimits = getEgressLimits(currentStorage);
     const egressLimit = egressLimits.softLimit;
@@ -140,17 +150,18 @@ export const getUsageStats = createServerFn({ method: "GET" })
       storage: {
         used: currentStorage,
         limit: storageLimit,
-        percentage: Math.min((currentStorage / storageLimit) * 100, 100),
+        percentage: storagePercentage,
       },
       models: {
         used: currentModelCount,
         limit: modelCountLimit,
-        percentage: Math.min((currentModelCount / modelCountLimit) * 100, 100),
+        isUnlimited: modelLimitIsUnlimited,
+        percentage: modelPercentage,
       },
       members: {
         used: currentMemberCount,
         limit: memberLimit,
-        percentage: Math.min((currentMemberCount / memberLimit) * 100, 100),
+        percentage: memberPercentage,
       },
       egress: {
         used: egressUsage.bytes,

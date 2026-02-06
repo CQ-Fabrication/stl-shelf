@@ -26,6 +26,9 @@ export const UsageCard = () => {
   if (!usage) return null;
 
   const egressUsage = usage.egress;
+  const modelLimitLabel = usage.models.isUnlimited ? "Unlimited" : usage.models.limit;
+  const modelPercentage = usage.models.isUnlimited ? 0 : usage.models.percentage;
+  const modelProgressValue = usage.models.isUnlimited ? 42 : modelPercentage;
   const egressWarning = egressUsage?.percentage >= 80;
   const egressCritical = egressUsage?.percentage >= 100;
 
@@ -75,17 +78,27 @@ export const UsageCard = () => {
               <Box className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Models</span>
             </div>
-            <span className={getUsageColor(usage.models.percentage)}>
-              {usage.models.used} / {usage.models.limit}
+            <span
+              className={
+                usage.models.isUnlimited ? "text-muted-foreground" : getUsageColor(modelPercentage)
+              }
+            >
+              {usage.models.used} / {modelLimitLabel}
             </span>
           </div>
           <Progress
-            className="h-2"
-            indicatorClassName={getUsageProgressColor(usage.models.percentage)}
-            value={usage.models.percentage}
+            className={usage.models.isUnlimited ? "h-2 bg-brand/20" : "h-2"}
+            indicatorClassName={
+              usage.models.isUnlimited
+                ? "bg-gradient-to-r from-brand/70 to-brand/35"
+                : getUsageProgressColor(modelPercentage)
+            }
+            value={modelProgressValue}
           />
           <p className="text-muted-foreground text-xs">
-            {formatPercentage(usage.models.percentage)} used
+            {usage.models.isUnlimited
+              ? "No cap on model count"
+              : `${formatPercentage(modelPercentage)} used`}
           </p>
         </div>
 

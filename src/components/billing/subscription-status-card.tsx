@@ -31,13 +31,23 @@ type UsageRowProps = {
   limit: number | string;
   percentage: number;
   formatValue?: (val: number) => string;
+  isUnlimited?: boolean;
 };
 
-function UsageRow({ icon, label, used, limit, percentage, formatValue }: UsageRowProps) {
+function UsageRow({
+  icon,
+  label,
+  used,
+  limit,
+  percentage,
+  formatValue,
+  isUnlimited,
+}: UsageRowProps) {
   const displayUsed = formatValue && typeof used === "number" ? formatValue(used) : used;
   const displayLimit = formatValue && typeof limit === "number" ? formatValue(limit) : limit;
-  const isWarning = percentage >= 75;
-  const isCritical = percentage >= 90;
+  const isWarning = !isUnlimited && percentage >= 75;
+  const isCritical = !isUnlimited && percentage >= 90;
+  const progressValue = isUnlimited ? 42 : Math.min(percentage, 100);
 
   return (
     <div className="space-y-2">
@@ -46,7 +56,12 @@ function UsageRow({ icon, label, used, limit, percentage, formatValue }: UsageRo
           {icon}
           <span>{label}</span>
         </div>
-        <span className={`whitespace-nowrap font-medium tabular-nums ${getUsageColor(percentage)}`}>
+        <span
+          className={cn(
+            "whitespace-nowrap font-medium tabular-nums",
+            isUnlimited ? "text-muted-foreground" : getUsageColor(percentage),
+          )}
+        >
           {displayUsed} / {displayLimit}
           {isCritical && (
             <span className="ml-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
@@ -57,9 +72,13 @@ function UsageRow({ icon, label, used, limit, percentage, formatValue }: UsageRo
         </span>
       </div>
       <Progress
-        className="h-1.5"
-        indicatorClassName={getUsageProgressColor(percentage)}
-        value={Math.min(percentage, 100)}
+        className={cn("h-1.5", isUnlimited && "bg-brand/20")}
+        indicatorClassName={cn(
+          isUnlimited
+            ? "bg-gradient-to-r from-brand/70 to-brand/35"
+            : getUsageProgressColor(percentage),
+        )}
+        value={progressValue}
       />
     </div>
   );
@@ -125,7 +144,9 @@ export const SubscriptionStatusCard = ({ className }: SubscriptionStatusCardProp
     : null;
 
   // Check if any resource is at warning level
-  const hasWarning = usage.storage.percentage >= 75 || usage.models.percentage >= 75;
+  const modelPercentage = usage.models.isUnlimited ? 0 : usage.models.percentage;
+  const modelLimitLabel = usage.models.isUnlimited ? "Unlimited" : usage.models.limit;
+  const hasWarning = usage.storage.percentage >= 75 || modelPercentage >= 75;
 
   const statusLabel = hasPaymentIssue ? "Payment Issue" : subscription.status;
 
@@ -200,8 +221,9 @@ export const SubscriptionStatusCard = ({ className }: SubscriptionStatusCardProp
             icon={<Box className="h-4 w-4" />}
             label="Models"
             used={usage.models.used}
-            limit={usage.models.limit}
-            percentage={usage.models.percentage}
+            limit={modelLimitLabel}
+            percentage={modelPercentage}
+            isUnlimited={usage.models.isUnlimited}
           />
           <UsageRow
             icon={<Users className="h-4 w-4" />}

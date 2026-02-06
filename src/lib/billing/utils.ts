@@ -30,7 +30,8 @@ export const formatPrice = (price: number): string => {
  * Format percentage with rounding
  */
 export const formatPercentage = (value: number): string => {
-  return `${Math.round(value)}%`;
+  if (!Number.isFinite(value)) return "0%";
+  return `${Math.round(Math.max(0, value))}%`;
 };
 
 /**

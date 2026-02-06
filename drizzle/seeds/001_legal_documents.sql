@@ -236,4 +236,9 @@ For questions about this Privacy Policy or to exercise your data rights, contact
 - Address: CQ Fabrication, Italy$body$,
   NOW(),
   NOW()
-);
+)
+ON CONFLICT ("type", "version") DO UPDATE
+SET
+  "content" = EXCLUDED."content",
+  "published_at" = EXCLUDED."published_at",
+  "created_at" = EXCLUDED."created_at";
