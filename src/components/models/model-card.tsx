@@ -236,20 +236,19 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
         {Array.isArray(model.tags) && model.tags.length > 0 && (
           <div className="mt-auto flex min-h-[24px] items-center gap-1.5 text-xs">
             {/* Desktop: show 2 tags */}
-            <div className="hidden items-center gap-1.5 sm:flex">
+            <div className="hidden min-w-0 items-center gap-1.5 sm:flex">
               {model.tags.slice(0, 2).map((tag) => {
                 const filterLabel = "Filter by " + tag;
                 return (
                   <button
                     aria-label={filterLabel}
-                    className="relative z-20 max-w-24 cursor-pointer truncate"
+                    className="relative z-20 min-w-0 cursor-pointer"
                     key={tag}
                     onClick={(e) => handleTagClick(tag, e)}
-                    title={tag.length > 12 ? tag : undefined}
                     type="button"
                   >
                     <Badge
-                      className="text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                      className="max-w-full whitespace-normal break-words text-left text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
                       variant="secondary"
                     >
                       {tag}
@@ -299,20 +298,19 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
             </div>
 
             {/* Mobile: show 1 tag */}
-            <div className="flex items-center gap-1.5 sm:hidden">
+            <div className="flex min-w-0 items-center gap-1.5 sm:hidden">
               {model.tags.slice(0, 1).map((tag) => {
                 const filterLabel = "Filter by " + tag;
                 return (
                   <button
                     aria-label={filterLabel}
-                    className="relative z-20 max-w-20 cursor-pointer truncate"
+                    className="relative z-20 min-w-0 cursor-pointer"
                     key={tag}
                     onClick={(e) => handleTagClick(tag, e)}
-                    title={tag.length > 8 ? tag : undefined}
                     type="button"
                   >
                     <Badge
-                      className="text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
+                      className="max-w-full whitespace-normal break-words text-left text-xs transition-colors hover:bg-primary hover:text-primary-foreground"
                       variant="secondary"
                     >
                       {tag}
