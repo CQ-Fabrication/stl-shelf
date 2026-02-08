@@ -21,6 +21,9 @@ export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
+  validateSearch: z.object({
+    invitationId: z.string().optional(),
+  }),
   component: SignUpPage,
 });
 
@@ -53,6 +56,7 @@ const defaultValues: SignUpForm = {
 
 function SignUpPage() {
   const navigate = useNavigate();
+  const { invitationId } = Route.useSearch();
   const [showPassword, setShowPassword] = useState(false);
 
   // Fetch latest document versions for consent
@@ -69,12 +73,16 @@ function SignUpPage() {
       return;
     }
 
+    const callbackURL = invitationId
+      ? `/login?view=credentials&invitationId=${encodeURIComponent(invitationId)}`
+      : "/login?view=credentials";
+
     // Sign up first
     const result = await authClient.signUp.email({
       name: value.name,
       email: value.email,
       password: value.password,
-      callbackURL: "/login?view=credentials",
+      callbackURL,
       fetchOptions: {
         headers: {
           "x-captcha-response": value.captcha,
@@ -295,12 +303,22 @@ function SignUpPage() {
                   <Button className="w-full" disabled={!canSubmit || isSubmitting} type="submit">
                     {isSubmitting ? "Creating..." : "Create account"}
                   </Button>
-                  <Link
-                    className="mt-2 text-muted-foreground text-sm underline-offset-4"
-                    to="/login"
-                  >
-                    Already have an account? <span className="underline">Sign in</span>
-                  </Link>
+                  {invitationId ? (
+                    <Link
+                      className="mt-2 text-muted-foreground text-sm underline-offset-4"
+                      search={{ invitationId, view: "credentials" }}
+                      to="/login"
+                    >
+                      Already have an account? <span className="underline">Sign in</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      className="mt-2 text-muted-foreground text-sm underline-offset-4"
+                      to="/login"
+                    >
+                      Already have an account? <span className="underline">Sign in</span>
+                    </Link>
+                  )}
                 </div>
               )}
             </form.Subscribe>

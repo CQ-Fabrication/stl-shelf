@@ -14,6 +14,7 @@ export const Route = createFileRoute("/login")({
   }),
   validateSearch: z.object({
     view: z.enum(["magic-link", "credentials"]).optional(),
+    invitationId: z.string().optional(),
   }),
   component: LoginPage,
 });
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/login")({
 type LoginView = "magic-link" | "credentials";
 
 function LoginPage() {
-  const { view: viewParam } = Route.useSearch();
+  const { view: viewParam, invitationId } = Route.useSearch();
   const [view, setView] = useState<LoginView>(viewParam ?? "magic-link");
   const [magicLinkSent, setMagicLinkSent] = useState(false);
 
@@ -41,11 +42,12 @@ function LoginPage() {
           {view === "magic-link" ? (
             <MagicLinkForm
               auth={authClient}
+              invitationId={invitationId}
               magicLinkSent={magicLinkSent}
               onSuccess={() => setMagicLinkSent(true)}
             />
           ) : (
-            <CredentialsForm auth={authClient} />
+            <CredentialsForm auth={authClient} invitationId={invitationId} />
           )}
 
           <div className="relative">
@@ -76,9 +78,15 @@ function LoginPage() {
 
           <div className="text-center text-muted-foreground text-sm">
             Don't have an account?{" "}
-            <Link className="underline underline-offset-4" to="/signup">
-              Create one
-            </Link>
+            {invitationId ? (
+              <Link className="underline underline-offset-4" search={{ invitationId }} to="/signup">
+                Create one
+              </Link>
+            ) : (
+              <Link className="underline underline-offset-4" to="/signup">
+                Create one
+              </Link>
+            )}
           </div>
         </CardContent>
       </Card>

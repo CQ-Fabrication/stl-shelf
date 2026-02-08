@@ -53,11 +53,11 @@ function ModelDetailComponent() {
   const queryClient = useQueryClient();
   const deleteModel = useDeleteModel();
   const { data: model } = useQuery({
-    queryKey: ["models", modelId],
+    queryKey: ["model", modelId],
     queryFn: () => getModel({ data: { id: modelId } }),
   });
   const { data: versions } = useQuery({
-    queryKey: ["models", modelId, "versions"],
+    queryKey: ["model", modelId, "versions"],
     queryFn: () => getModelVersions({ data: { modelId } }),
   });
 
@@ -79,10 +79,13 @@ function ModelDetailComponent() {
         description: `Created ${data.version} with ${data.files.length} file${data.files.length > 1 ? "s" : ""}`,
       });
       queryClient.invalidateQueries({
-        queryKey: ["models", modelId],
+        queryKey: ["model", modelId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["models", modelId, "versions"],
+        queryKey: ["model", modelId, "versions"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["models"],
       });
       queryClient.invalidateQueries({
         queryKey: ["billing", "usage"],

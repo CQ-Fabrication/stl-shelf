@@ -1,8 +1,13 @@
 import archiver from "archiver";
 import { createFileRoute } from "@tanstack/react-router";
-import { auth } from "@/lib/auth";
+import { eq } from "drizzle-orm";
+import { isTierAtLeast } from "@/lib/billing/config";
+import { db } from "@/lib/db";
+import { organization } from "@/lib/db/schema/auth";
 import { modelDownloadService } from "@/server/services/models/model-download.service";
 import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import { getLiveSession } from "@/server/utils/live-session";
+import { crossSiteBlockedResponse, isTrustedRequestOrigin } from "@/server/utils/request-security";
 import { checkRateLimit, getClientIp } from "@/server/utils/rate-limit";
 
 const RATE_LIMIT = { windowMs: 60_000, max: 20 };
@@ -11,10 +16,12 @@ export const Route = createFileRoute("/api/download/version/$versionId/zip")({
   server: {
     handlers: {
       GET: async ({ request, params }: { request: Request; params: { versionId: string } }) => {
+        if (!isTrustedRequestOrigin(request)) {
+          return crossSiteBlockedResponse();
+        }
+
         // 1. Auth check using request headers
-        const session = await auth.api.getSession({
-          headers: request.headers,
-        });
+        const session = await getLiveSession(request.headers);
 
         if (!session?.session?.activeOrganizationId) {
           return new Response("Unauthorized", { status: 401 });
@@ -22,6 +29,26 @@ export const Route = createFileRoute("/api/download/version/$versionId/zip")({
 
         const { versionId } = params;
         const organizationId = session.session.activeOrganizationId;
+
+        const [org] = await db
+          .select({
+            subscriptionTier: organization.subscriptionTier,
+          })
+          .from(organization)
+          .where(eq(organization.id, organizationId))
+          .limit(1);
+
+        if (!org) {
+          return new Response("Organization not found", { status: 404 });
+        }
+
+        if (!isTierAtLeast(org.subscriptionTier, "basic")) {
+          return Response.json(
+            { error: "ZIP downloads are available on Basic and Pro plans." },
+            { status: 403 },
+          );
+        }
+
         const ip = getClientIp(request);
         const rate = checkRateLimit(`zip-download:${organizationId}:${ip}`, RATE_LIMIT);
 

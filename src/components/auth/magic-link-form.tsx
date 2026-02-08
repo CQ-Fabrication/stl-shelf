@@ -17,9 +17,15 @@ type MagicLinkFormProps = {
   auth: AuthClient;
   onSuccess: () => void;
   magicLinkSent: boolean;
+  invitationId?: string;
 };
 
-export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormProps) {
+export function MagicLinkForm({
+  auth,
+  onSuccess,
+  magicLinkSent,
+  invitationId,
+}: MagicLinkFormProps) {
   // Fetch latest document versions for consent
   const { data: documents } = useQuery({
     queryKey: ["consent-documents"],
@@ -44,9 +50,13 @@ export function MagicLinkForm({ auth, onSuccess, magicLinkSent }: MagicLinkFormP
         const fingerprint = await generateFingerprint();
         storePendingConsent(termsVersion, false, fingerprint); // Marketing consent collected via post-login banner
 
+        const callbackURL = invitationId
+          ? `/accept-invitation?invitationId=${encodeURIComponent(invitationId)}`
+          : "/library";
+
         await auth.signIn.magicLink({
           email: value.email,
-          callbackURL: "/library",
+          callbackURL,
         });
         onSuccess();
         toast.success("Check your email for a magic link");

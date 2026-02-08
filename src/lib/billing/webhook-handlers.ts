@@ -4,7 +4,7 @@ import type { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/co
 import type { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
 import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
 import { render } from "@react-email/components";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { Resend } from "resend";
 import { db } from "@/lib/db";
 import { organization, user } from "@/lib/db/schema/auth";
@@ -34,6 +34,83 @@ function getTierFromProductId(productId: string): SubscriptionTier | undefined {
   if (env.POLAR_PRODUCT_PRO_YEAR && productId === env.POLAR_PRODUCT_PRO_YEAR) return "pro";
   return undefined;
 }
+
+type WebhookApplyStatus =
+  | { status: "updated" }
+  | { status: "missing" }
+  | { status: "stale"; lastAppliedAt: Date | null };
+
+type WebhookOrganizationChanges = Omit<
+  Partial<typeof organization.$inferInsert>,
+  "billingLastWebhookAt"
+>;
+
+const applyOrganizationUpdateFromWebhook = async ({
+  customerId,
+  eventTimestamp,
+  changes,
+}: {
+  customerId: string;
+  eventTimestamp: Date;
+  changes: WebhookOrganizationChanges;
+}): Promise<WebhookApplyStatus> => {
+  const [updatedOrg] = await db
+    .update(organization)
+    .set({
+      ...changes,
+      billingLastWebhookAt: eventTimestamp,
+    })
+    .where(
+      and(
+        eq(organization.polarCustomerId, customerId),
+        or(
+          isNull(organization.billingLastWebhookAt),
+          lt(organization.billingLastWebhookAt, eventTimestamp),
+        ),
+      ),
+    )
+    .returning({ id: organization.id });
+
+  if (updatedOrg) {
+    return { status: "updated" };
+  }
+
+  const existingOrg = await db.query.organization.findFirst({
+    where: eq(organization.polarCustomerId, customerId),
+    columns: {
+      id: true,
+      billingLastWebhookAt: true,
+    },
+  });
+
+  if (!existingOrg) {
+    return { status: "missing" };
+  }
+
+  return {
+    status: "stale",
+    lastAppliedAt: existingOrg.billingLastWebhookAt ?? null,
+  };
+};
+
+const logStaleWebhook = ({
+  eventType,
+  customerId,
+  eventTimestamp,
+  lastAppliedAt,
+}: {
+  eventType: string;
+  customerId: string;
+  eventTimestamp: Date;
+  lastAppliedAt: Date | null;
+}) => {
+  logAuditEvent("billing.webhook.stale_ignored", {
+    eventType,
+    customerId,
+    eventTimestamp: eventTimestamp.toISOString(),
+    lastAppliedAt: lastAppliedAt?.toISOString() ?? null,
+  });
+};
 
 let resendClient: Resend | null = null;
 
@@ -166,6 +243,7 @@ export const handleOrderPaid = async (payload: WebhookOrderPaidPayload) => {
   const { data: order } = payload;
   const customerId = order.customerId;
   const productId = order.productId;
+  const eventTimestamp = payload.timestamp;
 
   if (!productId) {
     logErrorEvent("billing.webhook.order_missing_product", {
@@ -188,9 +266,10 @@ export const handleOrderPaid = async (payload: WebhookOrderPaidPayload) => {
 
   const tierConfig = SUBSCRIPTION_TIERS[tier];
 
-  await db
-    .update(organization)
-    .set({
+  const updateStatus = await applyOrganizationUpdateFromWebhook({
+    customerId,
+    eventTimestamp,
+    changes: {
       subscriptionTier: tier,
       subscriptionStatus: "active",
       subscriptionId: order.subscriptionId ?? null,
@@ -200,13 +279,32 @@ export const handleOrderPaid = async (payload: WebhookOrderPaidPayload) => {
       subscriptionPeriodEnd: null,
       subscriptionCancelAtPeriodEnd: false,
       graceDeadline: null,
-    })
-    .where(eq(organization.polarCustomerId, customerId));
+    },
+  });
+
+  if (updateStatus.status === "missing") {
+    logErrorEvent("billing.webhook.unknown_customer", {
+      customerId,
+      orderId: order.id,
+    });
+    return;
+  }
+
+  if (updateStatus.status === "stale") {
+    logStaleWebhook({
+      eventType: payload.type,
+      customerId,
+      eventTimestamp,
+      lastAppliedAt: updateStatus.lastAppliedAt,
+    });
+    return;
+  }
 
   logAuditEvent("billing.subscription.upgraded", {
     customerId,
     tier,
     subscriptionId: order.subscriptionId ?? null,
+    eventTimestamp: eventTimestamp.toISOString(),
   });
 };
 
@@ -217,6 +315,7 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
   const { data: subscription } = payload;
   const customerId = subscription.customerId;
   const productId = subscription.productId;
+  const eventTimestamp = payload.timestamp;
 
   const tier = getTierFromProductId(productId);
 
@@ -231,9 +330,10 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
 
   const tierConfig = SUBSCRIPTION_TIERS[tier];
 
-  await db
-    .update(organization)
-    .set({
+  const updateStatus = await applyOrganizationUpdateFromWebhook({
+    customerId,
+    eventTimestamp,
+    changes: {
       subscriptionTier: tier,
       subscriptionStatus: subscription.status,
       subscriptionId: subscription.id,
@@ -243,14 +343,33 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
       subscriptionPeriodEnd: subscription.currentPeriodEnd ?? subscription.endsAt ?? null,
       subscriptionCancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
       graceDeadline: null,
-    })
-    .where(eq(organization.polarCustomerId, customerId));
+    },
+  });
+
+  if (updateStatus.status === "missing") {
+    logErrorEvent("billing.webhook.unknown_customer", {
+      customerId,
+      subscriptionId: subscription.id,
+    });
+    return;
+  }
+
+  if (updateStatus.status === "stale") {
+    logStaleWebhook({
+      eventType: payload.type,
+      customerId,
+      eventTimestamp,
+      lastAppliedAt: updateStatus.lastAppliedAt,
+    });
+    return;
+  }
 
   logAuditEvent("billing.subscription.created", {
     customerId,
     tier,
     status: subscription.status,
     subscriptionId: subscription.id,
+    eventTimestamp: eventTimestamp.toISOString(),
   });
 };
 
@@ -262,15 +381,35 @@ export const handleSubscriptionCanceled = async (payload: WebhookSubscriptionCan
   const { data: subscription } = payload;
   const customerId = subscription.customerId;
   const tier = getTierFromProductId(subscription.productId);
+  const eventTimestamp = payload.timestamp;
 
-  await db
-    .update(organization)
-    .set({
+  const updateStatus = await applyOrganizationUpdateFromWebhook({
+    customerId,
+    eventTimestamp,
+    changes: {
       subscriptionStatus: "canceled",
       subscriptionPeriodEnd: subscription.currentPeriodEnd ?? subscription.endsAt ?? null,
       subscriptionCancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    })
-    .where(eq(organization.polarCustomerId, customerId));
+    },
+  });
+
+  if (updateStatus.status === "missing") {
+    logErrorEvent("billing.webhook.unknown_customer", {
+      customerId,
+      subscriptionId: subscription.id,
+    });
+    return;
+  }
+
+  if (updateStatus.status === "stale") {
+    logStaleWebhook({
+      eventType: payload.type,
+      customerId,
+      eventTimestamp,
+      lastAppliedAt: updateStatus.lastAppliedAt,
+    });
+    return;
+  }
 
   if (tier && subscription.cancelAtPeriodEnd) {
     try {
@@ -290,6 +429,7 @@ export const handleSubscriptionCanceled = async (payload: WebhookSubscriptionCan
   logAuditEvent("billing.subscription.canceled", {
     customerId,
     subscriptionId: subscription.id,
+    eventTimestamp: eventTimestamp.toISOString(),
   });
 };
 
@@ -300,10 +440,16 @@ export const handleSubscriptionCanceled = async (payload: WebhookSubscriptionCan
 export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevokedPayload) => {
   const { data: subscription } = payload;
   const customerId = subscription.customerId;
+  const eventTimestamp = payload.timestamp;
   const freeTier = SUBSCRIPTION_TIERS.free;
 
   const org = await db.query.organization.findFirst({
     where: eq(organization.polarCustomerId, customerId),
+    columns: {
+      id: true,
+      subscriptionTier: true,
+      billingLastWebhookAt: true,
+    },
   });
 
   if (!org) {
@@ -314,13 +460,23 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
     return;
   }
 
+  if (org.billingLastWebhookAt && org.billingLastWebhookAt >= eventTimestamp) {
+    logStaleWebhook({
+      eventType: payload.type,
+      customerId,
+      eventTimestamp,
+      lastAppliedAt: org.billingLastWebhookAt,
+    });
+    return;
+  }
+
   const previousTier =
     getTierFromProductId(subscription.productId) ??
     (org.subscriptionTier as SubscriptionTier) ??
     "free";
   const graceDeadline = await getGraceDeadlineIfOverLimit(org.id);
 
-  await db
+  const [updatedOrg] = await db
     .update(organization)
     .set({
       subscriptionTier: "free",
@@ -332,8 +488,35 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
       subscriptionPeriodEnd: null,
       subscriptionCancelAtPeriodEnd: false,
       graceDeadline,
+      billingLastWebhookAt: eventTimestamp,
     })
-    .where(eq(organization.id, org.id));
+    .where(
+      and(
+        eq(organization.id, org.id),
+        or(
+          isNull(organization.billingLastWebhookAt),
+          lt(organization.billingLastWebhookAt, eventTimestamp),
+        ),
+      ),
+    )
+    .returning({ id: organization.id });
+
+  if (!updatedOrg) {
+    const latestOrg = await db.query.organization.findFirst({
+      where: eq(organization.id, org.id),
+      columns: {
+        billingLastWebhookAt: true,
+      },
+    });
+
+    logStaleWebhook({
+      eventType: payload.type,
+      customerId,
+      eventTimestamp,
+      lastAppliedAt: latestOrg?.billingLastWebhookAt ?? null,
+    });
+    return;
+  }
 
   if (graceDeadline) {
     try {
@@ -349,6 +532,7 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
   logAuditEvent("billing.subscription.revoked", {
     customerId,
     subscriptionId: subscription.id,
+    eventTimestamp: eventTimestamp.toISOString(),
   });
 };
 
@@ -359,6 +543,7 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
 export const handleCustomerStateChanged = async (payload: WebhookCustomerStateChangedPayload) => {
   const { data: customerState } = payload;
   const customerId = customerState.id;
+  const eventTimestamp = payload.timestamp;
 
   const activeSubscriptions = customerState.activeSubscriptions ?? [];
 
@@ -371,9 +556,10 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
     if (tier) {
       const tierConfig = SUBSCRIPTION_TIERS[tier];
 
-      await db
-        .update(organization)
-        .set({
+      const updateStatus = await applyOrganizationUpdateFromWebhook({
+        customerId,
+        eventTimestamp,
+        changes: {
           subscriptionTier: tier,
           subscriptionStatus: sub.status,
           subscriptionId: sub.id,
@@ -383,14 +569,33 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
           subscriptionPeriodEnd: sub.currentPeriodEnd ?? sub.endsAt ?? null,
           subscriptionCancelAtPeriodEnd: sub.cancelAtPeriodEnd,
           graceDeadline: null,
-        })
-        .where(eq(organization.polarCustomerId, customerId));
+        },
+      });
+
+      if (updateStatus.status === "missing") {
+        logErrorEvent("billing.webhook.unknown_customer", {
+          customerId,
+          subscriptionId: sub.id,
+        });
+        return;
+      }
+
+      if (updateStatus.status === "stale") {
+        logStaleWebhook({
+          eventType: payload.type,
+          customerId,
+          eventTimestamp,
+          lastAppliedAt: updateStatus.lastAppliedAt,
+        });
+        return;
+      }
 
       logAuditEvent("billing.subscription.synced", {
         customerId,
         tier,
         status: sub.status,
         subscriptionId: sub.id,
+        eventTimestamp: eventTimestamp.toISOString(),
       });
     }
   } else {
@@ -398,6 +603,11 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
 
     const org = await db.query.organization.findFirst({
       where: eq(organization.polarCustomerId, customerId),
+      columns: {
+        id: true,
+        subscriptionTier: true,
+        billingLastWebhookAt: true,
+      },
     });
 
     if (!org) {
@@ -408,10 +618,20 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
       return;
     }
 
+    if (org.billingLastWebhookAt && org.billingLastWebhookAt >= eventTimestamp) {
+      logStaleWebhook({
+        eventType: payload.type,
+        customerId,
+        eventTimestamp,
+        lastAppliedAt: org.billingLastWebhookAt,
+      });
+      return;
+    }
+
     const graceDeadline = await getGraceDeadlineIfOverLimit(org.id);
     const previousTier = (org.subscriptionTier as SubscriptionTier) ?? "free";
 
-    await db
+    const [updatedOrg] = await db
       .update(organization)
       .set({
         subscriptionTier: "free",
@@ -423,8 +643,35 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
         subscriptionPeriodEnd: null,
         subscriptionCancelAtPeriodEnd: false,
         graceDeadline,
+        billingLastWebhookAt: eventTimestamp,
       })
-      .where(eq(organization.id, org.id));
+      .where(
+        and(
+          eq(organization.id, org.id),
+          or(
+            isNull(organization.billingLastWebhookAt),
+            lt(organization.billingLastWebhookAt, eventTimestamp),
+          ),
+        ),
+      )
+      .returning({ id: organization.id });
+
+    if (!updatedOrg) {
+      const latestOrg = await db.query.organization.findFirst({
+        where: eq(organization.id, org.id),
+        columns: {
+          billingLastWebhookAt: true,
+        },
+      });
+
+      logStaleWebhook({
+        eventType: payload.type,
+        customerId,
+        eventTimestamp,
+        lastAppliedAt: latestOrg?.billingLastWebhookAt ?? null,
+      });
+      return;
+    }
 
     if (graceDeadline) {
       try {
@@ -442,6 +689,7 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
       tier: "free",
       status: "active",
       subscriptionId: null,
+      eventTimestamp: eventTimestamp.toISOString(),
     });
   }
 };

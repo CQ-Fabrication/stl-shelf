@@ -27,6 +27,7 @@ export const env = createEnv({
     AUTH_URL: z.url(),
     WEB_URL: z.url(),
     AUTH_COOKIE_DOMAIN: z.string().optional(),
+    AUTH_COOKIE_SAMESITE: z.enum(["lax", "strict", "none"]).default("lax"),
     AUTH_TRUSTED_ORIGINS: z.string().optional(),
     BETTER_AUTH_SECRET: z.string().min(32),
 

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useAccountDeletion } from "@/hooks/use-account-deletion";
 import { authClient } from "@/lib/auth-client";
+import { revokeOtherSessionsFn } from "@/server/functions/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -71,7 +72,7 @@ export function SecurityTab() {
         });
 
         // Invalidate all other sessions for security
-        await authClient.revokeSessions();
+        await revokeOtherSessionsFn();
 
         toast.success("Password changed successfully. All other sessions have been signed out.");
 

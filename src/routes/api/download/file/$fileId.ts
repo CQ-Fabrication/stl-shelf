@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { and, eq, isNull } from "drizzle-orm";
-import { auth } from "@/lib/auth";
 import { db, modelFiles, modelVersions, models } from "@/lib/db";
 import { storageService } from "@/server/services/storage";
 import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import { getLiveSession } from "@/server/utils/live-session";
+import { crossSiteBlockedResponse, isTrustedRequestOrigin } from "@/server/utils/request-security";
 import { checkRateLimit, getClientIp } from "@/server/utils/rate-limit";
 
 const RATE_LIMIT = { windowMs: 60_000, max: 60 };
@@ -12,7 +13,11 @@ export const Route = createFileRoute("/api/download/file/$fileId")({
   server: {
     handlers: {
       GET: async ({ request, params }: { request: Request; params: { fileId: string } }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
+        if (!isTrustedRequestOrigin(request)) {
+          return crossSiteBlockedResponse();
+        }
+
+        const session = await getLiveSession(request.headers);
 
         if (!session?.session?.activeOrganizationId) {
           return new Response("Unauthorized", { status: 401 });

@@ -12,9 +12,10 @@ import type { AuthClient } from "@/lib/auth-client";
 
 type CredentialsFormProps = {
   auth: AuthClient;
+  invitationId?: string;
 };
 
-export function CredentialsForm({ auth }: CredentialsFormProps) {
+export function CredentialsForm({ auth, invitationId }: CredentialsFormProps) {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -38,6 +39,20 @@ export function CredentialsForm({ auth }: CredentialsFormProps) {
         if (result.error) {
           throw result.error;
         }
+
+        if (invitationId) {
+          const acceptResult = await auth.organization.acceptInvitation({
+            invitationId,
+          });
+          if (acceptResult.error) {
+            toast.error(
+              acceptResult.error.message || "Signed in, but invitation could not be accepted",
+            );
+          } else {
+            toast.success("Invitation accepted");
+          }
+        }
+
         toast.success("Welcome back!");
         await navigate({ to: "/library" });
       } catch (error) {

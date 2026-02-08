@@ -3,9 +3,9 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { db, legalDocuments, consentAudit, userConsents } from "@/lib/db";
 import { syncResendSegments } from "@/server/services/marketing/resend-segments";
+import { getLiveSession } from "@/server/utils/live-session";
 
 // Schema definitions
 const getDocumentByTypeSchema = z.object({
@@ -94,7 +94,7 @@ export const submitConsentFn = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(submitConsentSchema))
   .handler(async ({ data }: { data: z.infer<typeof submitConsentSchema> }) => {
     const headers = getRequestHeaders();
-    const session = await auth.api.getSession({ headers });
+    const session = await getLiveSession(headers);
 
     // CRITICAL: Verify user is authenticated and matches the userId
     if (!session?.user?.id) {
@@ -207,7 +207,7 @@ export const submitConsentFn = createServerFn({ method: "POST" })
  */
 export const getConsentStatusFn = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
-  const session = await auth.api.getSession({ headers });
+  const session = await getLiveSession(headers);
 
   if (!session?.user?.id) {
     return null;
@@ -238,7 +238,7 @@ export const getConsentStatusFn = createServerFn({ method: "GET" }).handler(asyn
  */
 export const checkConsentValidityFn = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
-  const session = await auth.api.getSession({ headers });
+  const session = await getLiveSession(headers);
 
   if (!session?.user?.id) {
     return { valid: false, reason: "no_session", shouldShowMarketingBanner: false };
@@ -304,7 +304,7 @@ export const updateMarketingConsentFn = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(updateMarketingConsentSchema))
   .handler(async ({ data }: { data: z.infer<typeof updateMarketingConsentSchema> }) => {
     const headers = getRequestHeaders();
-    const session = await auth.api.getSession({ headers });
+    const session = await getLiveSession(headers);
 
     if (!session?.user?.id) {
       throw new Error("Not authenticated");
@@ -357,7 +357,7 @@ export const reacceptConsentFn = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(reacceptConsentSchema))
   .handler(async ({ data }: { data: z.infer<typeof reacceptConsentSchema> }) => {
     const headers = getRequestHeaders();
-    const session = await auth.api.getSession({ headers });
+    const session = await getLiveSession(headers);
 
     if (!session?.user?.id) {
       throw new Error("Not authenticated");
@@ -443,7 +443,7 @@ export const updateMarketingPromptFn = createServerFn({ method: "POST" })
   .inputValidator(zodValidator(updateMarketingPromptSchema))
   .handler(async ({ data }: { data: z.infer<typeof updateMarketingPromptSchema> }) => {
     const headers = getRequestHeaders();
-    const session = await auth.api.getSession({ headers });
+    const session = await getLiveSession(headers);
 
     if (!session?.user?.id) {
       throw new Error("Not authenticated");

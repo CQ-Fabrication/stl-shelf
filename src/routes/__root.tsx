@@ -78,6 +78,7 @@ const PUBLIC_ROUTES = [
   "/reset-password",
   "/verify-email",
   "/verify-email-pending",
+  "/accept-invitation",
   "/about",
   "/pricing",
   "/privacy",
@@ -286,17 +287,19 @@ function RootDocument({ children }: { children: ReactNode }) {
             disableTransitionOnChange
             storageKey="stl-shelf-theme"
           >
-            <div className="grid h-svh grid-rows-[auto_1fr]">
-              {showProtectedUI && (
-                <>
-                  <Header />
-                  <AccountDeletionBanner />
-                  <GracePeriodBanner />
-                  <ConsentBanner />
-                  <PendingConsentHandler />
-                  <MarketingConsentBanner />
-                </>
-              )}
+            <div className="grid min-h-svh grid-rows-[auto_1fr]">
+              <div>
+                {showProtectedUI && (
+                  <>
+                    <Header />
+                    <AccountDeletionBanner />
+                    <GracePeriodBanner />
+                    <ConsentBanner />
+                    <PendingConsentHandler />
+                    <MarketingConsentBanner />
+                  </>
+                )}
+              </div>
               {children}
             </div>
             <Toaster richColors />

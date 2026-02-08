@@ -2,19 +2,23 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Globe, Loader2, LogOut, Monitor, Smartphone, Tablet, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
+import {
+  listUserSessionsFn,
+  revokeOtherSessionsFn,
+  revokeSessionByIdFn,
+} from "@/server/functions/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 type Session = {
   id: string;
-  token: string;
-  createdAt: Date;
-  updatedAt: Date;
-  expiresAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  expiresAt: Date | string;
   ipAddress?: string | null;
   userAgent?: string | null;
+  isCurrent: boolean;
 };
 
 /**
@@ -113,28 +117,22 @@ function formatDate(date: Date | string): string {
 
 export function SessionsTab() {
   const queryClient = useQueryClient();
-  const { data: sessionData } = authClient.useSession();
   const [revokingSession, setRevokingSession] = useState<string | null>(null);
   const [isRevokingAll, setIsRevokingAll] = useState(false);
 
   // Fetch all sessions
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["sessions"],
-    queryFn: async () => {
-      const result = await authClient.listSessions();
-      return result.data as Session[] | undefined;
-    },
+    queryFn: () => listUserSessionsFn() as Promise<Session[]>,
   });
 
-  const currentSessionToken = sessionData?.session?.token;
+  const currentSession = sessions?.find((session) => session.isCurrent);
+  const otherSessions = sessions?.filter((session) => !session.isCurrent) ?? [];
 
-  const currentSession = sessions?.find((s) => s.token === currentSessionToken);
-  const otherSessions = sessions?.filter((s) => s.token !== currentSessionToken) ?? [];
-
-  const handleRevokeSession = async (token: string) => {
-    setRevokingSession(token);
+  const handleRevokeSession = async (sessionId: string) => {
+    setRevokingSession(sessionId);
     try {
-      await authClient.revokeSession({ token });
+      await revokeSessionByIdFn({ data: { sessionId } });
       toast.success("Session revoked");
       await queryClient.invalidateQueries({ queryKey: ["sessions"] });
     } catch {
@@ -147,7 +145,7 @@ export function SessionsTab() {
   const handleRevokeAll = async () => {
     setIsRevokingAll(true);
     try {
-      await authClient.revokeSessions();
+      await revokeOtherSessionsFn();
       toast.success("All other sessions have been revoked");
       await queryClient.invalidateQueries({ queryKey: ["sessions"] });
     } catch {
@@ -224,9 +222,9 @@ export function SessionsTab() {
             <div className="space-y-4">
               {otherSessions.map((session) => (
                 <SessionItem
-                  isRevoking={revokingSession === session.token}
+                  isRevoking={revokingSession === session.id}
                   key={session.id}
-                  onRevoke={() => handleRevokeSession(session.token)}
+                  onRevoke={() => handleRevokeSession(session.id)}
                   session={session}
                 />
               ))}

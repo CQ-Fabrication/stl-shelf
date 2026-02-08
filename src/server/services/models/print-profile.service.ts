@@ -6,7 +6,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { modelFiles, modelVersions, printProfiles } from "@/lib/db/schema/models";
 import { slugify } from "@/lib/slug";
@@ -136,8 +136,19 @@ class PrintProfileService {
     const parsedData = parseResult.data;
 
     if (input.action === "replace") {
-      // Delete the existing profile (cascade will delete the file)
-      await db.delete(printProfiles).where(eq(printProfiles.id, input.existingProfileId));
+      const [deletedProfile] = await db
+        .delete(printProfiles)
+        .where(
+          and(
+            eq(printProfiles.id, input.existingProfileId),
+            eq(printProfiles.versionId, input.versionId),
+          ),
+        )
+        .returning({ id: printProfiles.id });
+
+      if (!deletedProfile) {
+        throw new Error("Profile not found or access denied");
+      }
     } else if (input.action === "keep_both") {
       // Modify the printer name to include a suffix
       parsedData.printerName = `${parsedData.printerName} (2)`;

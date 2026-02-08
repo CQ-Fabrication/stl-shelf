@@ -1,9 +1,9 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { and, eq, desc } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { member, user } from "@/lib/db/schema/auth";
+import { member, organization, user } from "@/lib/db/schema/auth";
 import { legalDocuments, userConsents } from "@/lib/db/schema/consent";
 
 export type AuthenticatedContext = {
@@ -39,25 +39,41 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(asyn
     throw new Error("No active organization");
   }
 
+  const [userState] = await db
+    .select({
+      accountDeletionRequestedAt: user.accountDeletionRequestedAt,
+      accountDeletionDeadline: user.accountDeletionDeadline,
+      accountDeletionCompletedAt: user.accountDeletionCompletedAt,
+    })
+    .from(user)
+    .where(eq(user.id, session.user.id))
+    .limit(1);
+
+  if (!userState) {
+    throw new Error("User not found");
+  }
+
+  if (userState.accountDeletionCompletedAt) {
+    throw new Error("Account deleted");
+  }
+
   // SECURITY: Verify user is actually a member of this organization
   const [membership] = await db
     .select({ id: member.id, role: member.role })
     .from(member)
+    .innerJoin(
+      organization,
+      and(
+        eq(member.organizationId, organization.id),
+        isNull(organization.accountDeletionCompletedAt),
+      ),
+    )
     .where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
     .limit(1);
 
   if (!membership) {
     throw new Error("Not a member of this organization");
   }
-
-  const [accountState] = await db
-    .select({
-      accountDeletionRequestedAt: user.accountDeletionRequestedAt,
-      accountDeletionDeadline: user.accountDeletionDeadline,
-    })
-    .from(user)
-    .where(eq(user.id, session.user.id))
-    .limit(1);
 
   // Check consent validity
   const [consent] = await db
@@ -97,8 +113,8 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(asyn
       userId: session.user.id,
       memberRole: membership.role,
       ipAddress,
-      accountDeletionRequestedAt: accountState?.accountDeletionRequestedAt ?? null,
-      accountDeletionDeadline: accountState?.accountDeletionDeadline ?? null,
+      accountDeletionRequestedAt: userState.accountDeletionRequestedAt ?? null,
+      accountDeletionDeadline: userState.accountDeletionDeadline ?? null,
     } satisfies AuthenticatedContext,
   });
 });

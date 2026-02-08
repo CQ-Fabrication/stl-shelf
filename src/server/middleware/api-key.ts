@@ -1,5 +1,6 @@
 import { db, apiKeys } from "@/lib/db";
 import { eq, and, isNull, or, gt } from "drizzle-orm";
+import { organization } from "@/lib/db/schema/auth";
 
 type ApiKeyValidationResult =
   | { valid: true; organizationId: string; apiKeyId: string; scopes: string[] }
@@ -66,8 +67,19 @@ export async function validateApiKey(request: Request): Promise<ApiKeyValidation
 
     // Find the API key in database
     const [foundKey] = await db
-      .select()
+      .select({
+        id: apiKeys.id,
+        organizationId: apiKeys.organizationId,
+        scopes: apiKeys.scopes,
+      })
       .from(apiKeys)
+      .innerJoin(
+        organization,
+        and(
+          eq(apiKeys.organizationId, organization.id),
+          isNull(organization.accountDeletionCompletedAt),
+        ),
+      )
       .where(
         and(
           eq(apiKeys.keyHash, keyHash),

@@ -31,7 +31,7 @@ type UseModelFilesResult = {
 export const useModelFiles = ({ modelId, versionId }: UseModelFilesParams): UseModelFilesResult => {
   // Fetch model versions
   const { data: versions } = useQuery({
-    queryKey: ["models", modelId, "versions"],
+    queryKey: ["model", modelId, "versions"],
     queryFn: () => getModelVersions({ data: { modelId } }),
   });
 
@@ -42,7 +42,7 @@ export const useModelFiles = ({ modelId, versionId }: UseModelFilesParams): UseM
 
   // Fetch files
   const filesQuery = useQuery({
-    queryKey: ["models", modelId, "versions", effectiveVersionId, "files"],
+    queryKey: ["model", modelId, "files", effectiveVersionId],
     queryFn: effectiveVersionId
       ? () => getModelFiles({ data: { modelId, versionId: effectiveVersionId } })
       : skipToken,

@@ -28,3 +28,8 @@ export const APIRoute = createAPIFileRoute("/api/auth/$")({
   POST: ({ request }) => auth.handler(request),
 });
 ```
+
+## Security-sensitive routes
+
+- Cookie-authenticated download handlers must enforce a trusted-origin guard before reading session cookies.
+- Session-management UI should call server functions that revoke/list by session `id` so bearer tokens are never exposed to client JavaScript.

@@ -5,7 +5,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { captcha, magicLink, openAPI, organization } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { Resend } from "resend";
 import { z } from "zod";
 import {
@@ -28,7 +28,12 @@ import {
 } from "@/lib/db";
 // Permission helpers available for future middleware/server function enforcement:
 // import { canChangeRole, canRemoveMember, type Role } from "@/lib/permissions";
-import { MagicLinkTemplate, PasswordResetTemplate, VerifyEmailTemplate } from "@/lib/email";
+import {
+  MagicLinkTemplate,
+  OrganizationInvitationTemplate,
+  PasswordResetTemplate,
+  VerifyEmailTemplate,
+} from "@/lib/email";
 import { env } from "@/lib/env";
 import { getTrustedOrigins } from "@/lib/trusted-origins";
 import { recordWebhookPayload } from "@/server/services/billing/webhook-audit.service";
@@ -37,6 +42,8 @@ import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent } from "@/lib/logging";
 
 const isProd = env.NODE_ENV === "production";
+const cookieSameSite = env.AUTH_COOKIE_SAMESITE;
+const useSecureCookies = isProd || cookieSameSite === "none";
 
 const emailSchema = z.string().email().max(255);
 
@@ -83,6 +90,42 @@ export const auth = betterAuth({
   plugins: [
     organization({
       organizationLimit: 1,
+      sendInvitationEmail: async ({
+        id,
+        email,
+        organization,
+        inviter,
+      }: {
+        id: string;
+        email: string;
+        organization: { name: string };
+        inviter: { user: { name?: string | null; email: string } };
+      }) => {
+        const invitationUrl = `${env.WEB_URL}/accept-invitation?invitationId=${encodeURIComponent(id)}`;
+        const inviterName = inviter.user.name ?? inviter.user.email;
+        const html = await render(
+          OrganizationInvitationTemplate({
+            invitationUrl,
+            organizationName: organization.name,
+            inviterName,
+            logoUrl: env.EMAIL_LOGO_URL,
+          }),
+        );
+        const { error } = await getResendClient().emails.send({
+          from: env.EMAIL_FROM,
+          to: validateEmail(email),
+          subject: `${inviterName} invited you to join ${organization.name} on STL Shelf`,
+          html,
+        });
+        if (error) {
+          captureServerException(error, { emailType: "organization_invitation" });
+          logErrorEvent("error.email.send_failed", {
+            emailType: "organization_invitation",
+            ...getErrorDetails(error),
+          });
+          throw new Error(`Failed to send invitation email: ${error.message}`);
+        }
+      },
       schema: {
         organization: {
           additionalFields: {
@@ -391,10 +434,10 @@ export const auth = betterAuth({
   },
 
   advanced: {
-    useSecureCookies: isProd,
+    useSecureCookies,
     defaultCookieAttributes: {
-      sameSite: isProd ? "none" : "lax",
-      secure: isProd,
+      sameSite: cookieSameSite,
+      secure: useSecureCookies,
       domain: env.AUTH_COOKIE_DOMAIN || undefined,
       httpOnly: true,
       path: "/",
@@ -416,11 +459,28 @@ export const auth = betterAuth({
     session: {
       create: {
         before: async (session) => {
+          const [sessionUser] = await db
+            .select({ accountDeletionCompletedAt: userTable.accountDeletionCompletedAt })
+            .from(userTable)
+            .where(eq(userTable.id, session.userId))
+            .limit(1);
+
+          if (!sessionUser || sessionUser.accountDeletionCompletedAt) {
+            throw new Error("Account is deleted");
+          }
+
           // Auto-set activeOrganizationId when session is created (at login)
           // This is the documented approach from Better Auth
           const [membership] = await db
             .select({ organizationId: memberTable.organizationId })
             .from(memberTable)
+            .innerJoin(
+              organizationTable,
+              and(
+                eq(memberTable.organizationId, organizationTable.id),
+                isNull(organizationTable.accountDeletionCompletedAt),
+              ),
+            )
             .where(eq(memberTable.userId, session.userId))
             .limit(1);
 

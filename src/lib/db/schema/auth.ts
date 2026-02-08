@@ -116,6 +116,7 @@ export const organization = pgTable(
     currentModelCount: integer("current_model_count"),
     currentMemberCount: integer("current_member_count"),
     graceDeadline: timestamp("grace_deadline"),
+    billingLastWebhookAt: timestamp("billing_last_webhook_at", { withTimezone: true }),
     egressBytesThisMonth: bigint("egress_bytes_this_month", { mode: "number" }).default(0),
     egressDownloadsThisMonth: integer("egress_downloads_this_month").default(0),
     egressPeriodStart: timestamp("egress_period_start"),
@@ -128,7 +129,11 @@ export const organization = pgTable(
     accountDeletionCanceledAt: timestamp("account_deletion_canceled_at", { withTimezone: true }),
     accountDeletionCompletedAt: timestamp("account_deletion_completed_at", { withTimezone: true }),
   },
-  (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
+  (table) => [
+    uniqueIndex("organization_slug_uidx").on(table.slug),
+    uniqueIndex("organization_polar_customer_uidx").on(table.polarCustomerId),
+    uniqueIndex("organization_subscription_uidx").on(table.subscriptionId),
+  ],
 );
 
 export const member = pgTable(

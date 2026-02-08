@@ -1,17 +1,32 @@
 import { eq } from "drizzle-orm";
+import { render } from "@react-email/components";
 import { Resend } from "resend";
 import { db } from "@/lib/db";
 import { organization, user } from "@/lib/db/schema/auth";
 import { formatStorage } from "@/lib/billing/utils";
+import { BandwidthUsageAlertTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
-import { logAuditEvent, logErrorEvent } from "@/lib/logging";
+import { captureServerException } from "@/lib/error-tracking.server";
+import { getErrorDetails, logAuditEvent, logErrorEvent } from "@/lib/logging";
 
 const SOFT_LIMIT_MULTIPLIER = 3;
 const HARD_LIMIT_MULTIPLIER = 5;
 const WARN_80 = 0.8;
 const WARN_100 = 1.0;
 
-const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+let resendClient: Resend | null = null;
+
+const getResendClient = () => {
+  if (!env.RESEND_API_KEY) {
+    return null;
+  }
+
+  if (!resendClient) {
+    resendClient = new Resend(env.RESEND_API_KEY);
+  }
+
+  return resendClient;
+};
 
 const getPeriodStart = (date: Date) =>
   new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
@@ -26,32 +41,42 @@ const sendEgressWarningEmail = async (params: {
   usedBytes: number;
   limitBytes: number;
 }) => {
+  const resend = getResendClient();
   if (!resend) return;
 
   const { to, orgName, percent, usedBytes, limitBytes } = params;
   const percentLabel = Math.round(percent * 100);
   const subject =
     percent >= 1 ? "STL Shelf: Bandwidth limit reached" : "STL Shelf: Bandwidth usage warning";
-
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5;">
-      <h2>Bandwidth usage alert</h2>
-      <p>Your organization <strong>${orgName}</strong> has used <strong>${percentLabel}%</strong> of its monthly download bandwidth.</p>
-      <p><strong>${formatStorage(usedBytes)}</strong> of <strong>${formatStorage(limitBytes)}</strong> used.</p>
-      <p>To avoid download interruptions, consider upgrading your plan or adding extra storage/bandwidth.</p>
-      <p><a href="${env.WEB_URL}/billing">View usage and plans →</a></p>
-    </div>
-  `;
+  const html = await render(
+    BandwidthUsageAlertTemplate({
+      orgName,
+      percentLabel,
+      usedLabel: formatStorage(usedBytes),
+      limitLabel: formatStorage(limitBytes),
+      manageUrl: `${env.WEB_URL}/billing`,
+      isHardLimit: percent >= 1,
+      logoUrl: env.EMAIL_LOGO_URL,
+    }),
+  );
 
   try {
-    await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: env.EMAIL_FROM,
       to,
       subject,
       html,
     });
+
+    if (error) {
+      throw error;
+    }
   } catch (error) {
-    logErrorEvent("error.egress.warning_email_failed", { error });
+    captureServerException(error, { emailType: "egress_warning" });
+    logErrorEvent("error.egress.warning_email_failed", {
+      emailType: "egress_warning",
+      ...getErrorDetails(error),
+    });
   }
 };
 

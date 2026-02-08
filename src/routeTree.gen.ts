@@ -24,6 +24,7 @@ import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
+import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
@@ -116,6 +117,11 @@ const BillingRoute = BillingRouteImport.update({
 const AnnouncementsRoute = AnnouncementsRouteImport.update({
   id: '/announcements',
   path: '/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcceptInvitationRoute = AcceptInvitationRouteImport.update({
+  id: '/accept-invitation',
+  path: '/accept-invitation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -211,6 +217,7 @@ const ApiV1ModelsModelIdFilesFileIdDownloadRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -245,6 +252,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -280,6 +288,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/accept-invitation'
     | '/announcements'
     | '/billing'
     | '/forgot-password'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/accept-invitation'
     | '/announcements'
     | '/billing'
     | '/forgot-password'
@@ -384,6 +395,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/accept-invitation'
     | '/announcements'
     | '/billing'
     | '/forgot-password'
@@ -419,6 +431,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AcceptInvitationRoute: typeof AcceptInvitationRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   BillingRoute: typeof BillingRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -553,6 +566,13 @@ declare module '@tanstack/react-router' {
       path: '/announcements'
       fullPath: '/announcements'
       preLoaderRoute: typeof AnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accept-invitation': {
+      id: '/accept-invitation'
+      path: '/accept-invitation'
+      fullPath: '/accept-invitation'
+      preLoaderRoute: typeof AcceptInvitationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -706,6 +726,7 @@ const ApiV1ModelsRouteWithChildren = ApiV1ModelsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AcceptInvitationRoute: AcceptInvitationRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   BillingRoute: BillingRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

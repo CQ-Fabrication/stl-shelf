@@ -73,6 +73,27 @@ export const SUBSCRIPTION_TIERS = {
 
 export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS;
 
+export const SUBSCRIPTION_TIER_ORDER = ["free", "basic", "pro"] as const;
+
+export const normalizeSubscriptionTier = (tier?: string | null): SubscriptionTier => {
+  if (!tier) return "free";
+  const normalized = tier.toLowerCase();
+  return SUBSCRIPTION_TIER_ORDER.includes(normalized as SubscriptionTier)
+    ? (normalized as SubscriptionTier)
+    : "free";
+};
+
+export const isTierAtLeast = (
+  currentTier: string | null | undefined,
+  requiredTier: SubscriptionTier,
+) => {
+  const normalizedCurrentTier = normalizeSubscriptionTier(currentTier);
+  return (
+    SUBSCRIPTION_TIER_ORDER.indexOf(normalizedCurrentTier) >=
+    SUBSCRIPTION_TIER_ORDER.indexOf(requiredTier)
+  );
+};
+
 export const getTierConfig = (tier: SubscriptionTier) => {
   return SUBSCRIPTION_TIERS[tier];
 };

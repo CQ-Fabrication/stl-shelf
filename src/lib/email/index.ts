@@ -47,3 +47,15 @@ export {
   default as AccountDeletionCompletedTemplate,
   default as AccountDeletionCompleted,
 } from "./templates/account-deletion-completed";
+
+export type { OrganizationInvitationTemplateProps } from "./templates/organization-invitation";
+export {
+  default as OrganizationInvitationTemplate,
+  default as OrganizationInvitation,
+} from "./templates/organization-invitation";
+
+export type { BandwidthUsageAlertTemplateProps } from "./templates/bandwidth-usage-alert";
+export {
+  default as BandwidthUsageAlertTemplate,
+  default as BandwidthUsageAlert,
+} from "./templates/bandwidth-usage-alert";

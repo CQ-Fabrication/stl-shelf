@@ -1,7 +1,7 @@
 import { and, eq, isNotNull, isNull, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { apiKeys } from "@/lib/db/schema/api-keys";
-import { organization, session, user } from "@/lib/db/schema/auth";
+import { account as accountTable, member, organization, session, user } from "@/lib/db/schema/auth";
 import { accountDeletionRunItems, accountDeletionRuns } from "@/lib/db/schema/billing";
 import { models } from "@/lib/db/schema/models";
 import { logAuditEvent, logErrorEvent } from "@/lib/logging";
@@ -10,6 +10,8 @@ import { polarService } from "@/server/services/billing/polar.service";
 import { storageService } from "@/server/services/storage";
 
 const DELETE_BATCH_SIZE = 1000;
+
+const anonymizedEmailForUser = (userId: string) => `deleted+${userId}@deleted.stl-shelf.local`;
 
 const deleteStorageByPrefix = async (prefix: string) => {
   let continuationToken: string | undefined;
@@ -54,11 +56,94 @@ const deleteStorageByPrefix = async (prefix: string) => {
   return { deletedBytes, deletedCount };
 };
 
-const deleteOrganizationData = async (org: {
-  id: string;
-  name: string;
-  polarCustomerId: string | null;
-}) => {
+const getActiveOrganizationCountForUser = async (userId: string) => {
+  const memberships = await db
+    .select({ organizationId: member.organizationId })
+    .from(member)
+    .innerJoin(
+      organization,
+      and(
+        eq(member.organizationId, organization.id),
+        isNull(organization.accountDeletionCompletedAt),
+      ),
+    )
+    .where(eq(member.userId, userId));
+
+  return memberships.length;
+};
+
+const softDeleteUser = async (params: { userId: string; deletedAt: Date }) => {
+  const { userId, deletedAt } = params;
+  const [userRow] = await db
+    .select({
+      id: user.id,
+      email: user.email,
+      accountDeletionRequestedAt: user.accountDeletionRequestedAt,
+      accountDeletionDeadline: user.accountDeletionDeadline,
+      accountDeletionCompletedAt: user.accountDeletionCompletedAt,
+      accountDeletionNoticeSentAt: user.accountDeletionNoticeSentAt,
+      accountDeletionFinalNoticeSentAt: user.accountDeletionFinalNoticeSentAt,
+    })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+
+  if (!userRow || userRow.accountDeletionCompletedAt) {
+    return { changed: false as const, email: userRow?.email ?? null };
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(session)
+      .set({
+        expiresAt: deletedAt,
+        activeOrganizationId: null,
+      })
+      .where(eq(session.userId, userId));
+
+    await tx
+      .update(accountTable)
+      .set({
+        accessToken: null,
+        refreshToken: null,
+        idToken: null,
+        accessTokenExpiresAt: null,
+        refreshTokenExpiresAt: null,
+        scope: null,
+        password: null,
+      })
+      .where(eq(accountTable.userId, userId));
+
+    await tx
+      .update(user)
+      .set({
+        name: "Deleted User",
+        email: anonymizedEmailForUser(userId),
+        image: null,
+        emailVerified: false,
+        accountDeletionRequestedAt: userRow.accountDeletionRequestedAt ?? deletedAt,
+        accountDeletionDeadline: userRow.accountDeletionDeadline ?? deletedAt,
+        accountDeletionCanceledAt: null,
+        accountDeletionCompletedAt: deletedAt,
+        accountDeletionNoticeSentAt: userRow.accountDeletionNoticeSentAt ?? deletedAt,
+        accountDeletionFinalNoticeSentAt: userRow.accountDeletionFinalNoticeSentAt ?? deletedAt,
+      })
+      .where(eq(user.id, userId));
+  });
+
+  return { changed: true as const, email: userRow.email };
+};
+
+const deleteOrganizationData = async (
+  org: {
+    id: string;
+    name: string;
+    polarCustomerId: string | null;
+    accountDeletionRequestedAt: Date | null;
+    accountDeletionDeadline: Date | null;
+  },
+  completedAt: Date,
+) => {
   const storagePrefix = `${org.id}/`;
   const storageResult = await deleteStorageByPrefix(storagePrefix);
 
@@ -75,13 +160,32 @@ const deleteOrganizationData = async (org: {
   }
 
   await db.transaction(async (tx) => {
-    await tx.delete(apiKeys).where(eq(apiKeys.organizationId, org.id));
-    await tx.delete(models).where(eq(models.organizationId, org.id));
+    await tx
+      .update(apiKeys)
+      .set({
+        isActive: false,
+      })
+      .where(eq(apiKeys.organizationId, org.id));
+    await tx
+      .update(models)
+      .set({
+        deletedAt: completedAt,
+      })
+      .where(and(eq(models.organizationId, org.id), isNull(models.deletedAt)));
     await tx
       .update(session)
       .set({ activeOrganizationId: null })
       .where(eq(session.activeOrganizationId, org.id));
-    await tx.delete(organization).where(eq(organization.id, org.id));
+    await tx
+      .update(organization)
+      .set({
+        graceDeadline: null,
+        accountDeletionRequestedAt: org.accountDeletionRequestedAt ?? completedAt,
+        accountDeletionDeadline: org.accountDeletionDeadline ?? completedAt,
+        accountDeletionCanceledAt: null,
+        accountDeletionCompletedAt: completedAt,
+      })
+      .where(eq(organization.id, org.id));
   });
 
   return storageResult;
@@ -128,18 +232,34 @@ const runSweep = async () => {
           id: organization.id,
           name: organization.name,
           polarCustomerId: organization.polarCustomerId,
+          accountDeletionRequestedAt: organization.accountDeletionRequestedAt,
+          accountDeletionDeadline: organization.accountDeletionDeadline,
         })
         .from(organization)
-        .where(eq(organization.ownerId, account.id));
+        .where(
+          and(
+            eq(organization.ownerId, account.id),
+            isNull(organization.accountDeletionCompletedAt),
+          ),
+        );
 
       let orgFailure = false;
       let userDeletedOrgs = 0;
       let userDeletedBytes = 0;
       let errorMessage: string | null = null;
+      const impactedUserIds = new Set<string>([account.id]);
 
       for (const org of ownedOrganizations) {
+        const orgMembers = await db
+          .select({ userId: member.userId })
+          .from(member)
+          .where(eq(member.organizationId, org.id));
+        for (const orgMember of orgMembers) {
+          impactedUserIds.add(orgMember.userId);
+        }
+
         try {
-          const storageResult = await deleteOrganizationData(org);
+          const storageResult = await deleteOrganizationData(org, now);
           deletedOrganizations += 1;
           userDeletedOrgs += 1;
           deletedBytes += storageResult.deletedBytes;
@@ -188,25 +308,67 @@ const runSweep = async () => {
         }
       }
 
-      await db.insert(accountDeletionRunItems).values({
-        runId: run.id,
-        userId: account.id,
-        userEmail: account.email,
-        status: "deleted",
-        deletedOrganizations: userDeletedOrgs,
-        deletedBytes: userDeletedBytes,
-        error: null,
-      });
+      let ownerSoftDeleted = false;
 
-      await db.delete(user).where(eq(user.id, account.id));
+      for (const userId of impactedUserIds) {
+        const isOwner = userId === account.id;
+        if (!isOwner) {
+          const remainingOrgs = await getActiveOrganizationCountForUser(userId);
+          if (remainingOrgs > 0) {
+            continue;
+          }
+        }
 
-      deletedUsers += 1;
-      logAuditEvent("account_deletion.completed", {
-        userId: account.id,
-        organizationCount: ownedOrganizations.length,
-      });
+        const deletionResult = await softDeleteUser({ userId, deletedAt: now });
+        if (!deletionResult.changed) {
+          continue;
+        }
 
-      console.log(`[account-deletion] user=${account.id} status=deleted`);
+        if (isOwner) {
+          ownerSoftDeleted = true;
+        }
+
+        await db.insert(accountDeletionRunItems).values({
+          runId: run.id,
+          userId,
+          userEmail: deletionResult.email,
+          status: "deleted",
+          deletedOrganizations: isOwner ? userDeletedOrgs : 0,
+          deletedBytes: isOwner ? userDeletedBytes : 0,
+          error: null,
+        });
+
+        deletedUsers += 1;
+
+        if (isOwner) {
+          logAuditEvent("account_deletion.completed", {
+            userId: account.id,
+            organizationCount: ownedOrganizations.length,
+          });
+          console.log(`[account-deletion] user=${account.id} status=deleted`);
+        } else {
+          logAuditEvent("account_deletion.completed_orphaned_member", {
+            triggerUserId: account.id,
+            userId,
+            organizationCount: 0,
+          });
+          console.log(`[account-deletion] user=${userId} status=deleted_orphaned`);
+        }
+      }
+
+      if (!ownerSoftDeleted) {
+        await db.insert(accountDeletionRunItems).values({
+          runId: run.id,
+          userId: account.id,
+          userEmail: account.email,
+          status: "failed",
+          deletedOrganizations: userDeletedOrgs,
+          deletedBytes: userDeletedBytes,
+          error: "Owner still has active organizations; soft delete skipped",
+        });
+
+        console.log(`[account-deletion] user=${account.id} status=not_deleted_active_orgs`);
+      }
     }
 
     await db

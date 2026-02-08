@@ -29,7 +29,24 @@ Database:
 - PSQL connection: `psql "postgresql://stlshelf:stlshelf_dev_password@localhost:5432/stlshelf"`
 - Drizzle commands: `bun db:generate`, `bun db:migrate`, `bun db:push`, `bun db:studio`, `bun db:seed`
 - Seed data: `bun db:seed` (runs `drizzle/seeds/*.sql`)
-- Docker services: `docker compose up -d`, `docker compose down`, `docker compose logs -f`
+- Docker services: `docker compose up -d`, `docker compose down`, `docker compose logs -f`, `docker compose restart minio`
+
+MinIO CORS (first-time setup):
+
+- `docker exec stl-shelf-minio mc alias set local http://localhost:9000 stlshelf stlshelf_minio_dev_password`
+- `docker exec stl-shelf-minio mc admin config set local api cors_allow_origin="http://localhost:3000"`
+- `docker compose restart minio`
+
+Local OAuth testing (ngrok):
+
+- `bun run ngrok`
+- `.env`: `NGROK_DOMAIN=yourname.ngrok-free.app`, `NGROK_PORT=3000` (optional), `AUTH_URL=https://yourname.ngrok-free.app`, `WEB_URL=https://yourname.ngrok-free.app`
+- Polar webhook: `https://yourname.ngrok-free.app/api/auth/polar/webhooks`
+
+Data backup:
+
+- Postgres: `docker exec stl-shelf-postgres pg_dump -U stlshelf stlshelf > backup.sql`
+- MinIO: `docker run --rm -v stl-shelf_minio_data:/data -v $(pwd):/backup alpine tar czf /backup/minio-backup.tar.gz /data`
 
 Maintenance scripts:
 
