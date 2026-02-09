@@ -26,37 +26,49 @@ const splitName = (name?: string | null) => {
   return { firstName, lastName };
 };
 
-const createContactWithSegments = async (
-  input: ResendContactInput & { segmentIds: string[] },
+const ensureContact = async (
+  input: ResendContactInput,
 ): Promise<{ ok: boolean; exists: boolean }> => {
   if (!resend) return { ok: false, exists: false };
-  const { email, segmentIds } = input;
+  const { email, name } = input;
+  const { firstName, lastName } = splitName(name);
 
-  const payload: Record<string, unknown> = {
-    email,
-  };
-  if (segmentIds.length > 0) {
-    payload.segments = segmentIds.map((id) => ({ id }));
-  }
-
-  const { error } = await runResendRateLimited(() =>
-    resend.post<{ id: string }>("/contacts", payload),
+  const { error: createError } = await runResendRateLimited(() =>
+    resend.contacts.create({
+      email,
+      firstName,
+      lastName,
+    }),
   );
 
-  if (!error) {
+  if (!createError) {
     return { ok: true, exists: false as const };
   }
 
-  if (isResendAlreadyExistsError(error)) {
+  if (isResendAlreadyExistsError(createError)) {
     return { ok: true, exists: true as const };
   }
 
-  logErrorEvent("resend.contact.create_failed", {
+  // Fallback lookup to handle transient create failures where contact was still persisted.
+  const { data: existing, error: getError } = await runResendRateLimited(() =>
+    resend.contacts.get({ email }),
+  );
+
+  if (!getError && existing?.id) {
+    return { ok: true, exists: true as const };
+  }
+
+  logErrorEvent("resend.contact.ensure_failed", {
     email,
-    errorMessage: error.message,
+    createErrorMessage: createError.message,
+    getErrorMessage: getError?.message,
   });
   if (env.NODE_ENV === "development") {
-    console.warn("[Resend] Contact create failed:", error.message);
+    console.warn("[Resend] Unable to ensure contact:", {
+      email,
+      createError: createError.message,
+      getError: getError?.message,
+    });
   }
   return { ok: false, exists: false as const };
 };
@@ -122,21 +134,10 @@ export const syncResendSegments = async ({
     return;
   }
 
-  // Skip external calls when segments are not configured.
-  // This avoids unnecessary Resend API traffic on signup.
-  if (!baseSegmentId && !marketingSegmentId) {
-    return;
-  }
-
   try {
-    const targetSegmentIds = [baseSegmentId, marketingAccepted ? marketingSegmentId : null].filter(
-      (value): value is string => Boolean(value),
-    );
-
-    const contactResult = await createContactWithSegments({
+    const contactResult = await ensureContact({
       email,
       name,
-      segmentIds: targetSegmentIds,
     });
     if (!contactResult.ok) {
       if (env.NODE_ENV === "development") {
@@ -145,13 +146,14 @@ export const syncResendSegments = async ({
       return;
     }
 
-    // If contact was created with segments, we're done.
-    if (!contactResult.exists) {
+    // Contact creation is enough when segments are not configured.
+    if (!baseSegmentId && !marketingSegmentId) {
       return;
     }
 
-    // Existing contact: reconcile desired membership.
-    await updateContactName({ email, name });
+    if (contactResult.exists) {
+      await updateContactName({ email, name });
+    }
 
     if (baseSegmentId) {
       await addToSegment(email, baseSegmentId);

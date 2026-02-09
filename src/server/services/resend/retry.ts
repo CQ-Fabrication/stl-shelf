@@ -4,6 +4,7 @@ const DEFAULT_MAX_ATTEMPTS = 4;
 const DEFAULT_BASE_DELAY_MS = 500;
 const MAX_BACKOFF_MS = 5000;
 const DEFAULT_MIN_INTERVAL_MS = 550;
+const MAX_SERVER_HINT_DELAY_MS = 30_000;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -41,6 +42,11 @@ const parseResetMs = (headers: Record<string, string>): number | null => {
 
   const now = Date.now();
 
+  // Epoch milliseconds
+  if (value > 1_000_000_000_000) {
+    return Math.max(0, Math.ceil(value - now));
+  }
+
   // Epoch seconds
   if (value > 1_000_000_000) {
     return Math.max(0, Math.ceil(value * 1000 - now));
@@ -55,14 +61,27 @@ const fallbackDelayMs = (attempt: number): number =>
 
 const retryDelayMs = (headers: Record<string, string> | null, attempt: number): number => {
   const normalized = normalizeHeaders(headers);
-  return parseRetryAfterMs(normalized) ?? parseResetMs(normalized) ?? fallbackDelayMs(attempt);
+  const hintedDelay = parseRetryAfterMs(normalized) ?? parseResetMs(normalized);
+  if (hintedDelay !== null) {
+    return Math.min(MAX_SERVER_HINT_DELAY_MS, hintedDelay);
+  }
+  return fallbackDelayMs(attempt);
 };
 
-export const isResendRateLimitError = (error: ErrorResponse | null | undefined): boolean =>
-  error?.name === "rate_limit_exceeded";
+export const isResendRateLimitError = (error: ErrorResponse | null | undefined): boolean => {
+  if (!error) return false;
+  if (error.statusCode === 429) return true;
+
+  const code = `${error.name}`.toLowerCase();
+  if (code === "rate_limit_exceeded") return true;
+  if (code.includes("too_many") || code.includes("rate_limit")) return true;
+
+  return error.message.toLowerCase().includes("too many request");
+};
 
 export const isResendAlreadyExistsError = (error: ErrorResponse | null | undefined): boolean => {
   if (!error) return false;
+  if (error.statusCode === 409) return true;
 
   const message = error.message.toLowerCase();
   return (
