@@ -30,6 +30,11 @@ Database:
 - Drizzle commands: `bun db:generate`, `bun db:migrate`, `bun db:push`, `bun db:studio`, `bun db:seed`
 - Seed data: `bun db:seed` (runs `drizzle/seeds/*.sql`)
 - Docker services: `docker compose up -d`, `docker compose down`, `docker compose logs -f`, `docker compose restart minio`
+- Migration guidelines:
+- Always change schema in `src/lib/db/schema` first, then run `bun db:generate` to produce SQL + update `drizzle/meta/_journal.json`.
+- Never add or edit `drizzle/*.sql` by hand without a matching entry in `drizzle/meta/_journal.json` (migrations are driven by the journal).
+- Confirm the newest migration exists in both `drizzle/*.sql` and `drizzle/meta/_journal.json` before deploy.
+- Run `bun db:migrate` locally after generating, and ensure prod deploys run `bun db:migrate` before serving traffic.
 
 MinIO CORS (first-time setup):
 
