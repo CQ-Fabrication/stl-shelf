@@ -38,6 +38,7 @@ import { env } from "@/lib/env";
 import { getTrustedOrigins } from "@/lib/trusted-origins";
 import { recordWebhookPayload } from "@/server/services/billing/webhook-audit.service";
 import { syncResendSegments } from "@/server/services/marketing/resend-segments";
+import { runResendRateLimited } from "@/server/services/resend/retry";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent } from "@/lib/logging";
 
@@ -111,12 +112,14 @@ export const auth = betterAuth({
             logoUrl: env.EMAIL_LOGO_URL,
           }),
         );
-        const { error } = await getResendClient().emails.send({
-          from: env.EMAIL_FROM,
-          to: validateEmail(email),
-          subject: `${inviterName} invited you to join ${organization.name} on STL Shelf`,
-          html,
-        });
+        const { error } = await runResendRateLimited(() =>
+          getResendClient().emails.send({
+            from: env.EMAIL_FROM,
+            to: validateEmail(email),
+            subject: `${inviterName} invited you to join ${organization.name} on STL Shelf`,
+            html,
+          }),
+        );
         if (error) {
           captureServerException(error, { emailType: "organization_invitation" });
           logErrorEvent("error.email.send_failed", {
@@ -290,12 +293,14 @@ export const auth = betterAuth({
             logoUrl: env.EMAIL_LOGO_URL,
           }),
         );
-        const { error } = await getResendClient().emails.send({
-          from: env.EMAIL_FROM,
-          to: validEmail,
-          subject: "Sign in to STL Shelf",
-          html,
-        });
+        const { error } = await runResendRateLimited(() =>
+          getResendClient().emails.send({
+            from: env.EMAIL_FROM,
+            to: validEmail,
+            subject: "Sign in to STL Shelf",
+            html,
+          }),
+        );
         if (error) {
           captureServerException(error, { emailType: "magic_link" });
           logErrorEvent("error.email.send_failed", {
@@ -376,12 +381,14 @@ export const auth = betterAuth({
           logoUrl: env.EMAIL_LOGO_URL,
         }),
       );
-      const { error } = await getResendClient().emails.send({
-        from: env.EMAIL_FROM,
-        to: validEmail,
-        subject: "Reset your password",
-        html,
-      });
+      const { error } = await runResendRateLimited(() =>
+        getResendClient().emails.send({
+          from: env.EMAIL_FROM,
+          to: validEmail,
+          subject: "Reset your password",
+          html,
+        }),
+      );
       if (error) {
         captureServerException(error, { emailType: "password_reset" });
         logErrorEvent("error.email.send_failed", {
@@ -402,12 +409,14 @@ export const auth = betterAuth({
           logoUrl: env.EMAIL_LOGO_URL,
         }),
       );
-      const { error } = await getResendClient().emails.send({
-        from: env.EMAIL_FROM,
-        to: validEmail,
-        subject: "Verify your email address",
-        html,
-      });
+      const { error } = await runResendRateLimited(() =>
+        getResendClient().emails.send({
+          from: env.EMAIL_FROM,
+          to: validEmail,
+          subject: "Verify your email address",
+          html,
+        }),
+      );
       if (error) {
         captureServerException(error, { emailType: "verification" });
         logErrorEvent("error.email.send_failed", {

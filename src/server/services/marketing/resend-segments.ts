@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { env } from "@/lib/env";
 import { logErrorEvent } from "@/lib/logging";
+import { isResendAlreadyExistsError, runResendRateLimited } from "@/server/services/resend/retry";
 
 type ResendContactInput = {
   email: string;
@@ -25,73 +26,84 @@ const splitName = (name?: string | null) => {
   return { firstName, lastName };
 };
 
-const ensureContactId = async ({ email, name }: ResendContactInput) => {
-  if (!resend) return null;
-  const { firstName, lastName } = splitName(name);
+const createContactWithSegments = async (
+  input: ResendContactInput & { segmentIds: string[] },
+): Promise<{ ok: boolean; exists: boolean }> => {
+  if (!resend) return { ok: false, exists: false };
+  const { email, segmentIds } = input;
 
-  const { data: existing, error: getError } = await resend.contacts.get({ email });
-  if (existing?.id) {
-    if (firstName || lastName) {
-      const { error: updateError } = await resend.contacts.update({
-        id: existing.id,
-        firstName,
-        lastName,
-      });
-      if (updateError) {
-        logErrorEvent("resend.contact.update_failed", {
-          email,
-          contactId: existing.id,
-          errorMessage: updateError.message,
-        });
-      }
-    }
-    return existing.id;
-  }
-
-  if (getError && env.NODE_ENV === "development") {
-    console.warn("[Resend] Contact lookup failed, attempting create:", getError.message);
-  }
-
-  const { data: created, error: createError } = await resend.contacts.create({
+  const payload: Record<string, unknown> = {
     email,
-    firstName,
-    lastName,
-  });
-
-  if (created?.id) return created.id;
-
-  if (createError) {
-    logErrorEvent("resend.contact.create_failed", {
-      email,
-      errorMessage: createError.message,
-    });
-    if (env.NODE_ENV === "development") {
-      console.warn("[Resend] Contact create failed:", createError.message);
-    }
+  };
+  if (segmentIds.length > 0) {
+    payload.segments = segmentIds.map((id) => ({ id }));
   }
 
-  const { data: retry } = await resend.contacts.get({ email });
-  return retry?.id ?? null;
+  const { error } = await runResendRateLimited(() =>
+    resend.post<{ id: string }>("/contacts", payload),
+  );
+
+  if (!error) {
+    return { ok: true, exists: false as const };
+  }
+
+  if (isResendAlreadyExistsError(error)) {
+    return { ok: true, exists: true as const };
+  }
+
+  logErrorEvent("resend.contact.create_failed", {
+    email,
+    errorMessage: error.message,
+  });
+  if (env.NODE_ENV === "development") {
+    console.warn("[Resend] Contact create failed:", error.message);
+  }
+  return { ok: false, exists: false as const };
 };
 
-const addToSegment = async (contactId: string, segmentId?: string | null) => {
+const updateContactName = async ({ email, name }: ResendContactInput) => {
+  if (!resend) return;
+  const { firstName, lastName } = splitName(name);
+  if (!firstName && !lastName) return;
+
+  const { error } = await runResendRateLimited(() =>
+    resend.contacts.update({
+      email,
+      firstName,
+      lastName,
+    }),
+  );
+
+  if (error) {
+    logErrorEvent("resend.contact.update_failed", {
+      email,
+      errorMessage: error.message,
+    });
+  }
+};
+
+const addToSegment = async (email: string, segmentId?: string | null) => {
   if (!resend || !segmentId) return;
-  const { error } = await resend.contacts.segments.add({ contactId, segmentId });
+  const { error } = await runResendRateLimited(() =>
+    resend.contacts.segments.add({ email, segmentId }),
+  );
   if (error) {
     logErrorEvent("resend.segment.add_failed", {
-      contactId,
+      email,
       segmentId,
       errorMessage: error.message,
     });
   }
 };
 
-const removeFromSegment = async (contactId: string, segmentId?: string | null) => {
+const removeFromSegment = async (email: string, segmentId?: string | null) => {
   if (!resend || !segmentId) return;
-  const { error } = await resend.contacts.segments.remove({ contactId, segmentId });
+  const { error } = await runResendRateLimited(() =>
+    resend.contacts.segments.remove({ email, segmentId }),
+  );
   if (error) {
     logErrorEvent("resend.segment.remove_failed", {
-      contactId,
+      email,
       segmentId,
       errorMessage: error.message,
     });
@@ -110,30 +122,53 @@ export const syncResendSegments = async ({
     return;
   }
 
+  // Skip external calls when segments are not configured.
+  // This avoids unnecessary Resend API traffic on signup.
+  if (!baseSegmentId && !marketingSegmentId) {
+    return;
+  }
+
   try {
-    const contactId = await ensureContactId({ email, name });
-    if (!contactId) {
+    const targetSegmentIds = [baseSegmentId, marketingAccepted ? marketingSegmentId : null].filter(
+      (value): value is string => Boolean(value),
+    );
+
+    const contactResult = await createContactWithSegments({
+      email,
+      name,
+      segmentIds: targetSegmentIds,
+    });
+    if (!contactResult.ok) {
       if (env.NODE_ENV === "development") {
-        console.warn("[Resend] Unable to resolve contactId; skipping segment sync.", { email });
+        console.warn("[Resend] Unable to resolve contact; skipping segment sync.", { email });
       }
       return;
     }
+
+    // If contact was created with segments, we're done.
+    if (!contactResult.exists) {
+      return;
+    }
+
+    // Existing contact: reconcile desired membership.
+    await updateContactName({ email, name });
+
     if (baseSegmentId) {
-      await addToSegment(contactId, baseSegmentId);
+      await addToSegment(email, baseSegmentId);
     } else if (env.NODE_ENV === "development") {
       console.warn("[Resend] RESEND_SEGMENT_USERS not set; contact created without base segment.");
     }
 
     if (marketingAccepted) {
       if (marketingSegmentId) {
-        await addToSegment(contactId, marketingSegmentId);
+        await addToSegment(email, marketingSegmentId);
       } else if (env.NODE_ENV === "development") {
         console.warn(
           "[Resend] RESEND_SEGMENT_MARKETING_OPT_IN not set; cannot add marketing segment.",
         );
       }
     } else if (marketingSegmentId) {
-      await removeFromSegment(contactId, marketingSegmentId);
+      await removeFromSegment(email, marketingSegmentId);
     }
   } catch (error) {
     logErrorEvent("resend.segment.sync_failed", {
