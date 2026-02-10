@@ -2,6 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { Logo } from "@/components/ui/logo";
 import type { AuthClient } from "@/lib/auth-client";
 
@@ -57,7 +58,7 @@ export function Navigation({ session }: NavigationProps) {
   return (
     <>
       <nav className="fixed top-0 right-0 left-0 z-50 border-b bg-background/80 backdrop-blur-lg">
-        <div className="container mx-auto grid h-16 grid-cols-3 items-center px-4">
+        <div className="container mx-auto grid h-16 grid-cols-[auto_1fr_auto] items-center px-4">
           {/* Logo - Left */}
           <Link className="flex items-center" onClick={handleLogoClick} to="/">
             <Logo className="h-8" />
@@ -89,34 +90,36 @@ export function Navigation({ session }: NavigationProps) {
           </div>
 
           {/* Auth Buttons - Right */}
-          <div className="hidden md:flex items-center justify-end gap-3">
-            {showDashboardCta ? (
-              <Button asChild className="animate-in fade-in duration-200">
-                <Link to="/library">
-                  Go to Dashboard
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            ) : (
-              <div className="flex items-center gap-3 animate-in fade-in duration-200">
-                <Button variant="ghost" asChild>
-                  <Link to="/login">Sign In</Link>
+          <div className="flex items-center justify-end gap-2">
+            <div className="hidden md:flex items-center gap-3">
+              {showDashboardCta ? (
+                <Button asChild className="animate-in fade-in duration-200">
+                  <Link to="/library">
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
-                <Button asChild>
-                  <Link to="/signup">Get Started</Link>
-                </Button>
-              </div>
-            )}
+              ) : (
+                <div className="flex items-center gap-3 animate-in fade-in duration-200">
+                  <Button variant="ghost" asChild>
+                    <Link to="/login">Sign In</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link to="/signup">Get Started</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+            <AnimatedThemeToggler variant="icon" />
+            <button
+              aria-label="Toggle menu"
+              className="rounded-lg p-2 transition-colors hover:bg-accent md:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              type="button"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
-
-          <button
-            aria-label="Toggle menu"
-            className="rounded-lg p-2 transition-colors hover:bg-accent md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            type="button"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
         </div>
       </nav>
 
