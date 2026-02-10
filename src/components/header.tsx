@@ -8,7 +8,6 @@ import { useActiveOrganization, useOrganizations } from "@/hooks/use-organizatio
 import { usePermissions } from "@/hooks/use-permissions";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 import { AnnouncementDropdown } from "@/components/announcements/announcement-dropdown";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
 import { Logo } from "@/components/ui/logo";
 
@@ -72,7 +71,6 @@ export default function Header() {
           )}
           {/* Announcements dropdown - Only show for authenticated users */}
           {session?.user && <AnnouncementDropdown />}
-          <AnimatedThemeToggler variant="icon" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button aria-label="User menu" size="icon" variant="outline">
