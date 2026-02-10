@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { authClient } from "@/lib/auth-client";
 import { getMemberRoleFn } from "@/server/functions/auth";
 import { isAtLeast, type Role } from "@/lib/permissions";
 
@@ -23,6 +24,7 @@ export type Permissions = {
  * - Control role management options (owner-only admin management)
  */
 export function usePermissions() {
+  const { data: session } = authClient.useSession();
   const { data, isLoading, error } = useQuery({
     queryKey: ["permissions"],
     queryFn: async () => {
@@ -45,6 +47,7 @@ export function usePermissions() {
         canManageAdmins: role === "owner",
       } satisfies Permissions;
     },
+    enabled: Boolean(session?.user),
     staleTime: 5 * 60 * 1000, // 5 minutes - role changes take effect next session anyway
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

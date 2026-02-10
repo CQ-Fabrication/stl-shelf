@@ -10,9 +10,14 @@ import { cn } from "@/lib/utils";
 type Props = {
   className?: string;
   showLabel?: boolean;
+  variant?: "menu" | "icon";
 };
 
-export function AnimatedThemeToggler({ className, showLabel = false }: Props) {
+export function AnimatedThemeToggler({
+  className,
+  showLabel = false,
+  variant = "menu",
+}: Props) {
   const { resolvedTheme, setTheme } = useTheme();
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -64,7 +69,9 @@ export function AnimatedThemeToggler({ className, showLabel = false }: Props) {
   return (
     <button
       className={cn(
-        "flex w-full items-center justify-start rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+        variant === "icon"
+          ? "flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          : "flex w-full items-center justify-start rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
         className,
       )}
       onClick={toggleTheme}

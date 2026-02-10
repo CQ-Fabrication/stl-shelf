@@ -72,6 +72,7 @@ export default function Header() {
           )}
           {/* Announcements dropdown - Only show for authenticated users */}
           {session?.user && <AnnouncementDropdown />}
+          <AnimatedThemeToggler variant="icon" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button aria-label="User menu" size="icon" variant="outline">
