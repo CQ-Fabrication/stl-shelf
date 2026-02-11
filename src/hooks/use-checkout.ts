@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { SubscriptionProductSlug } from "@/lib/billing/config";
+import { getLastTouchAttribution } from "@/lib/openpanel/attribution";
 import { trackPricingInteraction, useOpenPanelClient } from "@/lib/openpanel";
 import { createCheckout } from "@/server/functions/billing";
 
@@ -12,7 +13,13 @@ export const useCheckout = () => {
   );
 
   const mutation = useMutation({
-    mutationFn: (productSlug: SubscriptionProductSlug) => createCheckout({ data: { productSlug } }),
+    mutationFn: (productSlug: SubscriptionProductSlug) =>
+      createCheckout({
+        data: {
+          productSlug,
+          campaign: getLastTouchAttribution(),
+        },
+      }),
     onSuccess: (data, productSlug) => {
       trackPricingInteraction(client, `checkout_redirect_${productSlug}`);
       window.location.href = data.checkoutUrl;

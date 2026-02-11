@@ -36,6 +36,20 @@ const isPolarCustomerConflict = (error: unknown) => {
 
 const createCheckoutSchema = z.object({
   productSlug: z.enum(SUBSCRIPTION_PRODUCT_SLUG_OPTIONS),
+  campaign: z
+    .object({
+      utm_source: z.string().optional(),
+      utm_medium: z.string().optional(),
+      utm_campaign: z.string().optional(),
+      utm_term: z.string().optional(),
+      utm_content: z.string().optional(),
+      utm_id: z.string().optional(),
+      gclid: z.string().optional(),
+      fbclid: z.string().optional(),
+      msclkid: z.string().optional(),
+      ttclid: z.string().optional(),
+    })
+    .optional(),
 });
 
 // Get current subscription info
@@ -301,7 +315,9 @@ export const createCheckout = createServerFn({ method: "POST" })
           currentModelCount: org.currentModelCount,
           currentMemberCount: org.currentMemberCount,
         });
-        trackCheckoutStarted(profile, targetTier, currentTier, "organic").catch(() => {});
+        trackCheckoutStarted(profile, targetTier, currentTier, "organic", data.campaign).catch(
+          () => {},
+        );
 
         return { checkoutUrl: checkout.url };
       } catch (error) {

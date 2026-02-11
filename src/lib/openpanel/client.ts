@@ -1,4 +1,5 @@
 import { OpenPanel } from "@openpanel/web";
+import { applyOpenPanelAttribution } from "./attribution";
 
 let client: OpenPanel | null = null;
 
@@ -21,7 +22,7 @@ export function getOpenPanelClient(): OpenPanel | null {
       trackAttributes: false,
     });
 
-    client.setGlobalProperties({
+    applyOpenPanelAttribution(client, {
       environment: import.meta.env.MODE,
     });
 

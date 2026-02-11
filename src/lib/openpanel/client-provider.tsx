@@ -3,6 +3,7 @@ import type { OpenPanel } from "@openpanel/web";
 import { authClient } from "@/lib/auth-client";
 import { useActiveOrganization } from "@/hooks/use-organizations";
 import { setSentryUser } from "@/lib/error-tracking.client";
+import { getAttributionProfileProperties } from "./attribution";
 import { getOpenPanelClient } from "./client";
 
 type OpenPanelContextValue = {
@@ -47,6 +48,7 @@ function OpenPanelUserSync({
       properties: {
         organizationId: activeOrgId ?? undefined,
         plan: activeOrg?.subscriptionTier ?? "free",
+        ...getAttributionProfileProperties(),
       },
     });
 

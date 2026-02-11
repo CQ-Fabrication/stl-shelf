@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { useOpenPanelClient } from "./client-provider";
+import { applyOpenPanelAttribution } from "./attribution";
 
 /**
  * Auto-tracks page views on navigation.
@@ -13,6 +14,10 @@ export function usePageTracking() {
 
   useEffect(() => {
     if (!client) return;
+
+    applyOpenPanelAttribution(client, {
+      environment: import.meta.env.MODE,
+    });
 
     if (pathname !== prevPathname.current) {
       client.track("page_view", {

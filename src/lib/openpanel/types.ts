@@ -398,6 +398,16 @@ export type EventMetadata = {
     targetTier: SubscriptionTier;
     currentTier: SubscriptionTier;
     trigger?: "storage_limit" | "feature_gate" | "organic";
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_term?: string;
+    utm_content?: string;
+    utm_id?: string;
+    gclid?: string;
+    fbclid?: string;
+    msclkid?: string;
+    ttclid?: string;
   };
   subscription_activated: {
     tier: SubscriptionTier;

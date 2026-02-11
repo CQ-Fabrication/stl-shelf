@@ -375,9 +375,27 @@ export async function trackCheckoutStarted(
   targetTier: SubscriptionTier,
   currentTier: SubscriptionTier,
   trigger?: "storage_limit" | "feature_gate" | "organic",
+  attribution?: Pick<
+    EventMetadata["checkout_started"],
+    | "utm_source"
+    | "utm_medium"
+    | "utm_campaign"
+    | "utm_term"
+    | "utm_content"
+    | "utm_id"
+    | "gclid"
+    | "fbclid"
+    | "msclkid"
+    | "ttclid"
+  >,
 ): Promise<void> {
   await safeTrack(() =>
-    logEvent(user, "checkout_started", undefined, { targetTier, currentTier, trigger }),
+    logEvent(user, "checkout_started", undefined, {
+      targetTier,
+      currentTier,
+      trigger,
+      ...attribution,
+    }),
   );
 }
 
