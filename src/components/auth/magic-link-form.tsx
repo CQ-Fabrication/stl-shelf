@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AuthClient } from "@/lib/auth-client";
 import { generateFingerprint } from "@/lib/fingerprint";
-import { trackFormSubmit, useOpenPanelClient } from "@/lib/openpanel";
+import { trackFormSubmit } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { storePendingConsent } from "@/lib/pending-consent";
 import { getLatestDocumentsFn } from "@/server/functions/consent";
 

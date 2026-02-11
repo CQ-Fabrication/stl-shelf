@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { FileStackEffect } from "@/components/empty-state/file-stack-effect";
 import { Button } from "@/components/ui/button";
 import { useRedirectCountdown } from "@/hooks/use-redirect-countdown";
-import { trackPricingInteraction, useOpenPanelClient } from "@/lib/openpanel";
+import { trackPricingInteraction } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 
 const REDIRECT_SECONDS = 5;
 const PROGRESS_MAX = 100;

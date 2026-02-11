@@ -1,7 +1,8 @@
 import { Check } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { trackCtaClick, useOpenPanelClient } from "@/lib/openpanel";
+import { trackCtaClick } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { cn } from "@/lib/utils";
 import type { PricingTier } from "./pricing-utils";
 

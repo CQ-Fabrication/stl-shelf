@@ -6,7 +6,7 @@ import { StorageAddonsCard } from "@/components/billing/storage-addons-card";
 import { SubscriptionStatusCard } from "@/components/billing/subscription-status-card";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useOpenPanelClient } from "@/lib/openpanel";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { getPublicPricing } from "@/server/functions/pricing";
 
 export const Route = createFileRoute("/billing")({

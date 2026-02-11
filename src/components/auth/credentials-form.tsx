@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AuthClient } from "@/lib/auth-client";
-import { trackFormSubmit, useOpenPanelClient } from "@/lib/openpanel";
+import { trackFormSubmit } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 
 type CredentialsFormProps = {
   auth: AuthClient;

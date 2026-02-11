@@ -10,7 +10,8 @@ import {
   type BillingInterval,
   type SubscriptionTier,
 } from "@/lib/billing/config";
-import { trackPlanSelected, trackPricingInteraction, useOpenPanelClient } from "@/lib/openpanel";
+import { trackPlanSelected, trackPricingInteraction } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { PricingCards } from "@/components/pricing/pricing-cards";
 import type { TierSlug } from "@/components/pricing/pricing-utils";
 import type { PublicPricingResponse } from "@/server/functions/pricing";

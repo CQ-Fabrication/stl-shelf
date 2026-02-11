@@ -4,7 +4,7 @@ import { Navigation } from "@/components/marketing/navigation";
 import { Pricing as PricingSection } from "@/components/marketing/sections/pricing";
 import { Footer } from "@/components/marketing/sections";
 import { useActiveOrganization } from "@/hooks/use-organizations";
-import { useOpenPanelClient } from "@/lib/openpanel";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { getPublicPricing } from "@/server/functions/pricing";
 import { getSessionFn } from "@/server/functions/auth";
 

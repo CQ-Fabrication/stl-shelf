@@ -3,7 +3,8 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { SubscriptionProductSlug } from "@/lib/billing/config";
 import { getLastTouchAttribution } from "@/lib/openpanel/attribution";
-import { trackPricingInteraction, useOpenPanelClient } from "@/lib/openpanel";
+import { trackPricingInteraction } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { createCheckout } from "@/server/functions/billing";
 
 export const useCheckout = () => {

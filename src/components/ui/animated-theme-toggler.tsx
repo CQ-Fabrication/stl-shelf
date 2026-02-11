@@ -13,11 +13,7 @@ type Props = {
   variant?: "menu" | "icon" | "iconGhost";
 };
 
-export function AnimatedThemeToggler({
-  className,
-  showLabel = false,
-  variant = "menu",
-}: Props) {
+export function AnimatedThemeToggler({ className, showLabel = false, variant = "menu" }: Props) {
   const { resolvedTheme, setTheme } = useTheme();
   const buttonRef = useRef<HTMLButtonElement>(null);
 

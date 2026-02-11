@@ -14,7 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
 import { authClient } from "@/lib/auth-client";
 import { generateFingerprint } from "@/lib/fingerprint";
-import { trackFormSubmit, useOpenPanelClient } from "@/lib/openpanel";
+import { trackFormSubmit } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { clearPendingConsent, storePendingConsent } from "@/lib/pending-consent";
 import { getLatestDocumentsFn, submitConsentFn } from "@/server/functions/consent";
 
