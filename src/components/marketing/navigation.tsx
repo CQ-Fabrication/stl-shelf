@@ -110,7 +110,7 @@ export function Navigation({ session }: NavigationProps) {
                 </div>
               )}
             </div>
-            <AnimatedThemeToggler variant="icon" />
+            <AnimatedThemeToggler variant="iconGhost" />
             <button
               aria-label="Toggle menu"
               className="rounded-lg p-2 transition-colors hover:bg-accent md:hidden"

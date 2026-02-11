@@ -72,7 +72,6 @@ export default function Header() {
           )}
           {/* Announcements dropdown - Only show for authenticated users */}
           {session?.user && <AnnouncementDropdown />}
-          <AnimatedThemeToggler variant="icon" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button aria-label="User menu" size="icon" variant="outline">
@@ -174,8 +173,12 @@ export default function Header() {
                   <DropdownMenuSeparator />
                 </>
               )}
-              <AnimatedThemeToggler showLabel />
-              <DropdownMenuSeparator />
+              {session?.user && (
+                <>
+                  <AnimatedThemeToggler showLabel />
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem
                 onClick={async () => {
                   try {
