@@ -8,6 +8,7 @@ import { useActiveOrganization, useOrganizations } from "@/hooks/use-organizatio
 import { usePermissions } from "@/hooks/use-permissions";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 import { AnnouncementDropdown } from "@/components/announcements/announcement-dropdown";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
 import { Logo } from "@/components/ui/logo";
 
@@ -172,8 +173,12 @@ export default function Header() {
                   <DropdownMenuSeparator />
                 </>
               )}
-              <AnimatedThemeToggler showLabel />
-              <DropdownMenuSeparator />
+              {session?.user && (
+                <>
+                  <AnimatedThemeToggler showLabel />
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem
                 onClick={async () => {
                   try {
