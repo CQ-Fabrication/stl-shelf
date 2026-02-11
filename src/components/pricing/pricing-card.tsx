@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { trackCtaClick, useOpenPanelClient } from "@/lib/openpanel";
 import { cn } from "@/lib/utils";
 import type { PricingTier } from "./pricing-utils";
 
@@ -10,6 +11,8 @@ type PricingCardProps = {
 };
 
 export function PricingCard({ tier, renderCta }: PricingCardProps) {
+  const { client } = useOpenPanelClient();
+
   return (
     <div
       className={cn(
@@ -69,7 +72,17 @@ export function PricingCard({ tier, renderCta }: PricingCardProps) {
             variant={tier.highlighted ? "default" : "outline"}
             asChild
           >
-            <Link to="/signup">{tier.cta}</Link>
+            <Link
+              onClick={() =>
+                trackCtaClick(client, `pricing_${tier.slug}_signup`, {
+                  location: "pricing_card",
+                  variant: tier.highlighted ? "highlighted" : "standard",
+                })
+              }
+              to="/signup"
+            >
+              {tier.cta}
+            </Link>
           </Button>
         )}
       </div>

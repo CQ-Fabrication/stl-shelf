@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AuthClient } from "@/lib/auth-client";
 import { generateFingerprint } from "@/lib/fingerprint";
+import { trackFormSubmit, useOpenPanelClient } from "@/lib/openpanel";
 import { storePendingConsent } from "@/lib/pending-consent";
 import { getLatestDocumentsFn } from "@/server/functions/consent";
 
@@ -26,6 +27,8 @@ export function MagicLinkForm({
   magicLinkSent,
   invitationId,
 }: MagicLinkFormProps) {
+  const { client } = useOpenPanelClient();
+
   // Fetch latest document versions for consent
   const { data: documents } = useQuery({
     queryKey: ["consent-documents"],
@@ -41,6 +44,10 @@ export function MagicLinkForm({
       const termsVersion = documents?.termsAndConditions?.version;
 
       if (!termsVersion) {
+        trackFormSubmit(client, "login_magic_link_request", {
+          success: false,
+          errorType: "terms_version_missing",
+        });
         toast.error("Terms and conditions not available. Please try again.");
         return;
       }
@@ -58,10 +65,15 @@ export function MagicLinkForm({
           email: value.email,
           callbackURL,
         });
+        trackFormSubmit(client, "login_magic_link_request", { success: true });
         onSuccess();
         toast.success("Check your email for a magic link");
       } catch (error) {
         const err = error as { error?: { message?: string } };
+        trackFormSubmit(client, "login_magic_link_request", {
+          success: false,
+          errorType: "request_failed",
+        });
         toast.error(err.error?.message || "Failed to send magic link. Please try again.");
       }
     },

@@ -124,6 +124,13 @@ export const getProductSlugForTier = (tier: SubscriptionTier, interval: BillingI
   return SUBSCRIPTION_PRODUCT_SLUGS[tier][interval];
 };
 
+export const getTierFromProductSlug = (productSlug: SubscriptionProductSlug): SubscriptionTier => {
+  if (productSlug === "free") return "free";
+  if (productSlug.startsWith("basic")) return "basic";
+  if (productSlug.startsWith("pro")) return "pro";
+  return "free";
+};
+
 export const getTierPrice = (tier: SubscriptionTier, interval: BillingInterval) => {
   const config = SUBSCRIPTION_TIERS[tier];
   return interval === "year" ? config.priceYearly : config.priceMonthly;

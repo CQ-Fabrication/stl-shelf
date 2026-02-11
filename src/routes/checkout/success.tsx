@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CheckCircle, Clock, CreditCard, Sparkles } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { z } from "zod";
 import { FileStackEffect } from "@/components/empty-state/file-stack-effect";
 import { Button } from "@/components/ui/button";
 import { useCheckoutSuccess } from "@/hooks/use-checkout-success";
+import { trackPricingInteraction, useOpenPanelClient } from "@/lib/openpanel";
 
 const REDIRECT_SECONDS = 5;
 const PROGRESS_MAX = 100;
@@ -39,6 +40,8 @@ export const Route = createFileRoute("/checkout/success")({
 function CheckoutSuccessPage() {
   const { checkout_id } = Route.useSearch();
   const navigate = useNavigate();
+  const { client } = useOpenPanelClient();
+  const trackedRef = useRef(false);
   const handleRedirect = useCallback(() => navigate({ to: "/billing" }), [navigate]);
   const { secondsLeft, progress } = useCheckoutSuccess({
     checkoutId: checkout_id,
@@ -46,6 +49,12 @@ function CheckoutSuccessPage() {
     onRedirect: handleRedirect,
   });
   const progressPercent = Math.min(PROGRESS_MAX, Math.max(0, progress * PROGRESS_MAX));
+
+  useEffect(() => {
+    if (!client || trackedRef.current) return;
+    trackPricingInteraction(client, "checkout_success_page_viewed");
+    trackedRef.current = true;
+  }, [client]);
 
   return (
     <div className="relative min-h-svh overflow-hidden bg-gradient-to-b from-background via-background to-muted/40">

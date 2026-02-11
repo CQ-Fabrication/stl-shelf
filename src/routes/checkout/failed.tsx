@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, CreditCard, LifeBuoy, ShieldCheck } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { FileStackEffect } from "@/components/empty-state/file-stack-effect";
 import { Button } from "@/components/ui/button";
 import { useRedirectCountdown } from "@/hooks/use-redirect-countdown";
+import { trackPricingInteraction, useOpenPanelClient } from "@/lib/openpanel";
 
 const REDIRECT_SECONDS = 5;
 const PROGRESS_MAX = 100;
@@ -34,12 +35,20 @@ export const Route = createFileRoute("/checkout/failed")({
 
 function CheckoutFailedPage() {
   const navigate = useNavigate();
+  const { client } = useOpenPanelClient();
+  const trackedRef = useRef(false);
   const handleRedirect = useCallback(() => navigate({ to: "/billing" }), [navigate]);
   const { secondsLeft, progress } = useRedirectCountdown({
     seconds: REDIRECT_SECONDS,
     onRedirect: handleRedirect,
   });
   const progressPercent = Math.min(PROGRESS_MAX, Math.max(0, progress * PROGRESS_MAX));
+
+  useEffect(() => {
+    if (!client || trackedRef.current) return;
+    trackPricingInteraction(client, "checkout_failed_page_viewed");
+    trackedRef.current = true;
+  }, [client]);
 
   return (
     <div className="relative min-h-svh overflow-hidden bg-gradient-to-b from-background via-background to-muted/40">

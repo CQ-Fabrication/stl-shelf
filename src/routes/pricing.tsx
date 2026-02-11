@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { Navigation } from "@/components/marketing/navigation";
 import { Pricing as PricingSection } from "@/components/marketing/sections/pricing";
 import { Footer } from "@/components/marketing/sections";
+import { useActiveOrganization } from "@/hooks/use-organizations";
+import { useOpenPanelClient } from "@/lib/openpanel";
 import { getPublicPricing } from "@/server/functions/pricing";
 import { getSessionFn } from "@/server/functions/auth";
 
@@ -61,6 +64,25 @@ export const Route = createFileRoute("/pricing")({
 
 function PricingPage() {
   const { pricing, session } = Route.useLoaderData();
+  const { client } = useOpenPanelClient();
+  const { data: activeOrg } = useActiveOrganization();
+  const trackedRef = useRef(false);
+
+  useEffect(() => {
+    if (!client || trackedRef.current) return;
+
+    const currentTier =
+      activeOrg?.subscriptionTier === "basic" || activeOrg?.subscriptionTier === "pro"
+        ? activeOrg.subscriptionTier
+        : "free";
+
+    client.track("pricing_page_viewed", {
+      currentTier,
+      source: "marketing_pricing",
+    });
+    trackedRef.current = true;
+  }, [client, activeOrg?.subscriptionTier]);
+
   return (
     <>
       <Navigation session={session} />

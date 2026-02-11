@@ -1,9 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { PlanSelector } from "@/components/billing/plan-selector";
 import { StorageAddonsCard } from "@/components/billing/storage-addons-card";
 import { SubscriptionStatusCard } from "@/components/billing/subscription-status-card";
 import { Button } from "@/components/ui/button";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useOpenPanelClient } from "@/lib/openpanel";
 import { getPublicPricing } from "@/server/functions/pricing";
 
 export const Route = createFileRoute("/billing")({
@@ -19,6 +22,19 @@ export const Route = createFileRoute("/billing")({
 
 function BillingPage() {
   const { pricing } = Route.useLoaderData();
+  const { client } = useOpenPanelClient();
+  const { subscription } = useSubscription();
+  const trackedRef = useRef(false);
+
+  useEffect(() => {
+    if (!client || trackedRef.current || !subscription?.tier) return;
+
+    client.track("pricing_page_viewed", {
+      currentTier: subscription.tier,
+      source: "billing_page",
+    });
+    trackedRef.current = true;
+  }, [client, subscription?.tier]);
 
   return (
     <div className="bg-background">

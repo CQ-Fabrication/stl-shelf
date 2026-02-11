@@ -10,6 +10,7 @@ import {
   type BillingInterval,
   type SubscriptionTier,
 } from "@/lib/billing/config";
+import { trackPlanSelected, trackPricingInteraction, useOpenPanelClient } from "@/lib/openpanel";
 import { PricingCards } from "@/components/pricing/pricing-cards";
 import type { TierSlug } from "@/components/pricing/pricing-utils";
 import type { PublicPricingResponse } from "@/server/functions/pricing";
@@ -50,27 +51,35 @@ export const PlanSelector = ({ pricing, className }: PlanSelectorProps) => {
   const { startCheckout, loadingProductSlug, isLoading: isCheckoutLoading } = useCheckout();
   const { openPortal, isLoading: isPortalLoading } = useCustomerPortal();
   const { subscription } = useSubscription();
+  const { client } = useOpenPanelClient();
   const currentTier = subscription?.tier ?? "free";
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("month");
   const visibleSlugs: TierSlug[] = ["free", "basic", "pro"];
 
   const handleSelectPlan = (tier: SubscriptionTier) => {
+    trackPlanSelected(client, tier);
     const isOwner = subscription?.isOwner ?? false;
     const isDowngrade = tierRank[tier] < tierRank[currentTier];
 
     if (!isOwner) {
+      trackPricingInteraction(client, "plan_select_blocked_owner_only");
       toast.error("Only the organization owner can upgrade");
       return;
     }
 
     if (isDowngrade) {
+      trackPricingInteraction(client, `downgrade_open_portal_${tier}`);
       openPortal();
       return;
     }
 
-    if (tier === currentTier) return;
+    if (tier === currentTier) {
+      trackPricingInteraction(client, "plan_select_current_tier");
+      return;
+    }
 
     const productSlug = getProductSlugForTier(tier, billingInterval);
+    trackPricingInteraction(client, `checkout_requested_${productSlug}`);
     startCheckout(productSlug);
   };
 

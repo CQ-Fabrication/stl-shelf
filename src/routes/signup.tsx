@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/ui/logo";
 import { authClient } from "@/lib/auth-client";
 import { generateFingerprint } from "@/lib/fingerprint";
+import { trackFormSubmit, useOpenPanelClient } from "@/lib/openpanel";
 import { clearPendingConsent, storePendingConsent } from "@/lib/pending-consent";
 import { getLatestDocumentsFn, submitConsentFn } from "@/server/functions/consent";
 
@@ -58,6 +59,7 @@ function SignUpPage() {
   const navigate = useNavigate();
   const { invitationId } = Route.useSearch();
   const [showPassword, setShowPassword] = useState(false);
+  const { client } = useOpenPanelClient();
 
   // Fetch latest document versions for consent
   const { data: documents } = useQuery({
@@ -69,6 +71,7 @@ function SignUpPage() {
     const termsVersion = documents?.termsAndConditions?.version;
 
     if (!termsVersion) {
+      trackFormSubmit(client, "signup", { success: false, errorType: "terms_version_missing" });
       toast.error("Terms and conditions not available. Please try again.");
       return;
     }
@@ -91,6 +94,7 @@ function SignUpPage() {
     });
 
     if (!result.data?.user?.id) {
+      trackFormSubmit(client, "signup", { success: false, errorType: "signup_failed" });
       toast.error("Failed to create account. Please try again.");
       return;
     }
@@ -116,10 +120,14 @@ function SignUpPage() {
         clearPendingConsent();
       } catch {
         // If consent fails, we must block - per spec
+        trackFormSubmit(client, "signup", { success: false, errorType: "consent_failed" });
         toast.error("Failed to record consent. Please try again.");
         return;
       }
     }
+
+    trackFormSubmit(client, "signup", { success: true });
+    client?.track("user_signed_up", { method: "email" });
 
     await navigate({
       to: "/verify-email-pending",
@@ -136,6 +144,7 @@ function SignUpPage() {
       try {
         await handleSignUp(value);
       } catch (err) {
+        trackFormSubmit(client, "signup", { success: false, errorType: "unexpected_error" });
         if (import.meta.env.DEV) console.debug("signUp error", err);
       }
     },

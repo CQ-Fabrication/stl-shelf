@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AuthClient } from "@/lib/auth-client";
+import { trackFormSubmit, useOpenPanelClient } from "@/lib/openpanel";
 
 type CredentialsFormProps = {
   auth: AuthClient;
@@ -18,6 +19,7 @@ type CredentialsFormProps = {
 export function CredentialsForm({ auth, invitationId }: CredentialsFormProps) {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const { client } = useOpenPanelClient();
 
   const form = useForm({
     defaultValues: {
@@ -53,6 +55,7 @@ export function CredentialsForm({ auth, invitationId }: CredentialsFormProps) {
           }
         }
 
+        trackFormSubmit(client, "login_credentials", { success: true });
         toast.success("Welcome back!");
         await navigate({ to: "/library" });
       } catch (error) {
@@ -65,6 +68,10 @@ export function CredentialsForm({ auth, invitationId }: CredentialsFormProps) {
             : error instanceof Error
               ? error.message
               : undefined;
+        trackFormSubmit(client, "login_credentials", {
+          success: false,
+          errorType: errorMessage?.toLowerCase().includes("captcha") ? "captcha" : "auth_failed",
+        });
         toast.error(errorMessage || "Invalid email or password");
       }
     },

@@ -53,6 +53,37 @@ function OpenPanelUserSync({
     setSentryUser(session.user.id, activeOrgId ?? null);
   }, [client, userKey, session, activeOrgId, activeOrg?.subscriptionTier]);
 
+  useEffect(() => {
+    if (!client || !userId) return;
+
+    const now = Date.now();
+    const storageKey = `openpanel:last-session:${userId}`;
+
+    let isReturningUser = false;
+    let daysSinceLastVisit: number | undefined;
+
+    try {
+      const previousTimestamp = window.localStorage.getItem(storageKey);
+      if (previousTimestamp) {
+        isReturningUser = true;
+        const previousMs = Number(previousTimestamp);
+        if (!Number.isNaN(previousMs) && previousMs > 0) {
+          const msPerDay = 1000 * 60 * 60 * 24;
+          daysSinceLastVisit = Math.max(0, Math.floor((now - previousMs) / msPerDay));
+        }
+      }
+
+      window.localStorage.setItem(storageKey, String(now));
+    } catch {
+      // localStorage may be blocked in privacy modes - still emit minimal event
+    }
+
+    client.track("session_started", {
+      isReturningUser,
+      ...(daysSinceLastVisit !== undefined ? { daysSinceLastVisit } : {}),
+    });
+  }, [client, userId]);
+
   return <>{children}</>;
 }
 

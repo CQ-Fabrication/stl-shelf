@@ -10,7 +10,9 @@ import type { SubscriptionTier } from "@/lib/billing/config";
 import {
   SUBSCRIPTION_PRODUCT_SLUG_OPTIONS,
   getTierConfig,
+  getTierFromProductSlug,
   isUnlimited,
+  normalizeSubscriptionTier,
 } from "@/lib/billing/config";
 import { getRetentionDeadline } from "@/lib/billing/grace";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
@@ -21,6 +23,7 @@ import { enforceRetentionForOrganization } from "@/server/services/billing/reten
 import { getErrorDetails, logErrorEvent } from "@/lib/logging";
 import { handleCustomerStateChanged } from "@/lib/billing/webhook-handlers";
 import type { WebhookCustomerStateChangedPayload } from "@polar-sh/sdk/models/components/webhookcustomerstatechangedpayload.js";
+import { buildOpenPanelProfile, trackCheckoutStarted } from "@/lib/openpanel";
 
 const SUPPORT_MESSAGE =
   "We couldn't start checkout due to a customer reconciliation issue. Please contact support and share reference: ";
@@ -286,6 +289,19 @@ export const createCheckout = createServerFn({ method: "POST" })
 
         // Create checkout session
         const checkout = await polarService.createCheckoutSession(customerId, data.productSlug);
+
+        const currentTier = normalizeSubscriptionTier(org.subscriptionTier);
+        const targetTier = getTierFromProductSlug(data.productSlug);
+        const profile = buildOpenPanelProfile(context, {
+          id: org.id,
+          name: org.name,
+          subscriptionTier: org.subscriptionTier,
+          subscriptionStatus: org.subscriptionStatus,
+          currentStorage: org.currentStorage,
+          currentModelCount: org.currentModelCount,
+          currentMemberCount: org.currentMemberCount,
+        });
+        trackCheckoutStarted(profile, targetTier, currentTier, "organic").catch(() => {});
 
         return { checkoutUrl: checkout.url };
       } catch (error) {

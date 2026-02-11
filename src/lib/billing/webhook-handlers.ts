@@ -12,8 +12,9 @@ import { env } from "@/lib/env";
 import { SubscriptionCanceledTemplate, SubscriptionGraceTemplate } from "@/lib/email";
 import { formatStorage } from "@/lib/billing/utils";
 import { logAuditEvent, logErrorEvent } from "@/lib/logging";
+import { trackSubscriptionActivated, trackSubscriptionCanceled } from "@/lib/openpanel";
 import type { SubscriptionTier } from "./config";
-import { SUBSCRIPTION_TIERS, isUnlimited } from "./config";
+import { SUBSCRIPTION_TIERS, isUnlimited, normalizeSubscriptionTier } from "./config";
 import {
   getGraceDeadlineIfOverLimit,
   getUsageSnapshotForOrganization,
@@ -34,6 +35,54 @@ function getTierFromProductId(productId: string): SubscriptionTier | undefined {
   if (env.POLAR_PRODUCT_PRO_YEAR && productId === env.POLAR_PRODUCT_PRO_YEAR) return "pro";
   return undefined;
 }
+
+type BillingTrackingContext = {
+  currentTier: SubscriptionTier;
+  profile: {
+    profileId: string;
+    properties: Record<string, unknown>;
+  };
+};
+
+const getTrackingContextByCustomerId = async (
+  customerId: string,
+): Promise<BillingTrackingContext | null> => {
+  const org = await db.query.organization.findFirst({
+    where: eq(organization.polarCustomerId, customerId),
+    columns: {
+      id: true,
+      name: true,
+      ownerId: true,
+      subscriptionTier: true,
+      subscriptionStatus: true,
+      currentStorage: true,
+      currentModelCount: true,
+      currentMemberCount: true,
+    },
+  });
+
+  if (!org) {
+    return null;
+  }
+
+  const currentTier = normalizeSubscriptionTier(org.subscriptionTier);
+
+  return {
+    currentTier,
+    profile: {
+      profileId: org.ownerId ?? org.id,
+      properties: {
+        organizationId: org.id,
+        organizationName: org.name,
+        subscriptionTier: currentTier,
+        subscriptionStatus: org.subscriptionStatus ?? "none",
+        storageUsedBytes: org.currentStorage ?? 0,
+        modelsCount: org.currentModelCount ?? 0,
+        memberCount: org.currentMemberCount ?? 1,
+      },
+    },
+  };
+};
 
 type WebhookApplyStatus =
   | { status: "updated" }
@@ -316,6 +365,7 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
   const customerId = subscription.customerId;
   const productId = subscription.productId;
   const eventTimestamp = payload.timestamp;
+  const trackingBefore = await getTrackingContextByCustomerId(customerId);
 
   const tier = getTierFromProductId(productId);
 
@@ -371,6 +421,16 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
     subscriptionId: subscription.id,
     eventTimestamp: eventTimestamp.toISOString(),
   });
+
+  const trackingAfter = (await getTrackingContextByCustomerId(customerId)) ?? trackingBefore;
+  if (trackingAfter) {
+    const previousTier = trackingBefore?.currentTier;
+    trackSubscriptionActivated(
+      trackingAfter.profile,
+      tier,
+      previousTier && previousTier !== tier ? previousTier : undefined,
+    ).catch(() => {});
+  }
 };
 
 /**
@@ -382,6 +442,7 @@ export const handleSubscriptionCanceled = async (payload: WebhookSubscriptionCan
   const customerId = subscription.customerId;
   const tier = getTierFromProductId(subscription.productId);
   const eventTimestamp = payload.timestamp;
+  const trackingBefore = await getTrackingContextByCustomerId(customerId);
 
   const updateStatus = await applyOrganizationUpdateFromWebhook({
     customerId,
@@ -431,6 +492,16 @@ export const handleSubscriptionCanceled = async (payload: WebhookSubscriptionCan
     subscriptionId: subscription.id,
     eventTimestamp: eventTimestamp.toISOString(),
   });
+
+  const trackingAfter = (await getTrackingContextByCustomerId(customerId)) ?? trackingBefore;
+  const canceledTier = tier ?? trackingBefore?.currentTier ?? "free";
+  if (trackingAfter) {
+    trackSubscriptionCanceled(
+      trackingAfter.profile,
+      canceledTier,
+      subscription.cancelAtPeriodEnd ? "cancel_at_period_end" : "canceled",
+    ).catch(() => {});
+  }
 };
 
 /**
@@ -442,6 +513,7 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
   const customerId = subscription.customerId;
   const eventTimestamp = payload.timestamp;
   const freeTier = SUBSCRIPTION_TIERS.free;
+  const trackingBefore = await getTrackingContextByCustomerId(customerId);
 
   const org = await db.query.organization.findFirst({
     where: eq(organization.polarCustomerId, customerId),
@@ -534,6 +606,11 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
     subscriptionId: subscription.id,
     eventTimestamp: eventTimestamp.toISOString(),
   });
+
+  const trackingAfter = (await getTrackingContextByCustomerId(customerId)) ?? trackingBefore;
+  if (trackingAfter && previousTier !== "free") {
+    trackSubscriptionCanceled(trackingAfter.profile, previousTier, "revoked").catch(() => {});
+  }
 };
 
 /**
