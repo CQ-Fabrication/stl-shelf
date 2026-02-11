@@ -96,10 +96,10 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
       </Link>
 
       <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 space-y-1">
-            <CardTitle className="line-clamp-2 text-lg">{model.name}</CardTitle>
-            <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <CardTitle className="line-clamp-2 min-h-14 text-lg leading-7">{model.name}</CardTitle>
+            <div className="mt-1 flex min-h-6 items-center gap-1.5 text-muted-foreground text-xs">
               {/* User Avatar */}
               <TooltipProvider>
                 <Tooltip>
@@ -214,7 +214,7 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="relative z-20">
-                  <CardDescription className="mb-3 line-clamp-2 cursor-help">
+                  <CardDescription className="mb-3 line-clamp-2 min-h-10 cursor-help">
                     {model.description}
                   </CardDescription>
                 </div>
