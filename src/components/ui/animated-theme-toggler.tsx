@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import type { MouseEvent } from "react";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,11 @@ type Props = {
 export function AnimatedThemeToggler({ className, showLabel = false, variant = "menu" }: Props) {
   const { resolvedTheme, setTheme } = useTheme();
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleTheme = useCallback(
     async (_e: MouseEvent<HTMLButtonElement>) => {
@@ -60,7 +65,7 @@ export function AnimatedThemeToggler({ className, showLabel = false, variant = "
     [resolvedTheme, setTheme],
   );
 
-  const isLight = resolvedTheme !== "dark";
+  const isLight = !mounted || resolvedTheme !== "dark";
 
   return (
     <button
