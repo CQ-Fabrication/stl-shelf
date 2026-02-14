@@ -16,6 +16,8 @@ assets/*.stl
 
 # Playwright MCP
 .playwright-mcp/
+output/playwright/
+**/.playwright-cli/
 
 # Statsig local overrides
 

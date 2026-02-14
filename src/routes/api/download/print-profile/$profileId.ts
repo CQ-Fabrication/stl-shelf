@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db, modelFiles, modelVersions, models, printProfiles } from "@/lib/db";
 import { storageService } from "@/server/services/storage";
 import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import { createContentDisposition } from "@/server/utils/filename-security";
 import { getLiveSession } from "@/server/utils/live-session";
 import { crossSiteBlockedResponse, isTrustedRequestOrigin } from "@/server/utils/request-security";
 import { checkRateLimit, getClientIp } from "@/server/utils/rate-limit";
@@ -79,7 +80,7 @@ export const Route = createFileRoute("/api/download/print-profile/$profileId")({
         return new Response(stream, {
           headers: {
             "Content-Type": profile.mimeType || "application/octet-stream",
-            "Content-Disposition": `attachment; filename="${filename}"`,
+            "Content-Disposition": createContentDisposition("attachment", filename, "profile"),
             "Cache-Control": "private, no-store, max-age=0",
           },
         });

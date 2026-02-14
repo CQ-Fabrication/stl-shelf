@@ -4,6 +4,7 @@ import { and, eq, isNull, notInArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { modelFiles, models, modelVersions, printProfiles } from "@/lib/db/schema/models";
 import { storageService } from "@/server/services/storage";
+import { createArchiveEntryPath, sanitizeFilename } from "@/server/utils/filename-security";
 
 type ModelFileData = {
   id: string;
@@ -313,14 +314,18 @@ class ModelDownloadService {
     profileFiles: (ModelFileData & { printerName: string })[],
     modelSlug: string,
   ): Promise<void> {
-    const folderName = modelSlug;
+    const folderName = sanitizeFilename(modelSlug, "model-files");
 
     // Add source files to root
     for (const file of sourceFiles) {
       try {
         const fileData = await storageService.getFile(file.storageKey);
         archive.append(Buffer.from(fileData.body), {
-          name: `${folderName}/${file.originalName}`,
+          name: createArchiveEntryPath({
+            folder: folderName,
+            filename: file.originalName,
+            fallbackFilename: file.filename,
+          }),
         });
       } catch {
         // Continue with other files even if one fails
@@ -332,7 +337,12 @@ class ModelDownloadService {
       try {
         const fileData = await storageService.getFile(profile.storageKey);
         archive.append(Buffer.from(fileData.body), {
-          name: `${folderName}/profiles/${profile.originalName}`,
+          name: createArchiveEntryPath({
+            folder: folderName,
+            subfolder: "profiles",
+            filename: profile.originalName,
+            fallbackFilename: profile.filename,
+          }),
         });
       } catch {
         // Continue with other files even if one fails
@@ -345,14 +355,18 @@ class ModelDownloadService {
     files: ModelFileData[],
     modelSlug: string,
   ): Promise<void> {
-    const folderName = modelSlug;
+    const folderName = sanitizeFilename(modelSlug, "model-files");
 
     for (const file of files) {
       try {
         const fileData = await storageService.getFile(file.storageKey);
 
         archive.append(Buffer.from(fileData.body), {
-          name: `${folderName}/${file.originalName}`,
+          name: createArchiveEntryPath({
+            folder: folderName,
+            filename: file.originalName,
+            fallbackFilename: file.filename,
+          }),
         });
       } catch {
         // Continue with other files even if one fails
@@ -426,7 +440,8 @@ class ModelDownloadService {
         // Convert web ReadableStream to Node.js Readable for archiver
         const nodeStream = this.webStreamToNodeStream(stream);
 
-        archive.append(nodeStream, { name: file.originalName });
+        const archiveFilename = sanitizeFilename(file.originalName, file.filename);
+        archive.append(nodeStream, { name: archiveFilename });
       } catch (error) {
         // Log error but continue with other files
         console.error(`Failed to stream file ${file.originalName}:`, error);

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { organization } from "@/lib/db/schema/auth";
 import { modelDownloadService } from "@/server/services/models/model-download.service";
 import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import { createContentDisposition } from "@/server/utils/filename-security";
 import { getLiveSession } from "@/server/utils/live-session";
 import { crossSiteBlockedResponse, isTrustedRequestOrigin } from "@/server/utils/request-security";
 import { checkRateLimit, getClientIp } from "@/server/utils/rate-limit";
@@ -123,7 +124,7 @@ export const Route = createFileRoute("/api/download/version/$versionId/zip")({
         return new Response(readable, {
           headers: {
             "Content-Type": "application/zip",
-            "Content-Disposition": `attachment; filename="${filename}"`,
+            "Content-Disposition": createContentDisposition("attachment", filename, "download.zip"),
             "Cache-Control": "no-cache, no-store, must-revalidate",
           },
         });

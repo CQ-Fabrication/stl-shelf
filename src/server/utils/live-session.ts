@@ -1,7 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { organization, session as sessionTable, user } from "@/lib/db/schema/auth";
+import { member, organization, session as sessionTable, user } from "@/lib/db/schema/auth";
 
 export const getLiveSession = async (headers: Headers) => {
   const session = await auth.api.getSession({ headers });
@@ -24,18 +24,20 @@ export const getLiveSession = async (headers: Headers) => {
     return session;
   }
 
-  const [liveOrganization] = await db
-    .select({ id: organization.id })
-    .from(organization)
-    .where(
+  const [liveMembership] = await db
+    .select({ id: member.id })
+    .from(member)
+    .innerJoin(
+      organization,
       and(
-        eq(organization.id, activeOrganizationId),
+        eq(member.organizationId, organization.id),
         isNull(organization.accountDeletionCompletedAt),
       ),
     )
+    .where(and(eq(member.organizationId, activeOrganizationId), eq(member.userId, session.user.id)))
     .limit(1);
 
-  if (liveOrganization) {
+  if (liveMembership) {
     return session;
   }
 
