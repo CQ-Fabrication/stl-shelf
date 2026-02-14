@@ -12,11 +12,6 @@ type ResendConsentInput = ResendContactInput & {
   marketingAccepted: boolean;
 };
 
-const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
-
-const baseSegmentId = env.RESEND_SEGMENT_USERS;
-const marketingSegmentId = env.RESEND_SEGMENT_MARKETING_OPT_IN;
-
 const splitName = (name?: string | null) => {
   if (!name) return {};
   const parts = name.trim().split(/\s+/);
@@ -27,9 +22,9 @@ const splitName = (name?: string | null) => {
 };
 
 const ensureContact = async (
+  resend: Resend,
   input: ResendContactInput,
 ): Promise<{ ok: boolean; exists: boolean }> => {
-  if (!resend) return { ok: false, exists: false };
   const { email, name } = input;
   const { firstName, lastName } = splitName(name);
 
@@ -73,8 +68,7 @@ const ensureContact = async (
   return { ok: false, exists: false as const };
 };
 
-const updateContactName = async ({ email, name }: ResendContactInput) => {
-  if (!resend) return;
+const updateContactName = async (resend: Resend, { email, name }: ResendContactInput) => {
   const { firstName, lastName } = splitName(name);
   if (!firstName && !lastName) return;
 
@@ -94,8 +88,8 @@ const updateContactName = async ({ email, name }: ResendContactInput) => {
   }
 };
 
-const addToSegment = async (email: string, segmentId?: string | null) => {
-  if (!resend || !segmentId) return;
+const addToSegment = async (resend: Resend, email: string, segmentId?: string | null) => {
+  if (!segmentId) return;
   const { error } = await runResendRateLimited(() =>
     resend.contacts.segments.add({ email, segmentId }),
   );
@@ -108,8 +102,8 @@ const addToSegment = async (email: string, segmentId?: string | null) => {
   }
 };
 
-const removeFromSegment = async (email: string, segmentId?: string | null) => {
-  if (!resend || !segmentId) return;
+const removeFromSegment = async (resend: Resend, email: string, segmentId?: string | null) => {
+  if (!segmentId) return;
   const { error } = await runResendRateLimited(() =>
     resend.contacts.segments.remove({ email, segmentId }),
   );
@@ -127,6 +121,10 @@ export const syncResendSegments = async ({
   name,
   marketingAccepted,
 }: ResendConsentInput) => {
+  const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+  const baseSegmentId = env.RESEND_SEGMENT_USERS;
+  const marketingSegmentId = env.RESEND_SEGMENT_MARKETING_OPT_IN;
+
   if (!resend) {
     if (env.NODE_ENV === "development") {
       console.warn("[Resend] Missing RESEND_API_KEY; skipping segment sync.");
@@ -135,7 +133,7 @@ export const syncResendSegments = async ({
   }
 
   try {
-    const contactResult = await ensureContact({
+    const contactResult = await ensureContact(resend, {
       email,
       name,
     });
@@ -152,25 +150,25 @@ export const syncResendSegments = async ({
     }
 
     if (contactResult.exists) {
-      await updateContactName({ email, name });
+      await updateContactName(resend, { email, name });
     }
 
     if (baseSegmentId) {
-      await addToSegment(email, baseSegmentId);
+      await addToSegment(resend, email, baseSegmentId);
     } else if (env.NODE_ENV === "development") {
       console.warn("[Resend] RESEND_SEGMENT_USERS not set; contact created without base segment.");
     }
 
     if (marketingAccepted) {
       if (marketingSegmentId) {
-        await addToSegment(email, marketingSegmentId);
+        await addToSegment(resend, email, marketingSegmentId);
       } else if (env.NODE_ENV === "development") {
         console.warn(
           "[Resend] RESEND_SEGMENT_MARKETING_OPT_IN not set; cannot add marketing segment.",
         );
       }
     } else if (marketingSegmentId) {
-      await removeFromSegment(email, marketingSegmentId);
+      await removeFromSegment(resend, email, marketingSegmentId);
     }
   } catch (error) {
     logErrorEvent("resend.segment.sync_failed", {

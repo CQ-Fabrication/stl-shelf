@@ -1,19 +1,26 @@
 import type { ErrorResponse } from "resend";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-type TestState = {
+type TestEnv = {
+  RESEND_API_KEY: string;
+  RESEND_SEGMENT_USERS: string | undefined;
+  RESEND_SEGMENT_MARKETING_OPT_IN: string | undefined;
+  NODE_ENV: "test";
+};
+
+const state = {
   env: {
-    RESEND_API_KEY: string;
-    RESEND_SEGMENT_USERS: string | undefined;
-    RESEND_SEGMENT_MARKETING_OPT_IN: string | undefined;
-    NODE_ENV: "test";
-  };
-  createMock: ReturnType<typeof vi.fn>;
-  getMock: ReturnType<typeof vi.fn>;
-  updateMock: ReturnType<typeof vi.fn>;
-  addMock: ReturnType<typeof vi.fn>;
-  removeMock: ReturnType<typeof vi.fn>;
-  logErrorEventMock: ReturnType<typeof vi.fn>;
+    RESEND_API_KEY: "re_test_key",
+    RESEND_SEGMENT_USERS: undefined,
+    RESEND_SEGMENT_MARKETING_OPT_IN: undefined,
+    NODE_ENV: "test",
+  } as TestEnv,
+  createMock: vi.fn(),
+  getMock: vi.fn(),
+  updateMock: vi.fn(),
+  addMock: vi.fn(),
+  removeMock: vi.fn(),
+  logErrorEventMock: vi.fn(),
 };
 
 const asError = (value: Partial<ErrorResponse>): ErrorResponse =>
@@ -37,69 +44,67 @@ const errorResponse = (error: Partial<ErrorResponse>) =>
     headers: null,
   }) as const;
 
-const loadSubject = async (overrides?: Partial<TestState["env"]>) => {
-  vi.resetModules();
+vi.mock("@/lib/env", () => ({
+  env: state.env,
+}));
 
-  const state: TestState = {
-    env: {
-      RESEND_API_KEY: "re_test_key",
-      RESEND_SEGMENT_USERS: undefined,
-      RESEND_SEGMENT_MARKETING_OPT_IN: undefined,
-      NODE_ENV: "test",
-      ...overrides,
-    },
-    createMock: vi.fn().mockResolvedValue(okResponse({ id: "contact_1", object: "contact" })),
-    getMock: vi.fn().mockResolvedValue(okResponse({ id: "contact_1" })),
-    updateMock: vi.fn().mockResolvedValue(okResponse({ id: "contact_1", object: "contact" })),
-    addMock: vi.fn().mockResolvedValue(okResponse({ id: "segment_1" })),
-    removeMock: vi.fn().mockResolvedValue(okResponse({ id: "segment_1", deleted: true })),
-    logErrorEventMock: vi.fn(),
-  };
+vi.mock("@/lib/logging", () => ({
+  logErrorEvent: state.logErrorEventMock,
+}));
 
-  vi.doMock("@/lib/env", () => ({
-    env: state.env,
-  }));
+vi.mock("@/server/services/resend/retry", () => ({
+  runResendRateLimited: async <T>(operation: () => Promise<T>) => operation(),
+  isResendAlreadyExistsError: (error: { statusCode?: number }) => error.statusCode === 409,
+}));
 
-  vi.doMock("@/lib/logging", () => ({
-    logErrorEvent: state.logErrorEventMock,
-  }));
-
-  vi.doMock("@/server/services/resend/retry", async () => {
-    const actual = await vi.importActual<typeof import("@/server/services/resend/retry")>(
-      "@/server/services/resend/retry",
-    );
-    return {
-      ...actual,
-      runResendRateLimited: async <T>(operation: () => Promise<T>) => operation(),
+vi.mock("resend", () => ({
+  Resend: class Resend {
+    contacts = {
+      create: state.createMock,
+      get: state.getMock,
+      update: state.updateMock,
+      segments: {
+        add: state.addMock,
+        remove: state.removeMock,
+      },
     };
-  });
+  },
+}));
 
-  vi.doMock("resend", () => ({
-    Resend: class Resend {
-      contacts = {
-        create: state.createMock,
-        get: state.getMock,
-        update: state.updateMock,
-        segments: {
-          add: state.addMock,
-          remove: state.removeMock,
-        },
-      };
-    },
-  }));
+import { syncResendSegments } from "./resend-segments";
 
-  const module = await import("./resend-segments");
-
-  return {
-    syncResendSegments: module.syncResendSegments,
-    state,
-  };
+const resetState = (envOverrides?: Partial<TestEnv>) => {
+  state.env.RESEND_API_KEY = "re_test_key";
+  state.env.RESEND_SEGMENT_USERS = undefined;
+  state.env.RESEND_SEGMENT_MARKETING_OPT_IN = undefined;
+  state.env.NODE_ENV = "test";
+  if (envOverrides?.RESEND_API_KEY !== undefined) {
+    state.env.RESEND_API_KEY = envOverrides.RESEND_API_KEY;
+  }
+  if (envOverrides?.RESEND_SEGMENT_USERS !== undefined) {
+    state.env.RESEND_SEGMENT_USERS = envOverrides.RESEND_SEGMENT_USERS;
+  }
+  if (envOverrides?.RESEND_SEGMENT_MARKETING_OPT_IN !== undefined) {
+    state.env.RESEND_SEGMENT_MARKETING_OPT_IN = envOverrides.RESEND_SEGMENT_MARKETING_OPT_IN;
+  }
 };
+
+beforeEach(() => {
+  resetState();
+  state.createMock
+    .mockReset()
+    .mockResolvedValue(okResponse({ id: "contact_1", object: "contact" }));
+  state.getMock.mockReset().mockResolvedValue(okResponse({ id: "contact_1" }));
+  state.updateMock
+    .mockReset()
+    .mockResolvedValue(okResponse({ id: "contact_1", object: "contact" }));
+  state.addMock.mockReset().mockResolvedValue(okResponse({ id: "segment_1" }));
+  state.removeMock.mockReset().mockResolvedValue(okResponse({ id: "segment_1", deleted: true }));
+  state.logErrorEventMock.mockReset();
+});
 
 describe("syncResendSegments", () => {
   it("creates contact even when segments are not configured", async () => {
-    const { syncResendSegments, state } = await loadSubject();
-
     await syncResendSegments({
       email: "claudioquaglia1985+segments-none@gmail.com",
       name: "Claudio Quaglia",
@@ -117,7 +122,7 @@ describe("syncResendSegments", () => {
   });
 
   it("reconciles segments for existing contacts", async () => {
-    const { syncResendSegments, state } = await loadSubject({
+    resetState({
       RESEND_SEGMENT_USERS: "seg_users",
       RESEND_SEGMENT_MARKETING_OPT_IN: "seg_marketing",
     });
@@ -153,7 +158,7 @@ describe("syncResendSegments", () => {
   });
 
   it("falls back to contact lookup when create fails unexpectedly", async () => {
-    const { syncResendSegments, state } = await loadSubject({
+    resetState({
       RESEND_SEGMENT_USERS: "seg_users",
     });
 
