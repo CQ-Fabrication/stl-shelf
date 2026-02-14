@@ -69,6 +69,8 @@ import path from "node:path";
 const SERVER_PORT = Number(process.env.PORT ?? 3000);
 const CLIENT_DIRECTORY = "./dist/client";
 const SERVER_ENTRY_POINT = "./dist/server/server.js";
+const FRAME_ANCESTORS_DIRECTIVE = "frame-ancestors 'none'";
+const X_FRAME_OPTIONS_VALUE = "DENY";
 
 // Logging utilities for professional output
 const log = {
@@ -170,6 +172,48 @@ interface PreloadResult {
   skipped: AssetMetadata[];
 }
 
+function upsertFrameAncestorsDirective(existingCsp: string | null): string {
+  if (!existingCsp || existingCsp.trim().length === 0) {
+    return FRAME_ANCESTORS_DIRECTIVE;
+  }
+
+  const directives = existingCsp
+    .split(";")
+    .map((directive) => directive.trim())
+    .filter(Boolean);
+
+  let hasFrameAncestors = false;
+
+  const updatedDirectives = directives.map((directive) => {
+    if (directive.toLowerCase().startsWith("frame-ancestors")) {
+      hasFrameAncestors = true;
+      return FRAME_ANCESTORS_DIRECTIVE;
+    }
+    return directive;
+  });
+
+  if (!hasFrameAncestors) {
+    updatedDirectives.push(FRAME_ANCESTORS_DIRECTIVE);
+  }
+
+  return updatedDirectives.join("; ");
+}
+
+function applySecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("X-Frame-Options", X_FRAME_OPTIONS_VALUE);
+  headers.set(
+    "Content-Security-Policy",
+    upsertFrameAncestorsDirective(headers.get("Content-Security-Policy")),
+  );
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 /**
  * Check if a file is eligible for preloading based on configured patterns
  */
@@ -227,10 +271,12 @@ function createResponseHandler(asset: InMemoryAsset): (req: Request) => Response
     if (ENABLE_ETAG && asset.etag) {
       const ifNone = req.headers.get("if-none-match");
       if (ifNone && ifNone === asset.etag) {
-        return new Response(null, {
-          status: 304,
-          headers: { ETag: asset.etag },
-        });
+        return applySecurityHeaders(
+          new Response(null, {
+            status: 304,
+            headers: { ETag: asset.etag },
+          }),
+        );
       }
       headers.ETag = asset.etag;
     }
@@ -239,12 +285,12 @@ function createResponseHandler(asset: InMemoryAsset): (req: Request) => Response
       headers["Content-Encoding"] = "gzip";
       headers["Content-Length"] = String(asset.gz.byteLength);
       const gzCopy = new Uint8Array(asset.gz);
-      return new Response(gzCopy, { status: 200, headers });
+      return applySecurityHeaders(new Response(gzCopy, { status: 200, headers }));
     }
 
     headers["Content-Length"] = String(asset.raw.byteLength);
     const rawCopy = new Uint8Array(asset.raw);
-    return new Response(rawCopy, { status: 200, headers });
+    return applySecurityHeaders(new Response(rawCopy, { status: 200, headers }));
   };
 }
 
@@ -324,12 +370,14 @@ async function initializeStaticRoutes(clientDirectory: string): Promise<PreloadR
         } else {
           routes[route] = () => {
             const fileOnDemand = Bun.file(filepath);
-            return new Response(fileOnDemand, {
-              headers: {
-                "Content-Type": metadata.type,
-                "Cache-Control": "public, max-age=3600",
-              },
-            });
+            return applySecurityHeaders(
+              new Response(fileOnDemand, {
+                headers: {
+                  "Content-Type": metadata.type,
+                  "Cache-Control": "public, max-age=3600",
+                },
+              }),
+            );
           };
 
           skipped.push(metadata);
@@ -470,19 +518,20 @@ async function initializeServer() {
     routes: {
       ...routes,
 
-      "/*": (req: Request) => {
+      "/*": async (req: Request) => {
         try {
-          return handler.fetch(req);
+          const response = await handler.fetch(req);
+          return applySecurityHeaders(response);
         } catch (error) {
           log.error(`Server handler error: ${String(error)}`);
-          return new Response("Internal Server Error", { status: 500 });
+          return applySecurityHeaders(new Response("Internal Server Error", { status: 500 }));
         }
       },
     },
 
     error(error) {
       log.error(`Uncaught server error: ${error instanceof Error ? error.message : String(error)}`);
-      return new Response("Internal Server Error", { status: 500 });
+      return applySecurityHeaders(new Response("Internal Server Error", { status: 500 }));
     },
   });
 

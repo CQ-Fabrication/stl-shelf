@@ -3,17 +3,15 @@ version = 1
 name = "stl-shelf"
 
 [setup]
-script = ""
+script = '''
+curl -fsSL https://bun.sh/install | bash
+bun install
+'''
 
 [[actions]]
 name = "Run"
 icon = "run"
 command = "bun dev"
-
-[[actions]]
-name = "Install"
-icon = "tool"
-command = "bun install"
 
 [[actions]]
 name = "Ngrok"
