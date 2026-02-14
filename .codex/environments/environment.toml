@@ -17,3 +17,8 @@ command = "bun dev"
 name = "Ngrok"
 icon = "tool"
 command = "bun run ngrok"
+
+[[actions]]
+name = "test"
+icon = "test"
+command = "bun test"
