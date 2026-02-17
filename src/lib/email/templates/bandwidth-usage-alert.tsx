@@ -25,11 +25,13 @@ export default function BandwidthUsageAlertTemplate({
 }: BandwidthUsageAlertTemplateProps) {
   const preview = isHardLimit
     ? `Bandwidth limit reached for ${orgName}`
-    : `Bandwidth usage warning for ${orgName}`;
+    : `Bandwidth usage update for ${orgName}`;
 
   return (
     <EmailLayout preview={preview} logoUrl={logoUrl}>
-      <Heading style={textStyles.heading}>Bandwidth usage alert</Heading>
+      <Heading style={textStyles.heading}>
+        {isHardLimit ? "Bandwidth limit reached" : "Bandwidth usage update"}
+      </Heading>
       <Text style={textStyles.paragraph}>
         Your organization <strong>{orgName}</strong> has used <strong>{percentLabel}%</strong> of
         its monthly download bandwidth.
@@ -40,7 +42,7 @@ export default function BandwidthUsageAlertTemplate({
       <Text style={textStyles.paragraph}>
         {isHardLimit
           ? "Downloads may be interrupted until usage resets or your plan is upgraded."
-          : "To avoid download interruptions, consider upgrading your plan or adding extra storage/bandwidth."}
+          : "This is an early heads-up. No immediate action is required, but you can review usage and plans any time."}
       </Text>
       <div style={{ margin: "32px 0", textAlign: "center" }}>
         <Button href={manageUrl}>View Usage and Plans</Button>

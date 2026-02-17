@@ -4,6 +4,11 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUsageStats } from "@/hooks/use-usage-stats";
 import {
+  EGRESS_HARD_WARNING_PERCENT,
+  EGRESS_SOFT_WARNING_MIN_BYTES,
+  EGRESS_SOFT_WARNING_PERCENT,
+} from "@/lib/billing/egress";
+import {
   formatPercentage,
   formatStorage,
   getUsageColor,
@@ -29,8 +34,11 @@ export const UsageCard = () => {
   const modelLimitLabel = usage.models.isUnlimited ? "Unlimited" : usage.models.limit;
   const modelPercentage = usage.models.isUnlimited ? 0 : usage.models.percentage;
   const modelProgressValue = usage.models.isUnlimited ? 42 : modelPercentage;
-  const egressWarning = egressUsage?.percentage >= 80;
-  const egressCritical = egressUsage?.percentage >= 100;
+  const egressCritical = (egressUsage?.percentage ?? 0) >= EGRESS_HARD_WARNING_PERCENT;
+  const egressSoftWarning =
+    (egressUsage?.percentage ?? 0) >= EGRESS_SOFT_WARNING_PERCENT &&
+    (egressUsage?.used ?? 0) >= EGRESS_SOFT_WARNING_MIN_BYTES;
+  const egressWarning = egressCritical || egressSoftWarning;
 
   return (
     <Card>

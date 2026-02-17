@@ -3,6 +3,12 @@ import { render } from "@react-email/components";
 import { Resend } from "resend";
 import { db } from "@/lib/db";
 import { organization, user } from "@/lib/db/schema/auth";
+import {
+  EGRESS_HARD_WARNING_RATIO,
+  EGRESS_SOFT_WARNING_RATIO,
+  shouldTriggerHardEgressWarning,
+  shouldTriggerSoftEgressWarning,
+} from "@/lib/billing/egress";
 import { formatStorage } from "@/lib/billing/utils";
 import { BandwidthUsageAlertTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
@@ -11,8 +17,6 @@ import { getErrorDetails, logAuditEvent, logErrorEvent } from "@/lib/logging";
 
 const SOFT_LIMIT_MULTIPLIER = 3;
 const HARD_LIMIT_MULTIPLIER = 5;
-const WARN_80 = 0.8;
-const WARN_100 = 1.0;
 
 let resendClient: Resend | null = null;
 
@@ -47,7 +51,9 @@ const sendEgressWarningEmail = async (params: {
   const { to, orgName, percent, usedBytes, limitBytes } = params;
   const percentLabel = Math.round(percent * 100);
   const subject =
-    percent >= 1 ? "STL Shelf: Bandwidth limit reached" : "STL Shelf: Bandwidth usage warning";
+    percent >= EGRESS_HARD_WARNING_RATIO
+      ? "STL Shelf: Bandwidth limit reached"
+      : "STL Shelf: Bandwidth usage update";
   const html = await render(
     BandwidthUsageAlertTemplate({
       orgName,
@@ -165,8 +171,9 @@ export const checkAndTrackEgress = async (params: {
   }
 
   const percent = softLimit > 0 ? newBytes / softLimit : 0;
-  const shouldWarn80 = percent >= WARN_80 && !org.egressWarning80SentAt;
-  const shouldWarn100 = percent >= WARN_100 && !org.egressWarning100SentAt;
+  const shouldWarn80 =
+    shouldTriggerSoftEgressWarning(percent, newBytes) && !org.egressWarning80SentAt;
+  const shouldWarn100 = shouldTriggerHardEgressWarning(percent) && !org.egressWarning100SentAt;
 
   await db
     .update(organization)
@@ -212,7 +219,7 @@ export const checkAndTrackEgress = async (params: {
       await sendEgressWarningEmail({
         to: owner.email,
         orgName: org.name,
-        percent: shouldWarn100 ? WARN_100 : WARN_80,
+        percent: shouldWarn100 ? EGRESS_HARD_WARNING_RATIO : EGRESS_SOFT_WARNING_RATIO,
         usedBytes: newBytes,
         limitBytes: softLimit,
       });
