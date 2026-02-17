@@ -17,6 +17,10 @@ export const Route = createFileRoute("/privacy")({
     meta: [
       { title: "Privacy Policy - STL Shelf" },
       {
+        name: "robots",
+        content: "index, follow",
+      },
+      {
         name: "description",
         content: "Privacy policy for STL Shelf - how we handle your data.",
       },
@@ -132,7 +136,7 @@ function PrivacyPage() {
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto prose prose-neutral dark:prose-invert prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3 prose-p:text-muted-foreground prose-li:text-muted-foreground">
-              <Markdown>{document!.content}</Markdown>
+              <Markdown>{document?.content ?? "Privacy policy is currently unavailable."}</Markdown>
             </div>
           </div>
         </section>

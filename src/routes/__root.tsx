@@ -90,6 +90,14 @@ const PUBLIC_ROUTES = [
 // Routes that authenticated users should NOT access (redirect to /library)
 const AUTH_ROUTES = ["/login", "/signup"];
 
+function normalizePathname(pathname: string): string {
+  if (pathname === "/") {
+    return pathname;
+  }
+
+  return pathname.replace(/\/+$/, "") || "/";
+}
+
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
@@ -163,8 +171,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     ],
   }),
   beforeLoad: async ({ location }) => {
+    const normalizedPathname = normalizePathname(location.pathname);
+
     // For auth routes, check if user is already logged in
-    if (AUTH_ROUTES.includes(location.pathname)) {
+    if (AUTH_ROUTES.includes(normalizedPathname)) {
       try {
         const session = await getSessionFn();
         if (session?.user) {
@@ -181,7 +191,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     }
 
     // Skip auth check for other public routes
-    if (PUBLIC_ROUTES.includes(location.pathname)) {
+    if (PUBLIC_ROUTES.includes(normalizedPathname)) {
       return;
     }
 
@@ -200,7 +210,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     }
 
     // Allow organization creation page for authenticated users
-    if (location.pathname === "/organization/create") {
+    if (normalizedPathname === "/organization/create") {
       return { session };
     }
 
@@ -232,8 +242,9 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 function RootDocument({ children }: { children: ReactNode }) {
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
+  const normalizedPathname = normalizePathname(pathname);
   const isNotFound = routerState.matches.some((match) => match.status === "notFound");
-  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+  const isPublicRoute = PUBLIC_ROUTES.includes(normalizedPathname);
   const jsonLd =
     pathname === "/"
       ? {

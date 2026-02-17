@@ -73,6 +73,10 @@ export const Route = createFileRoute("/self-hosted-3d-model-library")({
     meta: [
       { title: "Self-Hosted 3D Model Library - STL Shelf" },
       {
+        name: "robots",
+        content: "index, follow",
+      },
+      {
         name: "description",
         content:
           "Self-host STL Shelf with Docker and PostgreSQL. Keep STL, 3MF, OBJ, and PLY files on your server with a private 3D model library.",
@@ -92,7 +96,6 @@ export const Route = createFileRoute("/self-hosted-3d-model-library")({
 
 function SelfHostedLibraryPage() {
   const { session } = Route.useLoaderData();
-
   return (
     <div className="flex min-h-screen flex-col">
       <Navigation session={session} />

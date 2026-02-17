@@ -15,6 +15,10 @@ export const Route = createFileRoute("/about")({
     meta: [
       { title: "About - STL Shelf" },
       {
+        name: "robots",
+        content: "index, follow",
+      },
+      {
         name: "description",
         content:
           "Learn about STL Shelf - 3D model library built by makers, for makers. Cloud or self-hosted.",

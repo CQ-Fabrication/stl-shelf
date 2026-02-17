@@ -19,6 +19,10 @@ export const Route = createFileRoute("/pricing")({
     meta: [
       { title: "Pricing - STL Shelf" },
       {
+        name: "robots",
+        content: "index, follow",
+      },
+      {
         name: "description",
         content:
           "Simple, transparent pricing for STL Shelf. Start free, upgrade when you need more.",

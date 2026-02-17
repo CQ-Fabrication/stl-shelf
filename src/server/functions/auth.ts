@@ -17,8 +17,13 @@ import { getLiveSession } from "@/server/utils/live-session";
  */
 export const getSessionFn = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
-  const session = await getLiveSession(headers);
-  return session;
+  try {
+    const session = await getLiveSession(headers);
+    return session;
+  } catch (error) {
+    console.error("Failed to get live session:", error);
+    return null;
+  }
 });
 
 /**

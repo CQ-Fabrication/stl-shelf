@@ -29,6 +29,10 @@ export const Route = createFileRoute("/")({
         title: "STL Shelf - 3D Model Library for Makers",
       },
       {
+        name: "robots",
+        content: "index, follow",
+      },
+      {
         name: "description",
         content:
           "Organize, version, and share your 3D printable models. Cloud or self-hosted for makers and teams.",

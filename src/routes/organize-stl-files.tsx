@@ -85,6 +85,10 @@ export const Route = createFileRoute("/organize-stl-files")({
     meta: [
       { title: "Organize STL Files - STL Shelf" },
       {
+        name: "robots",
+        content: "index, follow",
+      },
+      {
         name: "description",
         content:
           "Organize STL, 3MF, OBJ, and PLY files in a searchable 3D model library. Tag, preview, and version your personal archive with STL Shelf.",
@@ -99,7 +103,6 @@ export const Route = createFileRoute("/organize-stl-files")({
 
 function OrganizeStlFilesPage() {
   const { session } = Route.useLoaderData();
-
   return (
     <div className="flex min-h-screen flex-col">
       <Navigation session={session} />
