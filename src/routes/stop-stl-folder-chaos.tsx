@@ -3,10 +3,10 @@ import { GuidePage, createMarketingHead } from "@/components/marketing/guides/gu
 import { guidePages } from "@/components/marketing/guides/guides-data";
 import { getSessionFn } from "@/server/functions/auth";
 
-const guide = guidePages.organizeStlFiles;
+const guide = guidePages.stopStlFolderChaos;
 
-export const Route = createFileRoute("/organize-stl-files")({
-  component: OrganizeStlFilesPage,
+export const Route = createFileRoute("/stop-stl-folder-chaos")({
+  component: StopStlFolderChaosPage,
   loader: async () => {
     const session = await getSessionFn();
     return { session };
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/organize-stl-files")({
     }),
 });
 
-function OrganizeStlFilesPage() {
+function StopStlFolderChaosPage() {
   const { session } = Route.useLoaderData();
   return <GuidePage guide={guide} session={session} />;
 }

@@ -15,7 +15,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Features", to: "/", hash: "features", scrollTo: "#features" },
-  { label: "Guides", to: "/", hash: "guides", scrollTo: "#guides" },
+  { label: "Guides", to: "/guides" },
   { label: "Pricing", to: "/", hash: "pricing", scrollTo: "#pricing" },
   { label: "About", to: "/about" },
 ];

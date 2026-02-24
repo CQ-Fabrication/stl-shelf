@@ -84,7 +84,16 @@ const PUBLIC_ROUTES = [
   "/pricing",
   "/privacy",
   "/terms",
+  "/guides",
   "/organize-stl-files",
+  "/stl-file-organizer",
+  "/organize-3mf-files",
+  "/organize-obj-files",
+  "/version-control-for-stl-files",
+  "/tagging-system-for-3d-models",
+  "/private-3d-model-library",
+  "/3d-model-preview-in-browser",
+  "/stop-stl-folder-chaos",
   "/self-hosted-3d-model-library",
 ];
 

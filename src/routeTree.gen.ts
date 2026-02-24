@@ -9,24 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VersionControlForStlFilesRouteImport } from './routes/version-control-for-stl-files'
 import { Route as VerifyEmailPendingRouteImport } from './routes/verify-email-pending'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TaggingSystemFor3dModelsRouteImport } from './routes/tagging-system-for-3d-models'
+import { Route as StopStlFolderChaosRouteImport } from './routes/stop-stl-folder-chaos'
+import { Route as StlFileOrganizerRouteImport } from './routes/stl-file-organizer'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SelfHosted3dModelLibraryRouteImport } from './routes/self-hosted-3d-model-library'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as Private3dModelLibraryRouteImport } from './routes/private-3d-model-library'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OrganizeStlFilesRouteImport } from './routes/organize-stl-files'
+import { Route as OrganizeObjFilesRouteImport } from './routes/organize-obj-files'
+import { Route as Organize3mfFilesRouteImport } from './routes/organize-3mf-files'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as GuidesRouteImport } from './routes/guides'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as R3dModelPreviewInBrowserRouteImport } from './routes/3d-model-preview-in-browser'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
 import { Route as OrganizationMembersRouteImport } from './routes/organization/members'
@@ -44,6 +53,12 @@ import { Route as ApiV1ModelsModelIdVersionsRouteImport } from './routes/api/v1/
 import { Route as ApiDownloadVersionVersionIdZipRouteImport } from './routes/api/download/version/$versionId.zip'
 import { Route as ApiV1ModelsModelIdFilesFileIdDownloadRouteImport } from './routes/api/v1/models.$modelId.files.$fileId.download'
 
+const VersionControlForStlFilesRoute =
+  VersionControlForStlFilesRouteImport.update({
+    id: '/version-control-for-stl-files',
+    path: '/version-control-for-stl-files',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const VerifyEmailPendingRoute = VerifyEmailPendingRouteImport.update({
   id: '/verify-email-pending',
   path: '/verify-email-pending',
@@ -57,6 +72,22 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TaggingSystemFor3dModelsRoute =
+  TaggingSystemFor3dModelsRouteImport.update({
+    id: '/tagging-system-for-3d-models',
+    path: '/tagging-system-for-3d-models',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const StopStlFolderChaosRoute = StopStlFolderChaosRouteImport.update({
+  id: '/stop-stl-folder-chaos',
+  path: '/stop-stl-folder-chaos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StlFileOrganizerRoute = StlFileOrganizerRouteImport.update({
+  id: '/stl-file-organizer',
+  path: '/stl-file-organizer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -80,6 +111,11 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Private3dModelLibraryRoute = Private3dModelLibraryRouteImport.update({
+  id: '/private-3d-model-library',
+  path: '/private-3d-model-library',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -95,6 +131,16 @@ const OrganizeStlFilesRoute = OrganizeStlFilesRouteImport.update({
   path: '/organize-stl-files',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrganizeObjFilesRoute = OrganizeObjFilesRouteImport.update({
+  id: '/organize-obj-files',
+  path: '/organize-obj-files',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Organize3mfFilesRoute = Organize3mfFilesRouteImport.update({
+  id: '/organize-3mf-files',
+  path: '/organize-3mf-files',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -103,6 +149,11 @@ const LoginRoute = LoginRouteImport.update({
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesRoute = GuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -135,6 +186,12 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const R3dModelPreviewInBrowserRoute =
+  R3dModelPreviewInBrowserRouteImport.update({
+    id: '/3d-model-preview-in-browser',
+    path: '/3d-model-preview-in-browser',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -222,24 +279,33 @@ const ApiV1ModelsModelIdFilesFileIdDownloadRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/3d-model-preview-in-browser': typeof R3dModelPreviewInBrowserRoute
   '/about': typeof AboutRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
   '/consent': typeof ConsentRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/guides': typeof GuidesRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/organize-3mf-files': typeof Organize3mfFilesRoute
+  '/organize-obj-files': typeof OrganizeObjFilesRoute
   '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/private-3d-model-library': typeof Private3dModelLibraryRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
   '/signup': typeof SignupRoute
+  '/stl-file-organizer': typeof StlFileOrganizerRoute
+  '/stop-stl-folder-chaos': typeof StopStlFolderChaosRoute
+  '/tagging-system-for-3d-models': typeof TaggingSystemFor3dModelsRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-email-pending': typeof VerifyEmailPendingRoute
+  '/version-control-for-stl-files': typeof VersionControlForStlFilesRoute
   '/checkout/failed': typeof CheckoutFailedRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
@@ -258,24 +324,33 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/3d-model-preview-in-browser': typeof R3dModelPreviewInBrowserRoute
   '/about': typeof AboutRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
   '/consent': typeof ConsentRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/guides': typeof GuidesRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/organize-3mf-files': typeof Organize3mfFilesRoute
+  '/organize-obj-files': typeof OrganizeObjFilesRoute
   '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/private-3d-model-library': typeof Private3dModelLibraryRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
   '/signup': typeof SignupRoute
+  '/stl-file-organizer': typeof StlFileOrganizerRoute
+  '/stop-stl-folder-chaos': typeof StopStlFolderChaosRoute
+  '/tagging-system-for-3d-models': typeof TaggingSystemFor3dModelsRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-email-pending': typeof VerifyEmailPendingRoute
+  '/version-control-for-stl-files': typeof VersionControlForStlFilesRoute
   '/checkout/failed': typeof CheckoutFailedRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
@@ -295,24 +370,33 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/3d-model-preview-in-browser': typeof R3dModelPreviewInBrowserRoute
   '/about': typeof AboutRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
   '/consent': typeof ConsentRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/guides': typeof GuidesRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/organize-3mf-files': typeof Organize3mfFilesRoute
+  '/organize-obj-files': typeof OrganizeObjFilesRoute
   '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/private-3d-model-library': typeof Private3dModelLibraryRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
   '/signup': typeof SignupRoute
+  '/stl-file-organizer': typeof StlFileOrganizerRoute
+  '/stop-stl-folder-chaos': typeof StopStlFolderChaosRoute
+  '/tagging-system-for-3d-models': typeof TaggingSystemFor3dModelsRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-email-pending': typeof VerifyEmailPendingRoute
+  '/version-control-for-stl-files': typeof VersionControlForStlFilesRoute
   '/checkout/failed': typeof CheckoutFailedRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/models/$modelId': typeof ModelsModelIdRoute
@@ -333,24 +417,33 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/3d-model-preview-in-browser'
     | '/about'
     | '/accept-invitation'
     | '/announcements'
     | '/billing'
     | '/consent'
     | '/forgot-password'
+    | '/guides'
     | '/library'
     | '/login'
+    | '/organize-3mf-files'
+    | '/organize-obj-files'
     | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
+    | '/private-3d-model-library'
     | '/profile'
     | '/reset-password'
     | '/self-hosted-3d-model-library'
     | '/signup'
+    | '/stl-file-organizer'
+    | '/stop-stl-folder-chaos'
+    | '/tagging-system-for-3d-models'
     | '/terms'
     | '/verify-email'
     | '/verify-email-pending'
+    | '/version-control-for-stl-files'
     | '/checkout/failed'
     | '/checkout/success'
     | '/models/$modelId'
@@ -369,24 +462,33 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/3d-model-preview-in-browser'
     | '/about'
     | '/accept-invitation'
     | '/announcements'
     | '/billing'
     | '/consent'
     | '/forgot-password'
+    | '/guides'
     | '/library'
     | '/login'
+    | '/organize-3mf-files'
+    | '/organize-obj-files'
     | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
+    | '/private-3d-model-library'
     | '/profile'
     | '/reset-password'
     | '/self-hosted-3d-model-library'
     | '/signup'
+    | '/stl-file-organizer'
+    | '/stop-stl-folder-chaos'
+    | '/tagging-system-for-3d-models'
     | '/terms'
     | '/verify-email'
     | '/verify-email-pending'
+    | '/version-control-for-stl-files'
     | '/checkout/failed'
     | '/checkout/success'
     | '/models/$modelId'
@@ -405,24 +507,33 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/3d-model-preview-in-browser'
     | '/about'
     | '/accept-invitation'
     | '/announcements'
     | '/billing'
     | '/consent'
     | '/forgot-password'
+    | '/guides'
     | '/library'
     | '/login'
+    | '/organize-3mf-files'
+    | '/organize-obj-files'
     | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
+    | '/private-3d-model-library'
     | '/profile'
     | '/reset-password'
     | '/self-hosted-3d-model-library'
     | '/signup'
+    | '/stl-file-organizer'
+    | '/stop-stl-folder-chaos'
+    | '/tagging-system-for-3d-models'
     | '/terms'
     | '/verify-email'
     | '/verify-email-pending'
+    | '/version-control-for-stl-files'
     | '/checkout/failed'
     | '/checkout/success'
     | '/models/$modelId'
@@ -442,24 +553,33 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  R3dModelPreviewInBrowserRoute: typeof R3dModelPreviewInBrowserRoute
   AboutRoute: typeof AboutRoute
   AcceptInvitationRoute: typeof AcceptInvitationRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   BillingRoute: typeof BillingRoute
   ConsentRoute: typeof ConsentRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  GuidesRoute: typeof GuidesRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
+  Organize3mfFilesRoute: typeof Organize3mfFilesRoute
+  OrganizeObjFilesRoute: typeof OrganizeObjFilesRoute
   OrganizeStlFilesRoute: typeof OrganizeStlFilesRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  Private3dModelLibraryRoute: typeof Private3dModelLibraryRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SelfHosted3dModelLibraryRoute: typeof SelfHosted3dModelLibraryRoute
   SignupRoute: typeof SignupRoute
+  StlFileOrganizerRoute: typeof StlFileOrganizerRoute
+  StopStlFolderChaosRoute: typeof StopStlFolderChaosRoute
+  TaggingSystemFor3dModelsRoute: typeof TaggingSystemFor3dModelsRoute
   TermsRoute: typeof TermsRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   VerifyEmailPendingRoute: typeof VerifyEmailPendingRoute
+  VersionControlForStlFilesRoute: typeof VersionControlForStlFilesRoute
   CheckoutFailedRoute: typeof CheckoutFailedRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   ModelsModelIdRoute: typeof ModelsModelIdRoute
@@ -476,6 +596,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/version-control-for-stl-files': {
+      id: '/version-control-for-stl-files'
+      path: '/version-control-for-stl-files'
+      fullPath: '/version-control-for-stl-files'
+      preLoaderRoute: typeof VersionControlForStlFilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/verify-email-pending': {
       id: '/verify-email-pending'
       path: '/verify-email-pending'
@@ -495,6 +622,27 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tagging-system-for-3d-models': {
+      id: '/tagging-system-for-3d-models'
+      path: '/tagging-system-for-3d-models'
+      fullPath: '/tagging-system-for-3d-models'
+      preLoaderRoute: typeof TaggingSystemFor3dModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stop-stl-folder-chaos': {
+      id: '/stop-stl-folder-chaos'
+      path: '/stop-stl-folder-chaos'
+      fullPath: '/stop-stl-folder-chaos'
+      preLoaderRoute: typeof StopStlFolderChaosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stl-file-organizer': {
+      id: '/stl-file-organizer'
+      path: '/stl-file-organizer'
+      fullPath: '/stl-file-organizer'
+      preLoaderRoute: typeof StlFileOrganizerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -525,6 +673,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/private-3d-model-library': {
+      id: '/private-3d-model-library'
+      path: '/private-3d-model-library'
+      fullPath: '/private-3d-model-library'
+      preLoaderRoute: typeof Private3dModelLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -546,6 +701,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizeStlFilesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/organize-obj-files': {
+      id: '/organize-obj-files'
+      path: '/organize-obj-files'
+      fullPath: '/organize-obj-files'
+      preLoaderRoute: typeof OrganizeObjFilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organize-3mf-files': {
+      id: '/organize-3mf-files'
+      path: '/organize-3mf-files'
+      fullPath: '/organize-3mf-files'
+      preLoaderRoute: typeof Organize3mfFilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -558,6 +727,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides': {
+      id: '/guides'
+      path: '/guides'
+      fullPath: '/guides'
+      preLoaderRoute: typeof GuidesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -600,6 +776,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/3d-model-preview-in-browser': {
+      id: '/3d-model-preview-in-browser'
+      path: '/3d-model-preview-in-browser'
+      fullPath: '/3d-model-preview-in-browser'
+      preLoaderRoute: typeof R3dModelPreviewInBrowserRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -745,24 +928,33 @@ const ApiV1ModelsRouteWithChildren = ApiV1ModelsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  R3dModelPreviewInBrowserRoute: R3dModelPreviewInBrowserRoute,
   AboutRoute: AboutRoute,
   AcceptInvitationRoute: AcceptInvitationRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   BillingRoute: BillingRoute,
   ConsentRoute: ConsentRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  GuidesRoute: GuidesRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
+  Organize3mfFilesRoute: Organize3mfFilesRoute,
+  OrganizeObjFilesRoute: OrganizeObjFilesRoute,
   OrganizeStlFilesRoute: OrganizeStlFilesRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  Private3dModelLibraryRoute: Private3dModelLibraryRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SelfHosted3dModelLibraryRoute: SelfHosted3dModelLibraryRoute,
   SignupRoute: SignupRoute,
+  StlFileOrganizerRoute: StlFileOrganizerRoute,
+  StopStlFolderChaosRoute: StopStlFolderChaosRoute,
+  TaggingSystemFor3dModelsRoute: TaggingSystemFor3dModelsRoute,
   TermsRoute: TermsRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   VerifyEmailPendingRoute: VerifyEmailPendingRoute,
+  VersionControlForStlFilesRoute: VersionControlForStlFilesRoute,
   CheckoutFailedRoute: CheckoutFailedRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   ModelsModelIdRoute: ModelsModelIdRoute,

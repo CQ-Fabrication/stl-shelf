@@ -71,6 +71,9 @@ const CLIENT_DIRECTORY = "./dist/client";
 const SERVER_ENTRY_POINT = "./dist/server/server.js";
 const FRAME_ANCESTORS_DIRECTIVE = "frame-ancestors 'none'";
 const X_FRAME_OPTIONS_VALUE = "DENY";
+const LLMS_ROUTE_PATH = "/llms.txt";
+const LLMS_FILE_PATH = path.join(CLIENT_DIRECTORY, "llms.txt");
+const TEXT_PLAIN_UTF8_CONTENT_TYPE = "text/plain; charset=utf-8";
 
 // Logging utilities for professional output
 const log = {
@@ -512,11 +515,29 @@ async function initializeServer() {
 
   const { routes } = await initializeStaticRoutes(CLIENT_DIRECTORY);
 
+  const llmsRouteHandler = async () => {
+    const llmsFile = Bun.file(LLMS_FILE_PATH);
+    if (!(await llmsFile.exists())) {
+      return applySecurityHeaders(new Response("Not Found", { status: 404 }));
+    }
+
+    return applySecurityHeaders(
+      new Response(llmsFile, {
+        status: 200,
+        headers: {
+          "Content-Type": TEXT_PLAIN_UTF8_CONTENT_TYPE,
+          "Cache-Control": "public, max-age=3600",
+        },
+      }),
+    );
+  };
+
   const server = Bun.serve({
     port: SERVER_PORT,
 
     routes: {
       ...routes,
+      [LLMS_ROUTE_PATH]: llmsRouteHandler,
 
       "/*": async (req: Request) => {
         try {
