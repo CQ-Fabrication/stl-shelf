@@ -3,11 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { isConsentRequiredError } from "@/lib/consent-errors";
-import {
-  trackAnnouncementOpened,
-  trackAnnouncementRead,
-  useOpenPanelClient,
-} from "@/lib/openpanel";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
+import { trackAnnouncementOpened, trackAnnouncementRead } from "@/lib/openpanel/client-events";
 import { AnnouncementCard } from "@/components/announcements/announcement-card";
 import { AnnouncementEmptyState } from "@/components/announcements/empty-state";
 import { Button } from "@/components/ui/button";

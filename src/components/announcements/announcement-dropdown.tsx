@@ -8,11 +8,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMarkAsRead, useRecentAnnouncements } from "@/hooks/use-announcements";
-import {
-  trackAnnouncementOpened,
-  trackAnnouncementRead,
-  useOpenPanelClient,
-} from "@/lib/openpanel";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
+import { trackAnnouncementOpened, trackAnnouncementRead } from "@/lib/openpanel/client-events";
 import { cn } from "@/lib/utils";
 import { AnnouncementCard } from "./announcement-card";
 import { AnnouncementEmptyState } from "./empty-state";
