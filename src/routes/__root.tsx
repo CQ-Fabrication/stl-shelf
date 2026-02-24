@@ -91,6 +91,9 @@ const PUBLIC_ROUTES = [
 // Routes that authenticated users should NOT access (redirect to /library)
 const AUTH_ROUTES = ["/login", "/signup"];
 const CONSENT_ROUTE = "/consent";
+const defaultSeoTitle = "STL Shelf - STL File Organizer & 3D Model Library";
+const defaultSeoDescription =
+  "STL file organizer and 3D model library for makers. Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in cloud or self-hosted mode.";
 
 function normalizePathname(pathname: string): string {
   if (pathname === "/") {
@@ -111,22 +114,20 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "STL Shelf - 3D Model Library for Makers",
+        title: defaultSeoTitle,
       },
       {
         name: "description",
-        content:
-          "Cloud or self-hosted 3D model library for makers. Version control, 3D preview, and smart organization for your STL, 3MF, and OBJ files.",
+        content: defaultSeoDescription,
       },
       // Open Graph
       {
         property: "og:title",
-        content: "STL Shelf - 3D Model Library for Makers",
+        content: defaultSeoTitle,
       },
       {
         property: "og:description",
-        content:
-          "Cloud or self-hosted 3D model library for makers. Version control, 3D preview, and smart organization for your STL, 3MF, and OBJ files.",
+        content: defaultSeoDescription,
       },
       {
         property: "og:image",
@@ -155,12 +156,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
       {
         name: "twitter:title",
-        content: "STL Shelf - 3D Model Library for Makers",
+        content: defaultSeoTitle,
       },
       {
         name: "twitter:description",
-        content:
-          "Cloud or self-hosted 3D model library for makers. Version control, 3D preview, and smart organization for your STL, 3MF, and OBJ files.",
+        content: defaultSeoDescription,
       },
       {
         name: "twitter:image",
@@ -265,23 +265,48 @@ function RootDocument({ children }: { children: ReactNode }) {
           "@graph": [
             {
               "@type": "Organization",
+              "@id": "https://stl-shelf.com/#organization",
               name: "STL Shelf",
               url: "https://stl-shelf.com",
               logo: "https://stl-shelf.com/og-image.svg",
               sameAs: ["https://github.com/CQ-Fabrication/stl-shelf"],
             },
             {
+              "@type": "WebSite",
+              "@id": "https://stl-shelf.com/#website",
+              name: "STL Shelf",
+              url: "https://stl-shelf.com",
+              inLanguage: "en-US",
+            },
+            {
               "@type": "SoftwareApplication",
+              "@id": "https://stl-shelf.com/#software",
               name: "STL Shelf",
               applicationCategory: "DesignApplication",
+              applicationSubCategory: "3D Printing File Management",
               operatingSystem: "Web",
               url: "https://stl-shelf.com/",
-              description:
-                "Cloud or self-hosted 3D model library for makers with version control, 3D preview, and smart organization.",
+              description: defaultSeoDescription,
+              provider: { "@id": "https://stl-shelf.com/#organization" },
+              featureList: [
+                "Organize STL, 3MF, OBJ, and PLY files in one searchable library",
+                "Tag and categorize models with custom metadata",
+                "Track version history for every model iteration",
+                "Preview 3D models directly in the browser",
+                "Deploy in cloud or self-hosted mode with Docker",
+              ],
+              keywords:
+                "stl file organizer, stl file manager, 3d model library, 3d printing file management",
+              isAccessibleForFree: true,
+              audience: {
+                "@type": "Audience",
+                audienceType: "Makers and 3D printing teams",
+              },
               offers: {
                 "@type": "Offer",
                 price: "0",
                 priceCurrency: "USD",
+                url: "https://stl-shelf.com/pricing",
               },
             },
           ],

@@ -13,8 +13,26 @@ import {
   FinalCTA,
   Footer,
 } from "@/components/marketing/sections";
+import { marketingFaqs } from "@/components/marketing/sections/faq.data";
 import { getPublicPricing } from "@/server/functions/pricing";
 import { getSessionFn } from "@/server/functions/auth";
+
+const homeTitle = "STL Shelf - STL File Organizer & 3D Model Library";
+const homeDescription =
+  "STL file organizer and 3D model library for makers. Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in cloud or self-hosted mode.";
+
+const faqStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: marketingFaqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+};
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -26,7 +44,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       {
-        title: "STL Shelf - 3D Model Library for Makers",
+        title: homeTitle,
       },
       {
         name: "robots",
@@ -34,17 +52,20 @@ export const Route = createFileRoute("/")({
       },
       {
         name: "description",
+        content: homeDescription,
+      },
+      {
+        name: "keywords",
         content:
-          "Organize, version, and share your 3D printable models. Cloud or self-hosted for makers and teams.",
+          "stl file organizer, stl file manager, 3d model library, stl management software, 3d printing file organization",
       },
       {
         property: "og:title",
-        content: "STL Shelf - 3D Model Library for Makers",
+        content: homeTitle,
       },
       {
         property: "og:description",
-        content:
-          "Organize, version, and share your 3D printable models. Cloud or self-hosted for makers and teams.",
+        content: homeDescription,
       },
       {
         property: "og:image",
@@ -60,16 +81,18 @@ export const Route = createFileRoute("/")({
       },
       {
         name: "twitter:title",
-        content: "STL Shelf - 3D Model Library for Makers",
+        content: homeTitle,
       },
       {
         name: "twitter:description",
-        content:
-          "Organize, version, and share your 3D printable models. Cloud or self-hosted for makers and teams.",
+        content: homeDescription,
       },
       {
         name: "twitter:image",
         content: "https://stl-shelf.com/og-image.svg",
+      },
+      {
+        "script:ld+json": faqStructuredData,
       },
     ],
     links: [{ rel: "canonical", href: "https://stl-shelf.com/" }],
