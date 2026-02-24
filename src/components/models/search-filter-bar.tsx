@@ -226,18 +226,35 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
     <div className={cn("space-y-3", className)}>
       {/* Unified Search and Filter Bar */}
       <div className="flex">
-        <div className="flex flex-1 items-center rounded-lg border bg-background shadow-sm focus-within:ring-2 focus-within:ring-brand/20">
+        <div
+          className="flex flex-1 items-center rounded-lg border bg-background shadow-sm focus-within:ring-2 focus-within:ring-brand/20"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-lpignore="true"
+          data-protonpass-ignore="true"
+        >
           {/* Search Input */}
           <div className="relative flex-1">
             <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
             <Input
+              autoCapitalize="none"
+              autoComplete="off"
+              autoCorrect="off"
               className={cn(
                 "border-0 bg-transparent pr-10 pl-10 shadow-none transition-opacity focus-visible:ring-0",
                 isPending && "opacity-70",
               )}
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-lpignore="true"
+              data-protonpass-ignore="true"
+              enterKeyHint="search"
+              name="model-search"
               onChange={(e) => handleSearchChange(e.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Search models..."
+              spellCheck={false}
+              type="search"
               value={localSearch}
             />
             {isPending && (
