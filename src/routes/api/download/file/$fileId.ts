@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, modelFiles, modelVersions, models } from "@/lib/db";
+import { shouldTrackEgressForDisposition } from "@/lib/billing/egress";
 import { storageService } from "@/server/services/storage";
 import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
 import { createContentDisposition } from "@/server/utils/filename-security";
@@ -27,6 +28,8 @@ export const Route = createFileRoute("/api/download/file/$fileId")({
         const organizationId = session.session.activeOrganizationId;
         const ip = getClientIp(request);
         const rate = checkRateLimit(`download:${organizationId}:${ip}`, RATE_LIMIT);
+        const disposition = new URL(request.url).searchParams.get("disposition");
+        const isInline = !shouldTrackEgressForDisposition(disposition);
 
         if (!rate.allowed) {
           return Response.json(
@@ -62,25 +65,25 @@ export const Route = createFileRoute("/api/download/file/$fileId")({
           return new Response("File not found", { status: 404 });
         }
 
-        const egress = await checkAndTrackEgress({
-          organizationId,
-          bytes: file.size,
-          downloadType: "file",
-          fileId: file.id,
-          modelId: file.modelId,
-          ip,
-        });
+        if (!isInline) {
+          const egress = await checkAndTrackEgress({
+            organizationId,
+            bytes: file.size,
+            downloadType: "file",
+            fileId: file.id,
+            modelId: file.modelId,
+            ip,
+          });
 
-        if (!egress.allowed) {
-          return Response.json(
-            { error: "Bandwidth limit reached. Upgrade or add storage to continue." },
-            { status: 429 },
-          );
+          if (!egress.allowed) {
+            return Response.json(
+              { error: "Bandwidth limit reached. Upgrade or add storage to continue." },
+              { status: 429 },
+            );
+          }
         }
 
         const stream = await storageService.getFileStream(file.storageKey);
-        const disposition = new URL(request.url).searchParams.get("disposition");
-        const isInline = disposition === "inline";
         const filename = file.originalName || "download";
 
         return new Response(stream, {

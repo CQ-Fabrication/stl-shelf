@@ -157,7 +157,7 @@ export const getUsageStats = createServerFn({ method: "GET" })
     const memberPercentage =
       memberLimit && memberLimit > 0 ? Math.min((currentMemberCount / memberLimit) * 100, 100) : 0;
     const egressUsage = await getEgressUsageSnapshot(context.organizationId);
-    const egressLimits = getEgressLimits(currentStorage);
+    const egressLimits = getEgressLimits(currentStorage, storageLimit);
     const egressLimit = egressLimits.softLimit;
     const egressPercentage = egressLimit
       ? Math.min((egressUsage.bytes / egressLimit) * 100, 100)

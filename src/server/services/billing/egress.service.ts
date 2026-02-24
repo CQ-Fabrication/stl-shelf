@@ -4,19 +4,20 @@ import { Resend } from "resend";
 import { db } from "@/lib/db";
 import { organization, user } from "@/lib/db/schema/auth";
 import {
+  EGRESS_HARD_LIMIT_MULTIPLIER,
   EGRESS_HARD_WARNING_RATIO,
+  EGRESS_SOFT_LIMIT_MULTIPLIER,
   EGRESS_SOFT_WARNING_RATIO,
+  getEgressLimitBaselineBytes,
   shouldTriggerHardEgressWarning,
   shouldTriggerSoftEgressWarning,
 } from "@/lib/billing/egress";
+import { getTierConfig, normalizeSubscriptionTier } from "@/lib/billing/config";
 import { formatStorage } from "@/lib/billing/utils";
 import { BandwidthUsageAlertTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logAuditEvent, logErrorEvent } from "@/lib/logging";
-
-const SOFT_LIMIT_MULTIPLIER = 3;
-const HARD_LIMIT_MULTIPLIER = 5;
 
 let resendClient: Resend | null = null;
 
@@ -86,11 +87,14 @@ const sendEgressWarningEmail = async (params: {
   }
 };
 
-export const getEgressLimits = (storageBytes: number) => {
-  const baseline = Math.max(storageBytes, 0);
+export const getEgressLimits = (
+  currentStorageBytes: number,
+  configuredStorageLimitBytes?: number | null,
+) => {
+  const baseline = getEgressLimitBaselineBytes(currentStorageBytes, configuredStorageLimitBytes);
   return {
-    softLimit: baseline * SOFT_LIMIT_MULTIPLIER,
-    hardLimit: baseline * HARD_LIMIT_MULTIPLIER,
+    softLimit: baseline * EGRESS_SOFT_LIMIT_MULTIPLIER,
+    hardLimit: baseline * EGRESS_HARD_LIMIT_MULTIPLIER,
   };
 };
 
@@ -152,13 +156,17 @@ export const checkAndTrackEgress = async (params: {
   const currentDownloads = shouldReset ? 0 : (org.egressDownloadsThisMonth ?? 0);
 
   const storageBytes = Number(org.currentStorage ?? 0);
-  const limits = getEgressLimits(storageBytes);
-  const softLimit = limits.softLimit > 0 ? limits.softLimit : params.bytes * SOFT_LIMIT_MULTIPLIER;
-  const hardLimit = limits.hardLimit > 0 ? limits.hardLimit : params.bytes * HARD_LIMIT_MULTIPLIER;
+  const normalizedTier = normalizeSubscriptionTier(org.subscriptionTier);
+  const tierConfig = getTierConfig(normalizedTier);
+  const configuredStorageLimit = Number(org.storageLimit ?? tierConfig.storageLimit ?? 0);
+  const limits = getEgressLimits(storageBytes, configuredStorageLimit);
+  const softLimit =
+    limits.softLimit > 0 ? limits.softLimit : params.bytes * EGRESS_SOFT_LIMIT_MULTIPLIER;
+  const hardLimit =
+    limits.hardLimit > 0 ? limits.hardLimit : params.bytes * EGRESS_HARD_LIMIT_MULTIPLIER;
 
   const newBytes = currentBytes + params.bytes;
-  const tier = (org.subscriptionTier ?? "free").toLowerCase();
-  const enforceHardLimit = tier === "free" || tier === "basic";
+  const enforceHardLimit = normalizedTier === "free" || normalizedTier === "basic";
 
   if (enforceHardLimit && newBytes > hardLimit) {
     return {

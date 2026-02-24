@@ -2,12 +2,22 @@ const MEBIBYTE = 1024 * 1024;
 
 export const EGRESS_SOFT_WARNING_PERCENT = 80;
 export const EGRESS_HARD_WARNING_PERCENT = 100;
+export const EGRESS_SOFT_LIMIT_MULTIPLIER = 3;
+export const EGRESS_HARD_LIMIT_MULTIPLIER = 5;
 
 export const EGRESS_SOFT_WARNING_RATIO = EGRESS_SOFT_WARNING_PERCENT / 100;
 export const EGRESS_HARD_WARNING_RATIO = EGRESS_HARD_WARNING_PERCENT / 100;
 
 // Prevent early warning noise on very small libraries where percentages jump too fast.
 export const EGRESS_SOFT_WARNING_MIN_BYTES = 250 * MEBIBYTE;
+
+export const getEgressLimitBaselineBytes = (
+  currentStorageBytes: number,
+  configuredStorageLimitBytes?: number | null,
+) => Math.max(currentStorageBytes, configuredStorageLimitBytes ?? 0, 0);
+
+export const shouldTrackEgressForDisposition = (disposition: string | null) =>
+  (disposition ?? "").toLowerCase() !== "inline";
 
 export const shouldTriggerSoftEgressWarning = (usageRatio: number, usedBytes: number) =>
   usageRatio >= EGRESS_SOFT_WARNING_RATIO && usedBytes >= EGRESS_SOFT_WARNING_MIN_BYTES;
