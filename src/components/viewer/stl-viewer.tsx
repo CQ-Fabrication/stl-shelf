@@ -14,7 +14,7 @@ import { errorContextActions } from "@/stores/error-context.store";
 // Error boundary to catch Three.js/Canvas errors and prevent page crashes
 type ErrorBoundaryProps = {
   children: ReactNode;
-  fallback: ReactNode;
+  renderFallback: (error: Error | null) => ReactNode;
 };
 
 type ErrorBoundaryState = {
@@ -38,7 +38,7 @@ class ViewerErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback;
+      return this.props.renderFallback(this.state.error);
     }
     return this.props.children;
   }
@@ -53,31 +53,25 @@ type STLViewerProps = {
 };
 
 type ModelMeshProps = {
-  url: string;
-  filename: string;
   autoRotate: boolean;
   color: string;
 };
 
-function ModelMesh({ url, filename, autoRotate, color }: ModelMeshProps) {
-  const meshRef = useRef<Mesh>(null);
+type MeshGeometryProps = ModelMeshProps & {
+  geometry: BufferGeometry | undefined;
+};
+
+type LoaderMeshProps = ModelMeshProps & {
+  url: string;
+};
+
+const getFileExtension = (filename: string): string | null => {
   const extension = filename.split(".").pop()?.toLowerCase();
+  return extension || null;
+};
 
-  // Always call both loaders to satisfy React hooks rules
-  const stlGeometry = useLoader(STLLoader, url);
-  const objObject = useLoader(OBJLoader, url);
-
-  // Select the appropriate geometry based on file extension
-  let geometry: BufferGeometry | undefined;
-  if (extension === "stl") {
-    geometry = stlGeometry;
-  } else if (extension === "obj") {
-    // Extract geometry from the first mesh in the OBJ
-    const firstChild = objObject.children[0];
-    if (firstChild && "geometry" in firstChild) {
-      geometry = (firstChild as Mesh).geometry;
-    }
-  }
+function MeshGeometry({ geometry, autoRotate, color }: MeshGeometryProps) {
+  const meshRef = useRef<Mesh>(null);
 
   // Auto-rotate the model (only if enabled)
   useFrame(() => {
@@ -124,6 +118,33 @@ function ModelMesh({ url, filename, autoRotate, color }: ModelMeshProps) {
   );
 }
 
+function STLModelMesh({ url, autoRotate, color }: LoaderMeshProps) {
+  const geometry = useLoader(STLLoader, url);
+  return <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} />;
+}
+
+function OBJModelMesh({ url, autoRotate, color }: LoaderMeshProps) {
+  const objObject = useLoader(OBJLoader, url);
+  const firstMesh = objObject.children.find((child): child is Mesh => "geometry" in child);
+  const geometry = firstMesh?.geometry as BufferGeometry | undefined;
+
+  return <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} />;
+}
+
+function ModelMesh({ url, filename, autoRotate, color }: LoaderMeshProps & { filename: string }) {
+  const extension = getFileExtension(filename);
+
+  if (extension === "stl") {
+    return <STLModelMesh autoRotate={autoRotate} color={color} url={url} />;
+  }
+
+  if (extension === "obj") {
+    return <OBJModelMesh autoRotate={autoRotate} color={color} url={url} />;
+  }
+
+  return null;
+}
+
 function ViewerControls({ onResetCamera }: { onResetCamera: () => void }) {
   return (
     <div className="absolute top-4 right-4 flex flex-col gap-2">
@@ -152,14 +173,18 @@ function LoadingFallback() {
 }
 
 function ErrorFallback({ error }: { error: Error }) {
-  // Log full error for debugging, show generic message to users
+  const isAllocationError = /array buffer allocation failed/i.test(error.message);
+
+  // Log full error for debugging
   console.error("STL Viewer error:", error);
   return (
     <div className="flex h-full w-full items-center justify-center bg-muted">
       <div className="space-y-2 text-center">
         <div className="text-destructive">Failed to load model</div>
         <div className="text-muted-foreground text-sm">
-          Please try refreshing the page or select a different file.
+          {isAllocationError
+            ? "This file is too large for in-browser preview. Download the file to inspect it locally."
+            : "Please try refreshing the page or select a different file."}
         </div>
       </div>
     </div>
@@ -245,7 +270,9 @@ export function STLViewer({ modelId, version, filename, className = "", url }: S
 export function STLViewerWithSuspense(props: STLViewerProps) {
   return (
     <ViewerErrorBoundary
-      fallback={<ErrorFallback error={new Error("The 3D viewer encountered an error")} />}
+      renderFallback={(error) => (
+        <ErrorFallback error={error ?? new Error("The 3D viewer encountered an error")} />
+      )}
     >
       <Suspense fallback={<LoadingFallback />}>
         <STLViewer {...props} />

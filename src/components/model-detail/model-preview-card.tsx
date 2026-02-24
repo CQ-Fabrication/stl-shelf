@@ -11,12 +11,18 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { STLViewerWithSuspense } from "@/components/viewer/stl-viewer";
+import { formatBytes } from "@/lib/files/limits";
 import { getModelVersions, getModelFiles } from "@/server/functions/models";
 
 type ModelPreviewCardProps = {
   modelId: string;
   versionId?: string;
 };
+
+const MAX_IN_BROWSER_PREVIEW_SIZE_BYTES = 40 * 1024 * 1024;
+
+const isTooLargeForInBrowserPreview = (fileSize: number) =>
+  fileSize > MAX_IN_BROWSER_PREVIEW_SIZE_BYTES;
 
 export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) => {
   const { data: versions } = useQuery({
@@ -38,6 +44,10 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
     const sourceViewable = viewable.filter((file) => file.storageKey?.includes("/sources/"));
     return sourceViewable.length > 0 ? sourceViewable : viewable;
   }, [files]);
+  const previewFilesWithinSizeLimit = useMemo(
+    () => previewFiles.filter((file) => !isTooLargeForInBrowserPreview(file.size)),
+    [previewFiles],
+  );
 
   const [activeFileId, setActiveFileId] = useState<string | null>(null);
 
@@ -51,10 +61,13 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
       return;
     }
 
-    setActiveFileId(previewFiles[0]?.id ?? null);
-  }, [activeFileId, previewFiles]);
+    setActiveFileId(previewFilesWithinSizeLimit[0]?.id ?? previewFiles[0]?.id ?? null);
+  }, [activeFileId, previewFiles, previewFilesWithinSizeLimit]);
 
   const activeFile = previewFiles.find((file) => file.id === activeFileId) ?? previewFiles[0];
+  const activeFileTooLargeForBrowserPreview = activeFile
+    ? isTooLargeForInBrowserPreview(activeFile.size)
+    : false;
 
   // Check if there are any 3D files at all (including unsupported ones)
   const has3DFiles = files?.some((f) =>
@@ -122,9 +135,11 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
                     <SelectContent>
                       {previewFiles.map((file, index) => {
                         const name = file.originalName || file.filename;
+                        const tooLargeForPreview = isTooLargeForInBrowserPreview(file.size);
                         return (
                           <SelectItem key={file.id} value={file.id}>
                             Plate {index + 1} · {name}
+                            {tooLargeForPreview ? " · too large for browser preview" : ""}
                           </SelectItem>
                         );
                       })}
@@ -134,13 +149,29 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
               </div>
             ) : null}
             <div className="aspect-video">
-              <STLViewerWithSuspense
-                className="h-full w-full overflow-hidden rounded-b-lg"
-                filename={activeFile.filename}
-                modelId={modelId}
-                url={activeFile.storageUrl}
-                version={activeVersion.version}
-              />
+              {activeFileTooLargeForBrowserPreview ? (
+                <div className="flex h-full w-full items-center justify-center bg-muted">
+                  <div className="space-y-2 px-6 text-center">
+                    <div className="font-medium text-destructive">Preview not available</div>
+                    <div className="text-muted-foreground text-sm">
+                      This file is {formatBytes(activeFile.size)} and exceeds the in-browser preview
+                      limit of {formatBytes(MAX_IN_BROWSER_PREVIEW_SIZE_BYTES)}.
+                    </div>
+                    <div className="text-muted-foreground text-sm">
+                      Download the file to inspect it locally.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <STLViewerWithSuspense
+                  className="h-full w-full overflow-hidden rounded-b-lg"
+                  filename={activeFile.filename}
+                  key={activeFile.id}
+                  modelId={modelId}
+                  url={activeFile.storageUrl}
+                  version={activeVersion.version}
+                />
+              )}
             </div>
           </div>
         ) : (
