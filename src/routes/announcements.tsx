@@ -2,6 +2,7 @@ import { infiniteQueryOptions } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
+import { isConsentRequiredError } from "@/lib/consent-errors";
 import { AnnouncementCard } from "@/components/announcements/announcement-card";
 import { AnnouncementEmptyState } from "@/components/announcements/empty-state";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,15 @@ export const Route = createFileRoute("/announcements")({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
   loader: async ({ context }) => {
-    await context.queryClient.ensureInfiniteQueryData(announcementsQueryOptions());
+    try {
+      await context.queryClient.ensureInfiniteQueryData(announcementsQueryOptions());
+    } catch (error) {
+      if (isConsentRequiredError(error)) {
+        console.warn("Skipping /announcements SSR prefetch due to missing consent");
+        return;
+      }
+      throw error;
+    }
   },
   component: AnnouncementsPage,
 });

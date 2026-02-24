@@ -2,6 +2,7 @@ import { infiniteQueryOptions } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { listModels, getAllTags, type ModelListCursor } from "@/server/functions/models";
+import { isConsentRequiredError } from "@/lib/consent-errors";
 import { ModelGrid } from "@/components/models/model-grid";
 import { SearchFilterBar } from "@/components/models/search-filter-bar";
 import { useHasModels, hasModelsQueryOptions } from "@/hooks/use-has-models";
@@ -67,11 +68,19 @@ export const Route = createFileRoute("/library")({
   }),
   loader: async ({ context, deps }) => {
     // Prefetch all queries for SSR - no loading states on initial render
-    await Promise.all([
-      context.queryClient.ensureInfiniteQueryData(modelsQueryOptions(deps.q, deps.tags)),
-      context.queryClient.ensureQueryData(tagsQueryOptions()),
-      context.queryClient.ensureQueryData(hasModelsQueryOptions()),
-    ]);
+    try {
+      await Promise.all([
+        context.queryClient.ensureInfiniteQueryData(modelsQueryOptions(deps.q, deps.tags)),
+        context.queryClient.ensureQueryData(tagsQueryOptions()),
+        context.queryClient.ensureQueryData(hasModelsQueryOptions()),
+      ]);
+    } catch (error) {
+      if (isConsentRequiredError(error)) {
+        console.warn("Skipping /library SSR prefetch due to missing consent");
+        return;
+      }
+      throw error;
+    }
   },
   component: LibraryPage,
 });

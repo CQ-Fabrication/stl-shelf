@@ -16,7 +16,7 @@ export function useConsentStatus() {
   return {
     isLoading,
     isValid: data?.valid ?? true, // Assume valid while loading
-    reason: data?.reason ?? null,
+    reason: data && "reason" in data ? data.reason : null,
     currentVersion: data && "currentVersion" in data ? data.currentVersion : null,
     userVersion: data && "userVersion" in data ? data.userVersion : null,
     // Return undefined when not available, so components can distinguish from explicit false

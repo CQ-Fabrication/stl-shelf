@@ -22,6 +22,7 @@ export function ConsentBanner() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   // Initialize to undefined, then sync with server value once loaded
   const [marketingChecked, setMarketingChecked] = useState<boolean | undefined>(undefined);
+  const isInitialConsent = reason === "no_consent" || reason === "not_accepted";
 
   // Sync marketing state when server value becomes available
   // Only sync once - don't override user's changes after initial load
@@ -58,8 +59,13 @@ export function ConsentBanner() {
     },
   });
 
-  // Don't show if loading, valid, or not an outdated consent issue
-  if (isLoading || isValid || reason !== "outdated") {
+  const shouldShowBanner =
+    !isLoading &&
+    !isValid &&
+    (reason === "outdated" || reason === "no_consent" || reason === "not_accepted");
+
+  // Don't show if loading, valid, or not a consent issue this banner can resolve
+  if (!shouldShowBanner) {
     return null;
   }
 
@@ -71,10 +77,13 @@ export function ConsentBanner() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <FileText className="h-6 w-6 text-primary" />
           </div>
-          <h2 className="font-semibold text-xl">Our Terms Have Been Updated</h2>
+          <h2 className="font-semibold text-xl">
+            {isInitialConsent ? "Consent Required to Continue" : "Our Terms Have Been Updated"}
+          </h2>
           <p className="text-muted-foreground text-sm">
-            We've made updates to our Terms of Service and Privacy Policy. Please review and accept
-            the updated terms to continue using STL Shelf.
+            {isInitialConsent
+              ? "Please review and accept our Terms of Service and Privacy Policy to continue using STL Shelf."
+              : "We've made updates to our Terms of Service and Privacy Policy. Please review and accept the updated terms to continue using STL Shelf."}
           </p>
         </div>
 

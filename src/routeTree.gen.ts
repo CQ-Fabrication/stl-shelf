@@ -22,6 +22,7 @@ import { Route as OrganizeStlFilesRouteImport } from './routes/organize-stl-file
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
@@ -107,6 +108,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsentRoute = ConsentRouteImport.update({
+  id: '/consent',
+  path: '/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BillingRoute = BillingRouteImport.update({
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
+  '/consent': typeof ConsentRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByTo {
   '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
+  '/consent': typeof ConsentRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
@@ -291,6 +299,7 @@ export interface FileRoutesById {
   '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
+  '/consent': typeof ConsentRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
@@ -328,6 +337,7 @@ export interface FileRouteTypes {
     | '/accept-invitation'
     | '/announcements'
     | '/billing'
+    | '/consent'
     | '/forgot-password'
     | '/library'
     | '/login'
@@ -363,6 +373,7 @@ export interface FileRouteTypes {
     | '/accept-invitation'
     | '/announcements'
     | '/billing'
+    | '/consent'
     | '/forgot-password'
     | '/library'
     | '/login'
@@ -398,6 +409,7 @@ export interface FileRouteTypes {
     | '/accept-invitation'
     | '/announcements'
     | '/billing'
+    | '/consent'
     | '/forgot-password'
     | '/library'
     | '/login'
@@ -434,6 +446,7 @@ export interface RootRouteChildren {
   AcceptInvitationRoute: typeof AcceptInvitationRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   BillingRoute: typeof BillingRoute
+  ConsentRoute: typeof ConsentRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
@@ -552,6 +565,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consent': {
+      id: '/consent'
+      path: '/consent'
+      fullPath: '/consent'
+      preLoaderRoute: typeof ConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/billing': {
@@ -729,6 +749,7 @@ const rootRouteChildren: RootRouteChildren = {
   AcceptInvitationRoute: AcceptInvitationRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   BillingRoute: BillingRoute,
+  ConsentRoute: ConsentRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,

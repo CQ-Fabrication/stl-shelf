@@ -22,6 +22,7 @@ import { NotFound } from "@/components/not-found";
 import { PendingConsentHandler } from "@/components/pending-consent-handler";
 import { generateErrorId } from "@/lib/error-id";
 import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
+import { checkConsentValidityFn } from "@/server/functions/consent";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { OpenPanelProvider } from "@/lib/openpanel/client-provider";
@@ -89,6 +90,7 @@ const PUBLIC_ROUTES = [
 
 // Routes that authenticated users should NOT access (redirect to /library)
 const AUTH_ROUTES = ["/login", "/signup"];
+const CONSENT_ROUTE = "/consent";
 
 function normalizePathname(pathname: string): string {
   if (pathname === "/") {
@@ -227,6 +229,17 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     // If no organizations, redirect to create one
     if (organizations.length === 0) {
       throw redirect({ to: "/organization/create", replace: true });
+    }
+
+    const consentStatus = await checkConsentValidityFn();
+    const consentInvalid = !consentStatus.valid && consentStatus.reason !== "no_session";
+
+    if (consentInvalid && normalizedPathname !== CONSENT_ROUTE) {
+      throw redirect({ to: CONSENT_ROUTE, replace: true });
+    }
+
+    if (!consentInvalid && normalizedPathname === CONSENT_ROUTE) {
+      throw redirect({ to: "/library", replace: true });
     }
 
     // activeOrganizationId is automatically set at session creation via databaseHooks

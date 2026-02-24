@@ -5,6 +5,8 @@ import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, legalDocuments, consentAudit, userConsents } from "@/lib/db";
 import { syncResendSegments } from "@/server/services/marketing/resend-segments";
+import { buildReacceptConsentUpsert } from "@/server/services/consent/reaccept-upsert";
+import { validateAuthenticatedConsent } from "@/server/services/consent/validate-consent";
 import { getLiveSession } from "@/server/utils/live-session";
 
 // Schema definitions
@@ -34,9 +36,6 @@ const reacceptConsentSchema = z.object({
 const updateMarketingPromptSchema = z.object({
   action: z.enum(["accept", "decline", "defer"]),
 });
-
-// 7 days in milliseconds for "Maybe Later" re-prompt
-const DEFER_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Get the latest published documents (T&C and Privacy Policy)
@@ -243,58 +242,7 @@ export const checkConsentValidityFn = createServerFn({ method: "GET" }).handler(
   if (!session?.user?.id) {
     return { valid: false, reason: "no_session", shouldShowMarketingBanner: false };
   }
-
-  const [consent] = await db
-    .select({
-      termsPrivacyAccepted: userConsents.termsPrivacyAccepted,
-      termsPrivacyVersion: userConsents.termsPrivacyVersion,
-      marketingAccepted: userConsents.marketingAccepted,
-      marketingPromptDismissedAt: userConsents.marketingPromptDismissedAt,
-      marketingPromptDeclined: userConsents.marketingPromptDeclined,
-    })
-    .from(userConsents)
-    .where(eq(userConsents.userId, session.user.id))
-    .limit(1);
-
-  if (!consent) {
-    return { valid: false, reason: "no_consent", shouldShowMarketingBanner: false };
-  }
-
-  if (!consent.termsPrivacyAccepted) {
-    return { valid: false, reason: "not_accepted", shouldShowMarketingBanner: false };
-  }
-
-  // Check if version is current
-  const docs = await getLatestDocumentsFn();
-  const currentVersion = docs.termsAndConditions?.version;
-
-  if (currentVersion && consent.termsPrivacyVersion !== currentVersion) {
-    return {
-      valid: false,
-      reason: "outdated",
-      currentVersion,
-      userVersion: consent.termsPrivacyVersion,
-      marketingAccepted: consent.marketingAccepted,
-      shouldShowMarketingBanner: false, // Don't show marketing banner when T&C is outdated
-    };
-  }
-
-  // Calculate if marketing banner should be shown
-  // Show if: NOT accepted AND NOT declined AND (never dismissed OR dismissed > 7 days ago)
-  let shouldShowMarketingBanner = false;
-  if (!consent.marketingAccepted && !consent.marketingPromptDeclined) {
-    if (!consent.marketingPromptDismissedAt) {
-      // Never prompted
-      shouldShowMarketingBanner = true;
-    } else {
-      // Check if 7 days have passed since dismissal
-      const dismissedAt = new Date(consent.marketingPromptDismissedAt).getTime();
-      const now = Date.now();
-      shouldShowMarketingBanner = now - dismissedAt > DEFER_DURATION_MS;
-    }
-  }
-
-  return { valid: true, shouldShowMarketingBanner };
+  return validateAuthenticatedConsent(session.user.id);
 });
 
 /**
@@ -386,6 +334,12 @@ export const reacceptConsentFn = createServerFn({ method: "POST" })
     }
 
     const now = new Date();
+    const { insertValues, updateSet } = buildReacceptConsentUpsert({
+      userId: session.user.id,
+      termsPrivacyVersion: data.termsPrivacyVersion,
+      marketingAccepted: data.marketingAccepted,
+      now,
+    });
 
     // Insert audit record for T&C + PP
     await db.insert(consentAudit).values({
@@ -413,18 +367,11 @@ export const reacceptConsentFn = createServerFn({ method: "POST" })
       createdAt: now,
     });
 
-    // Update consent state
-    await db
-      .update(userConsents)
-      .set({
-        termsPrivacyAccepted: true,
-        termsPrivacyVersion: data.termsPrivacyVersion,
-        termsPrivacyAcceptedAt: now,
-        marketingAccepted: data.marketingAccepted,
-        marketingUpdatedAt: now,
-        updatedAt: now,
-      })
-      .where(eq(userConsents.userId, session.user.id));
+    // Upsert consent state so users without a row can self-heal from /consent
+    await db.insert(userConsents).values(insertValues).onConflictDoUpdate({
+      target: userConsents.userId,
+      set: updateSet,
+    });
 
     await syncResendSegments({
       email: session.user.email,
