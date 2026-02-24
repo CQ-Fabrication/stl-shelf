@@ -147,11 +147,8 @@ export function InlineNameEditor({ modelId, name, onEditStart, onEditEnd }: Inli
     }
   }, []);
 
-  // Check for reduced motion preference
-  const prefersReducedMotion =
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const transitionClass = prefersReducedMotion ? "" : "transition-all duration-150 ease-out";
+  // Keep classes deterministic across SSR/client; CSS media variants handle reduced motion.
+  const transitionClass = "motion-reduce:transition-none transition-all duration-150 ease-out";
 
   if (isEditing) {
     return (
@@ -160,7 +157,7 @@ export function InlineNameEditor({ modelId, name, onEditStart, onEditEnd }: Inli
           className={cn(
             "flex items-center gap-2",
             transitionClass,
-            !prefersReducedMotion && "animate-in fade-in-0 zoom-in-95",
+            "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95",
           )}
         >
           <input

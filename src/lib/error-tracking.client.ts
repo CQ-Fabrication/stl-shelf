@@ -1,5 +1,10 @@
 import * as Sentry from "@sentry/react";
 import type { EnhancedErrorContext } from "@/lib/error-context";
+import {
+  collectHydrationDiagnostics,
+  isHydrationMismatchError,
+  isHydrationMismatchMessage,
+} from "@/lib/error-tracking/hydration-diagnostics";
 
 let initialized = false;
 
@@ -11,6 +16,42 @@ export const initClientErrorTracking = () => {
   Sentry.init({
     dsn,
     environment: import.meta.env.MODE,
+    beforeSend(event, hint) {
+      const hasHydrationMismatch =
+        isHydrationMismatchError(hint.originalException) ||
+        isHydrationMismatchMessage(event.message ?? "") ||
+        (event.exception?.values ?? []).some((value) =>
+          isHydrationMismatchMessage(value.value ?? ""),
+        );
+
+      if (!hasHydrationMismatch) {
+        return event;
+      }
+
+      const diagnostics = collectHydrationDiagnostics();
+      event.tags = {
+        ...event.tags,
+        react_error_kind: "hydration_mismatch",
+        hydration_has_extension_markers: String(diagnostics.extensionMarkers.length > 0),
+        hydration_prefers_reduced_motion:
+          diagnostics.prefersReducedMotion === null
+            ? "unknown"
+            : String(diagnostics.prefersReducedMotion),
+      };
+      event.extra = {
+        ...event.extra,
+        hydration_diagnostics: diagnostics,
+      };
+      event.fingerprint = [
+        ...(event.fingerprint ?? ["{{ default }}"]),
+        "hydration_mismatch",
+        diagnostics.extensionMarkers.length > 0
+          ? "with_extension_markers"
+          : "without_extension_markers",
+      ];
+
+      return event;
+    },
   });
   initialized = true;
 };
