@@ -1,4 +1,5 @@
 STL Shelf
+STL Shelf is a private 3D model library (digital asset manager) for 3D printing files.
 A private system to organize STL files for makers and print teams.
 STL file organizer for personal and team archives.
 STL management software focused on clarity, retrieval speed, and ownership.
