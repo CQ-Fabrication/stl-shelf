@@ -19,6 +19,7 @@ describe("hydration diagnostics", () => {
     const tokens = [
       "immersive-translate-target-inner",
       "data-grammarly",
+      "data-protonpass-form",
       "foo",
       "bar",
       "google-translate-widget",
@@ -29,6 +30,7 @@ describe("hydration diagnostics", () => {
     expect(matches).toEqual([
       "immersive-translate-target-inner",
       "data-grammarly",
+      "data-protonpass-form",
       "google-translate-widget",
     ]);
   });

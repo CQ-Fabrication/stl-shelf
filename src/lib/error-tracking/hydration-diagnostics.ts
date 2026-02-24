@@ -8,6 +8,7 @@ const HYDRATION_MISMATCH_PATTERNS = [
 const EXTENSION_MARKER_PATTERNS = [
   /immersive-translate/i,
   /grammarly/i,
+  /protonpass/i,
   /google-translate/i,
   /transover/i,
   /deepl/i,
@@ -78,6 +79,9 @@ function collectDomMarkerMatches(): string[] {
       '[class*="grammarly"]',
       '[id*="grammarly"]',
       "[data-grammarly]",
+      "[data-protonpass-form]",
+      '[class*="protonpass"]',
+      '[id*="protonpass"]',
     ].join(", "),
   );
   for (const node of Array.from(injectedNodes).slice(0, 5)) {
