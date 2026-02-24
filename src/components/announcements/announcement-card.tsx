@@ -98,30 +98,32 @@ export function AnnouncementCard({
   }
 
   const isPageVariant = variant === "page";
+  const unreadSurfaceClass = isPageVariant
+    ? "border-brand/25 bg-brand/6"
+    : "border-l-2 border-brand/45 bg-brand/6";
+  const readSurfaceClass = isPageVariant
+    ? "border-border/70 bg-card"
+    : "border-l-2 border-transparent bg-card opacity-80";
 
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-2 p-3",
-        isPageVariant && "rounded-lg border bg-card",
-        isPageVariant && !isRead && "border-primary/20 bg-primary/5",
-        // Dropdown: subtle opacity for read items
-        !isPageVariant && isRead && "opacity-60",
+        "flex flex-col gap-2 p-3 transition-colors",
+        isPageVariant && "rounded-lg border",
+        isRead ? readSurfaceClass : unreadSurfaceClass,
       )}
     >
-      {/* Unread indicator for both variants */}
-      {!isRead && (
-        <div
-          className={cn(
-            "-translate-y-1/2 absolute h-2 w-2 rounded-full bg-primary",
-            isPageVariant ? "top-1/2 left-0" : "top-4 left-1",
-          )}
-        />
-      )}
-
       {/* Header: Title + Timestamp */}
-      <div className={cn("flex items-start justify-between gap-2", !isRead && "pl-3")}>
-        <h4 className="line-clamp-2 font-semibold text-sm leading-tight">{title}</h4>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-start gap-2">
+          <span
+            className={cn(
+              "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+              isRead ? "bg-muted-foreground/35" : "bg-brand",
+            )}
+          />
+          <h4 className="line-clamp-2 font-semibold text-sm leading-tight">{title}</h4>
+        </div>
         <span className="flex-shrink-0 text-muted-foreground text-xs">
           {formatRelativeTime(createdAt)}
         </span>
@@ -133,7 +135,6 @@ export function AnnouncementCard({
           className={cn(
             "prose prose-sm dark:prose-invert max-w-none text-muted-foreground text-sm",
             "[&_p]:my-1 [&_a]:text-primary [&_a]:underline",
-            !isRead && "pl-3",
           )}
         >
           <Markdown
@@ -153,7 +154,7 @@ export function AnnouncementCard({
 
       {/* CTA Button */}
       {ctaUrl && (
-        <div className={cn("flex justify-end", !isRead && "pl-3")}>
+        <div className="flex justify-end">
           <Button
             className="h-7 gap-1 text-xs"
             onClick={handleCtaClick}
