@@ -3,6 +3,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { isConsentRequiredError } from "@/lib/consent-errors";
+import {
+  trackAnnouncementOpened,
+  trackAnnouncementRead,
+  useOpenPanelClient,
+} from "@/lib/openpanel";
 import { AnnouncementCard } from "@/components/announcements/announcement-card";
 import { AnnouncementEmptyState } from "@/components/announcements/empty-state";
 import { Button } from "@/components/ui/button";
@@ -49,11 +54,13 @@ export const Route = createFileRoute("/announcements")({
 });
 
 function AnnouncementsPage() {
+  const { client } = useOpenPanelClient();
   const { announcements, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteAnnouncements(LIMIT);
   const markAsRead = useMarkAsRead();
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const hasTrackedPageOpenRef = useRef(false);
 
   // Mark unread announcements as read after 3 seconds of visibility
   const unreadIds = announcements.filter((a) => !a.isRead).map((a) => a.id);
@@ -61,9 +68,25 @@ function AnnouncementsPage() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (isLoading || hasTrackedPageOpenRef.current) return;
+
+    trackAnnouncementOpened(client, {
+      location: "page",
+      unreadCount: unreadIds.length,
+      visibleCount: announcements.length,
+    });
+    hasTrackedPageOpenRef.current = true;
+  }, [announcements.length, client, isLoading, unreadIds.length]);
+
+  useEffect(() => {
     if (unreadIds.length === 0) return;
 
     timerRef.current = setTimeout(() => {
+      trackAnnouncementRead(client, {
+        location: "page",
+        source: "auto",
+        count: unreadIds.length,
+      });
       markAsRead.mutate(unreadIds);
     }, 3000);
 
@@ -73,7 +96,7 @@ function AnnouncementsPage() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unreadIdsKey]); // Stable string key to detect changes in unread IDs
+  }, [client, unreadIdsKey]); // Stable string key to detect changes in unread IDs
 
   // Infinite scroll observer
   useEffect(() => {
@@ -99,9 +122,15 @@ function AnnouncementsPage() {
   // Handle CTA click - mark single announcement as read
   const handleCtaClick = useCallback(
     (id: string) => {
+      trackAnnouncementRead(client, {
+        location: "page",
+        source: "cta",
+        count: 1,
+        announcementId: id,
+      });
       markAsRead.mutate([id]);
     },
-    [markAsRead],
+    [client, markAsRead],
   );
 
   return (

@@ -100,6 +100,8 @@ export {
   trackSortChanged,
   trackVersionHistoryViewed,
   trackChangelogViewed,
+  trackAnnouncementOpened,
+  trackAnnouncementRead,
   trackPurposefulReturn as trackPurposefulReturnClient,
   trackMarketingBannerViewed,
   trackMarketingBannerAccepted,

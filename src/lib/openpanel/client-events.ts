@@ -59,6 +59,10 @@ export const ClientEvent = {
   VERSION_HISTORY_VIEWED: "version_history_viewed",
   CHANGELOG_VIEWED: "changelog_viewed",
 
+  // Announcements
+  ANNOUNCEMENT_OPENED: "announcement_opened",
+  ANNOUNCEMENT_READ: "announcement_read",
+
   // Session
   PURPOSEFUL_RETURN: "purposeful_return",
 
@@ -276,6 +280,30 @@ export function trackVersionHistoryViewed(client: OpenPanelClient | null, modelI
 
 export function trackChangelogViewed(client: OpenPanelClient | null, modelId: string) {
   client?.track(ClientEvent.CHANGELOG_VIEWED, { modelId });
+}
+
+// ============================================================
+// Announcements
+// ============================================================
+
+export function trackAnnouncementOpened(
+  client: OpenPanelClient | null,
+  context: { location: "dropdown" | "page"; unreadCount: number; visibleCount: number },
+) {
+  client?.track(ClientEvent.ANNOUNCEMENT_OPENED, cleanProperties(context));
+}
+
+export function trackAnnouncementRead(
+  client: OpenPanelClient | null,
+  context: {
+    location: "dropdown" | "page";
+    source: "auto" | "cta" | "view_all";
+    count: number;
+    announcementId?: string;
+  },
+) {
+  if (context.count <= 0) return;
+  client?.track(ClientEvent.ANNOUNCEMENT_READ, cleanProperties(context));
 }
 
 // ============================================================

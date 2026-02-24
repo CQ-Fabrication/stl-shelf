@@ -8,6 +8,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMarkAsRead, useRecentAnnouncements } from "@/hooks/use-announcements";
+import {
+  trackAnnouncementOpened,
+  trackAnnouncementRead,
+  useOpenPanelClient,
+} from "@/lib/openpanel";
 import { cn } from "@/lib/utils";
 import { AnnouncementCard } from "./announcement-card";
 import { AnnouncementEmptyState } from "./empty-state";
@@ -18,6 +23,7 @@ export function AnnouncementDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { client } = useOpenPanelClient();
 
   // Snapshot of announcements shown while dropdown is open
   // This prevents UI from updating when markAsRead invalidates the query
@@ -77,6 +83,11 @@ export function AnnouncementDropdown() {
     }
 
     timerRef.current = setTimeout(() => {
+      trackAnnouncementRead(client, {
+        location: "dropdown",
+        source: "auto",
+        count: unreadIds.length,
+      });
       markAsRead.mutate(unreadIds);
     }, READ_DELAY_MS);
 
@@ -86,30 +97,55 @@ export function AnnouncementDropdown() {
         timerRef.current = null;
       }
     };
-  }, [isOpen, displayedAnnouncements, markAsRead]);
+  }, [client, isOpen, displayedAnnouncements, markAsRead]);
 
   // Handle CTA click - mark single announcement as read
   const handleCtaClick = useCallback(
     (id: string) => {
+      trackAnnouncementRead(client, {
+        location: "dropdown",
+        source: "cta",
+        count: 1,
+        announcementId: id,
+      });
       markAsRead.mutate([id]);
       setIsOpen(false);
     },
-    [markAsRead],
+    [client, markAsRead],
   );
 
   // Handle "View all" click - mark all unread as read
   const handleViewAllClick = useCallback(() => {
     const unreadIds = displayedAnnouncements.filter((a) => !a.isRead).map((a) => a.id);
     if (unreadIds.length > 0) {
+      trackAnnouncementRead(client, {
+        location: "dropdown",
+        source: "view_all",
+        count: unreadIds.length,
+      });
       markAsRead.mutate(unreadIds);
     }
-  }, [displayedAnnouncements, markAsRead]);
+  }, [client, displayedAnnouncements, markAsRead]);
+
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      setIsOpen(nextOpen);
+      if (nextOpen) {
+        trackAnnouncementOpened(client, {
+          location: "dropdown",
+          unreadCount,
+          visibleCount: announcements.length,
+        });
+      }
+    },
+    [announcements.length, client, unreadCount],
+  );
 
   const announcementsLabel =
     unreadCount > 0 ? "Announcements, " + unreadCount + " unread" : "Announcements";
 
   return (
-    <DropdownMenu onOpenChange={setIsOpen} open={isOpen}>
+    <DropdownMenu onOpenChange={handleOpenChange} open={isOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           aria-label={announcementsLabel}
