@@ -38,10 +38,12 @@ export function AnnouncementDropdown() {
 
   // Use recent announcements (unread + recently read within graceful period)
   const { announcements, unreadCount, isLoading, error, refetch } = useRecentAnnouncements(5, 7);
-  const markAsRead = useMarkAsRead();
+  const { mutate: markAsReadMutate } = useMarkAsRead();
 
   // Track if we've already snapshotted for this open session
   const hasSnapshotRef = useRef(false);
+  // Prevent duplicate tracking/mutations while optimistic state is in flight.
+  const readRequestedIdsRef = useRef<Set<string>>(new Set());
 
   // Snapshot announcements when dropdown opens
   useEffect(() => {
@@ -53,6 +55,7 @@ export function AnnouncementDropdown() {
     if (!isOpen && hasSnapshotRef.current) {
       setDisplayedAnnouncements([]);
       hasSnapshotRef.current = false;
+      readRequestedIdsRef.current.clear();
     }
   }, [isOpen, announcements]);
 
@@ -69,7 +72,9 @@ export function AnnouncementDropdown() {
 
   // Handle the 3-second timer for marking unread as read
   useEffect(() => {
-    const unreadIds = displayedAnnouncements.filter((a) => !a.isRead).map((a) => a.id);
+    const unreadIds = displayedAnnouncements
+      .filter((a) => !a.isRead && !readRequestedIdsRef.current.has(a.id))
+      .map((a) => a.id);
 
     if (!isOpen || unreadIds.length === 0) {
       if (timerRef.current) {
@@ -80,12 +85,41 @@ export function AnnouncementDropdown() {
     }
 
     timerRef.current = setTimeout(() => {
+      const uniqueIds = Array.from(new Set(unreadIds)).filter(
+        (id) => !readRequestedIdsRef.current.has(id),
+      );
+      if (uniqueIds.length === 0) return;
+
+      uniqueIds.forEach((id) => {
+        readRequestedIdsRef.current.add(id);
+      });
+
+      const uniqueIdSet = new Set(uniqueIds);
+      setDisplayedAnnouncements((current) =>
+        current.map((announcement) =>
+          uniqueIdSet.has(announcement.id) && !announcement.isRead
+            ? { ...announcement, isRead: true }
+            : announcement,
+        ),
+      );
+
       trackAnnouncementRead(client, {
         location: "dropdown",
         source: "auto",
-        count: unreadIds.length,
+        count: uniqueIds.length,
       });
-      markAsRead.mutate(unreadIds);
+      markAsReadMutate(uniqueIds, {
+        onError: () => {
+          uniqueIds.forEach((id) => {
+            readRequestedIdsRef.current.delete(id);
+          });
+          setDisplayedAnnouncements((current) =>
+            current.map((announcement) =>
+              uniqueIdSet.has(announcement.id) ? { ...announcement, isRead: false } : announcement,
+            ),
+          );
+        },
+      });
     }, READ_DELAY_MS);
 
     return () => {
@@ -94,35 +128,72 @@ export function AnnouncementDropdown() {
         timerRef.current = null;
       }
     };
-  }, [client, isOpen, displayedAnnouncements, markAsRead]);
+  }, [client, isOpen, displayedAnnouncements, markAsReadMutate]);
+
+  const markAnnouncementsRead = useCallback(
+    (ids: string[], source: "cta" | "view_all", announcementId?: string) => {
+      const unreadIdSet = new Set(
+        displayedAnnouncements.filter((announcement) => !announcement.isRead).map((a) => a.id),
+      );
+      const uniqueIds = Array.from(new Set(ids)).filter(
+        (id) => unreadIdSet.has(id) && !readRequestedIdsRef.current.has(id),
+      );
+      if (uniqueIds.length === 0) return;
+
+      uniqueIds.forEach((id) => {
+        readRequestedIdsRef.current.add(id);
+      });
+
+      const uniqueIdSet = new Set(uniqueIds);
+      setDisplayedAnnouncements((current) =>
+        current.map((announcement) =>
+          uniqueIdSet.has(announcement.id) && !announcement.isRead
+            ? { ...announcement, isRead: true }
+            : announcement,
+        ),
+      );
+
+      trackAnnouncementRead(client, {
+        location: "dropdown",
+        source,
+        count: uniqueIds.length,
+        announcementId,
+      });
+
+      markAsReadMutate(uniqueIds, {
+        onError: () => {
+          uniqueIds.forEach((id) => {
+            readRequestedIdsRef.current.delete(id);
+          });
+          setDisplayedAnnouncements((current) =>
+            current.map((announcement) =>
+              uniqueIdSet.has(announcement.id) ? { ...announcement, isRead: false } : announcement,
+            ),
+          );
+        },
+      });
+    },
+    [client, displayedAnnouncements, markAsReadMutate],
+  );
 
   // Handle CTA click - mark single announcement as read
   const handleCtaClick = useCallback(
     (id: string) => {
-      trackAnnouncementRead(client, {
-        location: "dropdown",
-        source: "cta",
-        count: 1,
-        announcementId: id,
-      });
-      markAsRead.mutate([id]);
+      markAnnouncementsRead([id], "cta", id);
       setIsOpen(false);
     },
-    [client, markAsRead],
+    [markAnnouncementsRead],
   );
 
   // Handle "View all" click - mark all unread as read
   const handleViewAllClick = useCallback(() => {
-    const unreadIds = displayedAnnouncements.filter((a) => !a.isRead).map((a) => a.id);
+    const unreadIds = displayedAnnouncements
+      .filter((a) => !a.isRead && !readRequestedIdsRef.current.has(a.id))
+      .map((a) => a.id);
     if (unreadIds.length > 0) {
-      trackAnnouncementRead(client, {
-        location: "dropdown",
-        source: "view_all",
-        count: unreadIds.length,
-      });
-      markAsRead.mutate(unreadIds);
+      markAnnouncementsRead(unreadIds, "view_all");
     }
-  }, [client, displayedAnnouncements, markAsRead]);
+  }, [displayedAnnouncements, markAnnouncementsRead]);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {

@@ -54,13 +54,16 @@ function AnnouncementsPage() {
   const { client } = useOpenPanelClient();
   const { announcements, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteAnnouncements(LIMIT);
-  const markAsRead = useMarkAsRead();
+  const { mutate: markAsReadMutate } = useMarkAsRead();
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const hasTrackedPageOpenRef = useRef(false);
+  const readRequestedIdsRef = useRef<Set<string>>(new Set());
 
   // Mark unread announcements as read after 3 seconds of visibility
-  const unreadIds = announcements.filter((a) => !a.isRead).map((a) => a.id);
+  const unreadIds = announcements
+    .filter((a) => !a.isRead && !readRequestedIdsRef.current.has(a.id))
+    .map((a) => a.id);
   const unreadIdsKey = unreadIds.join(",");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -75,16 +78,44 @@ function AnnouncementsPage() {
     hasTrackedPageOpenRef.current = true;
   }, [announcements.length, client, isLoading, unreadIds.length]);
 
-  useEffect(() => {
-    if (unreadIds.length === 0) return;
+  const markAnnouncementsRead = useCallback(
+    (ids: string[], source: "auto" | "cta", announcementId?: string) => {
+      const unreadIdSet = new Set(
+        announcements.filter((announcement) => !announcement.isRead).map((a) => a.id),
+      );
+      const uniqueIds = Array.from(new Set(ids)).filter(
+        (id) => unreadIdSet.has(id) && !readRequestedIdsRef.current.has(id),
+      );
+      if (uniqueIds.length === 0) return;
 
-    timerRef.current = setTimeout(() => {
+      uniqueIds.forEach((id) => {
+        readRequestedIdsRef.current.add(id);
+      });
+
       trackAnnouncementRead(client, {
         location: "page",
-        source: "auto",
-        count: unreadIds.length,
+        source,
+        count: uniqueIds.length,
+        announcementId,
       });
-      markAsRead.mutate(unreadIds);
+
+      markAsReadMutate(uniqueIds, {
+        onError: () => {
+          uniqueIds.forEach((id) => {
+            readRequestedIdsRef.current.delete(id);
+          });
+        },
+      });
+    },
+    [announcements, client, markAsReadMutate],
+  );
+
+  useEffect(() => {
+    if (!unreadIdsKey) return;
+    const unreadIdsToMark = unreadIdsKey.split(",");
+
+    timerRef.current = setTimeout(() => {
+      markAnnouncementsRead(unreadIdsToMark, "auto");
     }, 3000);
 
     return () => {
@@ -92,8 +123,7 @@ function AnnouncementsPage() {
         clearTimeout(timerRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, unreadIdsKey]); // Stable string key to detect changes in unread IDs
+  }, [markAnnouncementsRead, unreadIdsKey]); // Stable string key to detect unread ID changes
 
   // Infinite scroll observer
   useEffect(() => {
@@ -119,15 +149,9 @@ function AnnouncementsPage() {
   // Handle CTA click - mark single announcement as read
   const handleCtaClick = useCallback(
     (id: string) => {
-      trackAnnouncementRead(client, {
-        location: "page",
-        source: "cta",
-        count: 1,
-        announcementId: id,
-      });
-      markAsRead.mutate([id]);
+      markAnnouncementsRead([id], "cta", id);
     },
-    [client, markAsRead],
+    [markAnnouncementsRead],
   );
 
   return (
