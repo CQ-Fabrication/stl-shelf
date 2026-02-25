@@ -5,21 +5,6 @@ User-agent: *
 
 # Allow public pages
 Allow: /
-Allow: /about
-Allow: /pricing
-Allow: /privacy
-Allow: /terms
-Allow: /guides
-Allow: /organize-stl-files
-Allow: /stl-file-organizer
-Allow: /organize-3mf-files
-Allow: /organize-obj-files
-Allow: /version-control-for-stl-files
-Allow: /tagging-system-for-3d-models
-Allow: /private-3d-model-library
-Allow: /3d-model-preview-in-browser
-Allow: /stop-stl-folder-chaos
-Allow: /self-hosted-3d-model-library
 
 # Disallow private/authenticated routes
 Disallow: /library
