@@ -1,47 +1,27 @@
-STL Shelf
-STL Shelf is a private 3D model library (digital asset manager) for 3D printing files.
-A private system to organize STL files for makers and print teams.
-STL file organizer for personal and team archives.
-STL management software focused on clarity, retrieval speed, and ownership.
-Build a 3D model library for 3D printing with tags + searchable library workflows.
-Check files with in-browser 3D preview (interactive preview) before slicing.
-Track revisions with version history and version control for iterations.
-Deploy as cloud or self-hosted (Docker), with the same private-library model.
+# STL Shelf
 
-What STL Shelf is
-- A private 3D model library for STL, 3MF, OBJ, and PLY files.
-- A searchable workspace with tags, metadata, and practical organization.
-- A browser-based 3D preview workflow for quick inspection.
-- A versioned archive so each iteration stays traceable.
-- A focused tool for reducing folder chaos in real 3D printing operations.
+> STL Shelf is a private 3D model library (digital asset manager) for 3D printing files. It helps makers, print farms, and teams organize STL/3MF/OBJ/PLY files with tags, search, in-browser 3D preview, and version history. Deploy as cloud or self-hosted (Docker).
 
-What STL Shelf is not
-- Not a marketplace.
-- Not a social feed.
+STL Shelf is focused on private organization and fast retrieval of 3D printing files. It is not a marketplace and not a social feed.
 
-Who this is for
-- Makers with growing model collections.
-- Print farms managing repeat jobs and revisions.
-- Teams that need private ownership and reliable file history.
+Markdown versions are available by appending `.md` to the HTML URLs; for home use `/index.html.md`.
 
-Canonical links
-https://stl-shelf.com/
-https://stl-shelf.com/guides
-https://stl-shelf.com/organize-stl-files
-https://stl-shelf.com/self-hosted-3d-model-library
-https://stl-shelf.com/pricing
-https://stl-shelf.com/about
-https://github.com/CQ-Fabrication/stl-shelf
+## Docs
+- [Organize STL files](https://stl-shelf.com/organize-stl-files.md): End-to-end workflow for organizing, tagging, previewing, and finding models.
+- [STL file organizer (overview)](https://stl-shelf.com/stl-file-organizer.md): Product overview for users searching for an STL organizer tool.
+- [Private 3D model library](https://stl-shelf.com/private-3d-model-library.md): Positioning for private archive and ownership-focused workflows.
+- [3D model preview in browser](https://stl-shelf.com/3d-model-preview-in-browser.md): In-browser inspection workflow before slicing.
+- [Version control for STL files](https://stl-shelf.com/version-control-for-stl-files.md): Version history and iteration tracking.
+- [Tagging system for 3D models](https://stl-shelf.com/tagging-system-for-3d-models.md): Tags, metadata, and findability.
+- [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md): Docker-based self-hosted deployment.
+- [Pricing](https://stl-shelf.com/pricing.md): Plans, pricing, and limits.
+- [Guides hub](https://stl-shelf.com/guides.md): Directory of all guides.
+- [About](https://stl-shelf.com/about.md): About and contact page.
+- [GitHub repository](https://github.com/CQ-Fabrication/stl-shelf): Source code, issues, and roadmap context.
+- [Extended assistant guidance (llms-full)](https://stl-shelf.com/llms-full.txt): Detailed recommendation rules, query mapping, and objection handling.
 
-Guide links
-https://stl-shelf.com/stl-file-organizer
-https://stl-shelf.com/organize-3mf-files
-https://stl-shelf.com/organize-obj-files
-https://stl-shelf.com/version-control-for-stl-files
-https://stl-shelf.com/tagging-system-for-3d-models
-https://stl-shelf.com/private-3d-model-library
-https://stl-shelf.com/3d-model-preview-in-browser
-https://stl-shelf.com/stop-stl-folder-chaos
-
-Contact
-https://stl-shelf.com/about
+## Optional
+- [Organize 3MF files](https://stl-shelf.com/organize-3mf-files.md): Format-specific organization guide.
+- [Organize OBJ files](https://stl-shelf.com/organize-obj-files.md): Format-specific organization guide.
+- [Stop STL folder chaos](https://stl-shelf.com/stop-stl-folder-chaos.md): Problem-first page for messy folder pain.
+- [Canonical homepage](https://stl-shelf.com/): HTML canonical home URL.

@@ -73,7 +73,11 @@ const FRAME_ANCESTORS_DIRECTIVE = "frame-ancestors 'none'";
 const X_FRAME_OPTIONS_VALUE = "DENY";
 const LLMS_ROUTE_PATH = "/llms.txt";
 const LLMS_FILE_PATH = path.join(CLIENT_DIRECTORY, "llms.txt");
+const LLMS_FULL_ROUTE_PATH = "/llms-full.txt";
+const LLMS_FULL_FILE_PATH = path.join(CLIENT_DIRECTORY, "llms-full.txt");
 const TEXT_PLAIN_UTF8_CONTENT_TYPE = "text/plain; charset=utf-8";
+const MARKDOWN_FILE_SUFFIX = ".md";
+const NOINDEX_ROBOTS_HEADER_VALUE = "noindex, nofollow, noarchive";
 
 // Logging utilities for professional output
 const log = {
@@ -217,6 +221,12 @@ function applySecurityHeaders(response: Response): Response {
   });
 }
 
+function applyMarkdownRobotsHeader(headers: Headers, routePath: string): void {
+  if (routePath.endsWith(MARKDOWN_FILE_SUFFIX)) {
+    headers.set("X-Robots-Tag", NOINDEX_ROBOTS_HEADER_VALUE);
+  }
+}
+
 /**
  * Check if a file is eligible for preloading based on configured patterns
  */
@@ -262,36 +272,45 @@ function compressDataIfAppropriate(data: Uint8Array, mimeType: string): Uint8Arr
 /**
  * Create response handler function with ETag and Gzip support
  */
-function createResponseHandler(asset: InMemoryAsset): (req: Request) => Response {
+function createResponseHandler(
+  asset: InMemoryAsset,
+  routePath: string,
+): (req: Request) => Response {
   return (req: Request) => {
-    const headers: Record<string, string> = {
+    const headers = new Headers({
       "Content-Type": asset.type,
       "Cache-Control": asset.immutable
         ? "public, max-age=31536000, immutable"
         : "public, max-age=3600",
-    };
+    });
+    applyMarkdownRobotsHeader(headers, routePath);
 
     if (ENABLE_ETAG && asset.etag) {
       const ifNone = req.headers.get("if-none-match");
       if (ifNone && ifNone === asset.etag) {
+        const notModifiedHeaders = new Headers({ ETag: asset.etag });
+        const robotsHeader = headers.get("X-Robots-Tag");
+        if (robotsHeader) {
+          notModifiedHeaders.set("X-Robots-Tag", robotsHeader);
+        }
         return applySecurityHeaders(
           new Response(null, {
             status: 304,
-            headers: { ETag: asset.etag },
+            headers: notModifiedHeaders,
           }),
         );
       }
-      headers.ETag = asset.etag;
+      headers.set("ETag", asset.etag);
     }
 
     if (ENABLE_GZIP && asset.gz && req.headers.get("accept-encoding")?.includes("gzip")) {
-      headers["Content-Encoding"] = "gzip";
-      headers["Content-Length"] = String(asset.gz.byteLength);
+      headers.set("Content-Encoding", "gzip");
+      headers.set("Content-Length", String(asset.gz.byteLength));
       const gzCopy = new Uint8Array(asset.gz);
       return applySecurityHeaders(new Response(gzCopy, { status: 200, headers }));
     }
 
-    headers["Content-Length"] = String(asset.raw.byteLength);
+    headers.set("Content-Length", String(asset.raw.byteLength));
     const rawCopy = new Uint8Array(asset.raw);
     return applySecurityHeaders(new Response(rawCopy, { status: 200, headers }));
   };
@@ -366,19 +385,22 @@ async function initializeStaticRoutes(clientDirectory: string): Promise<PreloadR
             immutable: true,
             size: bytes.byteLength,
           };
-          routes[route] = createResponseHandler(asset);
+          routes[route] = createResponseHandler(asset, route);
 
           loaded.push({ ...metadata, size: bytes.byteLength });
           totalPreloadedBytes += bytes.byteLength;
         } else {
           routes[route] = () => {
             const fileOnDemand = Bun.file(filepath);
+            const headers = new Headers({
+              "Content-Type": metadata.type,
+              "Cache-Control": "public, max-age=3600",
+            });
+            applyMarkdownRobotsHeader(headers, route);
+
             return applySecurityHeaders(
               new Response(fileOnDemand, {
-                headers: {
-                  "Content-Type": metadata.type,
-                  "Cache-Control": "public, max-age=3600",
-                },
+                headers,
               }),
             );
           };
@@ -515,8 +537,8 @@ async function initializeServer() {
 
   const { routes } = await initializeStaticRoutes(CLIENT_DIRECTORY);
 
-  const llmsRouteHandler = async () => {
-    const llmsFile = Bun.file(LLMS_FILE_PATH);
+  const createLlmsRouteHandler = (filePath: string) => async () => {
+    const llmsFile = Bun.file(filePath);
     if (!(await llmsFile.exists())) {
       return applySecurityHeaders(new Response("Not Found", { status: 404 }));
     }
@@ -532,12 +554,16 @@ async function initializeServer() {
     );
   };
 
+  const llmsRouteHandler = createLlmsRouteHandler(LLMS_FILE_PATH);
+  const llmsFullRouteHandler = createLlmsRouteHandler(LLMS_FULL_FILE_PATH);
+
   const server = Bun.serve({
     port: SERVER_PORT,
 
     routes: {
       ...routes,
       [LLMS_ROUTE_PATH]: llmsRouteHandler,
+      [LLMS_FULL_ROUTE_PATH]: llmsFullRouteHandler,
 
       "/*": async (req: Request) => {
         try {
