@@ -11,6 +11,7 @@ import { AnnouncementDropdown } from "@/components/announcements/announcement-dr
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
 import { Logo } from "@/components/ui/logo";
+import { cn } from "@/lib/utils";
 
 const UploadModal = lazy(() =>
   import("./models/upload-modal/upload-modal").then((mod) => ({
@@ -18,7 +19,7 @@ const UploadModal = lazy(() =>
   })),
 );
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +57,7 @@ export default function Header() {
   }
 
   const hasOrganizations = (organizations?.length ?? 0) > 0;
+  const isAuthenticated = Boolean(session?.user);
 
   return (
     <div>
@@ -71,23 +73,24 @@ export default function Header() {
             </Button>
           )}
           {/* Announcements dropdown - Only show for authenticated users */}
-          {session?.user && <AnnouncementDropdown />}
+          {isAuthenticated && <AnnouncementDropdown />}
           <AnimatedThemeToggler variant="icon" />
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button aria-label="User menu" size="icon" variant="outline">
-                {session?.user ? (
-                  <GradientAvatar
-                    className="h-[1.2rem] w-[1.2rem]"
-                    id={session.user.id}
-                    name={session.user.name ?? session.user.email}
-                    size="xs"
-                    src={session.user.image ?? undefined}
-                  />
-                ) : (
-                  <User className="h-[1.2rem] w-[1.2rem]" />
-                )}
-              </Button>
+            <DropdownMenuTrigger
+              aria-label="User menu"
+              className={cn(buttonVariants({ size: "icon", variant: "outline" }))}
+            >
+              {isAuthenticated && session?.user ? (
+                <GradientAvatar
+                  className="h-[1.2rem] w-[1.2rem]"
+                  id={session.user.id}
+                  name={session.user.name ?? session.user.email}
+                  size="xs"
+                  src={session.user.image ?? undefined}
+                />
+              ) : (
+                <User className="h-[1.2rem] w-[1.2rem]" />
+              )}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Account</DropdownMenuLabel>
@@ -174,7 +177,7 @@ export default function Header() {
                   <DropdownMenuSeparator />
                 </>
               )}
-              {session?.user && (
+              {isAuthenticated && (
                 <>
                   <AnimatedThemeToggler showLabel />
                   <DropdownMenuSeparator />

@@ -20,14 +20,18 @@ export const TextReveal = ({ text, className }: TextRevealProps) => {
 
   return (
     <div ref={targetRef} className={cn("relative", className)}>
-      <p className="flex flex-wrap text-2xl font-semibold md:text-3xl lg:text-4xl">
+      <p className="text-2xl leading-tight font-semibold md:text-3xl lg:text-4xl">
         {words.map((word, i) => {
           const start = i / words.length;
           const end = start + 1 / words.length;
+          const isLastWord = i === words.length - 1;
           return (
-            <Word key={i} progress={scrollYProgress} range={[start, end]}>
-              {word}
-            </Word>
+            <span key={i}>
+              <Word progress={scrollYProgress} range={[start, end]}>
+                {word}
+              </Word>
+              {!isLastWord && " "}
+            </span>
           );
         })}
       </p>
@@ -45,7 +49,7 @@ const Word = ({ children, progress, range }: WordProps) => {
   const opacity = useTransform(progress, range, [0.15, 1]);
 
   return (
-    <span className="relative mr-2 mt-1 lg:mr-3 lg:mt-2">
+    <span className="relative inline-block">
       <motion.span style={{ opacity }} className="text-foreground">
         {children}
       </motion.span>

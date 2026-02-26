@@ -2,10 +2,10 @@
 
 import { ArrowRight, Box, Download } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { AuroraText } from "@/components/marketing/magicui/aurora-text";
-import { NumberTicker } from "@/components/marketing/magicui/number-ticker";
 import { HeroBackground } from "@/components/marketing/hero-background";
 
 const stats = [
@@ -80,7 +80,20 @@ export function HeroSection() {
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-3xl md:text-4xl font-bold text-foreground">
-                  <NumberTicker value={stat.value} suffix={stat.suffix} delay={0.5 + index * 0.2} />
+                  <motion.span
+                    className="inline-block tabular-nums font-mono tracking-tight"
+                    initial={{ filter: "blur(4px)", opacity: 0, scale: 0.96, y: 10 }}
+                    transition={{
+                      delay: 0.5 + index * 0.2,
+                      duration: 0.45,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                    viewport={{ once: true }}
+                    whileInView={{ filter: "blur(0px)", opacity: 1, scale: 1, y: 0 }}
+                  >
+                    {stat.value}
+                    {stat.suffix}
+                  </motion.span>
                 </div>
                 <div className="text-sm text-muted-foreground mt-1 font-medium">{stat.label}</div>
               </div>
