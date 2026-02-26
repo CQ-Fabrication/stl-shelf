@@ -5,6 +5,8 @@ User-agent: *
 
 # Allow public pages
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 # Disallow private/authenticated routes
 Disallow: /library
