@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { AlertCircle, Megaphone, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -214,19 +214,19 @@ export function AnnouncementDropdown() {
 
   return (
     <DropdownMenu onOpenChange={handleOpenChange} open={isOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          aria-label={announcementsLabel}
-          className={cn("relative", shouldBounce && "animate-bounce")}
-          size="icon"
-          variant="ghost"
-        >
-          <Megaphone className="h-[1.2rem] w-[1.2rem]" />
-          {/* Unread dot indicator */}
-          {unreadCount > 0 && (
-            <span className="-top-0.5 -right-0.5 absolute h-2.5 w-2.5 rounded-full border-2 border-background bg-destructive" />
-          )}
-        </Button>
+      <DropdownMenuTrigger
+        aria-label={announcementsLabel}
+        className={cn(
+          buttonVariants({ size: "icon", variant: "ghost" }),
+          "relative",
+          shouldBounce && "animate-bounce",
+        )}
+      >
+        <Megaphone className="h-[1.2rem] w-[1.2rem]" />
+        {/* Unread dot indicator */}
+        {unreadCount > 0 && (
+          <span className="-top-0.5 -right-0.5 absolute h-2.5 w-2.5 rounded-full border-2 border-background bg-destructive" />
+        )}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-[360px] p-0">
