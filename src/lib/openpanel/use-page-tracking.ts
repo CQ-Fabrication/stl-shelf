@@ -5,7 +5,7 @@ import { applyOpenPanelAttribution } from "./attribution";
 
 /**
  * Auto-tracks page views on navigation.
- * Logs a "page_view" event whenever the pathname changes.
+ * Logs a "screen_view" event whenever the pathname changes.
  */
 export function usePageTracking() {
   const { client } = useOpenPanelClient();
@@ -20,9 +20,10 @@ export function usePageTracking() {
     });
 
     if (pathname !== prevPathname.current) {
-      client.track("page_view", {
+      client.screenView(`${window.location.origin}${pathname}`, {
         path: pathname,
         referrer: prevPathname.current ?? "direct",
+        title: document.title,
       });
       prevPathname.current = pathname;
     }
