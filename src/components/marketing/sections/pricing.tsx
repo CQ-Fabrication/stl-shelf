@@ -36,6 +36,10 @@ export function Pricing({ pricing }: PricingProps) {
 
         <PricingCards pricing={pricing} />
 
+        <p className="mt-4 text-center text-xs text-muted-foreground/80">
+          Limits shown in these plans apply to STL Shelf Cloud (stl-shelf.com) only.
+        </p>
+
         <div className="animate-fade-in-up text-center mt-12 text-sm text-muted-foreground space-y-3">
           <div>All plans include 3D model preview, organization, and private storage.</div>
           <div>Save 10% with annual billing. Bandwidth includes a generous monthly allowance.</div>

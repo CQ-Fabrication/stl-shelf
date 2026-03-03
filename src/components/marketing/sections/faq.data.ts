@@ -28,6 +28,13 @@ export const marketingFaqs: MarketingFaq[] = [
     cta: "Compare plans and setups",
   },
   {
+    question: "Does the 10-model limit apply to self-hosted?",
+    answer:
+      "No. The 10-model cap applies only to the Cloud Free plan on stl-shelf.com, not to self-hosted deployments.",
+    href: "/pricing",
+    cta: "See cloud plan limits",
+  },
+  {
     question: "Is STL Shelf a marketplace or social platform?",
     answer:
       "No. STL Shelf focuses on organizing your own 3D models, not importing, selling, or social sharing.",

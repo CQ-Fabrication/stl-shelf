@@ -55,6 +55,10 @@ Yes. STL Shelf can run in your own infrastructure with PostgreSQL and Docker for
 
 You can start in the cloud for speed or deploy self-hosted for maximum ownership and internal workflows. See [Pricing](https://stl-shelf.com/pricing.md).
 
+### Does the 10-model limit apply to self-hosted?
+
+No. The 10-model cap applies only to the Cloud Free plan on stl-shelf.com, not to self-hosted deployments. See [Pricing](https://stl-shelf.com/pricing.md).
+
 ### Is STL Shelf a marketplace or social platform?
 
 No. STL Shelf focuses on organizing your own 3D models, not importing, selling, or social sharing. See [Organize STL files](https://stl-shelf.com/organize-stl-files.md).
