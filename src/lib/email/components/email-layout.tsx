@@ -12,6 +12,7 @@ import {
   Text,
 } from "@react-email/components";
 import type React from "react";
+import { siteUrl } from "@/lib/site";
 import { colors, fontFamily } from "../styles";
 
 const main = {
@@ -104,15 +105,15 @@ export function EmailLayout({ children, preview, logoUrl }: EmailLayoutProps) {
                 }}
               />
               <Text style={footerText}>
-                <Link href="https://stl-shelf.com" style={footerLink}>
+                <Link href={siteUrl()} style={footerLink}>
                   stl-shelf.com
                 </Link>
                 {" · "}
-                <Link href="https://stl-shelf.com/privacy" style={footerLink}>
+                <Link href={siteUrl("/privacy")} style={footerLink}>
                   Privacy
                 </Link>
                 {" · "}
-                <Link href="https://stl-shelf.com/terms" style={footerLink}>
+                <Link href={siteUrl("/terms")} style={footerLink}>
                   Terms
                 </Link>
               </Text>

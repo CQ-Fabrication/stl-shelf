@@ -3,6 +3,7 @@ import { ArrowLeft, Box, Github, Heart, Mail, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
+import { OG_IMAGE_URL, siteUrl } from "@/lib/site";
 import { getSessionFn } from "@/server/functions/auth";
 
 export const Route = createFileRoute("/about")({
@@ -34,11 +35,11 @@ export const Route = createFileRoute("/about")({
       },
       {
         property: "og:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
       },
       {
         property: "og:url",
-        content: "https://stl-shelf.com/about",
+        content: siteUrl("/about"),
       },
       {
         property: "og:type",
@@ -55,10 +56,10 @@ export const Route = createFileRoute("/about")({
       },
       {
         name: "twitter:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
       },
     ],
-    links: [{ rel: "canonical", href: "https://stl-shelf.com/about" }],
+    links: [{ rel: "canonical", href: siteUrl("/about") }],
   }),
 });
 

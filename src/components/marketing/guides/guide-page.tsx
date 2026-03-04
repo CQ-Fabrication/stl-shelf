@@ -5,10 +5,8 @@ import { Footer } from "@/components/marketing/sections";
 import { Button } from "@/components/ui/button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import type { AuthClient } from "@/lib/auth-client";
+import { OG_IMAGE_URL, siteUrl } from "@/lib/site";
 import type { GuideFaq, GuidePageData } from "./guides-data";
-
-const SITE_URL = "https://stl-shelf.com";
-const OG_IMAGE_URL = `${SITE_URL}/og-image.svg`;
 
 type Session = AuthClient["$Infer"]["Session"];
 
@@ -20,7 +18,7 @@ type HeadInput = {
 };
 
 export function createMarketingHead({ path, title, description, faqs }: HeadInput) {
-  const fullUrl = `${SITE_URL}${path}`;
+  const fullUrl = siteUrl(path);
   const meta: Array<Record<string, unknown>> = [
     { title },
     {

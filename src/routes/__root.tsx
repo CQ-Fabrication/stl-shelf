@@ -21,6 +21,7 @@ import { MarketingConsentBanner } from "@/components/marketing-consent-banner";
 import { NotFound } from "@/components/not-found";
 import { PendingConsentHandler } from "@/components/pending-consent-handler";
 import { generateErrorId } from "@/lib/error-id";
+import { OG_IMAGE_URL, SITE_URL, siteUrl } from "@/lib/site";
 import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
 import { checkConsentValidityFn } from "@/server/functions/consent";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -140,11 +141,23 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
       {
         property: "og:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
+      },
+      {
+        property: "og:image:type",
+        content: "image/png",
+      },
+      {
+        property: "og:image:width",
+        content: "1200",
+      },
+      {
+        property: "og:image:height",
+        content: "630",
       },
       {
         property: "og:url",
-        content: "https://stl-shelf.com",
+        content: SITE_URL,
       },
       {
         property: "og:type",
@@ -173,7 +186,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
       {
         name: "twitter:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
       },
     ],
     links: [
@@ -274,29 +287,29 @@ function RootDocument({ children }: { children: ReactNode }) {
           "@graph": [
             {
               "@type": "Organization",
-              "@id": "https://stl-shelf.com/#organization",
+              "@id": `${SITE_URL}/#organization`,
               name: "STL Shelf",
-              url: "https://stl-shelf.com",
-              logo: "https://stl-shelf.com/og-image.svg",
+              url: SITE_URL,
+              logo: OG_IMAGE_URL,
               sameAs: ["https://github.com/CQ-Fabrication/stl-shelf"],
             },
             {
               "@type": "WebSite",
-              "@id": "https://stl-shelf.com/#website",
+              "@id": `${SITE_URL}/#website`,
               name: "STL Shelf",
-              url: "https://stl-shelf.com",
+              url: SITE_URL,
               inLanguage: "en-US",
             },
             {
               "@type": "SoftwareApplication",
-              "@id": "https://stl-shelf.com/#software",
+              "@id": `${SITE_URL}/#software`,
               name: "STL Shelf",
               applicationCategory: "DesignApplication",
               applicationSubCategory: "3D Printing File Management",
               operatingSystem: "Web",
-              url: "https://stl-shelf.com/",
+              url: siteUrl("/"),
               description: defaultSeoDescription,
-              provider: { "@id": "https://stl-shelf.com/#organization" },
+              provider: { "@id": `${SITE_URL}/#organization` },
               featureList: [
                 "Organize STL, 3MF, OBJ, and PLY files in one searchable library",
                 "Tag and categorize models with custom metadata",
@@ -315,7 +328,7 @@ function RootDocument({ children }: { children: ReactNode }) {
                 "@type": "Offer",
                 price: "0",
                 priceCurrency: "USD",
-                url: "https://stl-shelf.com/pricing",
+                url: siteUrl("/pricing"),
               },
             },
           ],

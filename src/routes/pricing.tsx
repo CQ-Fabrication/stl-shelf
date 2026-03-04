@@ -5,6 +5,7 @@ import { Pricing as PricingSection } from "@/components/marketing/sections/prici
 import { Footer } from "@/components/marketing/sections";
 import { useActiveOrganization } from "@/hooks/use-organizations";
 import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
+import { OG_IMAGE_URL, siteUrl } from "@/lib/site";
 import { getPublicPricing } from "@/server/functions/pricing";
 import { getSessionFn } from "@/server/functions/auth";
 
@@ -38,11 +39,11 @@ export const Route = createFileRoute("/pricing")({
       },
       {
         property: "og:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
       },
       {
         property: "og:url",
-        content: "https://stl-shelf.com/pricing",
+        content: siteUrl("/pricing"),
       },
       {
         property: "og:type",
@@ -59,10 +60,10 @@ export const Route = createFileRoute("/pricing")({
       },
       {
         name: "twitter:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
       },
     ],
-    links: [{ rel: "canonical", href: "https://stl-shelf.com/pricing" }],
+    links: [{ rel: "canonical", href: siteUrl("/pricing") }],
   }),
 });
 

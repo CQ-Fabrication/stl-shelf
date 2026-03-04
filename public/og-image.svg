@@ -15,7 +15,8 @@
     y="30"
     width="420"
     height="170"
-    href="https://cdn.stl-shelf.com/logo-dark.svg"
+    xlink:href="logo-dark.png"
+    href="logo-dark.png"
     preserveAspectRatio="xMinYMin meet"
   />
 

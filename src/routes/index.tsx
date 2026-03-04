@@ -14,6 +14,7 @@ import {
   Footer,
 } from "@/components/marketing/sections";
 import { marketingFaqs } from "@/components/marketing/sections/faq.data";
+import { OG_IMAGE_URL, siteUrl } from "@/lib/site";
 import { getPublicPricing } from "@/server/functions/pricing";
 import { getSessionFn } from "@/server/functions/auth";
 
@@ -69,11 +70,11 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
       },
       {
         property: "og:url",
-        content: "https://stl-shelf.com/",
+        content: siteUrl("/"),
       },
       {
         property: "og:type",
@@ -89,13 +90,13 @@ export const Route = createFileRoute("/")({
       },
       {
         name: "twitter:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
       },
       {
         "script:ld+json": faqStructuredData,
       },
     ],
-    links: [{ rel: "canonical", href: "https://stl-shelf.com/" }],
+    links: [{ rel: "canonical", href: siteUrl("/") }],
   }),
 });
 

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import Markdown from "react-markdown";
 import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
+import { OG_IMAGE_URL, siteUrl } from "@/lib/site";
 import { getSessionFn } from "@/server/functions/auth";
 import { getDocumentByTypeFn } from "@/server/functions/consent";
 
@@ -34,11 +35,11 @@ export const Route = createFileRoute("/terms")({
       },
       {
         property: "og:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
       },
       {
         property: "og:url",
-        content: "https://stl-shelf.com/terms",
+        content: siteUrl("/terms"),
       },
       {
         property: "og:type",
@@ -54,10 +55,10 @@ export const Route = createFileRoute("/terms")({
       },
       {
         name: "twitter:image",
-        content: "https://stl-shelf.com/og-image.svg",
+        content: OG_IMAGE_URL,
       },
     ],
-    links: [{ rel: "canonical", href: "https://stl-shelf.com/terms" }],
+    links: [{ rel: "canonical", href: siteUrl("/terms") }],
   }),
 });
 

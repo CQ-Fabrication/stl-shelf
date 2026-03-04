@@ -4,6 +4,7 @@ import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
 import { Button } from "@/components/ui/button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { siteUrl } from "@/lib/site";
 import { getSessionFn } from "@/server/functions/auth";
 
 const pillars = [
@@ -88,7 +89,7 @@ export const Route = createFileRoute("/self-hosted-3d-model-library")({
     links: [
       {
         rel: "canonical",
-        href: "https://stl-shelf.com/self-hosted-3d-model-library",
+        href: siteUrl("/self-hosted-3d-model-library"),
       },
     ],
   }),
