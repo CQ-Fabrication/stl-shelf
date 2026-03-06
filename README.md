@@ -12,7 +12,7 @@ Existing solutions were either too complex or too limited. Dropbox, Google Drive
 
 STL Shelf does one thing: **organize your 3D models**. Nothing more, nothing less.
 
-Use our [hosted version](https://stl-shelf.com) or self-host it yourself.
+Use our [hosted version](https://stl-shelf.com) or self-host it on your own infrastructure.
 
 Simple. Friendly. Built for makers.
 
@@ -25,31 +25,6 @@ Simple. Friendly. Built for makers.
 - **Tagging System** - Organize models with custom tags and categories
 - **Bulk Downloads** - Download individual files or ZIP archives
 - **Self-Hosted** - Your data stays on your infrastructure
-
-## SEO Plan (Marketing)
-
-Guardrails (copy must respect):
-
-- No import/sync from other services
-- No sharing or social features
-- Personal archive: your files, your drive
-- Self-hosting only via Docker (Postgres required; Redis later)
-
-Phase 1 landing pages:
-
-- `/organize-stl-files` — STL/3MF/OBJ organizer, searchable library, tags, preview, version history
-- `/self-hosted-3d-model-library` — Docker-only, private, your data on your server
-
-Phase 2 (post Search Console data):
-
-- `/3d-model-version-control` — version history + iterations
-
-On-page requirements:
-
-- Exact-match H1 per page
-- 4–6 FAQs + FAQ schema
-- Canonical + JSON-LD (SoftwareApplication, FAQPage)
-- Internal links from home + footer + sitemap entry
 
 ## Tech Stack
 
@@ -66,6 +41,15 @@ On-page requirements:
 - **Bun** >= 1.1
 - **PostgreSQL** >= 14
 - **S3-compatible storage** (R2, MinIO, S3)
+
+## Self-Hosting
+
+STL Shelf can be self-hosted on your own infrastructure.
+
+For self-hosting prerequisites, required services, and deployment notes, see:
+
+- [Self-Hosted Guide](https://stl-shelf.com/self-hosted-3d-model-library)
+- [.env.example](./.env.example)
 
 ## Quick Start (Development)
 
@@ -134,150 +118,6 @@ Set these in `.env` when using ngrok:
 Polar webhook endpoint for local testing:
 
 - `https://yourname.ngrok-free.app/api/auth/polar/webhooks`
-
-## Production Deployment
-
-### Build & Run
-
-```bash
-bun run build
-bun run start
-```
-
-### Docker
-
-```dockerfile
-FROM oven/bun:1.3
-
-WORKDIR /app
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
-COPY . .
-RUN bun run build
-
-EXPOSE 3000
-CMD ["bun", ".output/server/index.mjs"]
-```
-
-```yaml
-# docker-compose.prod.yml
-services:
-  stl-shelf:
-    build: .
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env.production
-    restart: unless-stopped
-```
-
-### Reverse Proxy (Nginx)
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name stl-shelf.example.com;
-
-    ssl_certificate /etc/letsencrypt/live/stl-shelf.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/stl-shelf.example.com/privkey.pem;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-## Environment Variables
-
-### Required
-
-| Variable               | Description                  |
-| ---------------------- | ---------------------------- |
-| `DATABASE_URL`         | PostgreSQL connection string |
-| `AUTH_URL`             | Auth callback URL            |
-| `WEB_URL`              | Public web URL               |
-| `BETTER_AUTH_SECRET`   | Auth secret (32+ chars)      |
-| `STORAGE_ENDPOINT`     | S3-compatible endpoint       |
-| `STORAGE_ACCESS_KEY`   | Storage access key           |
-| `STORAGE_SECRET_KEY`   | Storage secret key           |
-| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret  |
-| `RESEND_API_KEY`       | Resend API key for emails    |
-
-### Optional
-
-| Variable                   | Description        | Default      |
-| -------------------------- | ------------------ | ------------ |
-| `PORT`                     | Server port        | `3000`       |
-| `STORAGE_BUCKET_NAME`      | S3 bucket name     | `stl-models` |
-| `STORAGE_REGION`           | S3 region          | `auto`       |
-| `POSTGRES_MAX_CONNECTIONS` | Max DB connections | `20`         |
-| `GITHUB_CLIENT_ID`         | GitHub OAuth       | -            |
-| `GITHUB_CLIENT_SECRET`     | GitHub OAuth       | -            |
-| `GOOGLE_CLIENT_ID`         | Google OAuth       | -            |
-| `GOOGLE_CLIENT_SECRET`     | Google OAuth       | -            |
-
-## Development Commands
-
-```bash
-bun dev          # Start dev server
-bun build        # Production build
-bun start        # Start production server
-bun test         # Run tests
-bun lint         # Lint code
-bun format       # Format code
-bun check-types  # Type check
-```
-
-### Database
-
-```bash
-bun db:generate  # Generate migrations
-bun db:migrate   # Run migrations
-bun db:push      # Push schema (dev)
-bun db:studio    # Open Drizzle Studio
-```
-
-### Docker Services
-
-```bash
-docker compose up -d      # Start services
-docker compose down       # Stop services
-docker compose logs -f    # View logs
-```
-
-## Project Structure
-
-```
-src/
-├── routes/          # File-based routing
-├── server/          # Server functions & services
-│   ├── functions/   # TanStack Server Functions
-│   └── services/    # Business logic
-├── components/      # React components
-│   └── ui/          # shadcn/ui components
-├── hooks/           # Custom React hooks
-├── lib/             # Core libraries
-│   ├── db/          # Drizzle schema
-│   └── auth.ts      # Auth config
-└── stores/          # State management
-```
-
-## Data Backup
-
-```bash
-# Backup PostgreSQL
-docker exec stl-shelf-postgres pg_dump -U stlshelf stlshelf > backup.sql
-
-# Backup MinIO
-docker run --rm -v stl-shelf_minio_data:/data -v $(pwd):/backup alpine tar czf /backup/minio-backup.tar.gz /data
-```
 
 ## Contributing
 

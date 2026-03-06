@@ -20,7 +20,7 @@ import { getSessionFn } from "@/server/functions/auth";
 
 const homeTitle = "STL Shelf - STL File Organizer & 3D Model Library";
 const homeDescription =
-  "STL file organizer and 3D model library for makers. Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in cloud or self-hosted mode.";
+  "STL file organizer and 3D model library for makers. Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in the cloud or on your own infrastructure.";
 
 const faqStructuredData = {
   "@context": "https://schema.org",
@@ -112,9 +112,9 @@ function LandingPage() {
         <HowItWorks />
         <UseCases />
         <Resources />
-        <Pricing pricing={pricing} />
         <Testimonials />
         <FAQ />
+        <Pricing pricing={pricing} />
         <FinalCTA />
         <Footer />
       </main>

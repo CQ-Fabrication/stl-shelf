@@ -83,6 +83,7 @@ const PUBLIC_ROUTES = [
   "/accept-invitation",
   "/about",
   "/pricing",
+  "/faqs",
   "/privacy",
   "/terms",
   "/guides",
@@ -103,7 +104,7 @@ const AUTH_ROUTES = ["/login", "/signup"];
 const CONSENT_ROUTE = "/consent";
 const defaultSeoTitle = "STL Shelf - STL File Organizer & 3D Model Library";
 const defaultSeoDescription =
-  "STL file organizer and 3D model library for makers. Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in cloud or self-hosted mode.";
+  "STL file organizer and 3D model library for makers. Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in the cloud or on your own infrastructure.";
 
 function normalizePathname(pathname: string): string {
   if (pathname === "/") {
@@ -280,6 +281,20 @@ function RootDocument({ children }: { children: ReactNode }) {
   const normalizedPathname = normalizePathname(pathname);
   const isNotFound = routerState.matches.some((match) => match.status === "notFound");
   const isPublicRoute = PUBLIC_ROUTES.includes(normalizedPathname);
+  const routeJsonLdEntries = routerState.matches.flatMap((match) =>
+    (match.meta ?? []).flatMap((meta) => {
+      if (
+        meta &&
+        typeof meta === "object" &&
+        "script:ld+json" in meta &&
+        (meta["script:ld+json"] as unknown | undefined)
+      ) {
+        return [meta["script:ld+json"]];
+      }
+
+      return [];
+    }),
+  );
   const jsonLd =
     pathname === "/"
       ? {
@@ -315,7 +330,7 @@ function RootDocument({ children }: { children: ReactNode }) {
                 "Tag and categorize models with custom metadata",
                 "Track version history for every model iteration",
                 "Preview 3D models directly in the browser",
-                "Deploy in cloud or self-hosted mode with Docker",
+                "Deploy in the cloud or self-host on your own infrastructure",
               ],
               keywords:
                 "stl file organizer, stl file manager, 3d model library, 3d printing file management",
@@ -342,6 +357,13 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {routeJsonLdEntries.map((entry, index) => (
+          <script
+            key={`route-jsonld-${index}`}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(entry) }}
+          />
+        ))}
         {jsonLd ? (
           <script
             type="application/ld+json"

@@ -3,14 +3,14 @@
 Canonical: https://stl-shelf.com/
 
 STL file organizer and 3D model library for makers.
-Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in cloud or self-hosted mode.
+Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in the cloud or on your own infrastructure.
 Manage your personal collection of 3D printable models with version control, preview, and smart organization.
 
 ## Core promise
 
 - Organize your 3D printing library in one place.
 - Manage personal collections with version control, 3D preview, and structured organization.
-- Use cloud deployment or self-host for complete data ownership.
+- Use the hosted app or deploy STL Shelf on your own infrastructure.
 
 ## Supported file types
 
@@ -32,7 +32,7 @@ Manage your personal collection of 3D printable models with version control, pre
 - **3D Preview**: Inspect models interactively without external software.
 - **Smart Tags**: Organize with tags, categories, and custom metadata.
 - **Batch Download**: Download individual files or ZIP collections.
-- **Self-Hosted**: Run on your own server, NAS, or cloud.
+- **Self-Hosted**: Run STL Shelf with PostgreSQL and S3-compatible storage on your own infrastructure.
 
 ## Who it's for
 
@@ -45,26 +45,23 @@ Manage your personal collection of 3D printable models with version control, pre
 
 ### How do I organize STL, 3MF, and OBJ files without folder chaos?
 
-Use STL Shelf as a searchable personal archive with tags, previews, and version history. See [Organize STL files](https://stl-shelf.com/organize-stl-files.md).
+Use STL Shelf as a searchable personal archive with tags, previews, and version history. See [FAQs](https://stl-shelf.com/faqs.md).
 
-### Can I self-host STL Shelf with Docker?
+### Can I self-host STL Shelf?
 
-Yes. STL Shelf can run in your own infrastructure with PostgreSQL and Docker for full data control. See [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md).
-
-### Should I choose cloud or self-hosted setup?
-
-You can start in the cloud for speed or deploy self-hosted for maximum ownership and internal workflows. See [Pricing](https://stl-shelf.com/pricing.md).
+Yes. Self-hosted deployments require PostgreSQL, S3-compatible storage, Resend, Cloudflare Turnstile, OpenPanel, and Polar. The self-hosted guide documents those prerequisites. See [FAQs](https://stl-shelf.com/faqs.md).
 
 ### Does the 10-model limit apply to self-hosted?
 
-No. The 10-model cap applies only to the Cloud Free plan on stl-shelf.com, not to self-hosted deployments. See [Pricing](https://stl-shelf.com/pricing.md).
+No. The 10-model cap applies only to the Cloud Free plan on stl-shelf.com, not to self-hosted deployments. See [FAQs](https://stl-shelf.com/faqs.md).
 
 ### Is STL Shelf a marketplace or social platform?
 
-No. STL Shelf focuses on organizing your own 3D models, not importing, selling, or social sharing. See [Organize STL files](https://stl-shelf.com/organize-stl-files.md).
+No. STL Shelf focuses on organizing your own 3D models, not importing, selling, or social sharing. See [FAQs](https://stl-shelf.com/faqs.md).
 
 ## Related links
 
+- [FAQs](https://stl-shelf.com/faqs.md)
 - [Guides hub](https://stl-shelf.com/guides.md)
 - [Organize STL files](https://stl-shelf.com/organize-stl-files.md)
 - [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md)

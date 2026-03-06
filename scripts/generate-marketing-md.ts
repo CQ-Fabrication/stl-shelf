@@ -21,6 +21,7 @@ type MarkdownPage = {
 
 const REQUIRED_PATHS: readonly SitePath[] = [
   "/",
+  "/faqs",
   "/guides",
   "/organize-stl-files",
   "/stl-file-organizer",
@@ -38,6 +39,7 @@ const REQUIRED_PATHS: readonly SitePath[] = [
 
 const pageLabels: Record<SitePath, string> = {
   "/": "Homepage",
+  "/faqs": "FAQs",
   "/guides": "Guides hub",
   "/organize-stl-files": "Organize STL files",
   "/stl-file-organizer": "STL file organizer",
@@ -55,6 +57,7 @@ const pageLabels: Record<SitePath, string> = {
 
 const linkLabels: Record<SitePath, string> = {
   "/": "Home",
+  "/faqs": "FAQs",
   "/guides": "Guides hub",
   "/organize-stl-files": "Organize STL files",
   "/stl-file-organizer": "STL file organizer",
@@ -180,14 +183,14 @@ function buildHomePage(): MarkdownPage {
     title: "STL Shelf - STL File Organizer & 3D Model Library",
     summary: [
       "STL file organizer and 3D model library for makers.",
-      "Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in cloud or self-hosted mode.",
+      "Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in the cloud or on your own infrastructure.",
       "Manage your personal collection of 3D printable models with version control, preview, and smart organization.",
     ],
     sections: [
       "## Core promise",
       "- Organize your 3D printing library in one place.",
       "- Manage personal collections with version control, 3D preview, and structured organization.",
-      "- Use cloud deployment or self-host for complete data ownership.",
+      "- Use the hosted app or deploy STL Shelf on your own infrastructure.",
       "",
       "## Supported file types",
       "- STL",
@@ -206,7 +209,7 @@ function buildHomePage(): MarkdownPage {
       "- **3D Preview**: Inspect models interactively without external software.",
       "- **Smart Tags**: Organize with tags, categories, and custom metadata.",
       "- **Batch Download**: Download individual files or ZIP collections.",
-      "- **Self-Hosted**: Run on your own server, NAS, or cloud.",
+      "- **Self-Hosted**: Run STL Shelf with PostgreSQL and S3-compatible storage on your own infrastructure.",
       "",
       "## Who it's for",
       "- **Hobbyist Makers**: Personal libraries for growing collections.",
@@ -217,16 +220,35 @@ function buildHomePage(): MarkdownPage {
       "## FAQ",
       ...marketingFaqs.flatMap((faq) => [
         `### ${faq.question}`,
-        `${faq.answer} See ${link(faq.href as SitePath)}.`,
+        `${faq.answer} See ${link("/faqs")}.`,
       ]),
       "",
       renderRelatedLinks([
+        "/faqs",
         "/guides",
         "/organize-stl-files",
         "/self-hosted-3d-model-library",
         "/pricing",
         "/about",
       ]),
+    ],
+  };
+}
+
+function buildFaqsPage(): MarkdownPage {
+  return {
+    path: "/faqs",
+    title: "FAQs - STL Shelf",
+    summary: [
+      "Frequently asked questions about STL Shelf.",
+      "Includes product positioning, self-hosting prerequisites, and cloud-plan clarifications.",
+      "Use this page as the main FAQ index for STL Shelf.",
+    ],
+    sections: [
+      "## Frequently asked questions",
+      ...renderFaqItems(marketingFaqs),
+      "",
+      renderRelatedLinks(["/", "/guides", "/self-hosted-3d-model-library", "/pricing"]),
     ],
   };
 }
@@ -249,70 +271,67 @@ function buildGuidesPage(): MarkdownPage {
       "## Start organizing today",
       "Build a private model library that stays clean as your collection grows.",
       "",
-      renderRelatedLinks(["/", "/organize-stl-files", "/self-hosted-3d-model-library", "/pricing"]),
+      renderRelatedLinks([
+        "/",
+        "/faqs",
+        "/organize-stl-files",
+        "/self-hosted-3d-model-library",
+        "/pricing",
+      ]),
     ],
   };
 }
 
 function buildSelfHostedPage(): MarkdownPage {
-  const requirements = [
-    "Docker and Docker Compose",
-    "PostgreSQL database (container or external)",
+  const prerequisites = [
+    "PostgreSQL",
     "S3-compatible storage (MinIO, R2, S3)",
+    "Resend",
+    "Cloudflare Turnstile",
+    "OpenPanel",
+    "Polar",
   ];
 
-  const selfHostedFaqs = [
-    {
-      question: "Can I self-host without Docker?",
-      answer:
-        "No. STL Shelf is designed to run via Docker to support PostgreSQL and future Redis requirements.",
-    },
-    {
-      question: "Does self-hosting include sharing or public links?",
-      answer: "No. STL Shelf is a private archive for your files only.",
-    },
-    {
-      question: "Can I import from other services?",
-      answer: "No. You upload and manage your own files only.",
-    },
-    {
-      question: "Which file types are supported?",
-      answer: "STL, 3MF, OBJ, and PLY are supported.",
-    },
+  const deploymentFlow = [
+    "Clone the repository.",
+    "Provision the required services.",
+    "Set the environment variables.",
+    "Run the app.",
+  ];
+
+  const serviceResponsibilities = [
+    "PostgreSQL -> users, organizations, metadata, tags, version history",
+    "S3-compatible storage -> file uploads and downloads",
+    "Resend -> email verification, magic links, password reset, invitation emails",
+    "Cloudflare Turnstile -> CAPTCHA on signup and auth flows",
+    "OpenPanel -> product analytics and event tracking",
+    "Polar -> billing, subscriptions, checkout, customer portal",
   ];
 
   return {
     path: "/self-hosted-3d-model-library",
-    title: "Self-hosted 3D model library for private archives",
+    title: "Self-Host STL Shelf",
     summary: [
-      "Run STL Shelf on your own infrastructure with Docker.",
-      "Keep your STL, 3MF, OBJ, and PLY files on your server with a clean, private library.",
-      "No sharing, no social, no marketplace.",
+      "Deploy STL Shelf on your own infrastructure with PostgreSQL, S3-compatible storage, Resend, Cloudflare Turnstile, OpenPanel, and Polar.",
+      "This page documents the prerequisites for a supported self-hosted deployment.",
+      "Use the repository as the source of truth for the full setup.",
     ],
     sections: [
-      "## Deployment pillars",
-      "- Docker-only: run the app, database, and storage in containers for a clean stack.",
-      "- PostgreSQL required: reliable metadata and version history with a real database.",
-      "- Your files stay local: no sharing or social feed.",
+      "## Prerequisites",
+      ...prerequisites.map((item) => `- ${item}`),
       "",
-      "## What STL Shelf is / is not",
-      "### STL Shelf is",
-      "- Docker-first deployment for private archives.",
-      "- PostgreSQL-backed metadata and version history.",
-      "- A private library for STL, 3MF, OBJ, and PLY files.",
+      "## Deployment flow",
+      ...deploymentFlow.map((item, index) => `${index + 1}. ${item}`),
       "",
-      "### STL Shelf is not",
-      "- Not a marketplace.",
-      "- Not a social feed.",
-      "- Not an import/sync connector for external services.",
+      "## What each service does",
+      ...serviceResponsibilities.map((item) => `- ${item}`),
       "",
-      "## Requirements",
-      ...requirements.map((item) => `- ${item}`),
-      "",
-      "## FAQ",
-      ...renderFaqItems(selfHostedFaqs),
+      "## Need the full setup?",
+      "Use the repository as the source of truth for the complete setup.",
+      "- https://github.com/CQ-Fabrication/stl-shelf",
       "",
       renderRelatedLinks([
+        "/faqs",
         "/organize-stl-files",
         "/private-3d-model-library",
         "/pricing",
@@ -350,6 +369,7 @@ function buildPricingPage(): MarkdownPage {
       `- For the latest live plan metadata, use the canonical HTML page: ${canonicalUrl("/pricing")}`,
       "",
       renderRelatedLinks([
+        "/faqs",
         "/organize-stl-files",
         "/self-hosted-3d-model-library",
         "/private-3d-model-library",
@@ -387,7 +407,7 @@ function buildAboutPage(): MarkdownPage {
       "- hello@stl-shelf.com",
       "- support@stl-shelf.com",
       "",
-      renderRelatedLinks(["/", "/guides", "/pricing", "/self-hosted-3d-model-library"]),
+      renderRelatedLinks(["/", "/faqs", "/guides", "/pricing", "/self-hosted-3d-model-library"]),
     ],
   };
 }
@@ -420,6 +440,7 @@ function buildPages(): MarkdownPage[] {
 
   return [
     buildHomePage(),
+    buildFaqsPage(),
     buildGuidesPage(),
     ...guidePagesToRender,
     buildSelfHostedPage(),

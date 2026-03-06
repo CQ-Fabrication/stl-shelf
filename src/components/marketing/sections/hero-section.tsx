@@ -45,7 +45,7 @@ export function HeroSection() {
 
           <p className="animate-fade-in-up text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto">
             Manage your personal collection of 3D printable models with version control, preview,
-            and smart organization. Use our cloud or self-host for complete data ownership.
+            and smart organization. Use our cloud or deploy STL Shelf on your own infrastructure.
           </p>
 
           <div className="animate-fade-in-up flex flex-wrap justify-center gap-2 pt-2">

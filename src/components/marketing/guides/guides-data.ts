@@ -25,6 +25,25 @@ export type GuidePageData = {
   ctaDescription: string;
 };
 
+export type GuideIndexPath =
+  | "/organize-stl-files"
+  | "/stl-file-organizer"
+  | "/organize-3mf-files"
+  | "/organize-obj-files"
+  | "/version-control-for-stl-files"
+  | "/tagging-system-for-3d-models"
+  | "/private-3d-model-library"
+  | "/self-hosted-3d-model-library"
+  | "/3d-model-preview-in-browser"
+  | "/stop-stl-folder-chaos";
+
+export type GuideIndexEntry = {
+  id: string;
+  path: GuideIndexPath;
+  listTitle: string;
+  description: string;
+};
+
 const defaultIsItems = [
   "A private library for your STL, 3MF, and OBJ files",
   "Searchable tags that keep projects and parts organized",
@@ -518,7 +537,7 @@ export const guidePages = {
   },
 } as const satisfies Record<string, GuidePageData>;
 
-export const guideList = [
+export const guideList: readonly GuideIndexEntry[] = [
   guidePages.organizeStlFiles,
   guidePages.stlFileOrganizer,
   guidePages.organize3mfFiles,
@@ -526,6 +545,13 @@ export const guideList = [
   guidePages.versionControlForStlFiles,
   guidePages.taggingSystemFor3dModels,
   guidePages.private3dModelLibrary,
+  {
+    id: "self-hosted-3d-model-library",
+    path: "/self-hosted-3d-model-library",
+    listTitle: "Self-Hosted 3D Model Library",
+    description:
+      "Deployment prerequisites, required services, and self-hosted setup notes for STL Shelf.",
+  },
   guidePages.modelPreviewInBrowser,
   guidePages.stopStlFolderChaos,
 ] as const;

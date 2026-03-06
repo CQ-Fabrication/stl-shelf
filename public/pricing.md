@@ -29,6 +29,7 @@ Choose a plan for your 3D model library, from free personal collections to team-
 
 ## Related links
 
+- [FAQs](https://stl-shelf.com/faqs.md)
 - [Organize STL files](https://stl-shelf.com/organize-stl-files.md)
 - [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md)
 - [Private 3D model library](https://stl-shelf.com/private-3d-model-library.md)

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
 import { Button } from "@/components/ui/button";
@@ -115,6 +115,15 @@ export function GuidePage({ guide, session }: GuidePageProps) {
 
           <div className="container relative mx-auto px-4">
             <div className="max-w-4xl">
+              <div className="mb-6">
+                <Link
+                  className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  to="/guides"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  View all guides
+                </Link>
+              </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-1.5 text-sm font-medium text-orange-500">
                 Guide
               </div>

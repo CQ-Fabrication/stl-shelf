@@ -30,6 +30,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as GuidesRouteImport } from './routes/guides'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as FaqsRouteImport } from './routes/faqs'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
@@ -161,6 +162,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqsRoute = FaqsRouteImport.update({
+  id: '/faqs',
+  path: '/faqs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsentRoute = ConsentRouteImport.update({
   id: '/consent',
   path: '/consent',
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
   '/consent': typeof ConsentRoute
+  '/faqs': typeof FaqsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/guides': typeof GuidesRoute
   '/library': typeof LibraryRoute
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
   '/consent': typeof ConsentRoute
+  '/faqs': typeof FaqsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/guides': typeof GuidesRoute
   '/library': typeof LibraryRoute
@@ -376,6 +384,7 @@ export interface FileRoutesById {
   '/announcements': typeof AnnouncementsRoute
   '/billing': typeof BillingRoute
   '/consent': typeof ConsentRoute
+  '/faqs': typeof FaqsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/guides': typeof GuidesRoute
   '/library': typeof LibraryRoute
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/billing'
     | '/consent'
+    | '/faqs'
     | '/forgot-password'
     | '/guides'
     | '/library'
@@ -468,6 +478,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/billing'
     | '/consent'
+    | '/faqs'
     | '/forgot-password'
     | '/guides'
     | '/library'
@@ -513,6 +524,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/billing'
     | '/consent'
+    | '/faqs'
     | '/forgot-password'
     | '/guides'
     | '/library'
@@ -559,6 +571,7 @@ export interface RootRouteChildren {
   AnnouncementsRoute: typeof AnnouncementsRoute
   BillingRoute: typeof BillingRoute
   ConsentRoute: typeof ConsentRoute
+  FaqsRoute: typeof FaqsRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GuidesRoute: typeof GuidesRoute
   LibraryRoute: typeof LibraryRoute
@@ -741,6 +754,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faqs': {
+      id: '/faqs'
+      path: '/faqs'
+      fullPath: '/faqs'
+      preLoaderRoute: typeof FaqsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/consent': {
@@ -934,6 +954,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnnouncementsRoute: AnnouncementsRoute,
   BillingRoute: BillingRoute,
   ConsentRoute: ConsentRoute,
+  FaqsRoute: FaqsRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   GuidesRoute: GuidesRoute,
   LibraryRoute: LibraryRoute,

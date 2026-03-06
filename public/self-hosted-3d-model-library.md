@@ -1,57 +1,45 @@
-# Self-hosted 3D model library for private archives
+# Self-Host STL Shelf
 
 Canonical: https://stl-shelf.com/self-hosted-3d-model-library
 
-Run STL Shelf on your own infrastructure with Docker.
-Keep your STL, 3MF, OBJ, and PLY files on your server with a clean, private library.
-No sharing, no social, no marketplace.
+Deploy STL Shelf on your own infrastructure with PostgreSQL, S3-compatible storage, Resend, Cloudflare Turnstile, OpenPanel, and Polar.
+This page documents the prerequisites for a supported self-hosted deployment.
+Use the repository as the source of truth for the full setup.
 
-## Deployment pillars
+## Prerequisites
 
-- Docker-only: run the app, database, and storage in containers for a clean stack.
-- PostgreSQL required: reliable metadata and version history with a real database.
-- Your files stay local: no sharing or social feed.
-
-## What STL Shelf is / is not
-
-### STL Shelf is
-
-- Docker-first deployment for private archives.
-- PostgreSQL-backed metadata and version history.
-- A private library for STL, 3MF, OBJ, and PLY files.
-
-### STL Shelf is not
-
-- Not a marketplace.
-- Not a social feed.
-- Not an import/sync connector for external services.
-
-## Requirements
-
-- Docker and Docker Compose
-- PostgreSQL database (container or external)
+- PostgreSQL
 - S3-compatible storage (MinIO, R2, S3)
+- Resend
+- Cloudflare Turnstile
+- OpenPanel
+- Polar
 
-## FAQ
+## Deployment flow
 
-### Can I self-host without Docker?
+1. Clone the repository.
+2. Provision the required services.
+3. Set the environment variables.
+4. Run the app.
 
-No. STL Shelf is designed to run via Docker to support PostgreSQL and future Redis requirements.
+## What each service does
 
-### Does self-hosting include sharing or public links?
+- PostgreSQL -> users, organizations, metadata, tags, version history
+- S3-compatible storage -> file uploads and downloads
+- Resend -> email verification, magic links, password reset, invitation emails
+- Cloudflare Turnstile -> CAPTCHA on signup and auth flows
+- OpenPanel -> product analytics and event tracking
+- Polar -> billing, subscriptions, checkout, customer portal
 
-No. STL Shelf is a private archive for your files only.
+## Need the full setup?
 
-### Can I import from other services?
+Use the repository as the source of truth for the complete setup.
 
-No. You upload and manage your own files only.
-
-### Which file types are supported?
-
-STL, 3MF, OBJ, and PLY are supported.
+- https://github.com/CQ-Fabrication/stl-shelf
 
 ## Related links
 
+- [FAQs](https://stl-shelf.com/faqs.md)
 - [Organize STL files](https://stl-shelf.com/organize-stl-files.md)
 - [Private 3D model library](https://stl-shelf.com/private-3d-model-library.md)
 - [Pricing](https://stl-shelf.com/pricing.md)

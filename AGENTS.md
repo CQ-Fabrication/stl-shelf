@@ -1,5 +1,3 @@
-READ ~/CQ\ Fabrication/agent-scripts/AGENTS.MD BEFORE ANYTHING (skip if missing).
-
 # AGENTS.md
 
 STL Shelf is a unified full-stack TypeScript app (TanStack Start) for managing a personal library of 3D printable models (STL, 3MF, OBJ).

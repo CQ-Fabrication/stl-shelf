@@ -32,6 +32,7 @@ STL Shelf is open source and can be self-hosted or contributed to on GitHub.
 ## Related links
 
 - [Home](https://stl-shelf.com/index.html.md)
+- [FAQs](https://stl-shelf.com/faqs.md)
 - [Guides hub](https://stl-shelf.com/guides.md)
 - [Pricing](https://stl-shelf.com/pricing.md)
 - [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md)

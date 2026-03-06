@@ -15,7 +15,7 @@ const resources = [
   {
     title: "Self-Hosted 3D Model Library",
     description:
-      "Docker-only setup with PostgreSQL. Your files stay on your server. No sharing, no social.",
+      "Deployment prerequisites, required services, and self-hosted setup notes for STL Shelf.",
     href: "/self-hosted-3d-model-library",
     icon: Server,
     eyebrow: "Deployment",
@@ -85,6 +85,16 @@ export function Resources() {
               </Link>
             );
           })}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            className="inline-flex items-center gap-2 text-sm font-medium text-orange-500 transition-colors hover:text-orange-400"
+            to="/guides"
+          >
+            View all guides
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>

@@ -67,9 +67,8 @@ export const testimonials = [
     accent: "slate",
   },
   {
-    id: "docker-break-it",
-    quote:
-      "Self-hostable with Docker Compose. I can break it on my own hardware, like God intended.",
+    id: "self-host-break-it",
+    quote: "Self-hostable on my own hardware. I can break it myself, like God intended.",
     author: "DevOps",
     role: "Proudly Unsupported",
     initials: "DO",
