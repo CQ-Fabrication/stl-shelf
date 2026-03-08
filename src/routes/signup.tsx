@@ -128,7 +128,6 @@ function SignUpPage() {
     }
 
     trackFormSubmit(client, "signup", { success: true });
-    client?.track("user_signed_up", { method: "email" });
 
     await navigate({
       to: "/verify-email-pending",

@@ -8,6 +8,13 @@ export type OpenPanelProfile = {
   properties: Record<string, unknown>;
 };
 
+type OpenPanelUser = {
+  id: string;
+  email?: string | null;
+  emailVerified?: boolean | null;
+  createdAt?: Date | string | null;
+};
+
 /**
  * Organization data needed for OpenPanel profile context
  */
@@ -58,9 +65,31 @@ export function buildOpenPanelProfile(
 }
 
 /**
+ * Build a minimal OpenPanel profile when only the user record is available.
+ */
+export function buildOpenPanelUserProfile(user: OpenPanelUser): OpenPanelProfile {
+  return {
+    profileId: user.id,
+    properties: {
+      createdAt: toISOString(user.createdAt),
+      emailHash: user.email ? hashEmail(user.email) : undefined,
+      emailVerified: user.emailVerified ?? undefined,
+    },
+  };
+}
+
+/**
  * Hash email for privacy using HMAC-SHA256
  */
 function hashEmail(email: string): string {
   const secret = env.OPENPANEL_CLIENT_SECRET;
   return createHmac("sha256", secret).update(email.toLowerCase().trim()).digest("hex");
+}
+
+function toISOString(value: OpenPanelUser["createdAt"]): string | undefined {
+  if (!value) return undefined;
+  if (value instanceof Date) return value.toISOString();
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }

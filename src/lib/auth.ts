@@ -2,6 +2,7 @@ import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { render } from "@react-email/components";
 import { betterAuth } from "better-auth";
+import type { GenericEndpointContext } from "@better-auth/core";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { captcha, magicLink, openAPI, organization } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
@@ -36,6 +37,8 @@ import {
 } from "@/lib/email";
 import { env } from "@/lib/env";
 import { getTrustedOrigins } from "@/lib/trusted-origins";
+import { trackUserSignedUp } from "@/lib/openpanel/events";
+import { buildOpenPanelUserProfile } from "@/lib/openpanel/user";
 import { recordWebhookPayload } from "@/server/services/billing/webhook-audit.service";
 import { syncResendSegments } from "@/server/services/marketing/resend-segments";
 import { runResendRateLimited } from "@/server/services/resend/retry";
@@ -62,6 +65,42 @@ function validateEmail(email: string | undefined): string {
     throw new Error("Invalid email address");
   }
   return result.data;
+}
+
+type SignupMethod = "email" | "magic_link" | "github" | "google";
+
+function getSignupMethodFromContext(context: GenericEndpointContext | null): SignupMethod | null {
+  if (!context) return null;
+
+  if (context.path === "/sign-up/email") {
+    return "email";
+  }
+
+  if (context.path === "/magic-link/verify") {
+    return "magic_link";
+  }
+
+  if (context.path !== "/callback/:id") {
+    return null;
+  }
+
+  if (!context.request) {
+    return null;
+  }
+
+  const pathname = new URL(context.request.url).pathname;
+  const segments = pathname.split("/").filter(Boolean);
+  const callbackIndex = segments.indexOf("callback");
+  const providerId = callbackIndex >= 0 ? segments[callbackIndex + 1] : null;
+
+  switch (providerId) {
+    case "github":
+      return "github";
+    case "google":
+      return "google";
+    default:
+      return null;
+  }
 }
 
 const polarClient = new Polar({
@@ -456,12 +495,17 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        after: async (user) => {
+        after: async (user, context) => {
           await syncResendSegments({
             email: user.email,
             name: user.name,
             marketingAccepted: false,
           });
+
+          const signupMethod = getSignupMethodFromContext(context);
+          if (signupMethod) {
+            await trackUserSignedUp(buildOpenPanelUserProfile(user), signupMethod);
+          }
         },
       },
     },
