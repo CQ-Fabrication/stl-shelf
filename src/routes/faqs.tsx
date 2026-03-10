@@ -6,6 +6,7 @@ import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
 import { marketingFaqs } from "@/components/marketing/sections/faq.data";
 import type { AuthClient } from "@/lib/auth-client";
+import { createJsonLdHeadScript } from "@/lib/seo/json-ld";
 import { siteUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { getSessionFn } from "@/server/functions/auth";
@@ -44,10 +45,8 @@ export const Route = createFileRoute("/faqs")({
         content:
           "Frequently asked questions about STL Shelf, including self-hosting prerequisites, pricing limits, and product positioning.",
       },
-      {
-        "script:ld+json": faqStructuredData,
-      },
     ],
+    scripts: [createJsonLdHeadScript(faqStructuredData)],
     links: [
       {
         rel: "canonical",

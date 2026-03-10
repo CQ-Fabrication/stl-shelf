@@ -5,6 +5,7 @@ import { Footer } from "@/components/marketing/sections";
 import { Button } from "@/components/ui/button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import type { AuthClient } from "@/lib/auth-client";
+import { createJsonLdHeadScript } from "@/lib/seo/json-ld";
 import { OG_IMAGE_URL, siteUrl } from "@/lib/site";
 import type { GuideFaq, GuidePageData } from "./guides-data";
 
@@ -64,20 +65,29 @@ export function createMarketingHead({ path, title, description, faqs }: HeadInpu
   ];
 
   if (faqs && faqs.length > 0) {
-    meta.push({
-      "script:ld+json": {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: faqs.map((faq) => ({
-          "@type": "Question",
-          name: faq.question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: faq.answer,
-          },
-        })),
-      },
-    });
+    return {
+      meta,
+      scripts: [
+        createJsonLdHeadScript({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: faqs.map((faq) => ({
+            "@type": "Question",
+            name: faq.question,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: faq.answer,
+            },
+          })),
+        }),
+      ],
+      links: [
+        {
+          rel: "canonical",
+          href: fullUrl,
+        },
+      ],
+    };
   }
 
   return {

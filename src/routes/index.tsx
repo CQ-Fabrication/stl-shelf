@@ -14,6 +14,7 @@ import {
   Footer,
 } from "@/components/marketing/sections";
 import { marketingFaqs } from "@/components/marketing/sections/faq.data";
+import { createJsonLdHeadScript } from "@/lib/seo/json-ld";
 import { OG_IMAGE_URL, siteUrl } from "@/lib/site";
 import { getPublicPricing } from "@/server/functions/pricing";
 import { getSessionFn } from "@/server/functions/auth";
@@ -92,10 +93,8 @@ export const Route = createFileRoute("/")({
         name: "twitter:image",
         content: OG_IMAGE_URL,
       },
-      {
-        "script:ld+json": faqStructuredData,
-      },
     ],
+    scripts: [createJsonLdHeadScript(faqStructuredData)],
     links: [{ rel: "canonical", href: siteUrl("/") }],
   }),
 });

@@ -281,20 +281,6 @@ function RootDocument({ children }: { children: ReactNode }) {
   const normalizedPathname = normalizePathname(pathname);
   const isNotFound = routerState.matches.some((match) => match.status === "notFound");
   const isPublicRoute = PUBLIC_ROUTES.includes(normalizedPathname);
-  const routeJsonLdEntries = routerState.matches.flatMap((match) =>
-    (match.meta ?? []).flatMap((meta) => {
-      if (
-        meta &&
-        typeof meta === "object" &&
-        "script:ld+json" in meta &&
-        (meta["script:ld+json"] as unknown | undefined)
-      ) {
-        return [meta["script:ld+json"]];
-      }
-
-      return [];
-    }),
-  );
   const jsonLd =
     pathname === "/"
       ? {
@@ -357,13 +343,6 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        {routeJsonLdEntries.map((entry, index) => (
-          <script
-            key={`route-jsonld-${index}`}
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(entry) }}
-          />
-        ))}
         {jsonLd ? (
           <script
             type="application/ld+json"
