@@ -14,7 +14,7 @@ export const Route = createFileRoute("/about")({
   },
   head: () => ({
     meta: [
-      { title: "About - STL Shelf" },
+      { title: "About STL Shelf - Private 3D Model Library Software" },
       {
         name: "robots",
         content: "index, follow",
@@ -22,16 +22,16 @@ export const Route = createFileRoute("/about")({
       {
         name: "description",
         content:
-          "Learn about STL Shelf - 3D model library built by makers, for makers. Cloud or self-hosted.",
+          "Learn about STL Shelf, private 3D model library software for organizing, cataloging, versioning, and managing 3D printing files.",
       },
       {
         property: "og:title",
-        content: "About STL Shelf",
+        content: "About STL Shelf - Private 3D Model Library Software",
       },
       {
         property: "og:description",
         content:
-          "Learn about STL Shelf - the 3D model library built by makers, for makers. Cloud or self-hosted.",
+          "Learn about STL Shelf, private 3D model library software for organizing, cataloging, versioning, and managing 3D printing files.",
       },
       {
         property: "og:image",
@@ -47,12 +47,12 @@ export const Route = createFileRoute("/about")({
       },
       {
         name: "twitter:title",
-        content: "About STL Shelf",
+        content: "About STL Shelf - Private 3D Model Library Software",
       },
       {
         name: "twitter:description",
         content:
-          "Learn about STL Shelf - the 3D model library built by makers, for makers. Cloud or self-hosted.",
+          "Learn about STL Shelf, private 3D model library software for organizing, cataloging, versioning, and managing 3D printing files.",
       },
       {
         name: "twitter:image",
@@ -133,9 +133,10 @@ function AboutPage() {
                 className="animate-fade-in-up text-lg md:text-xl text-muted-foreground mb-8"
                 style={{ animationDelay: "0.2s" }}
               >
-                STL Shelf was born from frustration. After years of downloading models, buying
-                bundles, and designing our own files, we ended up with thousands of STLs scattered
-                across hard drives, cloud folders, and USB sticks. Sound familiar?
+                STL Shelf was born from a simple problem: storing files was easy, but managing a
+                private 3D printing library was not. After years of downloading models, buying
+                bundles, and designing our own parts, we ended up with thousands of files scattered
+                across hard drives, cloud folders, and USB sticks.
               </p>
             </div>
           </div>
@@ -152,9 +153,10 @@ function AboutPage() {
                 that one perfect model.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                STL Shelf is our answer to the chaos. A solution that puts you in control of your 3D
-                model library. Use our cloud for convenience, or self-host for complete data
-                ownership. No vendor lock-in, and a free tier to get started.
+                STL Shelf is our answer to that chaos. It is software designed to organize, catalog,
+                version, and manage private 3D printing model libraries. The hosted product managed
+                by us is the fastest path for most users, and the open-source code makes
+                self-hosting possible when control matters more.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Whether you're a hobbyist with a growing collection or a print farm managing

@@ -2,27 +2,20 @@
 
 Canonical: https://stl-shelf.com/about
 
-STL Shelf is presented as a 3D model library built by makers, for makers.
-The page explains the origin story, product values, and open-source positioning.
-It also includes direct contact channels for product and support conversations.
+About STL Shelf, private 3D model library software for organizing, cataloging, versioning, and managing 3D printing files.
+Built by makers who needed more than folders and generic cloud storage.
 
-## Our story
+## Product summary
 
-STL Shelf was born from frustration after managing thousands of STL files across hard drives, cloud folders, and USB sticks.
-The team frames the product as a response to folder chaos and emphasizes practical organization for both hobbyists and print farms.
-The positioning includes cloud convenience, self-hosted ownership, and no vendor lock-in.
+STL Shelf is a software designed to organize, catalog, version, and manage private 3D printing model libraries.
+It is built for makers, hobbyists, design iterators, digital hoarders, and small print farms.
 
-## What we believe
+## Positioning
 
-- **Privacy First**: your data belongs to you; self-hosting is supported for full control.
-- **Built for Speed**: fast preview and search across large model collections.
-- **Made for Makers**: focused on real-world 3D printing library pain.
-
-## Open source
-
-STL Shelf is open source and can be self-hosted or contributed to on GitHub.
-
-- Repository: https://github.com/CQ-Fabrication/stl-shelf
+- Private 3D model library software.
+- Open source and self-hostable.
+- Hosted version managed by us for the simplest path.
+- Not a marketplace, not a social platform, not an import/sync hub.
 
 ## Contact
 
@@ -31,8 +24,7 @@ STL Shelf is open source and can be self-hosted or contributed to on GitHub.
 
 ## Related links
 
-- [Home](https://stl-shelf.com/index.html.md)
-- [FAQs](https://stl-shelf.com/faqs.md)
-- [Guides hub](https://stl-shelf.com/guides.md)
+- [Homepage](https://stl-shelf.com/index.html.md)
+- [Guides](https://stl-shelf.com/guides.md)
 - [Pricing](https://stl-shelf.com/pricing.md)
-- [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md)
+- [Self-Hosted 3D Model Library](https://stl-shelf.com/self-hosted-3d-model-library.md)

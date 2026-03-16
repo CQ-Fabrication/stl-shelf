@@ -1,0 +1,19 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "STL Shelf",
+  "description": "Software for organizing, cataloging, versioning, and managing private 3D printing model libraries.",
+  "applicationCategory": "STL file management software",
+  "featureList": [
+    "STL file organization",
+    "3D print file library management",
+    "tagging and categorization",
+    "version history",
+    "browser 3D preview",
+    "open-source private archive",
+    "self-hostable deployment",
+    "hosted version managed by us"
+  ],
+  "operatingSystem": "Web",
+  "url": "https://stl-shelf.com/"
+}

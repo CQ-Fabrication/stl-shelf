@@ -224,13 +224,13 @@ export const guidePages = {
   organizeObjFiles: {
     id: "organize-obj-files",
     path: "/organize-obj-files",
-    listTitle: "How to Organize OBJ Files",
-    title: "How to Organize OBJ Files for 3D Printing Projects",
+    listTitle: "Organize OBJ Files for 3D Printing",
+    title: "How to Organize OBJ Files for 3D Printing Projects | STL Shelf",
     description:
-      "Organize OBJ assets for 3D printing: tags, preview, and version history to avoid scattered folders and lost revisions.",
+      "Organize OBJ assets for 3D printing in a private library with tags, browser preview, and version history instead of scattered folders.",
     h1: "How to organize OBJ files for 3D printing projects",
     intro:
-      "OBJ assets can include variants, remixes, and supports, so naming alone is rarely enough to stay organized.",
+      "OBJ assets can include variants, remixes, and supports, so naming alone is rarely enough to keep a private 3D printing library organized.",
     problem: [
       "OBJ files often live in separate project directories with little shared structure.",
       "As revisions grow, people end up with final files that are impossible to trust.",
@@ -435,12 +435,12 @@ export const guidePages = {
     id: "3d-model-preview-in-browser",
     path: "/3d-model-preview-in-browser",
     listTitle: "3D Model Preview in Browser",
-    title: "3D Model Preview in the Browser (STL/3MF/OBJ)",
+    title: "3D Model Browser Preview for STL, 3MF, and OBJ Files | STL Shelf",
     description:
-      "Preview 3D models in your browser to quickly inspect files before printing. Keep everything organized in a private library.",
-    h1: "3D model preview in the browser",
+      "Preview 3D models in your browser to inspect files before printing and keep that inspection tied to a private versioned library.",
+    h1: "3D model browser preview for STL, 3MF, and OBJ files",
     intro:
-      "Browser preview helps you validate files before slicing, so you can catch mistakes early and avoid wasted print cycles.",
+      "Browser preview helps you validate files before slicing, so you can catch mistakes early and keep the review process tied to the right model and version.",
     problem: [
       "When preview is separated from your file library, inspection gets skipped.",
       "That increases the chance of printing the wrong revision.",

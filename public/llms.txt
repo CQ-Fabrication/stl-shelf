@@ -1,28 +1,53 @@
 # STL Shelf
 
-> STL Shelf is a private 3D model library (digital asset manager) for 3D printing files. It helps makers, print farms, and teams organize STL/3MF/OBJ/PLY files with tags, search, in-browser 3D preview, and version history. Deploy in the cloud or self-host on your own infrastructure.
+> STL Shelf is a software designed to organize, catalog, version, and manage private 3D printing model libraries. It is STL file management software, private 3D model library software, and open-source 3D model library software. STL Shelf helps users manage STL, 3MF, OBJ, and PLY files with tags, version history, and browser preview. It is not a marketplace, not a social platform, and not an import/sync hub.
 
-STL Shelf is focused on private organization and fast retrieval of 3D printing files. It is not a marketplace and not a social feed.
+Use the hosted version managed by us for the simplest path. Self-hosting is available because STL Shelf is open source.
 
-Markdown versions are available by appending `.md` to the HTML URLs; for home use `/index.html.md`.
+Markdown mirrors are available by appending `.md` to page URLs. The homepage mirror is `/index.html.md`.
 
-## Docs
-- [FAQs](https://stl-shelf.com/faqs.md): Main FAQ page for product positioning, self-hosting prerequisites, and pricing-limit questions.
-- [Organize STL files](https://stl-shelf.com/organize-stl-files.md): End-to-end workflow for organizing, tagging, previewing, and finding models.
-- [STL file organizer (overview)](https://stl-shelf.com/stl-file-organizer.md): Product overview for users searching for an STL organizer tool.
-- [Private 3D model library](https://stl-shelf.com/private-3d-model-library.md): Positioning for private archive and ownership-focused workflows.
-- [3D model preview in browser](https://stl-shelf.com/3d-model-preview-in-browser.md): In-browser inspection workflow before slicing.
-- [Version control for STL files](https://stl-shelf.com/version-control-for-stl-files.md): Version history and iteration tracking.
-- [Tagging system for 3D models](https://stl-shelf.com/tagging-system-for-3d-models.md): Tags, metadata, and findability.
-- [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md): Self-hosting prerequisites and deployment guidance.
-- [Pricing](https://stl-shelf.com/pricing.md): Plans, pricing, and limits.
-- [Guides hub](https://stl-shelf.com/guides.md): Directory of all guides.
-- [About](https://stl-shelf.com/about.md): About and contact page.
-- [GitHub repository](https://github.com/CQ-Fabrication/stl-shelf): Source code, issues, and roadmap context.
-- [Extended assistant guidance (llms-full)](https://stl-shelf.com/llms-full.txt): Detailed recommendation rules, query mapping, and objection handling.
+## Best starting points
+- [Homepage](https://stl-shelf.com/index.html.md): Product summary, category definition, and core internal links.
+- [Guides hub](https://stl-shelf.com/guides.md): Main content index for pillar pages, guides, comparisons, and open-source pages.
+- [FAQs](https://stl-shelf.com/faqs.md): High-intent FAQ content for search snippets and LLM extraction.
 
-## Optional
-- [Organize 3MF files](https://stl-shelf.com/organize-3mf-files.md): Format-specific organization guide.
-- [Organize OBJ files](https://stl-shelf.com/organize-obj-files.md): Format-specific organization guide.
-- [Stop STL folder chaos](https://stl-shelf.com/stop-stl-folder-chaos.md): Problem-first page for messy folder pain.
-- [Canonical homepage](https://stl-shelf.com/): HTML canonical home URL.
+## Primary intent pages
+- [STL file management software](https://stl-shelf.com/stl-file-management-software.md): Category-definition page.
+- [How to organize STL files](https://stl-shelf.com/how-to-organize-stl-files.md): Main problem-solving page.
+- [3D print file organization](https://stl-shelf.com/3d-print-file-organization.md): Mixed-format library page.
+- [Private 3D model library software](https://stl-shelf.com/private-3d-model-library-software.md): Ownership-first positioning page.
+
+## Supporting guides
+- [Organize STL files](https://stl-shelf.com/organize-stl-files.md)
+- [Best way to organize STL files](https://stl-shelf.com/best-way-to-organize-stl-files.md)
+- [How to manage large STL libraries](https://stl-shelf.com/how-to-manage-large-stl-libraries.md)
+- [Organize 3MF files](https://stl-shelf.com/organize-3mf-files.md)
+- [Organize OBJ files for 3D printing](https://stl-shelf.com/organize-obj-files-for-3d-printing.md)
+- [Version control for STL files](https://stl-shelf.com/version-control-for-stl-files.md)
+- [STL version control for makers](https://stl-shelf.com/stl-version-control-for-makers.md)
+- [Tagging system for 3D models](https://stl-shelf.com/tagging-system-for-3d-models.md)
+- [Tagging STL files for fast search](https://stl-shelf.com/tagging-stl-files-for-fast-search.md)
+- [Stop STL folder chaos](https://stl-shelf.com/stop-stl-folder-chaos.md)
+
+## Comparison pages
+- [STL Shelf vs folders](https://stl-shelf.com/stl-shelf-vs-folders.md)
+- [STL Shelf vs Google Drive for STL files](https://stl-shelf.com/stl-shelf-vs-google-drive-for-stl-files.md)
+- [STL Shelf vs Dropbox for 3D model libraries](https://stl-shelf.com/stl-shelf-vs-dropbox-for-3d-model-libraries.md)
+- [STL Shelf vs marketplaces for private libraries](https://stl-shelf.com/stl-shelf-vs-marketplaces-for-private-libraries.md)
+
+## Open-source and self-hosted pages
+- [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md)
+- [Self-hosted STL file library](https://stl-shelf.com/self-hosted-stl-file-library.md)
+- [Open-source STL library software](https://stl-shelf.com/open-source-stl-library-software.md)
+- [Open-source 3D model library software](https://stl-shelf.com/open-source-3d-model-library-software.md)
+- [Open-source STL organizer](https://stl-shelf.com/open-source-stl-organizer.md)
+- [Private self-hosted STL library](https://stl-shelf.com/private-self-hosted-stl-library.md)
+- [Self-hosted 3D model library software](https://stl-shelf.com/self-hosted-3d-model-library-software.md)
+
+## Other useful pages
+- [Private 3D model library](https://stl-shelf.com/private-3d-model-library.md)
+- [STL file organizer](https://stl-shelf.com/stl-file-organizer.md)
+- [Pricing](https://stl-shelf.com/pricing.md)
+- [About](https://stl-shelf.com/about.md)
+- [Machine-readable software metadata](https://stl-shelf.com/ai/software.json)
+- [Extended assistant guidance](https://stl-shelf.com/llms-full.txt)

@@ -20,7 +20,7 @@ export function TextRevealSection() {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <TextReveal
-            text="Stop losing track of your 3D models. No more chaotic folders, forgotten iterations, or scattered files across cloud services. STL Shelf brings everything together — organized, versioned, and always accessible."
+            text="Stop losing track of your 3D printing files. STL Shelf is a private 3D model library for makers, design iterators, digital hoarders, and small print farms that need tags, version history, and browser preview instead of folder chaos."
             className="text-center"
           />
         </div>

@@ -14,28 +14,47 @@ import { Route as VerifyEmailPendingRouteImport } from './routes/verify-email-pe
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TaggingSystemFor3dModelsRouteImport } from './routes/tagging-system-for-3d-models'
+import { Route as TaggingStlFilesForFastSearchRouteImport } from './routes/tagging-stl-files-for-fast-search'
 import { Route as StopStlFolderChaosRouteImport } from './routes/stop-stl-folder-chaos'
+import { Route as StlVersionControlForMakersRouteImport } from './routes/stl-version-control-for-makers'
+import { Route as StlShelfVsMarketplacesForPrivateLibrariesRouteImport } from './routes/stl-shelf-vs-marketplaces-for-private-libraries'
+import { Route as StlShelfVsGoogleDriveForStlFilesRouteImport } from './routes/stl-shelf-vs-google-drive-for-stl-files'
+import { Route as StlShelfVsFoldersRouteImport } from './routes/stl-shelf-vs-folders'
+import { Route as StlShelfVsDropboxFor3dModelLibrariesRouteImport } from './routes/stl-shelf-vs-dropbox-for-3d-model-libraries'
 import { Route as StlFileOrganizerRouteImport } from './routes/stl-file-organizer'
+import { Route as StlFileManagementSoftwareRouteImport } from './routes/stl-file-management-software'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SelfHostedStlFileLibraryRouteImport } from './routes/self-hosted-stl-file-library'
+import { Route as SelfHosted3dModelLibrarySoftwareRouteImport } from './routes/self-hosted-3d-model-library-software'
 import { Route as SelfHosted3dModelLibraryRouteImport } from './routes/self-hosted-3d-model-library'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PrivateSelfHostedStlLibraryRouteImport } from './routes/private-self-hosted-stl-library'
+import { Route as Private3dModelLibrarySoftwareRouteImport } from './routes/private-3d-model-library-software'
 import { Route as Private3dModelLibraryRouteImport } from './routes/private-3d-model-library'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OrganizeStlFilesRouteImport } from './routes/organize-stl-files'
+import { Route as OrganizeObjFilesFor3dPrintingRouteImport } from './routes/organize-obj-files-for-3d-printing'
 import { Route as OrganizeObjFilesRouteImport } from './routes/organize-obj-files'
 import { Route as Organize3mfFilesRouteImport } from './routes/organize-3mf-files'
+import { Route as OpenSourceStlOrganizerRouteImport } from './routes/open-source-stl-organizer'
+import { Route as OpenSourceStlLibrarySoftwareRouteImport } from './routes/open-source-stl-library-software'
+import { Route as OpenSource3dModelLibrarySoftwareRouteImport } from './routes/open-source-3d-model-library-software'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as HowToOrganizeStlFilesRouteImport } from './routes/how-to-organize-stl-files'
+import { Route as HowToManageLargeStlLibrariesRouteImport } from './routes/how-to-manage-large-stl-libraries'
 import { Route as GuidesRouteImport } from './routes/guides'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqsRouteImport } from './routes/faqs'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as BestWayToOrganizeStlFilesRouteImport } from './routes/best-way-to-organize-stl-files'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as R3dPrintFileOrganizationRouteImport } from './routes/3d-print-file-organization'
 import { Route as R3dModelPreviewInBrowserRouteImport } from './routes/3d-model-preview-in-browser'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrganizationSettingsRouteImport } from './routes/organization/settings'
@@ -81,21 +100,74 @@ const TaggingSystemFor3dModelsRoute =
     path: '/tagging-system-for-3d-models',
     getParentRoute: () => rootRouteImport,
   } as any)
+const TaggingStlFilesForFastSearchRoute =
+  TaggingStlFilesForFastSearchRouteImport.update({
+    id: '/tagging-stl-files-for-fast-search',
+    path: '/tagging-stl-files-for-fast-search',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const StopStlFolderChaosRoute = StopStlFolderChaosRouteImport.update({
   id: '/stop-stl-folder-chaos',
   path: '/stop-stl-folder-chaos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StlVersionControlForMakersRoute =
+  StlVersionControlForMakersRouteImport.update({
+    id: '/stl-version-control-for-makers',
+    path: '/stl-version-control-for-makers',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const StlShelfVsMarketplacesForPrivateLibrariesRoute =
+  StlShelfVsMarketplacesForPrivateLibrariesRouteImport.update({
+    id: '/stl-shelf-vs-marketplaces-for-private-libraries',
+    path: '/stl-shelf-vs-marketplaces-for-private-libraries',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const StlShelfVsGoogleDriveForStlFilesRoute =
+  StlShelfVsGoogleDriveForStlFilesRouteImport.update({
+    id: '/stl-shelf-vs-google-drive-for-stl-files',
+    path: '/stl-shelf-vs-google-drive-for-stl-files',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const StlShelfVsFoldersRoute = StlShelfVsFoldersRouteImport.update({
+  id: '/stl-shelf-vs-folders',
+  path: '/stl-shelf-vs-folders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StlShelfVsDropboxFor3dModelLibrariesRoute =
+  StlShelfVsDropboxFor3dModelLibrariesRouteImport.update({
+    id: '/stl-shelf-vs-dropbox-for-3d-model-libraries',
+    path: '/stl-shelf-vs-dropbox-for-3d-model-libraries',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const StlFileOrganizerRoute = StlFileOrganizerRouteImport.update({
   id: '/stl-file-organizer',
   path: '/stl-file-organizer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StlFileManagementSoftwareRoute =
+  StlFileManagementSoftwareRouteImport.update({
+    id: '/stl-file-management-software',
+    path: '/stl-file-management-software',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SelfHostedStlFileLibraryRoute =
+  SelfHostedStlFileLibraryRouteImport.update({
+    id: '/self-hosted-stl-file-library',
+    path: '/self-hosted-stl-file-library',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const SelfHosted3dModelLibrarySoftwareRoute =
+  SelfHosted3dModelLibrarySoftwareRouteImport.update({
+    id: '/self-hosted-3d-model-library-software',
+    path: '/self-hosted-3d-model-library-software',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const SelfHosted3dModelLibraryRoute =
   SelfHosted3dModelLibraryRouteImport.update({
     id: '/self-hosted-3d-model-library',
@@ -112,6 +184,18 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivateSelfHostedStlLibraryRoute =
+  PrivateSelfHostedStlLibraryRouteImport.update({
+    id: '/private-self-hosted-stl-library',
+    path: '/private-self-hosted-stl-library',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Private3dModelLibrarySoftwareRoute =
+  Private3dModelLibrarySoftwareRouteImport.update({
+    id: '/private-3d-model-library-software',
+    path: '/private-3d-model-library-software',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const Private3dModelLibraryRoute = Private3dModelLibraryRouteImport.update({
   id: '/private-3d-model-library',
   path: '/private-3d-model-library',
@@ -132,6 +216,12 @@ const OrganizeStlFilesRoute = OrganizeStlFilesRouteImport.update({
   path: '/organize-stl-files',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrganizeObjFilesFor3dPrintingRoute =
+  OrganizeObjFilesFor3dPrintingRouteImport.update({
+    id: '/organize-obj-files-for-3d-printing',
+    path: '/organize-obj-files-for-3d-printing',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const OrganizeObjFilesRoute = OrganizeObjFilesRouteImport.update({
   id: '/organize-obj-files',
   path: '/organize-obj-files',
@@ -142,6 +232,23 @@ const Organize3mfFilesRoute = Organize3mfFilesRouteImport.update({
   path: '/organize-3mf-files',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpenSourceStlOrganizerRoute = OpenSourceStlOrganizerRouteImport.update({
+  id: '/open-source-stl-organizer',
+  path: '/open-source-stl-organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpenSourceStlLibrarySoftwareRoute =
+  OpenSourceStlLibrarySoftwareRouteImport.update({
+    id: '/open-source-stl-library-software',
+    path: '/open-source-stl-library-software',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OpenSource3dModelLibrarySoftwareRoute =
+  OpenSource3dModelLibrarySoftwareRouteImport.update({
+    id: '/open-source-3d-model-library-software',
+    path: '/open-source-3d-model-library-software',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -152,6 +259,17 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HowToOrganizeStlFilesRoute = HowToOrganizeStlFilesRouteImport.update({
+  id: '/how-to-organize-stl-files',
+  path: '/how-to-organize-stl-files',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowToManageLargeStlLibrariesRoute =
+  HowToManageLargeStlLibrariesRouteImport.update({
+    id: '/how-to-manage-large-stl-libraries',
+    path: '/how-to-manage-large-stl-libraries',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const GuidesRoute = GuidesRouteImport.update({
   id: '/guides',
   path: '/guides',
@@ -177,6 +295,12 @@ const BillingRoute = BillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BestWayToOrganizeStlFilesRoute =
+  BestWayToOrganizeStlFilesRouteImport.update({
+    id: '/best-way-to-organize-stl-files',
+    path: '/best-way-to-organize-stl-files',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AnnouncementsRoute = AnnouncementsRouteImport.update({
   id: '/announcements',
   path: '/announcements',
@@ -192,6 +316,12 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const R3dPrintFileOrganizationRoute =
+  R3dPrintFileOrganizationRouteImport.update({
+    id: '/3d-print-file-organization',
+    path: '/3d-print-file-organization',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const R3dModelPreviewInBrowserRoute =
   R3dModelPreviewInBrowserRouteImport.update({
     id: '/3d-model-preview-in-browser',
@@ -286,28 +416,47 @@ const ApiV1ModelsModelIdFilesFileIdDownloadRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/3d-model-preview-in-browser': typeof R3dModelPreviewInBrowserRoute
+  '/3d-print-file-organization': typeof R3dPrintFileOrganizationRoute
   '/about': typeof AboutRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
+  '/best-way-to-organize-stl-files': typeof BestWayToOrganizeStlFilesRoute
   '/billing': typeof BillingRoute
   '/consent': typeof ConsentRoute
   '/faqs': typeof FaqsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/guides': typeof GuidesRoute
+  '/how-to-manage-large-stl-libraries': typeof HowToManageLargeStlLibrariesRoute
+  '/how-to-organize-stl-files': typeof HowToOrganizeStlFilesRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/open-source-3d-model-library-software': typeof OpenSource3dModelLibrarySoftwareRoute
+  '/open-source-stl-library-software': typeof OpenSourceStlLibrarySoftwareRoute
+  '/open-source-stl-organizer': typeof OpenSourceStlOrganizerRoute
   '/organize-3mf-files': typeof Organize3mfFilesRoute
   '/organize-obj-files': typeof OrganizeObjFilesRoute
+  '/organize-obj-files-for-3d-printing': typeof OrganizeObjFilesFor3dPrintingRoute
   '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/private-3d-model-library': typeof Private3dModelLibraryRoute
+  '/private-3d-model-library-software': typeof Private3dModelLibrarySoftwareRoute
+  '/private-self-hosted-stl-library': typeof PrivateSelfHostedStlLibraryRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
+  '/self-hosted-3d-model-library-software': typeof SelfHosted3dModelLibrarySoftwareRoute
+  '/self-hosted-stl-file-library': typeof SelfHostedStlFileLibraryRoute
   '/signup': typeof SignupRoute
+  '/stl-file-management-software': typeof StlFileManagementSoftwareRoute
   '/stl-file-organizer': typeof StlFileOrganizerRoute
+  '/stl-shelf-vs-dropbox-for-3d-model-libraries': typeof StlShelfVsDropboxFor3dModelLibrariesRoute
+  '/stl-shelf-vs-folders': typeof StlShelfVsFoldersRoute
+  '/stl-shelf-vs-google-drive-for-stl-files': typeof StlShelfVsGoogleDriveForStlFilesRoute
+  '/stl-shelf-vs-marketplaces-for-private-libraries': typeof StlShelfVsMarketplacesForPrivateLibrariesRoute
+  '/stl-version-control-for-makers': typeof StlVersionControlForMakersRoute
   '/stop-stl-folder-chaos': typeof StopStlFolderChaosRoute
+  '/tagging-stl-files-for-fast-search': typeof TaggingStlFilesForFastSearchRoute
   '/tagging-system-for-3d-models': typeof TaggingSystemFor3dModelsRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -332,28 +481,47 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/3d-model-preview-in-browser': typeof R3dModelPreviewInBrowserRoute
+  '/3d-print-file-organization': typeof R3dPrintFileOrganizationRoute
   '/about': typeof AboutRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
+  '/best-way-to-organize-stl-files': typeof BestWayToOrganizeStlFilesRoute
   '/billing': typeof BillingRoute
   '/consent': typeof ConsentRoute
   '/faqs': typeof FaqsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/guides': typeof GuidesRoute
+  '/how-to-manage-large-stl-libraries': typeof HowToManageLargeStlLibrariesRoute
+  '/how-to-organize-stl-files': typeof HowToOrganizeStlFilesRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/open-source-3d-model-library-software': typeof OpenSource3dModelLibrarySoftwareRoute
+  '/open-source-stl-library-software': typeof OpenSourceStlLibrarySoftwareRoute
+  '/open-source-stl-organizer': typeof OpenSourceStlOrganizerRoute
   '/organize-3mf-files': typeof Organize3mfFilesRoute
   '/organize-obj-files': typeof OrganizeObjFilesRoute
+  '/organize-obj-files-for-3d-printing': typeof OrganizeObjFilesFor3dPrintingRoute
   '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/private-3d-model-library': typeof Private3dModelLibraryRoute
+  '/private-3d-model-library-software': typeof Private3dModelLibrarySoftwareRoute
+  '/private-self-hosted-stl-library': typeof PrivateSelfHostedStlLibraryRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
+  '/self-hosted-3d-model-library-software': typeof SelfHosted3dModelLibrarySoftwareRoute
+  '/self-hosted-stl-file-library': typeof SelfHostedStlFileLibraryRoute
   '/signup': typeof SignupRoute
+  '/stl-file-management-software': typeof StlFileManagementSoftwareRoute
   '/stl-file-organizer': typeof StlFileOrganizerRoute
+  '/stl-shelf-vs-dropbox-for-3d-model-libraries': typeof StlShelfVsDropboxFor3dModelLibrariesRoute
+  '/stl-shelf-vs-folders': typeof StlShelfVsFoldersRoute
+  '/stl-shelf-vs-google-drive-for-stl-files': typeof StlShelfVsGoogleDriveForStlFilesRoute
+  '/stl-shelf-vs-marketplaces-for-private-libraries': typeof StlShelfVsMarketplacesForPrivateLibrariesRoute
+  '/stl-version-control-for-makers': typeof StlVersionControlForMakersRoute
   '/stop-stl-folder-chaos': typeof StopStlFolderChaosRoute
+  '/tagging-stl-files-for-fast-search': typeof TaggingStlFilesForFastSearchRoute
   '/tagging-system-for-3d-models': typeof TaggingSystemFor3dModelsRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -379,28 +547,47 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/3d-model-preview-in-browser': typeof R3dModelPreviewInBrowserRoute
+  '/3d-print-file-organization': typeof R3dPrintFileOrganizationRoute
   '/about': typeof AboutRoute
   '/accept-invitation': typeof AcceptInvitationRoute
   '/announcements': typeof AnnouncementsRoute
+  '/best-way-to-organize-stl-files': typeof BestWayToOrganizeStlFilesRoute
   '/billing': typeof BillingRoute
   '/consent': typeof ConsentRoute
   '/faqs': typeof FaqsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/guides': typeof GuidesRoute
+  '/how-to-manage-large-stl-libraries': typeof HowToManageLargeStlLibrariesRoute
+  '/how-to-organize-stl-files': typeof HowToOrganizeStlFilesRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/open-source-3d-model-library-software': typeof OpenSource3dModelLibrarySoftwareRoute
+  '/open-source-stl-library-software': typeof OpenSourceStlLibrarySoftwareRoute
+  '/open-source-stl-organizer': typeof OpenSourceStlOrganizerRoute
   '/organize-3mf-files': typeof Organize3mfFilesRoute
   '/organize-obj-files': typeof OrganizeObjFilesRoute
+  '/organize-obj-files-for-3d-printing': typeof OrganizeObjFilesFor3dPrintingRoute
   '/organize-stl-files': typeof OrganizeStlFilesRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/private-3d-model-library': typeof Private3dModelLibraryRoute
+  '/private-3d-model-library-software': typeof Private3dModelLibrarySoftwareRoute
+  '/private-self-hosted-stl-library': typeof PrivateSelfHostedStlLibraryRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/self-hosted-3d-model-library': typeof SelfHosted3dModelLibraryRoute
+  '/self-hosted-3d-model-library-software': typeof SelfHosted3dModelLibrarySoftwareRoute
+  '/self-hosted-stl-file-library': typeof SelfHostedStlFileLibraryRoute
   '/signup': typeof SignupRoute
+  '/stl-file-management-software': typeof StlFileManagementSoftwareRoute
   '/stl-file-organizer': typeof StlFileOrganizerRoute
+  '/stl-shelf-vs-dropbox-for-3d-model-libraries': typeof StlShelfVsDropboxFor3dModelLibrariesRoute
+  '/stl-shelf-vs-folders': typeof StlShelfVsFoldersRoute
+  '/stl-shelf-vs-google-drive-for-stl-files': typeof StlShelfVsGoogleDriveForStlFilesRoute
+  '/stl-shelf-vs-marketplaces-for-private-libraries': typeof StlShelfVsMarketplacesForPrivateLibrariesRoute
+  '/stl-version-control-for-makers': typeof StlVersionControlForMakersRoute
   '/stop-stl-folder-chaos': typeof StopStlFolderChaosRoute
+  '/tagging-stl-files-for-fast-search': typeof TaggingStlFilesForFastSearchRoute
   '/tagging-system-for-3d-models': typeof TaggingSystemFor3dModelsRoute
   '/terms': typeof TermsRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -427,28 +614,47 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/3d-model-preview-in-browser'
+    | '/3d-print-file-organization'
     | '/about'
     | '/accept-invitation'
     | '/announcements'
+    | '/best-way-to-organize-stl-files'
     | '/billing'
     | '/consent'
     | '/faqs'
     | '/forgot-password'
     | '/guides'
+    | '/how-to-manage-large-stl-libraries'
+    | '/how-to-organize-stl-files'
     | '/library'
     | '/login'
+    | '/open-source-3d-model-library-software'
+    | '/open-source-stl-library-software'
+    | '/open-source-stl-organizer'
     | '/organize-3mf-files'
     | '/organize-obj-files'
+    | '/organize-obj-files-for-3d-printing'
     | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
     | '/private-3d-model-library'
+    | '/private-3d-model-library-software'
+    | '/private-self-hosted-stl-library'
     | '/profile'
     | '/reset-password'
     | '/self-hosted-3d-model-library'
+    | '/self-hosted-3d-model-library-software'
+    | '/self-hosted-stl-file-library'
     | '/signup'
+    | '/stl-file-management-software'
     | '/stl-file-organizer'
+    | '/stl-shelf-vs-dropbox-for-3d-model-libraries'
+    | '/stl-shelf-vs-folders'
+    | '/stl-shelf-vs-google-drive-for-stl-files'
+    | '/stl-shelf-vs-marketplaces-for-private-libraries'
+    | '/stl-version-control-for-makers'
     | '/stop-stl-folder-chaos'
+    | '/tagging-stl-files-for-fast-search'
     | '/tagging-system-for-3d-models'
     | '/terms'
     | '/verify-email'
@@ -473,28 +679,47 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/3d-model-preview-in-browser'
+    | '/3d-print-file-organization'
     | '/about'
     | '/accept-invitation'
     | '/announcements'
+    | '/best-way-to-organize-stl-files'
     | '/billing'
     | '/consent'
     | '/faqs'
     | '/forgot-password'
     | '/guides'
+    | '/how-to-manage-large-stl-libraries'
+    | '/how-to-organize-stl-files'
     | '/library'
     | '/login'
+    | '/open-source-3d-model-library-software'
+    | '/open-source-stl-library-software'
+    | '/open-source-stl-organizer'
     | '/organize-3mf-files'
     | '/organize-obj-files'
+    | '/organize-obj-files-for-3d-printing'
     | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
     | '/private-3d-model-library'
+    | '/private-3d-model-library-software'
+    | '/private-self-hosted-stl-library'
     | '/profile'
     | '/reset-password'
     | '/self-hosted-3d-model-library'
+    | '/self-hosted-3d-model-library-software'
+    | '/self-hosted-stl-file-library'
     | '/signup'
+    | '/stl-file-management-software'
     | '/stl-file-organizer'
+    | '/stl-shelf-vs-dropbox-for-3d-model-libraries'
+    | '/stl-shelf-vs-folders'
+    | '/stl-shelf-vs-google-drive-for-stl-files'
+    | '/stl-shelf-vs-marketplaces-for-private-libraries'
+    | '/stl-version-control-for-makers'
     | '/stop-stl-folder-chaos'
+    | '/tagging-stl-files-for-fast-search'
     | '/tagging-system-for-3d-models'
     | '/terms'
     | '/verify-email'
@@ -519,28 +744,47 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/3d-model-preview-in-browser'
+    | '/3d-print-file-organization'
     | '/about'
     | '/accept-invitation'
     | '/announcements'
+    | '/best-way-to-organize-stl-files'
     | '/billing'
     | '/consent'
     | '/faqs'
     | '/forgot-password'
     | '/guides'
+    | '/how-to-manage-large-stl-libraries'
+    | '/how-to-organize-stl-files'
     | '/library'
     | '/login'
+    | '/open-source-3d-model-library-software'
+    | '/open-source-stl-library-software'
+    | '/open-source-stl-organizer'
     | '/organize-3mf-files'
     | '/organize-obj-files'
+    | '/organize-obj-files-for-3d-printing'
     | '/organize-stl-files'
     | '/pricing'
     | '/privacy'
     | '/private-3d-model-library'
+    | '/private-3d-model-library-software'
+    | '/private-self-hosted-stl-library'
     | '/profile'
     | '/reset-password'
     | '/self-hosted-3d-model-library'
+    | '/self-hosted-3d-model-library-software'
+    | '/self-hosted-stl-file-library'
     | '/signup'
+    | '/stl-file-management-software'
     | '/stl-file-organizer'
+    | '/stl-shelf-vs-dropbox-for-3d-model-libraries'
+    | '/stl-shelf-vs-folders'
+    | '/stl-shelf-vs-google-drive-for-stl-files'
+    | '/stl-shelf-vs-marketplaces-for-private-libraries'
+    | '/stl-version-control-for-makers'
     | '/stop-stl-folder-chaos'
+    | '/tagging-stl-files-for-fast-search'
     | '/tagging-system-for-3d-models'
     | '/terms'
     | '/verify-email'
@@ -566,28 +810,47 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R3dModelPreviewInBrowserRoute: typeof R3dModelPreviewInBrowserRoute
+  R3dPrintFileOrganizationRoute: typeof R3dPrintFileOrganizationRoute
   AboutRoute: typeof AboutRoute
   AcceptInvitationRoute: typeof AcceptInvitationRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
+  BestWayToOrganizeStlFilesRoute: typeof BestWayToOrganizeStlFilesRoute
   BillingRoute: typeof BillingRoute
   ConsentRoute: typeof ConsentRoute
   FaqsRoute: typeof FaqsRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GuidesRoute: typeof GuidesRoute
+  HowToManageLargeStlLibrariesRoute: typeof HowToManageLargeStlLibrariesRoute
+  HowToOrganizeStlFilesRoute: typeof HowToOrganizeStlFilesRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
+  OpenSource3dModelLibrarySoftwareRoute: typeof OpenSource3dModelLibrarySoftwareRoute
+  OpenSourceStlLibrarySoftwareRoute: typeof OpenSourceStlLibrarySoftwareRoute
+  OpenSourceStlOrganizerRoute: typeof OpenSourceStlOrganizerRoute
   Organize3mfFilesRoute: typeof Organize3mfFilesRoute
   OrganizeObjFilesRoute: typeof OrganizeObjFilesRoute
+  OrganizeObjFilesFor3dPrintingRoute: typeof OrganizeObjFilesFor3dPrintingRoute
   OrganizeStlFilesRoute: typeof OrganizeStlFilesRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   Private3dModelLibraryRoute: typeof Private3dModelLibraryRoute
+  Private3dModelLibrarySoftwareRoute: typeof Private3dModelLibrarySoftwareRoute
+  PrivateSelfHostedStlLibraryRoute: typeof PrivateSelfHostedStlLibraryRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SelfHosted3dModelLibraryRoute: typeof SelfHosted3dModelLibraryRoute
+  SelfHosted3dModelLibrarySoftwareRoute: typeof SelfHosted3dModelLibrarySoftwareRoute
+  SelfHostedStlFileLibraryRoute: typeof SelfHostedStlFileLibraryRoute
   SignupRoute: typeof SignupRoute
+  StlFileManagementSoftwareRoute: typeof StlFileManagementSoftwareRoute
   StlFileOrganizerRoute: typeof StlFileOrganizerRoute
+  StlShelfVsDropboxFor3dModelLibrariesRoute: typeof StlShelfVsDropboxFor3dModelLibrariesRoute
+  StlShelfVsFoldersRoute: typeof StlShelfVsFoldersRoute
+  StlShelfVsGoogleDriveForStlFilesRoute: typeof StlShelfVsGoogleDriveForStlFilesRoute
+  StlShelfVsMarketplacesForPrivateLibrariesRoute: typeof StlShelfVsMarketplacesForPrivateLibrariesRoute
+  StlVersionControlForMakersRoute: typeof StlVersionControlForMakersRoute
   StopStlFolderChaosRoute: typeof StopStlFolderChaosRoute
+  TaggingStlFilesForFastSearchRoute: typeof TaggingStlFilesForFastSearchRoute
   TaggingSystemFor3dModelsRoute: typeof TaggingSystemFor3dModelsRoute
   TermsRoute: typeof TermsRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -644,11 +907,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TaggingSystemFor3dModelsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tagging-stl-files-for-fast-search': {
+      id: '/tagging-stl-files-for-fast-search'
+      path: '/tagging-stl-files-for-fast-search'
+      fullPath: '/tagging-stl-files-for-fast-search'
+      preLoaderRoute: typeof TaggingStlFilesForFastSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stop-stl-folder-chaos': {
       id: '/stop-stl-folder-chaos'
       path: '/stop-stl-folder-chaos'
       fullPath: '/stop-stl-folder-chaos'
       preLoaderRoute: typeof StopStlFolderChaosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stl-version-control-for-makers': {
+      id: '/stl-version-control-for-makers'
+      path: '/stl-version-control-for-makers'
+      fullPath: '/stl-version-control-for-makers'
+      preLoaderRoute: typeof StlVersionControlForMakersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stl-shelf-vs-marketplaces-for-private-libraries': {
+      id: '/stl-shelf-vs-marketplaces-for-private-libraries'
+      path: '/stl-shelf-vs-marketplaces-for-private-libraries'
+      fullPath: '/stl-shelf-vs-marketplaces-for-private-libraries'
+      preLoaderRoute: typeof StlShelfVsMarketplacesForPrivateLibrariesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stl-shelf-vs-google-drive-for-stl-files': {
+      id: '/stl-shelf-vs-google-drive-for-stl-files'
+      path: '/stl-shelf-vs-google-drive-for-stl-files'
+      fullPath: '/stl-shelf-vs-google-drive-for-stl-files'
+      preLoaderRoute: typeof StlShelfVsGoogleDriveForStlFilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stl-shelf-vs-folders': {
+      id: '/stl-shelf-vs-folders'
+      path: '/stl-shelf-vs-folders'
+      fullPath: '/stl-shelf-vs-folders'
+      preLoaderRoute: typeof StlShelfVsFoldersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stl-shelf-vs-dropbox-for-3d-model-libraries': {
+      id: '/stl-shelf-vs-dropbox-for-3d-model-libraries'
+      path: '/stl-shelf-vs-dropbox-for-3d-model-libraries'
+      fullPath: '/stl-shelf-vs-dropbox-for-3d-model-libraries'
+      preLoaderRoute: typeof StlShelfVsDropboxFor3dModelLibrariesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/stl-file-organizer': {
@@ -658,11 +963,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StlFileOrganizerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stl-file-management-software': {
+      id: '/stl-file-management-software'
+      path: '/stl-file-management-software'
+      fullPath: '/stl-file-management-software'
+      preLoaderRoute: typeof StlFileManagementSoftwareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/self-hosted-stl-file-library': {
+      id: '/self-hosted-stl-file-library'
+      path: '/self-hosted-stl-file-library'
+      fullPath: '/self-hosted-stl-file-library'
+      preLoaderRoute: typeof SelfHostedStlFileLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/self-hosted-3d-model-library-software': {
+      id: '/self-hosted-3d-model-library-software'
+      path: '/self-hosted-3d-model-library-software'
+      fullPath: '/self-hosted-3d-model-library-software'
+      preLoaderRoute: typeof SelfHosted3dModelLibrarySoftwareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/self-hosted-3d-model-library': {
@@ -684,6 +1010,20 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/private-self-hosted-stl-library': {
+      id: '/private-self-hosted-stl-library'
+      path: '/private-self-hosted-stl-library'
+      fullPath: '/private-self-hosted-stl-library'
+      preLoaderRoute: typeof PrivateSelfHostedStlLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/private-3d-model-library-software': {
+      id: '/private-3d-model-library-software'
+      path: '/private-3d-model-library-software'
+      fullPath: '/private-3d-model-library-software'
+      preLoaderRoute: typeof Private3dModelLibrarySoftwareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/private-3d-model-library': {
@@ -714,6 +1054,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizeStlFilesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/organize-obj-files-for-3d-printing': {
+      id: '/organize-obj-files-for-3d-printing'
+      path: '/organize-obj-files-for-3d-printing'
+      fullPath: '/organize-obj-files-for-3d-printing'
+      preLoaderRoute: typeof OrganizeObjFilesFor3dPrintingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/organize-obj-files': {
       id: '/organize-obj-files'
       path: '/organize-obj-files'
@@ -728,6 +1075,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Organize3mfFilesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/open-source-stl-organizer': {
+      id: '/open-source-stl-organizer'
+      path: '/open-source-stl-organizer'
+      fullPath: '/open-source-stl-organizer'
+      preLoaderRoute: typeof OpenSourceStlOrganizerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/open-source-stl-library-software': {
+      id: '/open-source-stl-library-software'
+      path: '/open-source-stl-library-software'
+      fullPath: '/open-source-stl-library-software'
+      preLoaderRoute: typeof OpenSourceStlLibrarySoftwareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/open-source-3d-model-library-software': {
+      id: '/open-source-3d-model-library-software'
+      path: '/open-source-3d-model-library-software'
+      fullPath: '/open-source-3d-model-library-software'
+      preLoaderRoute: typeof OpenSource3dModelLibrarySoftwareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -740,6 +1108,20 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-to-organize-stl-files': {
+      id: '/how-to-organize-stl-files'
+      path: '/how-to-organize-stl-files'
+      fullPath: '/how-to-organize-stl-files'
+      preLoaderRoute: typeof HowToOrganizeStlFilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-to-manage-large-stl-libraries': {
+      id: '/how-to-manage-large-stl-libraries'
+      path: '/how-to-manage-large-stl-libraries'
+      fullPath: '/how-to-manage-large-stl-libraries'
+      preLoaderRoute: typeof HowToManageLargeStlLibrariesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guides': {
@@ -777,6 +1159,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/best-way-to-organize-stl-files': {
+      id: '/best-way-to-organize-stl-files'
+      path: '/best-way-to-organize-stl-files'
+      fullPath: '/best-way-to-organize-stl-files'
+      preLoaderRoute: typeof BestWayToOrganizeStlFilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/announcements': {
       id: '/announcements'
       path: '/announcements'
@@ -796,6 +1185,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/3d-print-file-organization': {
+      id: '/3d-print-file-organization'
+      path: '/3d-print-file-organization'
+      fullPath: '/3d-print-file-organization'
+      preLoaderRoute: typeof R3dPrintFileOrganizationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/3d-model-preview-in-browser': {
@@ -949,28 +1345,49 @@ const ApiV1ModelsRouteWithChildren = ApiV1ModelsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R3dModelPreviewInBrowserRoute: R3dModelPreviewInBrowserRoute,
+  R3dPrintFileOrganizationRoute: R3dPrintFileOrganizationRoute,
   AboutRoute: AboutRoute,
   AcceptInvitationRoute: AcceptInvitationRoute,
   AnnouncementsRoute: AnnouncementsRoute,
+  BestWayToOrganizeStlFilesRoute: BestWayToOrganizeStlFilesRoute,
   BillingRoute: BillingRoute,
   ConsentRoute: ConsentRoute,
   FaqsRoute: FaqsRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   GuidesRoute: GuidesRoute,
+  HowToManageLargeStlLibrariesRoute: HowToManageLargeStlLibrariesRoute,
+  HowToOrganizeStlFilesRoute: HowToOrganizeStlFilesRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
+  OpenSource3dModelLibrarySoftwareRoute: OpenSource3dModelLibrarySoftwareRoute,
+  OpenSourceStlLibrarySoftwareRoute: OpenSourceStlLibrarySoftwareRoute,
+  OpenSourceStlOrganizerRoute: OpenSourceStlOrganizerRoute,
   Organize3mfFilesRoute: Organize3mfFilesRoute,
   OrganizeObjFilesRoute: OrganizeObjFilesRoute,
+  OrganizeObjFilesFor3dPrintingRoute: OrganizeObjFilesFor3dPrintingRoute,
   OrganizeStlFilesRoute: OrganizeStlFilesRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   Private3dModelLibraryRoute: Private3dModelLibraryRoute,
+  Private3dModelLibrarySoftwareRoute: Private3dModelLibrarySoftwareRoute,
+  PrivateSelfHostedStlLibraryRoute: PrivateSelfHostedStlLibraryRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SelfHosted3dModelLibraryRoute: SelfHosted3dModelLibraryRoute,
+  SelfHosted3dModelLibrarySoftwareRoute: SelfHosted3dModelLibrarySoftwareRoute,
+  SelfHostedStlFileLibraryRoute: SelfHostedStlFileLibraryRoute,
   SignupRoute: SignupRoute,
+  StlFileManagementSoftwareRoute: StlFileManagementSoftwareRoute,
   StlFileOrganizerRoute: StlFileOrganizerRoute,
+  StlShelfVsDropboxFor3dModelLibrariesRoute:
+    StlShelfVsDropboxFor3dModelLibrariesRoute,
+  StlShelfVsFoldersRoute: StlShelfVsFoldersRoute,
+  StlShelfVsGoogleDriveForStlFilesRoute: StlShelfVsGoogleDriveForStlFilesRoute,
+  StlShelfVsMarketplacesForPrivateLibrariesRoute:
+    StlShelfVsMarketplacesForPrivateLibrariesRoute,
+  StlVersionControlForMakersRoute: StlVersionControlForMakersRoute,
   StopStlFolderChaosRoute: StopStlFolderChaosRoute,
+  TaggingStlFilesForFastSearchRoute: TaggingStlFilesForFastSearchRoute,
   TaggingSystemFor3dModelsRoute: TaggingSystemFor3dModelsRoute,
   TermsRoute: TermsRoute,
   VerifyEmailRoute: VerifyEmailRoute,

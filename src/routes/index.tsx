@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Navigation } from "@/components/marketing/navigation";
 import {
   HeroSection,
+  SemanticOverview,
   TextRevealSection,
   Features,
   HowItWorks,
@@ -19,9 +20,30 @@ import { OG_IMAGE_URL, siteUrl } from "@/lib/site";
 import { getPublicPricing } from "@/server/functions/pricing";
 import { getSessionFn } from "@/server/functions/auth";
 
-const homeTitle = "STL Shelf - STL File Organizer & 3D Model Library";
+const homeTitle = "Private 3D Model Library Software for STL Files | STL Shelf";
 const homeDescription =
-  "STL file organizer and 3D model library for makers. Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in the cloud or on your own infrastructure.";
+  "Private 3D model library software for organizing, cataloging, versioning, and managing STL, 3MF, OBJ, and PLY files. Hosted by us or self-hosted because STL Shelf is open source.";
+
+const softwareApplicationStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "STL Shelf",
+  description:
+    "Software for organizing, cataloging, versioning, and managing private 3D printing model libraries.",
+  applicationCategory: "STL file management software",
+  featureList: [
+    "STL file organization",
+    "3D print file library management",
+    "tagging and categorization",
+    "version history",
+    "browser 3D preview",
+    "open-source private archive",
+    "self-hostable deployment",
+    "hosted version managed by us",
+  ],
+  operatingSystem: "Web",
+  url: siteUrl("/"),
+};
 
 const faqStructuredData = {
   "@context": "https://schema.org",
@@ -94,7 +116,10 @@ export const Route = createFileRoute("/")({
         content: OG_IMAGE_URL,
       },
     ],
-    scripts: [createJsonLdHeadScript(faqStructuredData)],
+    scripts: [
+      createJsonLdHeadScript(faqStructuredData),
+      createJsonLdHeadScript(softwareApplicationStructuredData),
+    ],
     links: [{ rel: "canonical", href: siteUrl("/") }],
   }),
 });
@@ -106,6 +131,7 @@ function LandingPage() {
       <Navigation session={session} />
       <main className="min-h-screen">
         <HeroSection />
+        <SemanticOverview />
         <TextRevealSection />
         <Features />
         <HowItWorks />

@@ -1,0 +1,86 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I organize STL files?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use a private 3D model library with searchable tags, version history, and browser preview so the archive scales beyond folders and filenames."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the best way to manage a large STL library?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The best approach is a versioned private library workflow with tags, model-level grouping, and preview. Large archives usually outgrow folders and cloud-drive-only organization."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is STL Shelf a marketplace?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. STL Shelf is not a marketplace and not a social platform. It is software for managing private 3D printing model libraries."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I self-host STL Shelf?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. STL Shelf is open source and can be self-hosted. The hosted version managed by us is the simpler path for most users."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does STL Shelf support STL only?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. STL Shelf supports STL, 3MF, OBJ, and PLY files in the same private library workflow."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I keep multiple versions of the same 3D model?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use one stable model record and attach revisions as version history with notes. That keeps earlier iterations traceable without relying on filename chaos."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the difference between folders and a 3D model library?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Folders organize storage locations. A 3D model library organizes models, tags, versions, preview, and retrieval context."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can STL Shelf replace Google Drive for STL file organization?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For private library organization, yes. Google Drive remains a general-purpose sync tool, while STL Shelf is designed for archive structure, tags, versions, and preview."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is STL Shelf open source?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. STL Shelf is open-source software for managing private 3D printing model libraries."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I self-host STL Shelf or use the hosted version?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use the hosted version managed by us if you want the workflow with minimal operational work. Self-host when infrastructure control is an actual requirement."
+      }
+    }
+  ]
+}

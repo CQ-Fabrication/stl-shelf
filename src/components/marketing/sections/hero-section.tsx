@@ -5,7 +5,6 @@ import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
-import { AuroraText } from "@/components/marketing/magicui/aurora-text";
 import { HeroBackground } from "@/components/marketing/hero-background";
 
 const stats = [
@@ -35,17 +34,18 @@ export function HeroSection() {
           <div className="animate-fade-in-up flex justify-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary backdrop-blur-sm">
               <Box className="h-3.5 w-3.5" />
-              <span>3D Model Library for Makers</span>
+              <span>STL File Management Software</span>
             </div>
           </div>
 
           <h1 className="animate-fade-in-up text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight">
-            Organize Your <AuroraText className="font-bold">3D Printing</AuroraText> Library
+            Private <span className="text-orange-500">3D Model Library</span> Software
           </h1>
 
           <p className="animate-fade-in-up text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto">
-            Manage your personal collection of 3D printable models with version control, preview,
-            and smart organization. Use our cloud or deploy STL Shelf on your own infrastructure.
+            STL Shelf is software designed to organize, catalog, version, and manage private 3D
+            printing model libraries. Manage STL, 3MF, OBJ, and PLY files with tags, version
+            history, browser preview, and a hosted or self-hosted deployment path.
           </p>
 
           <div className="animate-fade-in-up flex flex-wrap justify-center gap-2 pt-2">

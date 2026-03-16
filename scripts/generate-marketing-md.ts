@@ -1,10 +1,11 @@
 import path from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
+import { guidePages, type GuidePageData } from "../src/components/marketing/guides/guides-data";
 import {
-  guideList,
-  guidePages,
-  type GuidePageData,
-} from "../src/components/marketing/guides/guides-data";
+  seoPageGroups,
+  seoPageList,
+  type SeoPageData,
+} from "../src/components/marketing/seo/seo-pages-data";
 import { marketingFaqs } from "../src/components/marketing/sections/faq.data";
 
 const SITE_URL = "https://stl-shelf.com";
@@ -19,103 +20,17 @@ type MarkdownPage = {
   sections: string[];
 };
 
-const REQUIRED_PATHS: readonly SitePath[] = [
+const legacyGuidePages = [guidePages.modelPreviewInBrowser, guidePages.organizeObjFiles] as const;
+
+const REQUIRED_PATHS: SitePath[] = [
   "/",
   "/faqs",
   "/guides",
-  "/organize-stl-files",
-  "/stl-file-organizer",
-  "/stop-stl-folder-chaos",
-  "/private-3d-model-library",
-  "/3d-model-preview-in-browser",
-  "/version-control-for-stl-files",
-  "/tagging-system-for-3d-models",
-  "/self-hosted-3d-model-library",
-  "/organize-3mf-files",
-  "/organize-obj-files",
   "/pricing",
   "/about",
+  ...seoPageList.map((page) => page.path),
+  ...legacyGuidePages.map((page) => page.path),
 ];
-
-const pageLabels: Record<SitePath, string> = {
-  "/": "Homepage",
-  "/faqs": "FAQs",
-  "/guides": "Guides hub",
-  "/organize-stl-files": "Organize STL files",
-  "/stl-file-organizer": "STL file organizer",
-  "/stop-stl-folder-chaos": "Stop STL folder chaos",
-  "/private-3d-model-library": "Private 3D model library",
-  "/3d-model-preview-in-browser": "3D model preview in browser",
-  "/version-control-for-stl-files": "Version control for STL files",
-  "/tagging-system-for-3d-models": "Tagging system for 3D models",
-  "/self-hosted-3d-model-library": "Self-hosted 3D model library",
-  "/organize-3mf-files": "Organize 3MF files",
-  "/organize-obj-files": "Organize OBJ files",
-  "/pricing": "Pricing",
-  "/about": "About",
-};
-
-const linkLabels: Record<SitePath, string> = {
-  "/": "Home",
-  "/faqs": "FAQs",
-  "/guides": "Guides hub",
-  "/organize-stl-files": "Organize STL files",
-  "/stl-file-organizer": "STL file organizer",
-  "/stop-stl-folder-chaos": "Stop STL folder chaos",
-  "/private-3d-model-library": "Private 3D model library",
-  "/3d-model-preview-in-browser": "3D model preview in browser",
-  "/version-control-for-stl-files": "Version control for STL files",
-  "/tagging-system-for-3d-models": "Tagging system for 3D models",
-  "/self-hosted-3d-model-library": "Self-hosted 3D model library",
-  "/organize-3mf-files": "Organize 3MF files",
-  "/organize-obj-files": "Organize OBJ files",
-  "/pricing": "Pricing",
-  "/about": "About",
-};
-
-const guideRelatedPaths: Record<GuidePageData["path"], SitePath[]> = {
-  "/organize-stl-files": [
-    "/stl-file-organizer",
-    "/stop-stl-folder-chaos",
-    "/tagging-system-for-3d-models",
-  ],
-  "/stl-file-organizer": [
-    "/organize-stl-files",
-    "/tagging-system-for-3d-models",
-    "/version-control-for-stl-files",
-  ],
-  "/organize-3mf-files": [
-    "/organize-stl-files",
-    "/organize-obj-files",
-    "/self-hosted-3d-model-library",
-  ],
-  "/organize-obj-files": [
-    "/organize-stl-files",
-    "/organize-3mf-files",
-    "/self-hosted-3d-model-library",
-  ],
-  "/version-control-for-stl-files": [
-    "/organize-stl-files",
-    "/3d-model-preview-in-browser",
-    "/tagging-system-for-3d-models",
-  ],
-  "/tagging-system-for-3d-models": [
-    "/organize-stl-files",
-    "/stl-file-organizer",
-    "/version-control-for-stl-files",
-  ],
-  "/private-3d-model-library": ["/self-hosted-3d-model-library", "/organize-stl-files", "/pricing"],
-  "/3d-model-preview-in-browser": [
-    "/version-control-for-stl-files",
-    "/organize-stl-files",
-    "/tagging-system-for-3d-models",
-  ],
-  "/stop-stl-folder-chaos": [
-    "/organize-stl-files",
-    "/stl-file-organizer",
-    "/tagging-system-for-3d-models",
-  ],
-};
 
 function canonicalUrl(pathname: SitePath): string {
   return pathname === "/" ? `${SITE_URL}/` : `${SITE_URL}${pathname}`;
@@ -134,8 +49,18 @@ function markdownFilesystemPath(pathname: SitePath): string {
   return path.join(OUTPUT_DIRECTORY, relativePath);
 }
 
-function link(pathname: SitePath): string {
-  return `[${linkLabels[pathname]}](${markdownUrl(pathname)})`;
+function pageLabel(pathname: SitePath): string {
+  if (pathname === "/") return "Homepage";
+  if (pathname === "/faqs") return "FAQs";
+  if (pathname === "/guides") return "Guides";
+  if (pathname === "/pricing") return "Pricing";
+  if (pathname === "/about") return "About";
+
+  return (
+    seoPageList.find((page) => page.path === pathname)?.listTitle ||
+    legacyGuidePages.find((page) => page.path === pathname)?.listTitle ||
+    pathname
+  );
 }
 
 function renderFaqItems(items: readonly { question: string; answer: string }[]): string[] {
@@ -143,14 +68,13 @@ function renderFaqItems(items: readonly { question: string; answer: string }[]):
 }
 
 function renderRelatedLinks(paths: readonly SitePath[]): string {
-  return ["## Related links", ...paths.map((pathname) => `- ${link(pathname)}`)].join("\n");
+  return [
+    "## Related links",
+    ...paths.map((pathname) => `- [${pageLabel(pathname)}](${markdownUrl(pathname)})`),
+  ].join("\n");
 }
 
 function renderGuidePage(guide: GuidePageData): MarkdownPage {
-  const related = Array.from(
-    new Set<SitePath>(["/guides", "/pricing", ...(guideRelatedPaths[guide.path] ?? [])]),
-  ).filter((pathname) => pathname !== guide.path);
-
   return {
     path: guide.path,
     title: guide.h1,
@@ -172,7 +96,59 @@ function renderGuidePage(guide: GuidePageData): MarkdownPage {
       "## FAQ",
       ...renderFaqItems(guide.faqs),
       "",
-      renderRelatedLinks(related),
+      renderRelatedLinks([
+        "/guides",
+        "/pricing",
+        "/organize-stl-files",
+        "/private-3d-model-library",
+      ]),
+    ],
+  };
+}
+
+function renderSeoPage(page: SeoPageData): MarkdownPage {
+  return {
+    path: page.path,
+    title: page.h1,
+    summary: [page.description, ...page.intro],
+    sections: [
+      "## Category definition",
+      ...page.semanticStatements.map((statement) => `- ${statement}`),
+      "",
+      "## STL Shelf helps you",
+      ...page.featureList.map((item) => `- ${item}`),
+      "",
+      `## ${page.workflowTitle}`,
+      ...page.workflow.map((step, index) => `${index + 1}. **${step.title}**: ${step.description}`),
+      "",
+      ...page.sections.flatMap((section) => {
+        const blocks = [`## ${section.title}`];
+
+        if (section.paragraphs) {
+          blocks.push(...section.paragraphs);
+          blocks.push("");
+        }
+
+        if (section.bullets) {
+          blocks.push(...section.bullets.map((bullet) => `- ${bullet}`));
+          blocks.push("");
+        }
+
+        if (section.ordered) {
+          blocks.push(...section.ordered.map((item, index) => `${index + 1}. ${item}`));
+          blocks.push("");
+        }
+
+        return blocks;
+      }),
+      "## FAQ",
+      ...renderFaqItems(page.faqs),
+      "",
+      renderRelatedLinks(page.internalLinks.map((link) => link.href)),
+      "",
+      "## Conclusion",
+      page.ctaDescription,
+      `- Call to action: ${page.ctaTitle}`,
     ],
   };
 }
@@ -180,56 +156,47 @@ function renderGuidePage(guide: GuidePageData): MarkdownPage {
 function buildHomePage(): MarkdownPage {
   return {
     path: "/",
-    title: "STL Shelf - STL File Organizer & 3D Model Library",
+    title: "STL Shelf - Private 3D Model Library Software",
     summary: [
-      "STL file organizer and 3D model library for makers.",
-      "Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in the cloud or on your own infrastructure.",
-      "Manage your personal collection of 3D printable models with version control, preview, and smart organization.",
+      "STL Shelf is software designed to organize, catalog, version, and manage private 3D printing model libraries.",
+      "It helps users manage STL, 3MF, OBJ, and PLY files with tags, version history, and browser preview.",
+      "Use the hosted version managed by us or self-host the open-source product when control matters more.",
     ],
     sections: [
-      "## Core promise",
-      "- Organize your 3D printing library in one place.",
-      "- Manage personal collections with version control, 3D preview, and structured organization.",
-      "- Use the hosted app or deploy STL Shelf on your own infrastructure.",
+      "## What is STL Shelf?",
+      "STL Shelf is a software designed to organize, catalog, version, and manage private 3D printing model libraries.",
+      "STL Shelf is a private 3D model library for makers and print farms.",
+      "STL Shelf is an open-source software for managing private 3D printing model libraries.",
       "",
-      "## Supported file types",
-      "- STL",
-      "- OBJ",
-      "- 3MF",
-      "- PLY",
+      "## Who it is for",
+      "- Makers and hobbyists.",
+      "- Design iterators.",
+      "- Digital hoarders.",
+      "- Small print farms.",
       "",
-      "## Core workflow",
-      "1. **Upload**: Drag and drop your 3D models with STL, OBJ, 3MF, and PLY support.",
-      "2. **Organize**: Tag, categorize, and version models for fast retrieval.",
-      "3. **Preview & Share**: Preview models in 3D, then download files or share inside your workflow.",
+      "## Problems it solves",
+      "- Folder chaos across downloads, drives, and cloud storage.",
+      "- Weak search for large STL libraries.",
+      "- Missing version history for repeated jobs.",
+      "- No quick browser preview before printing.",
       "",
-      "## Key capabilities",
-      "- **Organized Library**: Keep all STL, OBJ, 3MF, and PLY files in one searchable library.",
-      "- **Version Control**: Track design iterations with built-in history.",
-      "- **3D Preview**: Inspect models interactively without external software.",
-      "- **Smart Tags**: Organize with tags, categories, and custom metadata.",
-      "- **Batch Download**: Download individual files or ZIP collections.",
-      "- **Self-Hosted**: Run STL Shelf with PostgreSQL and S3-compatible storage on your own infrastructure.",
-      "",
-      "## Who it's for",
-      "- **Hobbyist Makers**: Personal libraries for growing collections.",
-      "- **Design Iterators**: Version tracking across frequent model updates.",
-      "- **Small Print Farms**: Fast retrieval of production files for reprints.",
-      "- **Digital Hoarders**: Search and structure for very large archives.",
-      "",
-      "## FAQ",
-      ...marketingFaqs.flatMap((faq) => [
-        `### ${faq.question}`,
-        `${faq.answer} See ${link("/faqs")}.`,
-      ]),
+      "## STL Shelf helps you",
+      "- organize STL files",
+      "- manage large 3D model libraries",
+      "- tag and categorize files",
+      "- track version history",
+      "- preview models in browser",
+      "- keep files private",
+      "- self-host your archive if desired",
+      "- use a hosted version managed by us",
       "",
       renderRelatedLinks([
-        "/faqs",
+        "/stl-file-management-software",
+        "/how-to-organize-stl-files",
+        "/private-3d-model-library-software",
+        "/self-hosted-3d-model-library-software",
         "/guides",
-        "/organize-stl-files",
-        "/self-hosted-3d-model-library",
-        "/pricing",
-        "/about",
+        "/faqs",
       ]),
     ],
   };
@@ -238,17 +205,15 @@ function buildHomePage(): MarkdownPage {
 function buildFaqsPage(): MarkdownPage {
   return {
     path: "/faqs",
-    title: "FAQs - STL Shelf",
+    title: "STL Shelf FAQs",
     summary: [
-      "Frequently asked questions about STL Shelf.",
-      "Includes product positioning, self-hosting prerequisites, and cloud-plan clarifications.",
-      "Use this page as the main FAQ index for STL Shelf.",
+      "High-intent FAQ content for STL Shelf covering organization, archive management, product positioning, open source, and self-hosting.",
     ],
     sections: [
       "## Frequently asked questions",
       ...renderFaqItems(marketingFaqs),
       "",
-      renderRelatedLinks(["/", "/guides", "/self-hosted-3d-model-library", "/pricing"]),
+      renderRelatedLinks(["/", "/guides", "/stl-file-management-software", "/pricing"]),
     ],
   };
 }
@@ -256,87 +221,19 @@ function buildFaqsPage(): MarkdownPage {
 function buildGuidesPage(): MarkdownPage {
   return {
     path: "/guides",
-    title: "Guides — Organize Your STL Library",
+    title: "STL Shelf Guides, Comparisons, and Category Pages",
     summary: [
-      "Practical STL Shelf guides to organize STL, 3MF, and OBJ files with tags, preview, and version history.",
-      "Browse practical guides for organizing STL, 3MF, and OBJ files with a simple private library workflow.",
-      "Use this hub as the starting point to choose the right guide page by intent.",
+      "The main content hub for STL Shelf pillar pages, supporting guides, comparison pages, and open-source/self-hosted pages.",
     ],
     sections: [
-      "## Guide index",
-      ...guideList.map(
-        (guide) => `- [${guide.listTitle}](${markdownUrl(guide.path)}): ${guide.description}`,
-      ),
-      "",
-      "## Start organizing today",
-      "Build a private model library that stays clean as your collection grows.",
-      "",
-      renderRelatedLinks([
-        "/",
-        "/faqs",
-        "/organize-stl-files",
-        "/self-hosted-3d-model-library",
-        "/pricing",
+      ...seoPageGroups.flatMap((group) => [
+        `## ${group.title}`,
+        ...group.pages.map(
+          (page) => `- [${page.listTitle}](${markdownUrl(page.path)}): ${page.description}`,
+        ),
+        "",
       ]),
-    ],
-  };
-}
-
-function buildSelfHostedPage(): MarkdownPage {
-  const prerequisites = [
-    "PostgreSQL",
-    "S3-compatible storage (MinIO, R2, S3)",
-    "Resend",
-    "Cloudflare Turnstile",
-    "OpenPanel",
-    "Polar",
-  ];
-
-  const deploymentFlow = [
-    "Clone the repository.",
-    "Provision the required services.",
-    "Set the environment variables.",
-    "Run the app.",
-  ];
-
-  const serviceResponsibilities = [
-    "PostgreSQL -> users, organizations, metadata, tags, version history",
-    "S3-compatible storage -> file uploads and downloads",
-    "Resend -> email verification, magic links, password reset, invitation emails",
-    "Cloudflare Turnstile -> CAPTCHA on signup and auth flows",
-    "OpenPanel -> product analytics and event tracking",
-    "Polar -> billing, subscriptions, checkout, customer portal",
-  ];
-
-  return {
-    path: "/self-hosted-3d-model-library",
-    title: "Self-Host STL Shelf",
-    summary: [
-      "Deploy STL Shelf on your own infrastructure with PostgreSQL, S3-compatible storage, Resend, Cloudflare Turnstile, OpenPanel, and Polar.",
-      "This page documents the prerequisites for a supported self-hosted deployment.",
-      "Use the repository as the source of truth for the full setup.",
-    ],
-    sections: [
-      "## Prerequisites",
-      ...prerequisites.map((item) => `- ${item}`),
-      "",
-      "## Deployment flow",
-      ...deploymentFlow.map((item, index) => `${index + 1}. ${item}`),
-      "",
-      "## What each service does",
-      ...serviceResponsibilities.map((item) => `- ${item}`),
-      "",
-      "## Need the full setup?",
-      "Use the repository as the source of truth for the complete setup.",
-      "- https://github.com/CQ-Fabrication/stl-shelf",
-      "",
-      renderRelatedLinks([
-        "/faqs",
-        "/organize-stl-files",
-        "/private-3d-model-library",
-        "/pricing",
-        "/about",
-      ]),
+      renderRelatedLinks(["/", "/faqs", "/pricing", "/about"]),
     ],
   };
 }
@@ -346,34 +243,22 @@ function buildPricingPage(): MarkdownPage {
     path: "/pricing",
     title: "STL Shelf Pricing",
     summary: [
-      "Simple, transparent pricing for STL Shelf.",
-      "Start free and upgrade when you need more.",
-      "Choose a plan for your 3D model library, from free personal collections to team-ready storage.",
+      "Pricing and plans for STL Shelf.",
+      "Use the canonical HTML page as the source of truth for the latest plan details.",
     ],
     sections: [
-      "## Overview",
-      "- Simple, transparent pricing.",
-      "- Start free and upgrade when needed.",
-      "- All plans include 3D model preview, organization, and private storage.",
-      "",
-      "## Plans",
-      "- Free, Basic, and Pro plans are available.",
-      "- Billing intervals: monthly and yearly.",
-      "- Save 10% with annual billing.",
-      "- Bandwidth includes a monthly allowance.",
-      "",
-      "## Billing notes",
-      "- Plan details can change; always verify against the canonical HTML pricing page.",
+      "## What pricing supports",
+      "- Hosted STL Shelf plans.",
+      "- Commercial path for the managed version.",
+      "- Plan details and limits can change over time.",
       "",
       "## Source of truth",
-      `- For the latest live plan metadata, use the canonical HTML page: ${canonicalUrl("/pricing")}`,
+      `- Canonical HTML page: ${canonicalUrl("/pricing")}`,
       "",
       renderRelatedLinks([
-        "/faqs",
-        "/organize-stl-files",
+        "/",
+        "/private-3d-model-library-software",
         "/self-hosted-3d-model-library",
-        "/private-3d-model-library",
-        "/about",
       ]),
     ],
   };
@@ -384,30 +269,25 @@ function buildAboutPage(): MarkdownPage {
     path: "/about",
     title: "About STL Shelf",
     summary: [
-      "STL Shelf is presented as a 3D model library built by makers, for makers.",
-      "The page explains the origin story, product values, and open-source positioning.",
-      "It also includes direct contact channels for product and support conversations.",
+      "About STL Shelf, private 3D model library software for organizing, cataloging, versioning, and managing 3D printing files.",
+      "Built by makers who needed more than folders and generic cloud storage.",
     ],
     sections: [
-      "## Our story",
-      "STL Shelf was born from frustration after managing thousands of STL files across hard drives, cloud folders, and USB sticks.",
-      "The team frames the product as a response to folder chaos and emphasizes practical organization for both hobbyists and print farms.",
-      "The positioning includes cloud convenience, self-hosted ownership, and no vendor lock-in.",
+      "## Product summary",
+      "STL Shelf is a software designed to organize, catalog, version, and manage private 3D printing model libraries.",
+      "It is built for makers, hobbyists, design iterators, digital hoarders, and small print farms.",
       "",
-      "## What we believe",
-      "- **Privacy First**: your data belongs to you; self-hosting is supported for full control.",
-      "- **Built for Speed**: fast preview and search across large model collections.",
-      "- **Made for Makers**: focused on real-world 3D printing library pain.",
-      "",
-      "## Open source",
-      "STL Shelf is open source and can be self-hosted or contributed to on GitHub.",
-      "- Repository: https://github.com/CQ-Fabrication/stl-shelf",
+      "## Positioning",
+      "- Private 3D model library software.",
+      "- Open source and self-hostable.",
+      "- Hosted version managed by us for the simplest path.",
+      "- Not a marketplace, not a social platform, not an import/sync hub.",
       "",
       "## Contact",
       "- hello@stl-shelf.com",
       "- support@stl-shelf.com",
       "",
-      renderRelatedLinks(["/", "/faqs", "/guides", "/pricing", "/self-hosted-3d-model-library"]),
+      renderRelatedLinks(["/", "/guides", "/pricing", "/self-hosted-3d-model-library"]),
     ],
   };
 }
@@ -426,24 +306,12 @@ function renderMarkdown(page: MarkdownPage): string {
 }
 
 function buildPages(): MarkdownPage[] {
-  const guidePagesToRender = [
-    guidePages.organizeStlFiles,
-    guidePages.stlFileOrganizer,
-    guidePages.stopStlFolderChaos,
-    guidePages.private3dModelLibrary,
-    guidePages.modelPreviewInBrowser,
-    guidePages.versionControlForStlFiles,
-    guidePages.taggingSystemFor3dModels,
-    guidePages.organize3mfFiles,
-    guidePages.organizeObjFiles,
-  ].map((guide) => renderGuidePage(guide));
-
   return [
     buildHomePage(),
     buildFaqsPage(),
     buildGuidesPage(),
-    ...guidePagesToRender,
-    buildSelfHostedPage(),
+    ...seoPageList.map((page) => renderSeoPage(page)),
+    ...legacyGuidePages.map((page) => renderGuidePage(page)),
     buildPricingPage(),
     buildAboutPage(),
   ];
@@ -470,9 +338,7 @@ function validateCoverage(pages: MarkdownPage[]) {
 function printChecklist() {
   console.log("Markdown checklist:");
   for (const pathname of REQUIRED_PATHS) {
-    const filePath = markdownPath(pathname);
-    const label = pageLabels[pathname];
-    console.log(`- [x] ${label}: ${filePath}`);
+    console.log(`- [x] ${pageLabel(pathname)}: ${markdownPath(pathname)}`);
   }
 }
 

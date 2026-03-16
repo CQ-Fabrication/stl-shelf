@@ -24,6 +24,7 @@ import { generateErrorId } from "@/lib/error-id";
 import { OG_IMAGE_URL, SITE_URL, siteUrl } from "@/lib/site";
 import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
 import { checkConsentValidityFn } from "@/server/functions/consent";
+import { seoPageList } from "@/components/marketing/seo/seo-pages-data";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { OpenPanelProvider } from "@/lib/openpanel/client-provider";
@@ -97,14 +98,16 @@ const PUBLIC_ROUTES = [
   "/3d-model-preview-in-browser",
   "/stop-stl-folder-chaos",
   "/self-hosted-3d-model-library",
-];
+  ...seoPageList.map((page) => page.path),
+] as const;
+const PUBLIC_ROUTE_SET = new Set<string>(PUBLIC_ROUTES);
 
 // Routes that authenticated users should NOT access (redirect to /library)
 const AUTH_ROUTES = ["/login", "/signup"];
 const CONSENT_ROUTE = "/consent";
-const defaultSeoTitle = "STL Shelf - STL File Organizer & 3D Model Library";
+const defaultSeoTitle = "Private 3D Model Library Software for STL Files | STL Shelf";
 const defaultSeoDescription =
-  "STL file organizer and 3D model library for makers. Organize, tag, preview, and version STL, 3MF, OBJ, and PLY files in the cloud or on your own infrastructure.";
+  "Private 3D model library software for organizing, cataloging, versioning, and managing STL, 3MF, OBJ, and PLY files. Hosted by us or self-hosted because STL Shelf is open source.";
 
 function normalizePathname(pathname: string): string {
   if (pathname === "/") {
@@ -216,7 +219,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     }
 
     // Skip auth check for other public routes
-    if (PUBLIC_ROUTES.includes(normalizedPathname)) {
+    if (PUBLIC_ROUTE_SET.has(normalizedPathname)) {
       return;
     }
 
@@ -280,7 +283,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   const pathname = routerState.location.pathname;
   const normalizedPathname = normalizePathname(pathname);
   const isNotFound = routerState.matches.some((match) => match.status === "notFound");
-  const isPublicRoute = PUBLIC_ROUTES.includes(normalizedPathname);
+  const isPublicRoute = PUBLIC_ROUTE_SET.has(normalizedPathname);
   const jsonLd =
     pathname === "/"
       ? {

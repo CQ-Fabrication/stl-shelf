@@ -1,0 +1,16 @@
+{
+  "name": "STL Shelf",
+  "category": "STL file management software",
+  "description": "Software for organizing, cataloging, versioning, and managing private 3D printing model libraries.",
+  "capabilities": [
+    "STL file organization",
+    "3D print file library management",
+    "tagging and categorization",
+    "version history",
+    "browser 3D preview",
+    "open-source private archive",
+    "self-hostable deployment",
+    "hosted version managed by us"
+  ],
+  "target_users": ["makers", "hobbyists", "design iterators", "small print farms"]
+}

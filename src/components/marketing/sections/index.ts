@@ -1,4 +1,5 @@
 export { HeroSection } from "./hero-section";
+export { SemanticOverview } from "./semantic-overview";
 export { TextRevealSection } from "./text-reveal-section";
 export { Features } from "./features";
 export { HowItWorks } from "./how-it-works";

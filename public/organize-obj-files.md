@@ -2,8 +2,8 @@
 
 Canonical: https://stl-shelf.com/organize-obj-files
 
-Organize OBJ assets for 3D printing: tags, preview, and version history to avoid scattered folders and lost revisions.
-OBJ assets can include variants, remixes, and supports, so naming alone is rarely enough to stay organized.
+Organize OBJ assets for 3D printing in a private library with tags, browser preview, and version history instead of scattered folders.
+OBJ assets can include variants, remixes, and supports, so naming alone is rarely enough to keep a private 3D printing library organized.
 
 ## The problem
 
@@ -52,8 +52,7 @@ Yes. Version history keeps revisions ordered and recoverable.
 
 ## Related links
 
-- [Guides hub](https://stl-shelf.com/guides.md)
+- [Guides](https://stl-shelf.com/guides.md)
 - [Pricing](https://stl-shelf.com/pricing.md)
-- [Organize STL files](https://stl-shelf.com/organize-stl-files.md)
-- [Organize 3MF files](https://stl-shelf.com/organize-3mf-files.md)
-- [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md)
+- [Organize STL Files](https://stl-shelf.com/organize-stl-files.md)
+- [Private 3D Model Library](https://stl-shelf.com/private-3d-model-library.md)

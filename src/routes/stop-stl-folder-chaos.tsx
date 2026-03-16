@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { GuidePage, createMarketingHead } from "@/components/marketing/guides/guide-page";
-import { guidePages } from "@/components/marketing/guides/guides-data";
+import { SeoPage, createSeoPageHead } from "@/components/marketing/seo/seo-page";
+import { seoPages } from "@/components/marketing/seo/seo-pages-data";
 import { getSessionFn } from "@/server/functions/auth";
 
-const guide = guidePages.stopStlFolderChaos;
+const page = seoPages.stopStlFolderChaos;
 
 export const Route = createFileRoute("/stop-stl-folder-chaos")({
   component: StopStlFolderChaosPage,
@@ -11,16 +11,10 @@ export const Route = createFileRoute("/stop-stl-folder-chaos")({
     const session = await getSessionFn();
     return { session };
   },
-  head: () =>
-    createMarketingHead({
-      path: guide.path,
-      title: guide.title,
-      description: guide.description,
-      faqs: guide.faqs,
-    }),
+  head: () => createSeoPageHead(page),
 });
 
 function StopStlFolderChaosPage() {
   const { session } = Route.useLoaderData();
-  return <GuidePage guide={guide} session={session} />;
+  return <SeoPage page={page} session={session} />;
 }

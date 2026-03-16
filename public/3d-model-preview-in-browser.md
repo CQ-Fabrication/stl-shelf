@@ -1,9 +1,9 @@
-# 3D model preview in the browser
+# 3D model browser preview for STL, 3MF, and OBJ files
 
 Canonical: https://stl-shelf.com/3d-model-preview-in-browser
 
-Preview 3D models in your browser to quickly inspect files before printing. Keep everything organized in a private library.
-Browser preview helps you validate files before slicing, so you can catch mistakes early and avoid wasted print cycles.
+Preview 3D models in your browser to inspect files before printing and keep that inspection tied to a private versioned library.
+Browser preview helps you validate files before slicing, so you can catch mistakes early and keep the review process tied to the right model and version.
 
 ## The problem
 
@@ -52,8 +52,7 @@ No. STL Shelf is a private file library with no social sharing.
 
 ## Related links
 
-- [Guides hub](https://stl-shelf.com/guides.md)
+- [Guides](https://stl-shelf.com/guides.md)
 - [Pricing](https://stl-shelf.com/pricing.md)
-- [Version control for STL files](https://stl-shelf.com/version-control-for-stl-files.md)
-- [Organize STL files](https://stl-shelf.com/organize-stl-files.md)
-- [Tagging system for 3D models](https://stl-shelf.com/tagging-system-for-3d-models.md)
+- [Organize STL Files](https://stl-shelf.com/organize-stl-files.md)
+- [Private 3D Model Library](https://stl-shelf.com/private-3d-model-library.md)

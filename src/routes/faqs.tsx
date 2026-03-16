@@ -43,7 +43,7 @@ export const Route = createFileRoute("/faqs")({
       {
         name: "description",
         content:
-          "Frequently asked questions about STL Shelf, including self-hosting prerequisites, pricing limits, and product positioning.",
+          "Frequently asked questions about organizing STL files, managing private 3D model libraries, open-source availability, and hosted vs self-hosted STL Shelf.",
       },
     ],
     scripts: [createJsonLdHeadScript(faqStructuredData)],
@@ -104,8 +104,8 @@ function FaqsPageContent({
                 Frequently asked questions
               </h1>
               <p className="mt-6 text-lg text-muted-foreground">
-                Clear answers about STL Shelf, including self-hosting prerequisites, cloud limits,
-                and how the product is positioned.
+                Clear answers about STL file organization, private 3D model library workflows,
+                open-source deployment options, and how STL Shelf is positioned.
               </p>
             </div>
           </div>

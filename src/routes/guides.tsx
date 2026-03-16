@@ -4,12 +4,12 @@ import { Navigation } from "@/components/marketing/navigation";
 import { Footer } from "@/components/marketing/sections";
 import { Button } from "@/components/ui/button";
 import { createMarketingHead } from "@/components/marketing/guides/guide-page";
-import { guideList } from "@/components/marketing/guides/guides-data";
+import { seoPageGroups } from "@/components/marketing/seo/seo-pages-data";
 import { getSessionFn } from "@/server/functions/auth";
 
-const pageTitle = "Guides — Organize Your STL Library";
+const pageTitle = "STL Shelf Guides, Comparisons, and Category Pages";
 const pageDescription =
-  "Practical STL Shelf guides to organize STL, 3MF, and OBJ files with tags, preview, and version history.";
+  "Browse pillar pages, supporting guides, comparisons, and open-source content for private 3D model library workflows.";
 
 export const Route = createFileRoute("/guides")({
   component: GuidesPage,
@@ -47,11 +47,11 @@ function GuidesPage() {
           <div className="container relative mx-auto px-4">
             <div className="max-w-4xl">
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                Guides — Organize Your STL Library
+                Guides, comparisons, and category pages for STL Shelf
               </h1>
               <p className="mt-6 text-lg text-muted-foreground">
-                Browse practical guides for organizing STL, 3MF, and OBJ files with a simple private
-                library workflow.
+                Browse the full content cluster around private 3D model library software, STL file
+                management, comparisons, and self-hosted options.
               </p>
             </div>
           </div>
@@ -59,23 +59,31 @@ function GuidesPage() {
 
         <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-4">
-            <div className="max-w-5xl mx-auto">
-              <ul className="space-y-4">
-                {guideList.map((guide) => (
-                  <li key={guide.path}>
-                    <Link
-                      className="group flex items-start justify-between gap-4 rounded-xl border border-border/50 bg-card/80 p-6 transition-colors hover:border-orange-500/40"
-                      to={guide.path}
-                    >
-                      <div>
-                        <h2 className="text-xl font-semibold">{guide.listTitle}</h2>
-                        <p className="mt-2 text-sm text-muted-foreground">{guide.description}</p>
-                      </div>
-                      <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+            <div className="max-w-5xl mx-auto space-y-12">
+              {seoPageGroups.map((group) => (
+                <section key={group.key}>
+                  <h2 className="text-2xl font-bold">{group.title}</h2>
+                  <ul className="mt-6 space-y-4">
+                    {group.pages.map((page) => (
+                      <li key={page.path}>
+                        <a
+                          className="group flex items-start justify-between gap-4 rounded-xl border border-border/50 bg-card/80 p-6 transition-colors hover:border-orange-500/40"
+                          href={page.path}
+                        >
+                          <div>
+                            <div className="text-xs font-mono uppercase tracking-wide text-orange-500">
+                              {page.groupLabel}
+                            </div>
+                            <h3 className="mt-2 text-xl font-semibold">{page.listTitle}</h3>
+                            <p className="mt-2 text-sm text-muted-foreground">{page.description}</p>
+                          </div>
+                          <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
             </div>
           </div>
         </section>

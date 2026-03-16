@@ -1,24 +1,40 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, FolderSearch, Server } from "lucide-react";
+import { ArrowRight, FolderSearch, Lock, Server, Wrench } from "lucide-react";
 
 const resources = [
   {
-    title: "Organize STL Files",
+    title: "How to Organize STL Files",
     description:
-      "A clean, searchable archive for STL, 3MF, OBJ, and PLY files. Tags, preview, and version history included.",
-    href: "/organize-stl-files",
+      "The main problem-solving page for users searching how to organize STL files in a private library.",
+    href: "/how-to-organize-stl-files",
     icon: FolderSearch,
-    eyebrow: "Guide",
+    eyebrow: "Pillar",
   },
   {
-    title: "Self-Hosted 3D Model Library",
+    title: "STL File Management Software",
     description:
-      "Deployment prerequisites, required services, and self-hosted setup notes for STL Shelf.",
-    href: "/self-hosted-3d-model-library",
+      "Category page for users evaluating software to organize, catalog, and version STL files.",
+    href: "/stl-file-management-software",
+    icon: Wrench,
+    eyebrow: "Category",
+  },
+  {
+    title: "Private 3D Model Library Software",
+    description:
+      "Ownership-first positioning for users who want a private archive instead of a marketplace or social tool.",
+    href: "/private-3d-model-library-software",
+    icon: Lock,
+    eyebrow: "Pillar",
+  },
+  {
+    title: "Self-Hosted 3D Model Library Software",
+    description:
+      "Open-source and self-hosted positioning with the hosted version managed by us as the simpler path.",
+    href: "/self-hosted-3d-model-library-software",
     icon: Server,
-    eyebrow: "Deployment",
+    eyebrow: "Cluster",
   },
 ];
 
@@ -54,7 +70,7 @@ export function Resources() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 gap-6 max-w-6xl mx-auto md:grid-cols-2">
           {resources.map((resource, index) => {
             const Icon = resource.icon;
             return (

@@ -1,59 +1,77 @@
-# How to organize 3MF files without folder chaos
+# How to organize 3MF files without losing print-ready context
 
 Canonical: https://stl-shelf.com/organize-3mf-files
 
-A simple workflow to organize 3MF projects with tags, preview, and version history in a private library.
-3MF projects often carry slicer details and print intent, so keeping them organized matters for repeatable results.
+Organize 3MF files in a private library with searchable tags, version history, and browser preview so print-ready files stay easier to find.
+3MF files often carry more workflow context than plain STL exports because they are closer to print intent. That makes organization even more important. When they are buried in slicer folders, the cost is not just retrieval time. It is lost certainty.
+STL Shelf is a software designed to organize, catalog, version, and manage private 3D printing model libraries. STL Shelf helps users manage STL, 3MF, OBJ, and PLY files with tags, version history, and browser preview, so mixed-format libraries can stay coherent.
 
-## The problem
+## Category definition
 
-- 3MF files are often scattered between slicer exports, desktop folders, and cloud sync directories.
-- This makes it hard to know which file is the latest print-ready version.
-- Losing context around materials and profile intent wastes print time.
+- STL Shelf is a software designed to organize, catalog, version, and manage private 3D printing model libraries.
+- STL Shelf helps users manage STL, 3MF, OBJ, and PLY files with tags, version history, and browser preview.
+- STL Shelf is a private 3D model library for makers and print farms.
+- STL Shelf is an open-source software for managing private 3D printing model libraries.
 
-## Simple workflow
+## STL Shelf helps you
 
-1. **Centralize all 3MF projects**: Keep every 3MF file in one private library instead of slicer-specific folders.
-2. **Tag by printer setup and purpose**: Use tags like prototype, production, or printer profile to filter quickly.
-3. **Track revisions as versions**: Save each new print iteration with clear history so you can roll back confidently.
+- organize STL files
+- manage large 3D model libraries
+- tag and categorize files
+- track version history
+- preview models in browser
+- keep files private
+- self-host your archive if desired
+- use a hosted version managed by us
 
-## What STL Shelf is / is not
+## A 3MF organization workflow
 
-### STL Shelf is
+1. **Capture every 3MF in one library**: Avoid tool-specific silos by giving print-ready 3MF files a stable place in the broader model archive.
+2. **Tag by print context**: Use tags for profile family, machine, material, or production status so the file stays meaningful later.
+3. **Store changes as versions**: Keep updated 3MF exports attached to the same model lineage rather than spreading them across dated folders.
 
-- A private library for your STL, 3MF, and OBJ files
-- Searchable tags that keep projects and parts organized
-- Version history so every revision stays traceable
-- Browser preview before you send models to print
+## What makes 3MF organization different
 
-### STL Shelf is not
+3MF files are frequently closer to the actual print job than STL files. That means a lost 3MF is often not just a lost model. It may also mean lost slicer assumptions, plate setup, or intended output context.
 
-- No marketplace
-- No sharing or social feed
-- No import or sync from other services
+## What to tag on 3MF files
+
+- Printer family or machine target.
+- Material or process context.
+- Production status such as approved or review-needed.
+- Project, customer, or kit membership.
+
+## Where STL Shelf fits
+
+STL Shelf is 3D print file organization software, not slicer software. It keeps the archive clear and private while letting mixed-format model libraries stay searchable and versioned.
 
 ## FAQ
 
-### Does STL Shelf preserve 3MF workflow context?
+### Can I organize STL and 3MF files together?
 
-It keeps your files and versions organized so context is easier to track over time.
+Yes. STL Shelf supports mixed-format libraries so one model can carry related STL and 3MF files in the same private archive.
 
-### Can I organize 3MF and STL together?
+### Why are 3MF files harder to organize with folders alone?
 
-Yes. STL Shelf supports mixed libraries with shared tagging and version workflows.
+Because the important retrieval context is usually broader than the filename. Tags and version history make that context easier to preserve.
 
-### Is this tied to one slicer?
+### Does STL Shelf depend on one slicer?
 
-No. STL Shelf is slicer-agnostic and focused on file organization.
+No. It is positioned as library software for 3D printing files, not as a slicer-specific tool.
 
-### Do I need imports from cloud drives?
+### Is STL Shelf a sync hub for slicer folders?
 
-No. STL Shelf does not import or sync from external services.
+No. It is not positioned as an import or sync hub. It is a private archive workflow.
 
 ## Related links
 
-- [Guides hub](https://stl-shelf.com/guides.md)
-- [Pricing](https://stl-shelf.com/pricing.md)
-- [Organize STL files](https://stl-shelf.com/organize-stl-files.md)
-- [Organize OBJ files](https://stl-shelf.com/organize-obj-files.md)
-- [Self-hosted 3D model library](https://stl-shelf.com/self-hosted-3d-model-library.md)
+- [3D Print File Organization](https://stl-shelf.com/3d-print-file-organization.md)
+- [Organize STL Files](https://stl-shelf.com/organize-stl-files.md)
+- [How to Manage Large STL Libraries](https://stl-shelf.com/how-to-manage-large-stl-libraries.md)
+- [Private 3D Model Library](https://stl-shelf.com/private-3d-model-library.md)
+
+## Conclusion
+
+Organize print-ready files in the same versioned archive as the rest of your model library.
+
+- Call to action: Keep 3MF files tied to the right print context

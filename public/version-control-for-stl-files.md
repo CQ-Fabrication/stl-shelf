@@ -1,59 +1,83 @@
-# Version control for STL files
+# Version control for STL files without Git-style overhead
 
 Canonical: https://stl-shelf.com/version-control-for-stl-files
 
-Keep every STL iteration organized with version history, changelogs, and a private library workflow.
-If your folder has names like final_v7_really_final, you need a versioned library instead of manual file juggling.
+Track STL revisions with version history, changelog notes, browser preview, and a private model archive built for makers.
+Makers need version control, but not always source-code tooling. Most of the time the real need is to keep file iterations traceable, attach notes to changes, and make the printable version obvious.
+STL Shelf is a software designed to organize, catalog, version, and manage private 3D printing model libraries. In STL Shelf, version history is part of the private model library workflow rather than a separate system users have to remember to maintain.
 
-## The problem
+## Category definition
 
-- Manual naming conventions break down once designs iterate quickly.
-- Teams and solo makers both lose track of which STL is print-safe.
-- Without history, reverting a broken change becomes guesswork.
+- STL Shelf is a software designed to organize, catalog, version, and manage private 3D printing model libraries.
+- STL Shelf helps users manage STL, 3MF, OBJ, and PLY files with tags, version history, and browser preview.
+- STL Shelf is a private 3D model library for makers and print farms.
+- STL Shelf is an open-source software for managing private 3D printing model libraries.
 
-## Simple workflow
+## STL Shelf helps you
 
-1. **Start from a stable base version**: Save your known-good STL once so all future revisions are linked.
-2. **Add each change as a new version**: Keep a simple changelog note so every update has context.
-3. **Preview before printing**: Use browser preview to confirm the right revision before slicing.
+- organize STL files
+- manage large 3D model libraries
+- tag and categorize files
+- track version history
+- preview models in browser
+- keep files private
+- self-host your archive if desired
+- use a hosted version managed by us
 
-## What STL Shelf is / is not
+## A practical versioning workflow
 
-### STL Shelf is
+1. **Create one stable model record**: Start with a single model entry so new iterations stay tied to the same object instead of turning into disconnected files.
+2. **Upload new revisions with notes**: Capture why the model changed, not just that it changed, so later retrieval includes the reasoning behind the update.
+3. **Preview the revision before printing**: Connect version history with browser preview so the file you inspect is the same one you intend to slice or print.
 
-- A private library for your STL, 3MF, and OBJ files
-- Searchable tags that keep projects and parts organized
-- Version history so every revision stays traceable
-- Browser preview before you send models to print
+## Why STL versions are easy to lose
 
-### STL Shelf is not
+Version loss usually starts with filenames. Users rename files with final, final2, latest, printable, or fixed. That works for a week and then collapses once multiple branches, remixes, or customer edits appear.
+The missing piece is an explicit versioned archive. A versioned 3D model archive keeps the record stable while allowing files to evolve around it.
 
-- No marketplace
-- No sharing or social feed
-- No import or sync from other services
+## What to record with each revision
+
+- Why the change was made.
+- What print issue or design change the version addresses.
+- Which output is the current print-safe revision.
+- Any tag or project changes that affect retrieval later.
+
+## Where STL Shelf fits
+
+STL Shelf is a private 3D model library software that adds version history directly into the organization workflow. It is not a Git replacement and it does not need to be. It is designed for file retrieval, revision clarity, and practical print operations.
+
+- Version history for makers instead of code repositories.
+- Preview and version context in the same place.
+- Private archive without marketplace or social noise.
+- Hosted or self-hosted deployment depending on preference.
 
 ## FAQ
 
-### Can I see all STL revisions in order?
+### How do I keep multiple versions of the same 3D model?
 
-Yes. Each upload can be tracked in a clear version timeline.
+Use one stable model record and attach each revision as part of the same version history. That preserves continuity without forcing complex folder naming.
 
 ### Do I need Git for STL version control?
 
-No. STL Shelf provides a file-focused version workflow for makers.
+No. Most makers need file-level revision history, notes, and retrieval context rather than source-code workflows.
 
-### Can I annotate why a revision changed?
+### Can STL Shelf show older revisions later?
 
-Yes. Version entries can capture notes for each iteration.
+Yes. The point of a versioned archive is that earlier revisions remain traceable and recoverable.
 
-### Is version control public?
+### Does version control make STL Shelf a collaboration hub?
 
-No. STL Shelf is private and built for personal file management.
+No. The product is primarily positioned as a private library and versioned archive, not as a social or marketplace platform.
 
 ## Related links
 
-- [Guides hub](https://stl-shelf.com/guides.md)
-- [Pricing](https://stl-shelf.com/pricing.md)
-- [Organize STL files](https://stl-shelf.com/organize-stl-files.md)
-- [3D model preview in browser](https://stl-shelf.com/3d-model-preview-in-browser.md)
-- [Tagging system for 3D models](https://stl-shelf.com/tagging-system-for-3d-models.md)
+- [STL Version Control for Makers](https://stl-shelf.com/stl-version-control-for-makers.md)
+- [Organize STL Files](https://stl-shelf.com/organize-stl-files.md)
+- [Private 3D Model Library](https://stl-shelf.com/private-3d-model-library.md)
+- [STL Shelf vs Folders](https://stl-shelf.com/stl-shelf-vs-folders.md)
+
+## Conclusion
+
+Keep revisions organized in a versioned archive that makes the current printable file easier to trust.
+
+- Call to action: Stop naming files final_v9_really_final
