@@ -41,6 +41,7 @@ import {
   recomputeThumbnailKey,
   removedFileWasThumbnailSource,
   selectThumbnailCandidate,
+  validateSnapshot,
 } from "./thumbnail.service";
 
 const PNG_BYTES = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -108,6 +109,28 @@ describe("selectThumbnailCandidate", () => {
       { extension: "obj", storageKey: "keys/model.obj" },
     ]);
     expect(result).toBeNull();
+  });
+});
+
+describe("validateSnapshot", () => {
+  const snapshotFile = (type: string, size: number): File => ({ type, size }) as unknown as File;
+
+  it("accepts a png within the size limit", () => {
+    expect(validateSnapshot(snapshotFile("image/png", 500_000))).toEqual({ ok: true });
+  });
+
+  it("accepts a png exactly at the 2MB limit", () => {
+    expect(validateSnapshot(snapshotFile("image/png", 2 * 1024 * 1024))).toEqual({ ok: true });
+  });
+
+  it("rejects a non-png type", () => {
+    const result = validateSnapshot(snapshotFile("image/jpeg", 1000));
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects a png over the 2MB limit", () => {
+    const result = validateSnapshot(snapshotFile("image/png", 2 * 1024 * 1024 + 1));
+    expect(result.ok).toBe(false);
   });
 });
 

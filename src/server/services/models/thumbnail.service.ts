@@ -4,7 +4,9 @@ import { extractThumbnailFrom3MF, is3MFFile } from "@/server/services/parsers";
 const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
 
 const EXTRACTED_THUMBNAIL_FILENAME = "preview-extracted.png";
-const GENERATED_THUMBNAIL_FILENAME = "preview-generated.png";
+export const GENERATED_THUMBNAIL_FILENAME = "preview-generated.png";
+
+const MAX_SNAPSHOT_SIZE_BYTES = 2 * 1024 * 1024;
 
 export type ThumbnailFile = {
   extension: string;
@@ -14,6 +16,18 @@ export type ThumbnailFile = {
 export type ThumbnailCandidate =
   | { kind: "image"; key: string }
   | { kind: "3mf"; storageKey: string };
+
+export type SnapshotValidation = { ok: true } | { ok: false; reason: string };
+
+export function validateSnapshot(image: File): SnapshotValidation {
+  if (image.type !== "image/png") {
+    return { ok: false, reason: "Snapshot must be a PNG image" };
+  }
+  if (image.size > MAX_SNAPSHOT_SIZE_BYTES) {
+    return { ok: false, reason: "Snapshot exceeds the 2MB limit" };
+  }
+  return { ok: true };
+}
 
 type ExtractOptions = {
   organizationId: string;
