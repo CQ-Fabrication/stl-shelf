@@ -135,11 +135,15 @@ export function parseInt(value: string | undefined | null): number | null {
  * Thumbnail paths in order of preference
  * plate_1.png is typically higher quality (rendered preview)
  * thumbnail.png is a simpler preview
+ * Auxiliaries/.thumbnails/* is where Bambu Studio stores previews in
+ * model-only saves (no sliced plate): middle is higher resolution than 3mf
  */
 const THUMBNAIL_PATHS = [
   "Metadata/plate_1.png",
   "Metadata/thumbnail.png",
   "Thumbnails/thumbnail.png",
+  "Auxiliaries/.thumbnails/thumbnail_middle.png",
+  "Auxiliaries/.thumbnails/thumbnail_3mf.png",
 ];
 
 /**

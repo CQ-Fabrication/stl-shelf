@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-type UploadCall = { key: string; contentType?: string };
+type UploadCall = { key: string; contentType?: string; body?: unknown };
 
 const state = {
   uploadCalls: [] as UploadCall[],
@@ -20,7 +20,7 @@ vi.mock("@/server/services/storage", () => ({
       if (state.uploadShouldThrow) {
         throw new Error("upload failed");
       }
-      state.uploadCalls.push({ key: opts.key, contentType: opts.contentType });
+      state.uploadCalls.push({ key: opts.key, contentType: opts.contentType, body: opts.file });
       return { key: opts.key, url: "", size: 0, etag: "" };
     }),
     getFile: vi.fn(async () => {
@@ -210,7 +210,7 @@ describe("extractThumbnailKeyFromBuffer", () => {
 
     expect(key).toBe("org_1/model_1/v1/artifacts/preview-extracted.png");
     expect(state.uploadCalls).toHaveLength(1);
-    expect(state.uploadCalls[0]).toEqual({ key, contentType: "image/png" });
+    expect(state.uploadCalls[0]).toMatchObject({ key, contentType: "image/png" });
   });
 
   it("returns null when the 3mf has no embedded thumbnail", async () => {
@@ -237,6 +237,47 @@ describe("extractThumbnailKeyFromBuffer", () => {
     const key = await extractThumbnailKeyFromBuffer({ ...EXTRACT_OPTS, buffer });
 
     expect(key).toBeNull();
+  });
+
+  it("extracts Bambu Studio thumbnails from Auxiliaries/.thumbnails", async () => {
+    const zip = new JSZip();
+    zip.file("3D/3dmodel.model", "<model/>");
+    zip.file("Auxiliaries/.thumbnails/thumbnail_3mf.png", PNG_BYTES);
+    const buffer = await zip.generateAsync({ type: "nodebuffer" });
+
+    const key = await extractThumbnailKeyFromBuffer({ ...EXTRACT_OPTS, buffer });
+
+    expect(key).toBe("org_1/model_1/v1/artifacts/preview-extracted.png");
+    expect(state.uploadCalls).toHaveLength(1);
+  });
+
+  it("prefers the higher-resolution Bambu thumbnail_middle over thumbnail_3mf", async () => {
+    const middleBytes = Uint8Array.from([...PNG_BYTES, 1]);
+    const zip = new JSZip();
+    zip.file("3D/3dmodel.model", "<model/>");
+    zip.file("Auxiliaries/.thumbnails/thumbnail_3mf.png", PNG_BYTES);
+    zip.file("Auxiliaries/.thumbnails/thumbnail_middle.png", middleBytes);
+    const buffer = await zip.generateAsync({ type: "nodebuffer" });
+
+    const key = await extractThumbnailKeyFromBuffer({ ...EXTRACT_OPTS, buffer });
+
+    expect(key).toBe("org_1/model_1/v1/artifacts/preview-extracted.png");
+    expect(state.uploadCalls).toHaveLength(1);
+    expect(state.uploadCalls[0]?.body).toEqual(Buffer.from(middleBytes));
+  });
+
+  it("prefers Metadata/plate_1.png over Bambu Auxiliaries thumbnails", async () => {
+    const plateBytes = Uint8Array.from([...PNG_BYTES, 2]);
+    const zip = new JSZip();
+    zip.file("3D/3dmodel.model", "<model/>");
+    zip.file("Auxiliaries/.thumbnails/thumbnail_middle.png", PNG_BYTES);
+    zip.file("Metadata/plate_1.png", plateBytes);
+    const buffer = await zip.generateAsync({ type: "nodebuffer" });
+
+    const key = await extractThumbnailKeyFromBuffer({ ...EXTRACT_OPTS, buffer });
+
+    expect(key).toBe("org_1/model_1/v1/artifacts/preview-extracted.png");
+    expect(state.uploadCalls[0]?.body).toEqual(Buffer.from(plateBytes));
   });
 });
 
