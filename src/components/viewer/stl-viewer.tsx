@@ -164,7 +164,8 @@ function OBJModelMesh({ url, autoRotate, color, onSnapshot }: LoaderMeshProps) {
   return (
     <>
       <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} />
-      {onSnapshot ? <SnapshotOnce onSnapshot={onSnapshot} /> : null}
+      {/* Without a mesh the canvas stays empty: a snapshot would lock in a blank thumbnail */}
+      {onSnapshot && geometry ? <SnapshotOnce onSnapshot={onSnapshot} /> : null}
     </>
   );
 }
