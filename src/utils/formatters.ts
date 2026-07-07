@@ -21,8 +21,3 @@ export const formatPrintTime = (minutes: number): string => {
   const mins = minutes % 60;
   return `${hours}h ${mins}m`;
 };
-
-export const getFileExtension = (filename: string): string => {
-  const ext = filename.split(".").pop();
-  return ext ? ext.toUpperCase() : "";
-};

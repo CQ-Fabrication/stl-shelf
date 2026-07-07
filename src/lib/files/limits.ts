@@ -55,44 +55,6 @@ export const MAX_TOTAL_IMAGE_SIZE = 50 * MB;
 export const MAX_FILES_PER_UPLOAD = 10;
 
 /**
- * File categories for UI grouping
- */
-export const FILE_CATEGORIES = {
-  model: {
-    label: "Model",
-    description: "3D printable model files",
-    extensions: ["stl", "obj", "ply"] as const,
-  },
-  container: {
-    label: "Project",
-    description: "Container formats with print settings",
-    extensions: ["3mf"] as const,
-  },
-  cad: {
-    label: "CAD",
-    description: "CAD interchange formats",
-    extensions: ["step", "stp"] as const,
-  },
-  slicer: {
-    label: "Slicer",
-    description: "Slicer output files",
-    extensions: ["gcode"] as const,
-  },
-  image: {
-    label: "Image",
-    description: "Preview and documentation images",
-    extensions: ["jpg", "jpeg", "png", "webp", "gif"] as const,
-  },
-  document: {
-    label: "Document",
-    description: "Documentation files",
-    extensions: ["pdf"] as const,
-  },
-} as const;
-
-export type FileCategory = keyof typeof FILE_CATEGORIES;
-
-/**
  * All supported extensions for 3D files (non-image)
  */
 export const MODEL_EXTENSIONS = ["stl", "obj", "ply", "3mf", "step", "stp", "gcode"] as const;
@@ -103,17 +65,12 @@ export const MODEL_EXTENSIONS = ["stl", "obj", "ply", "3mf", "step", "stp", "gco
 export const PREVIEW_EXTENSIONS = ["stl", "obj", "ply", "3mf"] as const;
 
 /**
- * All supported extensions
+ * Extract the lowercased extension (without dot) from a filename.
+ * Accepts undefined because react-dropzone passes items without a name during drag-over.
  */
-export const ALL_EXTENSIONS = [
-  ...MODEL_EXTENSIONS,
-  "jpg",
-  "jpeg",
-  "png",
-  "webp",
-  "gif",
-  "pdf",
-] as const;
+export function getFileExtension(filename: string | undefined): string {
+  return filename?.split(".").pop()?.toLowerCase() ?? "";
+}
 
 /**
  * Get the file size limit for a given extension
@@ -127,7 +84,7 @@ export function getFileSizeLimit(extension: string): number {
  * Check if a file exceeds its size limit
  */
 export function isFileTooLarge(filename: string, fileSize: number): boolean {
-  const extension = filename.split(".").pop()?.toLowerCase() ?? "";
+  const extension = getFileExtension(filename);
   const limit = getFileSizeLimit(extension);
   return fileSize > limit;
 }
@@ -148,21 +105,6 @@ export function formatBytes(bytes: number): string {
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${Math.round((bytes / 1024 ** i) * 100) / 100} ${sizes[i]}`;
-}
-
-/**
- * Get file category from extension
- */
-export function getFileCategory(filename: string): FileCategory | null {
-  const extension = filename.split(".").pop()?.toLowerCase() ?? "";
-
-  for (const [key, category] of Object.entries(FILE_CATEGORIES)) {
-    if ((category.extensions as readonly string[]).includes(extension)) {
-      return key as FileCategory;
-    }
-  }
-
-  return null;
 }
 
 /**

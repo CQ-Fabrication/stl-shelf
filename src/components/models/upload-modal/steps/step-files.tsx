@@ -22,14 +22,25 @@ import ReactCrop, {
 import "react-image-crop/dist/ReactCrop.css";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { formatBytes, getFileSizeLimit, getFileSizeLimitLabel } from "@/lib/files/limits";
+import {
+  formatBytes,
+  getFileExtension,
+  getFileSizeLimit,
+  getFileSizeLimitLabel,
+} from "@/lib/files/limits";
+import {
+  getUploadFileCategory,
+  UPLOAD_ACCEPTED_EXTENSIONS,
+  UPLOAD_FILE_CATEGORIES,
+  type UploadCategoryKey,
+} from "@/lib/files/upload-categories";
 import { uploadModalActions } from "@/stores/upload-modal.store";
 import type { UploadFormType } from "../use-upload-form";
 
 type UploadFile = {
   file: File;
   id: string;
-  category: CategoryKey;
+  category: UploadCategoryKey;
 };
 
 type StepFilesProps = {
@@ -39,50 +50,10 @@ type StepFilesProps = {
   isSubmitting: boolean;
 };
 
-/**
- * UI categories for file grouping
- * Size limits are derived from centralized config per extension
- */
-const FILE_CATEGORIES = {
-  model: {
-    key: "model",
-    label: "Model",
-    extensions: ["stl", "obj", "ply"],
-  },
-  slicer: {
-    key: "slicer",
-    label: "Project",
-    extensions: ["3mf"],
-  },
-  image: {
-    key: "image",
-    label: "Image",
-    extensions: ["jpg", "jpeg", "png", "webp"],
-  },
-} as const;
-
-type CategoryKey = keyof typeof FILE_CATEGORIES;
-
-// Validated by extension only - browsers don't recognize 3D file MIME types
-const ALL_EXTENSIONS = [".stl", ".obj", ".3mf", ".ply", ".jpg", ".jpeg", ".png", ".webp"];
 const FILE_EXTENSION_REGEX = /\.[^/.]+$/;
 
-function getFileExtension(filename: string): string {
-  return filename.split(".").pop()?.toLowerCase() ?? "";
-}
-
-function getFileCategory(filename: string): CategoryKey | null {
-  const ext = getFileExtension(filename);
-  for (const [key, category] of Object.entries(FILE_CATEGORIES)) {
-    if ((category.extensions as readonly string[]).includes(ext)) {
-      return key as CategoryKey;
-    }
-  }
-  return null;
-}
-
 function getCategoryStatus(files: UploadFile[], previewImage?: File) {
-  const result: Record<CategoryKey, { hasFiles: boolean; files: UploadFile[] }> = {
+  const result: Record<UploadCategoryKey, { hasFiles: boolean; files: UploadFile[] }> = {
     model: { hasFiles: false, files: [] },
     slicer: { hasFiles: false, files: [] },
     image: { hasFiles: false, files: [] },
@@ -110,7 +81,7 @@ export function StepFiles({ form, onPrev, onSubmit, isSubmitting }: StepFilesPro
     return currentFiles.map((file: File) => ({
       file,
       id: `${file.name}-${Date.now()}-${Math.random()}`,
-      category: getFileCategory(file.name) ?? "model",
+      category: getUploadFileCategory(file.name) ?? "model",
     }));
   });
 
@@ -137,7 +108,7 @@ export function StepFiles({ form, onPrev, onSubmit, isSubmitting }: StepFilesPro
       let newImageFile: File | null = null;
 
       for (const file of acceptedFiles) {
-        const category = getFileCategory(file.name);
+        const category = getUploadFileCategory(file.name);
         if (!category) continue;
 
         const extension = getFileExtension(file.name);
@@ -203,7 +174,7 @@ export function StepFiles({ form, onPrev, onSubmit, isSubmitting }: StepFilesPro
       for (const rejection of fileRejections) {
         const ext = getFileExtension(rejection.file.name) || "unknown";
         toast.error(`Unsupported file type: ${rejection.file.name}`, {
-          description: `".${ext}" files are not supported. Use ${ALL_EXTENSIONS.join(", ")}`,
+          description: `".${ext}" files are not supported. Use ${UPLOAD_ACCEPTED_EXTENSIONS.join(", ")}`,
         });
       }
 
@@ -212,7 +183,7 @@ export function StepFiles({ form, onPrev, onSubmit, isSubmitting }: StepFilesPro
     multiple: true,
     validator: (file) => {
       const ext = `.${getFileExtension(file.name)}`;
-      if (!ALL_EXTENSIONS.includes(ext)) {
+      if (!UPLOAD_ACCEPTED_EXTENSIONS.includes(ext)) {
         return {
           code: "file-invalid-type",
           message: `File type not supported: ${ext}`,
@@ -338,8 +309,8 @@ export function StepFiles({ form, onPrev, onSubmit, isSubmitting }: StepFilesPro
     <div className="space-y-4">
       {/* Category Badges - BEFORE dropzone */}
       <div className="flex flex-wrap gap-2">
-        {Object.entries(FILE_CATEGORIES).map(([key, category]) => {
-          const status = categoryStatus[key as CategoryKey];
+        {Object.entries(UPLOAD_FILE_CATEGORIES).map(([key, category]) => {
+          const status = categoryStatus[key as UploadCategoryKey];
           const hasFiles = status.hasFiles;
 
           return (
@@ -404,7 +375,7 @@ export function StepFiles({ form, onPrev, onSubmit, isSubmitting }: StepFilesPro
         ) : (
           <div className="space-y-1">
             <p className="font-medium text-sm">Drag & drop files here, or click to browse</p>
-            <p className="text-muted-foreground text-xs">{ALL_EXTENSIONS.join(", ")}</p>
+            <p className="text-muted-foreground text-xs">{UPLOAD_ACCEPTED_EXTENSIONS.join(", ")}</p>
             <p className="text-muted-foreground text-xs">
               STL/OBJ/PLY: 100-150MB • 3MF: 250MB • Images: 10MB
             </p>
