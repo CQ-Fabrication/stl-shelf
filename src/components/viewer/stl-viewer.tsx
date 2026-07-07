@@ -1,5 +1,5 @@
 import { OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { RotateCcw } from "lucide-react";
 import { Component, Suspense, useEffect, useRef, type ReactNode } from "react";
 import { type BufferGeometry, DoubleSide, type Mesh, Vector3 } from "three";
@@ -51,6 +51,7 @@ type STLViewerProps = {
   filename: string;
   className?: string;
   url: string; // Presigned URL from server
+  onSnapshot?: (blob: Blob) => void;
 };
 
 type ModelMeshProps = {
@@ -64,6 +65,7 @@ type MeshGeometryProps = ModelMeshProps & {
 
 type LoaderMeshProps = ModelMeshProps & {
   url: string;
+  onSnapshot?: (blob: Blob) => void;
 };
 
 function MeshGeometry({ geometry, autoRotate, color }: MeshGeometryProps) {
@@ -114,28 +116,74 @@ function MeshGeometry({ geometry, autoRotate, color }: MeshGeometryProps) {
   );
 }
 
-function STLModelMesh({ url, autoRotate, color }: LoaderMeshProps) {
-  const geometry = useLoader(STLLoader, url);
-  return <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} />;
+const SNAPSHOT_WARMUP_FRAMES = 4;
+
+// Captures the canvas as a PNG once, a few frames after the mesh subtree mounts
+// (mounting only happens after useLoader resolves, so the model is on screen).
+function SnapshotOnce({ onSnapshot }: { onSnapshot: (blob: Blob) => void }) {
+  const gl = useThree((state) => state.gl);
+  const renderedFrames = useRef(0);
+  const fired = useRef(false);
+
+  useFrame(() => {
+    if (fired.current) {
+      return;
+    }
+
+    renderedFrames.current += 1;
+    if (renderedFrames.current < SNAPSHOT_WARMUP_FRAMES) {
+      return;
+    }
+
+    fired.current = true;
+    gl.domElement.toBlob((blob) => {
+      if (blob) {
+        onSnapshot(blob);
+      }
+    }, "image/png");
+  });
+
+  return null;
 }
 
-function OBJModelMesh({ url, autoRotate, color }: LoaderMeshProps) {
+function STLModelMesh({ url, autoRotate, color, onSnapshot }: LoaderMeshProps) {
+  const geometry = useLoader(STLLoader, url);
+  return (
+    <>
+      <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} />
+      {onSnapshot ? <SnapshotOnce onSnapshot={onSnapshot} /> : null}
+    </>
+  );
+}
+
+function OBJModelMesh({ url, autoRotate, color, onSnapshot }: LoaderMeshProps) {
   const objObject = useLoader(OBJLoader, url);
   const firstMesh = objObject.children.find((child): child is Mesh => "geometry" in child);
   const geometry = firstMesh?.geometry as BufferGeometry | undefined;
 
-  return <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} />;
+  return (
+    <>
+      <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} />
+      {onSnapshot ? <SnapshotOnce onSnapshot={onSnapshot} /> : null}
+    </>
+  );
 }
 
-function ModelMesh({ url, filename, autoRotate, color }: LoaderMeshProps & { filename: string }) {
+function ModelMesh({
+  url,
+  filename,
+  autoRotate,
+  color,
+  onSnapshot,
+}: LoaderMeshProps & { filename: string }) {
   const extension = getFileExtension(filename);
 
   if (extension === "stl") {
-    return <STLModelMesh autoRotate={autoRotate} color={color} url={url} />;
+    return <STLModelMesh autoRotate={autoRotate} color={color} onSnapshot={onSnapshot} url={url} />;
   }
 
   if (extension === "obj") {
-    return <OBJModelMesh autoRotate={autoRotate} color={color} url={url} />;
+    return <OBJModelMesh autoRotate={autoRotate} color={color} onSnapshot={onSnapshot} url={url} />;
   }
 
   return null;
@@ -187,7 +235,14 @@ function ErrorFallback({ error }: { error: Error }) {
   );
 }
 
-export function STLViewer({ modelId, version, filename, className = "", url }: STLViewerProps) {
+export function STLViewer({
+  modelId,
+  version,
+  filename,
+  className = "",
+  url,
+  onSnapshot,
+}: STLViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { theme } = useTheme();
 
@@ -225,6 +280,7 @@ export function STLViewer({ modelId, version, filename, className = "", url }: S
           near: 0.1,
           far: 1000,
         }}
+        gl={{ preserveDrawingBuffer: true }}
         style={{ background: canvasBackground }}
       >
         {/* Lighting */}
@@ -252,7 +308,13 @@ export function STLViewer({ modelId, version, filename, className = "", url }: S
 
         {/* Model */}
         <Suspense fallback={null}>
-          <ModelMesh autoRotate={false} color={modelColor} filename={filename} url={modelUrl} />
+          <ModelMesh
+            autoRotate={false}
+            color={modelColor}
+            filename={filename}
+            onSnapshot={onSnapshot}
+            url={modelUrl}
+          />
         </Suspense>
       </Canvas>
 
