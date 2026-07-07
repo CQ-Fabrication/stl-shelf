@@ -35,7 +35,11 @@ const parseOptions = (argv: string[]): Options => {
         throw new Error(`Invalid --limit value: ${arg}`);
       }
       limit = parsed;
+      continue;
     }
+
+    // A typo like --dryrun must never silently fall through to a real run
+    throw new Error(`Unknown argument: ${arg} (expected --dry-run, --org=<id>, --limit=<n>)`);
   }
 
   return { dryRun, organizationId, limit };
