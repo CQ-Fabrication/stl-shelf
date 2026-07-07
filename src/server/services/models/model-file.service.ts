@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
 import {
@@ -9,6 +9,7 @@ import {
   getCategoryFromExtension,
 } from "@/lib/files/completeness";
 import { slugify } from "@/lib/slug";
+import { deriveAddedFileThumbnailKey } from "@/server/services/models/thumbnail.service";
 import { storageService } from "@/server/services/storage";
 
 const FALLBACK_FILENAME = "file";
@@ -125,6 +126,19 @@ export class ModelFileService {
         throw new Error("Failed to create file record");
       }
 
+      if (version.thumbnailPath == null) {
+        await this.applyThumbnailFromAddedFile({
+          versionId: input.versionId,
+          organizationId: input.organizationId,
+          modelId: version.model.id,
+          version: version.version,
+          file: input.file,
+          extension: ext,
+          storageKey,
+          timestamp,
+        });
+      }
+
       await db
         .update(modelVersions)
         .set({ updatedAt: timestamp })
@@ -150,6 +164,44 @@ export class ModelFileService {
     } catch (error) {
       await storageService.deleteFile(storageKey).catch(() => {});
       throw error;
+    }
+  }
+
+  /**
+   * Backfill the version thumbnail from a newly added file.
+   * Guarded by `thumbnail_path IS NULL` so the first writer wins on concurrent adds.
+   * Silent fallback: thumbnail work must never fail the upload.
+   */
+  private async applyThumbnailFromAddedFile(options: {
+    versionId: string;
+    organizationId: string;
+    modelId: string;
+    version: string;
+    file: File;
+    extension: string;
+    storageKey: string;
+    timestamp: Date;
+  }): Promise<void> {
+    try {
+      const thumbnailKey = await deriveAddedFileThumbnailKey({
+        file: options.file,
+        extension: options.extension,
+        storageKey: options.storageKey,
+        organizationId: options.organizationId,
+        modelId: options.modelId,
+        version: options.version,
+      });
+
+      if (!thumbnailKey) {
+        return;
+      }
+
+      await db
+        .update(modelVersions)
+        .set({ thumbnailPath: thumbnailKey, updatedAt: options.timestamp })
+        .where(and(eq(modelVersions.id, options.versionId), isNull(modelVersions.thumbnailPath)));
+    } catch {
+      // Silently skip - the file upload already succeeded
     }
   }
 

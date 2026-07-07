@@ -34,6 +34,7 @@ vi.mock("@/server/services/storage", () => ({
 
 import { storageService } from "@/server/services/storage";
 import {
+  deriveAddedFileThumbnailKey,
   extractFallbackThumbnailKey,
   extractThumbnailKeyFromBuffer,
   isAutoThumbnail,
@@ -232,6 +233,89 @@ describe("extractFallbackThumbnailKey", () => {
 
     expect(key).toBeNull();
     expect(state.uploadCalls).toHaveLength(0);
+  });
+});
+
+describe("deriveAddedFileThumbnailKey", () => {
+  it("returns the storage key of an added image without touching the file", async () => {
+    const file = {
+      name: "photo.png",
+      arrayBuffer: async () => {
+        throw new Error("must not be read");
+      },
+    } as unknown as File;
+
+    const key = await deriveAddedFileThumbnailKey({
+      ...EXTRACT_OPTS,
+      file,
+      extension: "png",
+      storageKey: "keys/photo.png",
+    });
+
+    expect(key).toBe("keys/photo.png");
+    expect(state.uploadCalls).toHaveLength(0);
+  });
+
+  it("extracts and uploads the embedded preview of an added 3mf", async () => {
+    const buffer = await build3MF(true);
+    const file = fileFrom(new Uint8Array(buffer), "model.3mf");
+
+    const key = await deriveAddedFileThumbnailKey({
+      ...EXTRACT_OPTS,
+      file,
+      extension: "3mf",
+      storageKey: "keys/model.3mf",
+    });
+
+    expect(key).toBe("org_1/model_1/v1/artifacts/preview-extracted.png");
+    expect(state.uploadCalls).toHaveLength(1);
+    expect(state.uploadCalls[0]?.contentType).toBe("image/png");
+  });
+
+  it("returns null for a non-candidate extension", async () => {
+    const file = fileFrom(new Uint8Array([1, 2, 3]), "model.stl");
+
+    const key = await deriveAddedFileThumbnailKey({
+      ...EXTRACT_OPTS,
+      file,
+      extension: "stl",
+      storageKey: "keys/model.stl",
+    });
+
+    expect(key).toBeNull();
+    expect(state.uploadCalls).toHaveLength(0);
+  });
+
+  it("returns null when the 3mf has no embedded thumbnail", async () => {
+    const buffer = await build3MF(false);
+    const file = fileFrom(new Uint8Array(buffer), "model.3mf");
+
+    const key = await deriveAddedFileThumbnailKey({
+      ...EXTRACT_OPTS,
+      file,
+      extension: "3mf",
+      storageKey: "keys/model.3mf",
+    });
+
+    expect(key).toBeNull();
+  });
+
+  it("returns null silently when reading the file throws", async () => {
+    const file = {
+      name: "model.3mf",
+      arrayBuffer: async () => {
+        throw new Error("read failed");
+      },
+    } as unknown as File;
+
+    const key = await deriveAddedFileThumbnailKey({
+      ...EXTRACT_OPTS,
+      file,
+      extension: "3mf",
+      storageKey: "keys/model.3mf",
+    });
+
+    expect(key).toBeNull();
   });
 });
 

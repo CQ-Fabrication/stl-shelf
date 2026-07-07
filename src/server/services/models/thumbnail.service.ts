@@ -142,6 +142,33 @@ export async function extractFallbackThumbnailKey(
 }
 
 /**
+ * Derive a thumbnail key from a single file just added to a version.
+ * Images use their own storage key directly; 3MF files get their embedded preview extracted.
+ * Silent fallback: any failure returns null.
+ */
+export async function deriveAddedFileThumbnailKey(
+  options: ExtractOptions & { file: File; extension: string; storageKey: string },
+): Promise<string | null> {
+  const { file, extension, storageKey, organizationId, modelId, version } = options;
+
+  const candidate = selectThumbnailCandidate([{ extension, storageKey }]);
+  if (!candidate) {
+    return null;
+  }
+
+  if (candidate.kind === "image") {
+    return candidate.key;
+  }
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    return await extractThumbnailKeyFromBuffer({ buffer, organizationId, modelId, version });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Recompute the thumbnail key from a version's remaining files.
  * Images are returned directly (no re-upload); 3MF files are fetched from storage and extracted.
  * Silent fallback: any failure returns null.
