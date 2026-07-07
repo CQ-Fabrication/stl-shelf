@@ -13,7 +13,7 @@
  */
 
 /**
- * Completeness categories (different from FILE_CATEGORIES in limits.ts)
+ * Completeness categories (different from UPLOAD_FILE_CATEGORIES in upload-categories.ts)
  * These represent the three pillars of a "complete" model version
  */
 export type CompletenessCategory = "model" | "slicer" | "image";

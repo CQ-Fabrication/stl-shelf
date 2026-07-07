@@ -9,6 +9,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useTheme } from "../theme-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getFileExtension } from "@/lib/files/limits";
 import { errorContextActions } from "@/stores/error-context.store";
 
 // Error boundary to catch Three.js/Canvas errors and prevent page crashes
@@ -63,11 +64,6 @@ type MeshGeometryProps = ModelMeshProps & {
 
 type LoaderMeshProps = ModelMeshProps & {
   url: string;
-};
-
-const getFileExtension = (filename: string): string | null => {
-  const extension = filename.split(".").pop()?.toLowerCase();
-  return extension || null;
 };
 
 function MeshGeometry({ geometry, autoRotate, color }: MeshGeometryProps) {
