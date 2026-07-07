@@ -9,7 +9,12 @@ import {
   getCategoryFromExtension,
 } from "@/lib/files/completeness";
 import { slugify } from "@/lib/slug";
-import { deriveAddedFileThumbnailKey } from "@/server/services/models/thumbnail.service";
+import {
+  deriveAddedFileThumbnailKey,
+  isAutoThumbnail,
+  recomputeThumbnailKey,
+  removedFileWasThumbnailSource,
+} from "@/server/services/models/thumbnail.service";
 import { storageService } from "@/server/services/storage";
 
 const FALLBACK_FILENAME = "file";
@@ -241,6 +246,25 @@ export class ModelFileService {
     await db.delete(modelFiles).where(eq(modelFiles.id, input.fileId));
 
     const timestamp = new Date();
+
+    const thumbnailPath = file.version.thumbnailPath;
+    if (
+      thumbnailPath &&
+      isAutoThumbnail(thumbnailPath) &&
+      removedFileWasThumbnailSource(
+        { extension: file.extension, storageKey: file.storageKey },
+        thumbnailPath,
+      )
+    ) {
+      await this.recomputeThumbnailAfterRemoval({
+        versionId: file.version.id,
+        organizationId: input.organizationId,
+        modelId: file.version.model.id,
+        version: file.version.version,
+        timestamp,
+      });
+    }
+
     await db
       .update(modelVersions)
       .set({ updatedAt: timestamp })
@@ -252,6 +276,41 @@ export class ModelFileService {
       .where(eq(models.id, file.version.model.id));
 
     return { success: true, fileId: input.fileId };
+  }
+
+  /**
+   * Recompute an auto-derived thumbnail after its source file was removed.
+   * A null result intentionally clears the stale thumbnail; the orphan artifact
+   * stays in storage (non-destructive). Silent fallback: an unexpected failure
+   * must never fail the removal.
+   */
+  private async recomputeThumbnailAfterRemoval(options: {
+    versionId: string;
+    organizationId: string;
+    modelId: string;
+    version: string;
+    timestamp: Date;
+  }): Promise<void> {
+    try {
+      const remainingFiles = await db.query.modelFiles.findMany({
+        where: eq(modelFiles.versionId, options.versionId),
+        columns: { extension: true, storageKey: true },
+      });
+
+      const thumbnailKey = await recomputeThumbnailKey({
+        files: remainingFiles,
+        organizationId: options.organizationId,
+        modelId: options.modelId,
+        version: options.version,
+      });
+
+      await db
+        .update(modelVersions)
+        .set({ thumbnailPath: thumbnailKey, updatedAt: options.timestamp })
+        .where(eq(modelVersions.id, options.versionId));
+    } catch {
+      // Silently skip - the file removal already succeeded
+    }
   }
 
   async getVersionFiles(versionId: string) {

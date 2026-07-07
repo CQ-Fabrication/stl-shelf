@@ -353,4 +353,35 @@ describe("recomputeThumbnailKey", () => {
 
     expect(key).toBeNull();
   });
+
+  it("returns null when there are no remaining files", async () => {
+    const key = await recomputeThumbnailKey({ ...EXTRACT_OPTS, files: [] });
+
+    expect(key).toBeNull();
+    expect(state.uploadCalls).toHaveLength(0);
+  });
+
+  it("returns null when the remaining 3mf has no embedded thumbnail", async () => {
+    const buffer = await build3MF(false);
+    state.getFileBody = new Uint8Array(buffer);
+
+    const key = await recomputeThumbnailKey({
+      ...EXTRACT_OPTS,
+      files: [{ extension: "3mf", storageKey: "keys/model.3mf" }],
+    });
+
+    expect(key).toBeNull();
+    expect(state.uploadCalls).toHaveLength(0);
+  });
+
+  it("returns null silently when fetching the 3mf from storage throws", async () => {
+    state.getFileShouldThrow = true;
+
+    const key = await recomputeThumbnailKey({
+      ...EXTRACT_OPTS,
+      files: [{ extension: "3mf", storageKey: "keys/model.3mf" }],
+    });
+
+    expect(key).toBeNull();
+  });
 });
