@@ -17,43 +17,47 @@ type TestState = {
   updateCalls: Array<{ table: unknown; setValue: unknown; whereValue: unknown }>;
 };
 
-const state: TestState = {
-  session: null,
-  selectResults: [],
-  selectCalls: [],
-  updateCalls: [],
-};
-
-const createSelectQuery = (result: unknown[]) => {
-  const query = {
-    from: vi.fn(() => query),
-    innerJoin: vi.fn(() => query),
-    where: vi.fn(() => query),
-    limit: vi.fn(async () => result),
+const { state, db } = vi.hoisted(() => {
+  const state: TestState = {
+    session: null,
+    selectResults: [],
+    selectCalls: [],
+    updateCalls: [],
   };
-  return query;
-};
 
-const db = {
-  select: vi.fn((fields: unknown) => {
-    state.selectCalls.push({ fields });
-    return createSelectQuery(state.selectResults.shift() ?? []);
-  }),
-  update: vi.fn((table: unknown) => {
-    const updateState = { table, setValue: null as unknown, whereValue: null as unknown };
-    state.updateCalls.push(updateState);
+  const createSelectQuery = (result: unknown[]) => {
     const query = {
-      set: vi.fn((setValue: unknown) => {
-        updateState.setValue = setValue;
-        return query;
-      }),
-      where: vi.fn(async (whereValue: unknown) => {
-        updateState.whereValue = whereValue;
-      }),
+      from: vi.fn(() => query),
+      innerJoin: vi.fn(() => query),
+      where: vi.fn(() => query),
+      limit: vi.fn(async () => result),
     };
     return query;
-  }),
-};
+  };
+
+  const db = {
+    select: vi.fn((fields: unknown) => {
+      state.selectCalls.push({ fields });
+      return createSelectQuery(state.selectResults.shift() ?? []);
+    }),
+    update: vi.fn((table: unknown) => {
+      const updateState = { table, setValue: null as unknown, whereValue: null as unknown };
+      state.updateCalls.push(updateState);
+      const query = {
+        set: vi.fn((setValue: unknown) => {
+          updateState.setValue = setValue;
+          return query;
+        }),
+        where: vi.fn(async (whereValue: unknown) => {
+          updateState.whereValue = whereValue;
+        }),
+      };
+      return query;
+    }),
+  };
+
+  return { state, db };
+});
 
 vi.mock("drizzle-orm", () => ({
   and: vi.fn((...args: unknown[]) => ({ type: "and", args })),

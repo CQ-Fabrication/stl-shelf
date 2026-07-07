@@ -8,7 +8,7 @@ type TestEnv = {
   NODE_ENV: "test";
 };
 
-const state = {
+const state = vi.hoisted(() => ({
   env: {
     RESEND_API_KEY: "re_test_key",
     RESEND_SEGMENT_USERS: undefined,
@@ -21,7 +21,7 @@ const state = {
   addMock: vi.fn(),
   removeMock: vi.fn(),
   logErrorEventMock: vi.fn(),
-};
+}));
 
 const asError = (value: Partial<ErrorResponse>): ErrorResponse =>
   ({
