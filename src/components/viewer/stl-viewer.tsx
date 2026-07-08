@@ -1,7 +1,15 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { RotateCcw } from "lucide-react";
-import { Component, Suspense, useEffect, useRef, type ReactNode } from "react";
+import {
+  Component,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { type BufferGeometry, DoubleSide, type Mesh, Vector3 } from "three";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
@@ -51,6 +59,7 @@ type STLViewerProps = {
   filename: string;
   className?: string;
   url: string; // Presigned URL from server
+  posterUrl?: string | null; // Thumbnail shown while the mesh downloads/parses
   onSnapshot?: (blob: Blob) => void;
 };
 
@@ -61,14 +70,16 @@ type ModelMeshProps = {
 
 type MeshGeometryProps = ModelMeshProps & {
   geometry: BufferGeometry | undefined;
+  onReady?: () => void;
 };
 
 type LoaderMeshProps = ModelMeshProps & {
   url: string;
   onSnapshot?: (blob: Blob) => void;
+  onReady?: () => void;
 };
 
-function MeshGeometry({ geometry, autoRotate, color }: MeshGeometryProps) {
+function MeshGeometry({ geometry, autoRotate, color, onReady }: MeshGeometryProps) {
   const meshRef = useRef<Mesh>(null);
 
   // Auto-rotate the model (only if enabled)
@@ -84,8 +95,9 @@ function MeshGeometry({ geometry, autoRotate, color }: MeshGeometryProps) {
       geometry.center();
       geometry.computeBoundingBox();
       geometry.computeVertexNormals();
+      onReady?.();
     }
-  }, [geometry]);
+  }, [geometry, onReady]);
 
   if (!geometry) {
     return null;
@@ -146,24 +158,24 @@ function SnapshotOnce({ onSnapshot }: { onSnapshot: (blob: Blob) => void }) {
   return null;
 }
 
-function STLModelMesh({ url, autoRotate, color, onSnapshot }: LoaderMeshProps) {
+function STLModelMesh({ url, autoRotate, color, onSnapshot, onReady }: LoaderMeshProps) {
   const geometry = useLoader(STLLoader, url);
   return (
     <>
-      <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} />
+      <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} onReady={onReady} />
       {onSnapshot ? <SnapshotOnce onSnapshot={onSnapshot} /> : null}
     </>
   );
 }
 
-function OBJModelMesh({ url, autoRotate, color, onSnapshot }: LoaderMeshProps) {
+function OBJModelMesh({ url, autoRotate, color, onSnapshot, onReady }: LoaderMeshProps) {
   const objObject = useLoader(OBJLoader, url);
   const firstMesh = objObject.children.find((child): child is Mesh => "geometry" in child);
   const geometry = firstMesh?.geometry as BufferGeometry | undefined;
 
   return (
     <>
-      <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} />
+      <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} onReady={onReady} />
       {/* Without a mesh the canvas stays empty: a snapshot would lock in a blank thumbnail */}
       {onSnapshot && geometry ? <SnapshotOnce onSnapshot={onSnapshot} /> : null}
     </>
@@ -176,15 +188,32 @@ function ModelMesh({
   autoRotate,
   color,
   onSnapshot,
+  onReady,
 }: LoaderMeshProps & { filename: string }) {
   const extension = getFileExtension(filename);
 
   if (extension === "stl") {
-    return <STLModelMesh autoRotate={autoRotate} color={color} onSnapshot={onSnapshot} url={url} />;
+    return (
+      <STLModelMesh
+        autoRotate={autoRotate}
+        color={color}
+        onReady={onReady}
+        onSnapshot={onSnapshot}
+        url={url}
+      />
+    );
   }
 
   if (extension === "obj") {
-    return <OBJModelMesh autoRotate={autoRotate} color={color} onSnapshot={onSnapshot} url={url} />;
+    return (
+      <OBJModelMesh
+        autoRotate={autoRotate}
+        color={color}
+        onReady={onReady}
+        onSnapshot={onSnapshot}
+        url={url}
+      />
+    );
   }
 
   return null;
@@ -242,10 +271,14 @@ export function STLViewer({
   filename,
   className = "",
   url,
+  posterUrl,
   onSnapshot,
 }: STLViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { theme } = useTheme();
+  // Poster stays up until the downloaded mesh is actually in the scene
+  const [modelReady, setModelReady] = useState(false);
+  const handleModelReady = useCallback(() => setModelReady(true), []);
 
   // Track 3D preview action for error context
   useEffect(() => {
@@ -313,11 +346,32 @@ export function STLViewer({
             autoRotate={false}
             color={modelColor}
             filename={filename}
+            onReady={handleModelReady}
             onSnapshot={onSnapshot}
             url={modelUrl}
           />
         </Suspense>
       </Canvas>
+
+      {/* Poster overlay while the mesh downloads/parses (DOM-only: SnapshotOnce
+          reads canvas pixels, so it can never capture the poster) */}
+      {!modelReady && (
+        <div
+          className="pointer-events-none absolute inset-0"
+          data-viewer-poster
+          style={{ background: canvasBackground }}
+        >
+          {posterUrl ? (
+            <img
+              alt={`${filename} preview`}
+              className="h-full w-full object-contain"
+              src={posterUrl}
+            />
+          ) : (
+            <LoadingFallback />
+          )}
+        </div>
+      )}
 
       {/* Overlay controls */}
       <ViewerControls onResetCamera={handleResetCamera} />
