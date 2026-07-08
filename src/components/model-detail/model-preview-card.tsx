@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { STLViewerWithSuspense } from "@/components/viewer/stl-viewer";
 import { formatBytes } from "@/lib/files/limits";
+import { setGeneratedThumbnail } from "@/server/functions/files";
 import { getModelVersions, getModelFiles } from "@/server/functions/models";
 
 type ModelPreviewCardProps = {
@@ -20,11 +21,14 @@ type ModelPreviewCardProps = {
 };
 
 const MAX_IN_BROWSER_PREVIEW_SIZE_BYTES = 40 * 1024 * 1024;
+const MAX_SNAPSHOT_SIZE_BYTES = 2 * 1024 * 1024;
 
 const isTooLargeForInBrowserPreview = (fileSize: number) =>
   fileSize > MAX_IN_BROWSER_PREVIEW_SIZE_BYTES;
 
 export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) => {
+  const queryClient = useQueryClient();
+  const snapshotVersionIdsRef = useRef<Set<string>>(new Set());
   const { data: versions } = useQuery({
     queryKey: ["model", modelId, "versions"],
     queryFn: () => getModelVersions({ data: { modelId } }),
@@ -73,6 +77,31 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
   const has3DFiles = files?.some((f) =>
     ["stl", "obj", "3mf", "ply"].includes(f.extension.toLowerCase()),
   );
+
+  // Capture a viewer snapshot as the library thumbnail, once per version, only when missing
+  const shouldCaptureSnapshot =
+    !!activeVersion &&
+    activeVersion.thumbnailPath == null &&
+    !snapshotVersionIdsRef.current.has(activeVersion.id);
+
+  const handleSnapshot = (blob: Blob) => {
+    if (!activeVersion || snapshotVersionIdsRef.current.has(activeVersion.id)) return;
+    if (blob.size > MAX_SNAPSHOT_SIZE_BYTES) return;
+    snapshotVersionIdsRef.current.add(activeVersion.id);
+
+    const formData = new FormData();
+    formData.append("versionId", activeVersion.id);
+    formData.append("image", new File([blob], "preview.png", { type: "image/png" }));
+
+    setGeneratedThumbnail({ data: formData })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["models"] });
+        queryClient.invalidateQueries({ queryKey: ["model", modelId, "versions"] });
+      })
+      .catch((error) => {
+        console.error("Failed to set generated thumbnail:", error);
+      });
+  };
 
   if (isLoading) {
     return (
@@ -168,6 +197,7 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
                   filename={activeFile.filename}
                   key={activeFile.id}
                   modelId={modelId}
+                  onSnapshot={shouldCaptureSnapshot ? handleSnapshot : undefined}
                   url={activeFile.storageUrl}
                   version={activeVersion.version}
                 />

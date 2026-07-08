@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
 import { slugify } from "@/lib/slug";
 import { storageService } from "@/server/services/storage";
-import { extractThumbnailFrom3MF, is3MFFile } from "@/server/services/parsers";
+import { is3MFFile } from "@/server/services/parsers";
+import { extractFallbackThumbnailKey } from "@/server/services/models/thumbnail.service";
 import { printProfileService } from "@/server/services/models/print-profile.service";
 
 const FALLBACK_FILENAME = "model-file";
@@ -127,7 +128,7 @@ export class ModelVersionService {
       }
     } else {
       // Fallback: Try to extract thumbnail from 3MF file
-      thumbnailPath = await this.extractFallbackThumbnail({
+      thumbnailPath = await extractFallbackThumbnailKey({
         files: input.files,
         organizationId: input.organizationId,
         modelId: input.modelId,
@@ -337,53 +338,6 @@ export class ModelVersionService {
       if (!result.success) {
         console.warn(`Auto-parse failed for ${uploadResult.originalName}: ${result.error}`);
       }
-    }
-  }
-
-  /**
-   * Extract thumbnail from the first 3MF file found in the uploaded files
-   * Returns the storage key if successful, null otherwise
-   */
-  private async extractFallbackThumbnail(options: {
-    files: File[];
-    organizationId: string;
-    modelId: string;
-    version: string;
-  }): Promise<string | null> {
-    const { files, organizationId, modelId, version } = options;
-
-    // Find first 3MF file
-    const threeMFFile = files.find((file) => is3MFFile(file.name));
-    if (!threeMFFile) {
-      return null;
-    }
-
-    try {
-      const buffer = Buffer.from(await threeMFFile.arrayBuffer());
-      const thumbnail = await extractThumbnailFrom3MF(buffer);
-
-      if (!thumbnail) {
-        return null;
-      }
-
-      const previewKey = storageService.generateStorageKey({
-        organizationId,
-        modelId,
-        version,
-        filename: "preview-extracted.png",
-        kind: "artifact",
-      });
-
-      await storageService.uploadFile({
-        key: previewKey,
-        file: thumbnail,
-        contentType: "image/png",
-      });
-
-      return previewKey;
-    } catch {
-      // Silently fail - fallback is optional
-      return null;
     }
   }
 }

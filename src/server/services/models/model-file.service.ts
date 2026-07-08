@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
 import {
@@ -9,6 +9,13 @@ import {
   getCategoryFromExtension,
 } from "@/lib/files/completeness";
 import { slugify } from "@/lib/slug";
+import {
+  GENERATED_THUMBNAIL_FILENAME,
+  deriveAddedFileThumbnailKey,
+  isAutoThumbnail,
+  recomputeThumbnailKey,
+  removedFileWasThumbnailSource,
+} from "@/server/services/models/thumbnail.service";
 import { storageService } from "@/server/services/storage";
 
 const FALLBACK_FILENAME = "file";
@@ -125,6 +132,19 @@ export class ModelFileService {
         throw new Error("Failed to create file record");
       }
 
+      if (version.thumbnailPath == null) {
+        await this.applyThumbnailFromAddedFile({
+          versionId: input.versionId,
+          organizationId: input.organizationId,
+          modelId: version.model.id,
+          version: version.version,
+          file: input.file,
+          extension: ext,
+          storageKey,
+          timestamp,
+        });
+      }
+
       await db
         .update(modelVersions)
         .set({ updatedAt: timestamp })
@@ -150,6 +170,44 @@ export class ModelFileService {
     } catch (error) {
       await storageService.deleteFile(storageKey).catch(() => {});
       throw error;
+    }
+  }
+
+  /**
+   * Backfill the version thumbnail from a newly added file.
+   * Guarded by `thumbnail_path IS NULL` so the first writer wins on concurrent adds.
+   * Silent fallback: thumbnail work must never fail the upload.
+   */
+  private async applyThumbnailFromAddedFile(options: {
+    versionId: string;
+    organizationId: string;
+    modelId: string;
+    version: string;
+    file: File;
+    extension: string;
+    storageKey: string;
+    timestamp: Date;
+  }): Promise<void> {
+    try {
+      const thumbnailKey = await deriveAddedFileThumbnailKey({
+        file: options.file,
+        extension: options.extension,
+        storageKey: options.storageKey,
+        organizationId: options.organizationId,
+        modelId: options.modelId,
+        version: options.version,
+      });
+
+      if (!thumbnailKey) {
+        return;
+      }
+
+      await db
+        .update(modelVersions)
+        .set({ thumbnailPath: thumbnailKey, updatedAt: options.timestamp })
+        .where(and(eq(modelVersions.id, options.versionId), isNull(modelVersions.thumbnailPath)));
+    } catch {
+      // Silently skip - the file upload already succeeded
     }
   }
 
@@ -189,6 +247,25 @@ export class ModelFileService {
     await db.delete(modelFiles).where(eq(modelFiles.id, input.fileId));
 
     const timestamp = new Date();
+
+    const thumbnailPath = file.version.thumbnailPath;
+    if (
+      thumbnailPath &&
+      isAutoThumbnail(thumbnailPath) &&
+      removedFileWasThumbnailSource(
+        { extension: file.extension, storageKey: file.storageKey },
+        thumbnailPath,
+      )
+    ) {
+      await this.recomputeThumbnailAfterRemoval({
+        versionId: file.version.id,
+        organizationId: input.organizationId,
+        modelId: file.version.model.id,
+        version: file.version.version,
+        timestamp,
+      });
+    }
+
     await db
       .update(modelVersions)
       .set({ updatedAt: timestamp })
@@ -200,6 +277,93 @@ export class ModelFileService {
       .where(eq(models.id, file.version.model.id));
 
     return { success: true, fileId: input.fileId };
+  }
+
+  /**
+   * Recompute an auto-derived thumbnail after its source file was removed.
+   * A null result intentionally clears the stale thumbnail; the orphan artifact
+   * stays in storage (non-destructive). Silent fallback: an unexpected failure
+   * must never fail the removal.
+   */
+  private async recomputeThumbnailAfterRemoval(options: {
+    versionId: string;
+    organizationId: string;
+    modelId: string;
+    version: string;
+    timestamp: Date;
+  }): Promise<void> {
+    try {
+      const remainingFiles = await db.query.modelFiles.findMany({
+        where: eq(modelFiles.versionId, options.versionId),
+        columns: { extension: true, storageKey: true },
+      });
+
+      const thumbnailKey = await recomputeThumbnailKey({
+        files: remainingFiles,
+        organizationId: options.organizationId,
+        modelId: options.modelId,
+        version: options.version,
+      });
+
+      await db
+        .update(modelVersions)
+        .set({ thumbnailPath: thumbnailKey, updatedAt: options.timestamp })
+        .where(eq(modelVersions.id, options.versionId));
+    } catch {
+      // Silently skip - the file removal already succeeded
+    }
+  }
+
+  /**
+   * Set a viewer-generated snapshot as the version thumbnail.
+   * Only fills a missing thumbnail (never overwrites): skipped=true when one already exists,
+   * and the update is still guarded by `thumbnail_path IS NULL` against concurrent writers.
+   */
+  async setGeneratedThumbnail(input: {
+    versionId: string;
+    organizationId: string;
+    image: File;
+  }): Promise<{ success: true; skipped: boolean }> {
+    const version = await db.query.modelVersions.findFirst({
+      where: eq(modelVersions.id, input.versionId),
+      with: {
+        model: {
+          columns: { id: true, organizationId: true },
+        },
+      },
+    });
+
+    if (!version || version.model.organizationId !== input.organizationId) {
+      throw new Error("Version not found or access denied");
+    }
+
+    if (version.thumbnailPath != null) {
+      return { success: true, skipped: true };
+    }
+
+    const storageKey = storageService.generateStorageKey({
+      organizationId: input.organizationId,
+      modelId: version.model.id,
+      version: version.version,
+      filename: GENERATED_THUMBNAIL_FILENAME,
+      kind: "artifact",
+    });
+
+    await storageService.uploadFile({
+      key: storageKey,
+      file: input.image,
+      contentType: "image/png",
+    });
+
+    const timestamp = new Date();
+    await db
+      .update(modelVersions)
+      .set({ thumbnailPath: storageKey, updatedAt: timestamp })
+      .where(and(eq(modelVersions.id, input.versionId), isNull(modelVersions.thumbnailPath)));
+
+    await db.update(models).set({ updatedAt: timestamp }).where(eq(models.id, version.model.id));
+
+    return { success: true, skipped: false };
   }
 
   async getVersionFiles(versionId: string) {
