@@ -20,10 +20,14 @@ import Header from "@/components/header";
 import { MarketingConsentBanner } from "@/components/marketing-consent-banner";
 import { NotFound } from "@/components/not-found";
 import { PendingConsentHandler } from "@/components/pending-consent-handler";
+import {
+  consentGuardQueryOptions,
+  organizationsGuardQueryOptions,
+  sessionGuardQueryOptions,
+} from "@/lib/auth-guard-queries";
 import { generateErrorId } from "@/lib/error-id";
 import { OG_IMAGE_URL, SITE_URL, siteUrl } from "@/lib/site";
-import { getSessionFn, listOrganizationsFn } from "@/server/functions/auth";
-import { checkConsentValidityFn } from "@/server/functions/consent";
+import type { getSessionFn } from "@/server/functions/auth";
 import { seoPageList } from "@/components/marketing/seo/seo-pages-data";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -198,13 +202,14 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       { rel: "manifest", href: "/manifest.json" },
     ],
   }),
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async ({ location, context }) => {
+    const { queryClient } = context;
     const normalizedPathname = normalizePathname(location.pathname);
 
     // For auth routes, check if user is already logged in
     if (AUTH_ROUTES.includes(normalizedPathname)) {
       try {
-        const session = await getSessionFn();
+        const session = await queryClient.ensureQueryData(sessionGuardQueryOptions());
         if (session?.user) {
           throw redirect({ to: "/library", replace: true });
         }
@@ -226,7 +231,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
     // Get session using server function (has cookie access during SSR)
     let session: Awaited<ReturnType<typeof getSessionFn>> | null = null;
     try {
-      session = await getSessionFn();
+      session = await queryClient.ensureQueryData(sessionGuardQueryOptions());
     } catch (error) {
       console.error("Session check failed:", error);
       throw redirect({ to: "/login", replace: true });
@@ -242,22 +247,19 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       return { session };
     }
 
-    // Check organizations using server function
-    let organizations: Array<{ id: string }> = [];
-    try {
-      const result = await listOrganizationsFn();
-      organizations = result.organizations;
-    } catch (error) {
-      console.error("Failed to fetch organizations:", error);
-      throw redirect({ to: "/organization/create", replace: true });
-    }
+    // Organizations and consent don't depend on each other - check in parallel
+    const [organizationsResult, consentStatus] = await Promise.all([
+      queryClient.ensureQueryData(organizationsGuardQueryOptions()).catch((error) => {
+        console.error("Failed to fetch organizations:", error);
+        return null;
+      }),
+      queryClient.ensureQueryData(consentGuardQueryOptions()),
+    ]);
 
     // If no organizations, redirect to create one
-    if (organizations.length === 0) {
+    if (!organizationsResult || organizationsResult.organizations.length === 0) {
       throw redirect({ to: "/organization/create", replace: true });
     }
-
-    const consentStatus = await checkConsentValidityFn();
     const consentInvalid = !consentStatus.valid && consentStatus.reason !== "no_session";
 
     if (consentInvalid && normalizedPathname !== CONSENT_ROUTE) {
