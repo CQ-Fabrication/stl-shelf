@@ -56,6 +56,11 @@ const updateModelTagsSchema = z.object({
   tags: z.array(z.string().min(1).max(64)).max(20),
 });
 
+const modelTagSchema = z.object({
+  modelId: z.string().uuid(),
+  tagName: z.string().min(1).max(64),
+});
+
 const downloadFileSchema = z.object({
   storageKey: z.string(),
 });
@@ -77,6 +82,38 @@ const renameModelSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "Name is required").max(100, "Name must be 100 characters or less"),
 });
+
+// Shared authorization for model edits: verifies the org allows writes and the
+// current member can edit the target model (admins edit any, members edit own).
+async function assertCanEditModel(modelId: string, context: AuthenticatedContext): Promise<void> {
+  const org = await db.query.organization.findFirst({
+    where: eq(organization.id, context.organizationId),
+  });
+
+  if (!org) {
+    throw new Error("Organization not found");
+  }
+
+  assertWriteAllowed({
+    graceDeadline: org.graceDeadline,
+    accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+  });
+
+  const [model] = await db
+    .select({ ownerId: models.ownerId })
+    .from(models)
+    .where(and(eq(models.id, modelId), eq(models.organizationId, context.organizationId)))
+    .limit(1);
+
+  if (!model) {
+    throw new Error("Model not found");
+  }
+
+  const isOwnModel = model.ownerId === context.userId;
+  if (!canEditModel(context.memberRole as Role, isOwnModel)) {
+    throw new Error("You don't have permission to edit this model");
+  }
+}
 
 // List models with pagination
 export const listModels = createServerFn({ method: "GET" })
@@ -225,37 +262,60 @@ export const updateModelTags = createServerFn({ method: "POST" })
       data: z.infer<typeof updateModelTagsSchema>;
       context: AuthenticatedContext;
     }) => {
-      const org = await db.query.organization.findFirst({
-        where: eq(organization.id, context.organizationId),
-      });
-
-      if (!org) {
-        throw new Error("Organization not found");
-      }
-
-      assertWriteAllowed({
-        graceDeadline: org.graceDeadline,
-        accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
-      });
-
-      // RBAC: Check edit permission (admins can edit any, members can edit own only)
-      const [model] = await db
-        .select({ ownerId: models.ownerId })
-        .from(models)
-        .where(and(eq(models.id, data.modelId), eq(models.organizationId, context.organizationId)))
-        .limit(1);
-
-      if (!model) {
-        throw new Error("Model not found");
-      }
-
-      const isOwnModel = model.ownerId === context.userId;
-      if (!canEditModel(context.memberRole as Role, isOwnModel)) {
-        throw new Error("You don't have permission to edit this model");
-      }
+      await assertCanEditModel(data.modelId, context);
 
       const uniqueTags = Array.from(new Set(data.tags));
       await tagService.updateModelTags(data.modelId, uniqueTags, context.organizationId);
+
+      return { success: true };
+    },
+  );
+
+// Add a single tag to a model (persists immediately)
+export const addModelTag = createServerFn({ method: "POST" })
+  .inputValidator(zodValidator(modelTagSchema))
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof modelTagSchema>;
+      context: AuthenticatedContext;
+    }) => {
+      await assertCanEditModel(data.modelId, context);
+
+      const tagName = data.tagName.trim().toLowerCase();
+      if (!tagName) {
+        throw new Error("Tag name is required");
+      }
+
+      await tagService.addTagsToModel(data.modelId, [tagName], context.organizationId);
+
+      return { success: true };
+    },
+  );
+
+// Remove a single tag from a model (persists immediately)
+export const removeModelTag = createServerFn({ method: "POST" })
+  .inputValidator(zodValidator(modelTagSchema))
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof modelTagSchema>;
+      context: AuthenticatedContext;
+    }) => {
+      await assertCanEditModel(data.modelId, context);
+
+      const tagName = data.tagName.trim().toLowerCase();
+      if (!tagName) {
+        throw new Error("Tag name is required");
+      }
+
+      await tagService.removeTagsFromModel(data.modelId, [tagName]);
 
       return { success: true };
     },
