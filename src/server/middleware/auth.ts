@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { member, organization, user } from "@/lib/db/schema/auth";
 import { validateAuthenticatedConsent } from "@/server/services/consent/validate-consent";
+import { extractClientIp } from "@/server/utils/client-ip";
 
 export type AuthenticatedContext = {
   session: NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
@@ -81,9 +82,7 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(asyn
     throw new Error(CONSENT_REQUIRED_ERROR_MESSAGE);
   }
 
-  // Get IP address from headers
-  const ipAddress =
-    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? headers.get("x-real-ip") ?? null;
+  const ipAddress = extractClientIp(headers);
 
   return next({
     context: {
