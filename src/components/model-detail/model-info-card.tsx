@@ -65,10 +65,10 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
               <ImageIcon className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium text-sm">Preview</span>
             </div>
-            <div className="overflow-hidden rounded-lg border">
+            <div className="overflow-hidden rounded-lg border bg-muted p-2">
               <img
                 alt={`Preview of ${model.name}`}
-                className="aspect-video w-full object-cover"
+                className="aspect-video w-full object-contain"
                 height={360}
                 loading="lazy"
                 src={activeVersion.thumbnailUrl}
