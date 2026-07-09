@@ -20,6 +20,10 @@ import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { assertWriteAllowed } from "@/server/services/billing/retention.service";
 import { modelFileService } from "@/server/services/models/model-file.service";
+import {
+  assertCanEditModelOfFile,
+  assertCanEditModelOfVersion,
+} from "@/server/services/models/model-permission.service";
 import { validatePreviewImage, validateSnapshot } from "@/server/services/models/thumbnail.service";
 
 const removeFileFromVersionSchema = z.object({
@@ -103,6 +107,9 @@ export const addFileToVersion = createServerFn({ method: "POST" })
           graceDeadline: org.graceDeadline,
           accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
         });
+
+        // RBAC: Check edit permission (admins can edit any, members can edit own only)
+        await assertCanEditModelOfVersion(data.versionId, context);
 
         const extension = data.file.name.split(".").pop()?.toLowerCase() || "";
         const maxSize = getFileSizeLimit(extension);
@@ -432,6 +439,9 @@ export const removeFileFromVersion = createServerFn({ method: "POST" })
           graceDeadline: org.graceDeadline,
           accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
         });
+
+        // RBAC: Check edit permission (admins can edit any, members can edit own only)
+        await assertCanEditModelOfFile(data.fileId, context);
 
         const result = await modelFileService.removeFileFromVersion({
           fileId: data.fileId,
