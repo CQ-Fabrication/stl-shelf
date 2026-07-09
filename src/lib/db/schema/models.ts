@@ -143,6 +143,14 @@ export const modelFiles = pgTable(
 // Append-only audit trail for hard-deleted model files. Intentionally has no
 // foreign keys: tombstones must survive cascade deletes of files, versions,
 // models, and organizations.
+//
+// SCOPE GUARDRAIL: only DESTRUCTIVE, low-frequency events belong here (file
+// removals; deletions of versions/models if ever needed). Never record
+// high-frequency activity (views, downloads, uploads, edits) — that telemetry
+// goes to the log pipeline (logAuditEvent → BetterStack). Self-hosted deploys
+// share one Postgres server across multiple apps, so this table must stay
+// small by construction; if a future event type could grow it, add a
+// retention sweep (see scripts/retention-sweep.ts) in the same PR.
 export const modelFileEvents = pgTable(
   "model_file_events",
   {

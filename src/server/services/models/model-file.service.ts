@@ -251,6 +251,7 @@ export class ModelFileService {
 
     // Tombstone in the same transaction as the delete: a removed file must
     // always leave a queryable trace of what was deleted, by whom, and when.
+    // Destructive events only — see the scope guardrail on modelFileEvents.
     await db.transaction(async (tx) => {
       await tx.insert(modelFileEvents).values({
         event: "removed",
