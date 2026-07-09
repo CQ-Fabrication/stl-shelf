@@ -35,6 +35,7 @@ type FileData = {
 };
 
 type SourceFilesSectionProps = {
+  modelId: string;
   versionId: string;
   files: FileData[];
   hasThumbnail: boolean;
@@ -42,6 +43,7 @@ type SourceFilesSectionProps = {
 };
 
 export const SourceFilesSection = ({
+  modelId,
   versionId,
   files,
   hasThumbnail,
@@ -91,6 +93,8 @@ export const SourceFilesSection = ({
 
   const handleAddFileSuccess = () => {
     onFilesChanged();
+    // Adding a file can change the version thumbnail (viewer poster, completeness badge)
+    queryClient.invalidateQueries({ queryKey: ["model", modelId, "versions"] });
     queryClient.invalidateQueries({ queryKey: ["models"] });
   };
 
@@ -100,6 +104,8 @@ export const SourceFilesSection = ({
       await removeFileFromVersion({ data: { fileId } });
       toast.success("File removed successfully");
       onFilesChanged();
+      // Removing a file recomputes the version thumbnail server-side
+      queryClient.invalidateQueries({ queryKey: ["model", modelId, "versions"] });
       queryClient.invalidateQueries({ queryKey: ["models"] });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to remove file";
