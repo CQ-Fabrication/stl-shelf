@@ -247,13 +247,18 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       return { session };
     }
 
-    // Organizations and consent don't depend on each other - check in parallel
+    // Organizations and consent don't depend on each other - check in parallel.
+    // On the consent page the cached verdict is the stale "invalid" one that
+    // sent the user here, so await a fresh check (fetchQuery dedupes with the
+    // refetch the consent banner triggers on accept) or the user gets stuck.
     const [organizationsResult, consentStatus] = await Promise.all([
       queryClient.ensureQueryData(organizationsGuardQueryOptions()).catch((error) => {
         console.error("Failed to fetch organizations:", error);
         return null;
       }),
-      queryClient.ensureQueryData(consentGuardQueryOptions()),
+      normalizedPathname === CONSENT_ROUTE
+        ? queryClient.fetchQuery({ ...consentGuardQueryOptions(), staleTime: 0 })
+        : queryClient.ensureQueryData(consentGuardQueryOptions()),
     ]);
 
     // If no organizations, redirect to create one
