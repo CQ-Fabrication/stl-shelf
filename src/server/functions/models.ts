@@ -51,9 +51,11 @@ const getModelFilesSchema = z.object({
   versionId: z.string().uuid(),
 });
 
+const MAX_TAGS_PER_MODEL = 20;
+
 const updateModelTagsSchema = z.object({
   modelId: z.string().uuid(),
-  tags: z.array(z.string().min(1).max(64)).max(20),
+  tags: z.array(z.string().min(1).max(64)).max(MAX_TAGS_PER_MODEL),
 });
 
 const modelTagSchema = z.object({
@@ -290,7 +292,18 @@ export const addModelTag = createServerFn({ method: "POST" })
         throw new Error("Tag name is required");
       }
 
+      const currentTags = await modelDetailService.getModelTags(
+        data.modelId,
+        context.organizationId,
+      );
+      const alreadyOnModel = currentTags.some((tag) => tag.name === tagName);
+      if (!alreadyOnModel && currentTags.length >= MAX_TAGS_PER_MODEL) {
+        throw new Error(`A model can have at most ${MAX_TAGS_PER_MODEL} tags`);
+      }
+
       await tagService.addTagsToModel(data.modelId, [tagName], context.organizationId);
+      // Adding a tag is an explicit edit; reflect it in the model's updatedAt.
+      await db.update(models).set({ updatedAt: new Date() }).where(eq(models.id, data.modelId));
 
       return { success: true };
     },
@@ -315,7 +328,9 @@ export const removeModelTag = createServerFn({ method: "POST" })
         throw new Error("Tag name is required");
       }
 
-      await tagService.removeTagsFromModel(data.modelId, [tagName]);
+      await tagService.removeTagsFromModel(data.modelId, [tagName], context.organizationId);
+      // Removing a tag is an explicit edit; reflect it in the model's updatedAt.
+      await db.update(models).set({ updatedAt: new Date() }).where(eq(models.id, data.modelId));
 
       return { success: true };
     },
