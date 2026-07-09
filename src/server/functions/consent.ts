@@ -8,6 +8,7 @@ import { syncResendSegments } from "@/server/services/marketing/resend-segments"
 import { buildReacceptConsentUpsert } from "@/server/services/consent/reaccept-upsert";
 import { validateAuthenticatedConsent } from "@/server/services/consent/validate-consent";
 import { getLiveSession } from "@/server/utils/live-session";
+import { extractClientIp } from "@/server/utils/client-ip";
 
 // Schema definitions
 const getDocumentByTypeSchema = z.object({
@@ -104,10 +105,7 @@ export const submitConsentFn = createServerFn({ method: "POST" })
       throw new Error("Unauthorized: Cannot submit consent for another user");
     }
 
-    const ipAddress =
-      headers.get("cf-connecting-ip") ??
-      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      "unknown";
+    const ipAddress = extractClientIp(headers) ?? "unknown";
     const userAgent = headers.get("user-agent") ?? "unknown";
 
     // Verify document version exists
@@ -258,10 +256,7 @@ export const updateMarketingConsentFn = createServerFn({ method: "POST" })
       throw new Error("Not authenticated");
     }
 
-    const ipAddress =
-      headers.get("cf-connecting-ip") ??
-      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      "unknown";
+    const ipAddress = extractClientIp(headers) ?? "unknown";
     const userAgent = headers.get("user-agent") ?? "unknown";
 
     const now = new Date();
@@ -311,10 +306,7 @@ export const reacceptConsentFn = createServerFn({ method: "POST" })
       throw new Error("Not authenticated");
     }
 
-    const ipAddress =
-      headers.get("cf-connecting-ip") ??
-      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      "unknown";
+    const ipAddress = extractClientIp(headers) ?? "unknown";
     const userAgent = headers.get("user-agent") ?? "unknown";
 
     // Verify document version exists
@@ -396,10 +388,7 @@ export const updateMarketingPromptFn = createServerFn({ method: "POST" })
       throw new Error("Not authenticated");
     }
 
-    const ipAddress =
-      headers.get("cf-connecting-ip") ??
-      headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      "unknown";
+    const ipAddress = extractClientIp(headers) ?? "unknown";
     const userAgent = headers.get("user-agent") ?? "unknown";
 
     const now = new Date();

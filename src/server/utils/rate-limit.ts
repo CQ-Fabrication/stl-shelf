@@ -1,3 +1,5 @@
+import { extractClientIp } from "./client-ip";
+
 type RateLimitConfig = {
   windowMs: number;
   max: number;
@@ -36,10 +38,5 @@ export const checkRateLimit = (key: string, config: RateLimitConfig) => {
   };
 };
 
-export const getClientIp = (request: Request): string => {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || "unknown";
-  }
-  return request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip") || "unknown";
-};
+export const getClientIp = (request: Request): string =>
+  extractClientIp(request.headers) ?? "unknown";
