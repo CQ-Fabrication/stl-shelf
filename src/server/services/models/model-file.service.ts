@@ -355,13 +355,12 @@ export class ModelFileService {
       contentType: "image/png",
     });
 
-    const timestamp = new Date();
+    // Passive snapshot from merely viewing the model: don't bump updatedAt on the
+    // version or the model, or browsing the library would reorder it (sorted by updated_at).
     await db
       .update(modelVersions)
-      .set({ thumbnailPath: storageKey, updatedAt: timestamp })
+      .set({ thumbnailPath: storageKey })
       .where(and(eq(modelVersions.id, input.versionId), isNull(modelVersions.thumbnailPath)));
-
-    await db.update(models).set({ updatedAt: timestamp }).where(eq(models.id, version.model.id));
 
     return { success: true, skipped: false };
   }
