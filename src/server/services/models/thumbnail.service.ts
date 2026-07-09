@@ -8,6 +8,18 @@ export const GENERATED_THUMBNAIL_FILENAME = "preview-generated.png";
 
 const MAX_SNAPSHOT_SIZE_BYTES = 2 * 1024 * 1024;
 
+const MAX_PREVIEW_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Accepted preview-image MIME types mapped to the extension used for the
+ * `artifacts/preview.<ext>` storage key. Both jpg/jpeg collapse to "jpg".
+ */
+const PREVIEW_IMAGE_EXTENSION_BY_TYPE = new Map<string, string>([
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
+
 export type ThumbnailFile = {
   extension: string;
   storageKey: string;
@@ -27,6 +39,26 @@ export function validateSnapshot(image: File): SnapshotValidation {
     return { ok: false, reason: "Snapshot exceeds the 2MB limit" };
   }
   return { ok: true };
+}
+
+export type PreviewImageValidation =
+  | { ok: true; extension: string }
+  | { ok: false; reason: string };
+
+/**
+ * Validate a user-uploaded preview image (explicit replace action).
+ * Unlike a viewer snapshot this accepts JPG/PNG/WebP up to the 10MB image cap,
+ * and returns the extension for the `artifacts/preview.<ext>` storage key.
+ */
+export function validatePreviewImage(image: File): PreviewImageValidation {
+  const extension = PREVIEW_IMAGE_EXTENSION_BY_TYPE.get(image.type);
+  if (!extension) {
+    return { ok: false, reason: "Preview image must be a JPG, PNG or WebP file" };
+  }
+  if (image.size > MAX_PREVIEW_IMAGE_SIZE_BYTES) {
+    return { ok: false, reason: "Preview image exceeds the 10MB limit" };
+  }
+  return { ok: true, extension };
 }
 
 type ExtractOptions = {

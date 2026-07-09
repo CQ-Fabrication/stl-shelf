@@ -15,19 +15,53 @@ import {
   getCompletenessStatus,
 } from "@/lib/files/completeness";
 import { getFileSizeLimit, formatBytes } from "@/lib/files/limits";
+import { canEditModel, type Role } from "@/lib/permissions";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { assertWriteAllowed } from "@/server/services/billing/retention.service";
 import { modelFileService } from "@/server/services/models/model-file.service";
-import { validateSnapshot } from "@/server/services/models/thumbnail.service";
+import { validatePreviewImage, validateSnapshot } from "@/server/services/models/thumbnail.service";
 
 const removeFileFromVersionSchema = z.object({
   fileId: z.string().uuid(),
 });
 
+const removeVersionThumbnailSchema = z.object({
+  versionId: z.string().uuid(),
+});
+
 const getVersionCompletenessSchema = z.object({
   versionId: z.string().uuid(),
 });
+
+// Mirrors models.ts canEditModel gating: admins can edit any model in the org,
+// members only their own. Resolves the owning model from a version id.
+async function assertCanEditVersionModel(
+  versionId: string,
+  context: AuthenticatedContext,
+): Promise<void> {
+  const [model] = await db
+    .select({ ownerId: models.ownerId })
+    .from(modelVersions)
+    .innerJoin(models, eq(models.id, modelVersions.modelId))
+    .where(
+      and(
+        eq(modelVersions.id, versionId),
+        eq(models.organizationId, context.organizationId),
+        isNull(models.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!model) {
+    throw new Error("Model not found");
+  }
+
+  const isOwnModel = model.ownerId === context.userId;
+  if (!canEditModel(context.memberRole as Role, isOwnModel)) {
+    throw new Error("You don't have permission to edit this model");
+  }
+}
 
 export const addFileToVersion = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => {
@@ -195,6 +229,9 @@ export const setGeneratedThumbnail = createServerFn({ method: "POST" })
           throw new Error(validation.reason);
         }
 
+        // Intentionally org-level (no canEditModel gate): this is a passive
+        // viewer snapshot that only fills a missing thumbnail (non-destructive,
+        // only-if-null), so any org member may trigger it.
         const result = await modelFileService.setGeneratedThumbnail({
           versionId: data.versionId,
           organizationId: context.organizationId,
@@ -221,6 +258,147 @@ export const setGeneratedThumbnail = createServerFn({ method: "POST" })
           };
           captureServerException(error, errorContext);
           logErrorEvent("error.file.thumbnail_generation_failed", {
+            ...errorContext,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
+    },
+  );
+
+export const replaceVersionThumbnail = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => {
+    if (!(input instanceof FormData)) {
+      throw new Error("Expected FormData");
+    }
+    const versionId = input.get("versionId") as string;
+    const image = input.get("image") as File | null;
+
+    if (!versionId) {
+      throw new Error("Version ID is required");
+    }
+
+    if (!image) {
+      throw new Error("Image is required");
+    }
+
+    return { versionId, image };
+  })
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: { versionId: string; image: File };
+      context: AuthenticatedContext;
+    }) => {
+      try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
+        await assertCanEditVersionModel(data.versionId, context);
+
+        const validation = validatePreviewImage(data.image);
+        if (!validation.ok) {
+          throw new Error(validation.reason);
+        }
+
+        const result = await modelFileService.replaceVersionThumbnail({
+          versionId: data.versionId,
+          organizationId: context.organizationId,
+          image: data.image,
+          extension: validation.extension,
+        });
+
+        logAuditEvent("model.thumbnail_replaced", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          versionId: data.versionId,
+          ipAddress: context.ipAddress,
+        });
+
+        return result;
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          const errorContext = {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            versionId: data.versionId,
+            ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.file.thumbnail_replace_failed", {
+            ...errorContext,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
+    },
+  );
+
+export const removeVersionThumbnail = createServerFn({ method: "POST" })
+  .inputValidator(zodValidator(removeVersionThumbnailSchema))
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof removeVersionThumbnailSchema>;
+      context: AuthenticatedContext;
+    }) => {
+      try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
+        await assertCanEditVersionModel(data.versionId, context);
+
+        const result = await modelFileService.removeVersionThumbnail({
+          versionId: data.versionId,
+          organizationId: context.organizationId,
+        });
+
+        logAuditEvent("model.thumbnail_removed", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          versionId: data.versionId,
+          ipAddress: context.ipAddress,
+        });
+
+        return result;
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          const errorContext = {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            versionId: data.versionId,
+            ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.file.thumbnail_remove_failed", {
             ...errorContext,
             ...getErrorDetails(error),
           });
