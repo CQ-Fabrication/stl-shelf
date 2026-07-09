@@ -6,12 +6,12 @@
 - `bun dev` - Start development server (port 3000)
 - `bun build` - Build for production
 - `bun preview` - Preview production build
-- `bun start` - Start production server
+- `bun start` - Run pending migrations, then start production server
 
 ## Database
 
 - `bun db:generate` - Generate Drizzle migrations
-- `bun db:migrate` - Run migrations
+- `bun db:migrate` - Run migrations via `scripts/migrate.ts` (custom runner, handles `CONCURRENTLY`; see AGENTS.md migration guidelines)
 - `bun db:push` - Push schema changes (dev)
 - `bun db:studio` - Open Drizzle Studio
 

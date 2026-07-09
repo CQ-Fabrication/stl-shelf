@@ -9,11 +9,20 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from "react";
-import { type BufferGeometry, DoubleSide, type Mesh, Vector3 } from "three";
+import {
+  type BufferGeometry,
+  type Camera,
+  DoubleSide,
+  type Mesh,
+  PerspectiveCamera,
+  Vector3,
+} from "three";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { computeCameraDistance, FRAME_DIRECTION } from "./camera-framing";
 import { useTheme } from "../theme-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,19 +77,72 @@ type ModelMeshProps = {
   color: string;
 };
 
+type ControlsRef = RefObject<OrbitControlsImpl | null>;
+
+// MeshGeometry scales every model to fit a 2-unit cube (see below).
+const NORMALIZED_CUBE_SIZE = 2;
+
+// Factor that maps the raw geometry to the normalized 2-unit cube.
+function computeNormalizationScale(geometry: BufferGeometry): number {
+  const size = new Vector3();
+  geometry.boundingBox?.getSize(size);
+  const maxDimension = Math.max(size.x, size.y, size.z);
+  return maxDimension > 0 ? NORMALIZED_CUBE_SIZE / maxDimension : 1;
+}
+
+// Position the camera along the diagonal 3/4 view at a distance that fits the
+// normalized model, and store that pose so OrbitControls.reset() returns to it.
+function frameCameraToGeometry({
+  geometry,
+  camera,
+  canvas,
+  controls,
+}: {
+  geometry: BufferGeometry;
+  camera: Camera;
+  canvas: HTMLCanvasElement;
+  controls: OrbitControlsImpl | null;
+}) {
+  if (!(camera instanceof PerspectiveCamera) || !geometry.boundingSphere) {
+    return;
+  }
+
+  const radiusScaled = geometry.boundingSphere.radius * computeNormalizationScale(geometry);
+  const aspect = canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
+  const distance = computeCameraDistance(radiusScaled, camera.fov, aspect);
+  if (!(distance > 0)) {
+    return;
+  }
+
+  const direction = new Vector3(...FRAME_DIRECTION).normalize();
+  camera.position.copy(direction.multiplyScalar(distance));
+  camera.lookAt(0, 0, 0);
+  camera.updateProjectionMatrix();
+
+  if (controls) {
+    controls.target.set(0, 0, 0);
+    controls.update();
+    controls.saveState();
+  }
+}
+
 type MeshGeometryProps = ModelMeshProps & {
   geometry: BufferGeometry | undefined;
+  controlsRef: ControlsRef;
   onReady?: () => void;
 };
 
 type LoaderMeshProps = ModelMeshProps & {
   url: string;
+  controlsRef: ControlsRef;
   onSnapshot?: (blob: Blob) => void;
   onReady?: () => void;
 };
 
-function MeshGeometry({ geometry, autoRotate, color, onReady }: MeshGeometryProps) {
+function MeshGeometry({ geometry, autoRotate, color, controlsRef, onReady }: MeshGeometryProps) {
   const meshRef = useRef<Mesh>(null);
+  const camera = useThree((state) => state.camera);
+  const gl = useThree((state) => state.gl);
 
   // Auto-rotate the model (only if enabled)
   useFrame(() => {
@@ -89,30 +151,39 @@ function MeshGeometry({ geometry, autoRotate, color, onReady }: MeshGeometryProp
     }
   });
 
-  // Prepare geometry - always call useEffect
+  // Prepare geometry, then frame the camera to fit it BEFORE reporting ready.
+  // This runs as a passive effect on mount, i.e. before SnapshotOnce's first
+  // useFrame (rAF) fires, so the warmup frames and the captured snapshot both
+  // render with the framed camera. Reset restores this framing via saveState().
   useEffect(() => {
-    if (geometry) {
-      geometry.center();
-      geometry.computeBoundingBox();
-      geometry.computeVertexNormals();
-      onReady?.();
+    if (!geometry) {
+      return;
     }
-  }, [geometry, onReady]);
+    geometry.center();
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    geometry.computeVertexNormals();
+
+    frameCameraToGeometry({
+      geometry,
+      camera,
+      canvas: gl.domElement,
+      controls: controlsRef.current,
+    });
+
+    onReady?.();
+  }, [geometry, camera, gl, controlsRef, onReady]);
 
   if (!geometry) {
     return null;
   }
 
   // Center and scale the geometry
-  const boundingBox = geometry.boundingBox;
-  if (!boundingBox) {
+  if (!geometry.boundingBox) {
     geometry.computeBoundingBox();
   }
 
-  const size = new Vector3();
-  geometry.boundingBox?.getSize(size);
-  const maxDimension = Math.max(size.x, size.y, size.z);
-  const scale = maxDimension > 0 ? 2 / maxDimension : 1; // Scale to fit in a 2-unit cube
+  const scale = computeNormalizationScale(geometry); // Scale to fit in a 2-unit cube
 
   return (
     <mesh ref={meshRef} scale={[scale, scale, scale]}>
@@ -158,24 +229,50 @@ function SnapshotOnce({ onSnapshot }: { onSnapshot: (blob: Blob) => void }) {
   return null;
 }
 
-function STLModelMesh({ url, autoRotate, color, onSnapshot, onReady }: LoaderMeshProps) {
+function STLModelMesh({
+  url,
+  autoRotate,
+  color,
+  controlsRef,
+  onSnapshot,
+  onReady,
+}: LoaderMeshProps) {
   const geometry = useLoader(STLLoader, url);
   return (
     <>
-      <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} onReady={onReady} />
+      <MeshGeometry
+        autoRotate={autoRotate}
+        color={color}
+        controlsRef={controlsRef}
+        geometry={geometry}
+        onReady={onReady}
+      />
       {onSnapshot ? <SnapshotOnce onSnapshot={onSnapshot} /> : null}
     </>
   );
 }
 
-function OBJModelMesh({ url, autoRotate, color, onSnapshot, onReady }: LoaderMeshProps) {
+function OBJModelMesh({
+  url,
+  autoRotate,
+  color,
+  controlsRef,
+  onSnapshot,
+  onReady,
+}: LoaderMeshProps) {
   const objObject = useLoader(OBJLoader, url);
   const firstMesh = objObject.children.find((child): child is Mesh => "geometry" in child);
   const geometry = firstMesh?.geometry as BufferGeometry | undefined;
 
   return (
     <>
-      <MeshGeometry autoRotate={autoRotate} color={color} geometry={geometry} onReady={onReady} />
+      <MeshGeometry
+        autoRotate={autoRotate}
+        color={color}
+        controlsRef={controlsRef}
+        geometry={geometry}
+        onReady={onReady}
+      />
       {/* Without a mesh the canvas stays empty: a snapshot would lock in a blank thumbnail */}
       {onSnapshot && geometry ? <SnapshotOnce onSnapshot={onSnapshot} /> : null}
     </>
@@ -187,6 +284,7 @@ function ModelMesh({
   filename,
   autoRotate,
   color,
+  controlsRef,
   onSnapshot,
   onReady,
 }: LoaderMeshProps & { filename: string }) {
@@ -197,6 +295,7 @@ function ModelMesh({
       <STLModelMesh
         autoRotate={autoRotate}
         color={color}
+        controlsRef={controlsRef}
         onReady={onReady}
         onSnapshot={onSnapshot}
         url={url}
@@ -209,6 +308,7 @@ function ModelMesh({
       <OBJModelMesh
         autoRotate={autoRotate}
         color={color}
+        controlsRef={controlsRef}
         onReady={onReady}
         onSnapshot={onSnapshot}
         url={url}
@@ -345,6 +445,7 @@ export function STLViewer({
           <ModelMesh
             autoRotate={false}
             color={modelColor}
+            controlsRef={controlsRef}
             filename={filename}
             onReady={handleModelReady}
             onSnapshot={onSnapshot}

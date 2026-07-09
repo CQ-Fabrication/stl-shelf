@@ -60,6 +60,9 @@ export const buildLibraryTagSearch = (tag: string, searchQuery?: string) => ({
   tags: tag,
 });
 
+const DESKTOP_VISIBLE_TAGS = 3;
+const MOBILE_VISIBLE_TAGS = 1;
+
 const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -187,11 +190,11 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
       <CardContent className="flex flex-grow flex-col">
         {/* Thumbnail preview - clean, no overlays */}
         <div className="mb-3">
-          <div className="aspect-video overflow-hidden rounded-md bg-muted transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
+          <div className="aspect-video overflow-hidden rounded-md bg-muted p-2 transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
             {model.thumbnailUrl ? (
               <img
                 alt={`Preview of ${model.name}`}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
                 height={360}
                 loading="lazy"
                 src={model.thumbnailUrl}
@@ -235,9 +238,9 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
         {/* Tags footer - always at bottom */}
         {Array.isArray(model.tags) && model.tags.length > 0 && (
           <div className="mt-auto flex min-h-[24px] items-center gap-1.5 text-xs">
-            {/* Desktop: show 2 tags */}
+            {/* Desktop: show 3 tags */}
             <div className="hidden min-w-0 items-center gap-1.5 sm:flex">
-              {model.tags.slice(0, 2).map((tag) => {
+              {model.tags.slice(0, DESKTOP_VISIBLE_TAGS).map((tag) => {
                 const filterLabel = "Filter by " + tag;
                 return (
                   <button
@@ -256,14 +259,14 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
                   </button>
                 );
               })}
-              {model.tags.length > 2 && (
+              {model.tags.length > DESKTOP_VISIBLE_TAGS && (
                 <Popover>
                   <PopoverTrigger asChild>
                     <Badge
                       className="relative z-20 flex cursor-pointer items-center gap-0.5 border border-border/50 bg-muted/50 text-xs hover:bg-muted"
                       variant="secondary"
                     >
-                      +{model.tags.length - 2}
+                      +{model.tags.length - DESKTOP_VISIBLE_TAGS}
                       <ChevronDown className="h-3 w-3" />
                     </Badge>
                   </PopoverTrigger>
@@ -299,7 +302,7 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
 
             {/* Mobile: show 1 tag */}
             <div className="flex min-w-0 items-center gap-1.5 sm:hidden">
-              {model.tags.slice(0, 1).map((tag) => {
+              {model.tags.slice(0, MOBILE_VISIBLE_TAGS).map((tag) => {
                 const filterLabel = "Filter by " + tag;
                 return (
                   <button
@@ -318,14 +321,14 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
                   </button>
                 );
               })}
-              {model.tags.length > 1 && (
+              {model.tags.length > MOBILE_VISIBLE_TAGS && (
                 <Popover>
                   <PopoverTrigger asChild>
                     <Badge
                       className="relative z-20 flex cursor-pointer items-center gap-0.5 border border-border/50 bg-muted/50 text-xs hover:bg-muted"
                       variant="secondary"
                     >
-                      +{model.tags.length - 1}
+                      +{model.tags.length - MOBILE_VISIBLE_TAGS}
                       <ChevronDown className="h-3 w-3" />
                     </Badge>
                   </PopoverTrigger>

@@ -13,7 +13,7 @@ Non-standard commands:
 - Lint/format checks: `bun check` (oxlint + oxfmt, no autofix)
 - Build: `bun build` (do not run if the dev server is already running)
 - Preview build: `bun preview`
-- Production server: `bun start`
+- Production server: `bun start` (runs pending migrations first, then serves)
 - Tests: `bun test` (vitest run)
 - Ngrok tunnel (Polar webhooks): `bun run ngrok`
 - Docs list: `bun docs:list`
@@ -32,7 +32,11 @@ Database:
 - Always change schema in `src/lib/db/schema` first, then run `bun db:generate` to produce SQL + update `drizzle/meta/_journal.json`.
 - Never add or edit `drizzle/*.sql` by hand without a matching entry in `drizzle/meta/_journal.json` (migrations are driven by the journal).
 - Confirm the newest migration exists in both `drizzle/*.sql` and `drizzle/meta/_journal.json` before deploy.
-- Run `bun db:migrate` locally after generating, and ensure prod deploys run `bun db:migrate` before serving traffic.
+- Run `bun db:migrate` locally after generating.
+- `bun db:migrate` runs `scripts/migrate.ts`, a custom runner (NOT `drizzle-kit migrate`, which wraps every migration in a transaction and fails on `CREATE INDEX CONCURRENTLY`). It uses the same `drizzle.__drizzle_migrations` table, so it stays interoperable with drizzle-kit.
+- A migration containing `CONCURRENTLY` runs statement-by-statement OUTSIDE a transaction (no rollback). Every statement in such a migration must be idempotent (`IF NOT EXISTS` / `IF EXISTS`). If a concurrent index build fails it can leave an INVALID index — `DROP INDEX` it before rerunning.
+- If a migration is ever applied out-of-band (psql), record it: `INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES (sha256-hex of the .sql file, journal "when" ms)`.
+- Deploys: `bun start` runs migrations BEFORE the server binds — a failed migration aborts startup (loud banner, exit 1) so the old container keeps serving. In Coolify the start command must be `bun start`; never run migrations as a post-deployment hook (hook failures are silent and run after new code is already live — this hid unapplied migrations 0014/0015 in prod from Jan to Jul 2026).
 
 MinIO CORS (first-time setup):
 

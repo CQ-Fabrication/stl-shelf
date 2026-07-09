@@ -119,7 +119,7 @@ export const PreviewImageManager = ({
       />
 
       {thumbnailUrl ? (
-        <div className="group/preview relative overflow-hidden rounded-lg border">
+        <div className="group/preview relative overflow-hidden rounded-lg border bg-muted p-2">
           <button
             aria-label="View preview image"
             className="block w-full"
@@ -129,7 +129,7 @@ export const PreviewImageManager = ({
           >
             <img
               alt={`Preview of ${modelName}`}
-              className="aspect-video w-full object-cover"
+              className="aspect-video w-full object-contain"
               height={360}
               loading="lazy"
               src={thumbnailUrl}
