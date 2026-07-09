@@ -121,7 +121,7 @@ const runBackfill = async (options: Options) => {
 
     await db
       .update(modelVersions)
-      .set({ thumbnailPath: key, updatedAt: new Date() })
+      .set({ thumbnailPath: key })
       .where(and(eq(modelVersions.id, version.versionId), isNull(modelVersions.thumbnailPath)));
 
     updated += 1;
