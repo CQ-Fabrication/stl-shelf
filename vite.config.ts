@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 import path from "node:path";
 import { defineConfig, searchForWorkspaceRoot } from "vite";
+import { configDefaults } from "vitest/config";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import viteTsConfigPaths from "vite-tsconfig-paths";
@@ -22,6 +23,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Nested agent worktrees carry their own copies of every test file
+    exclude: [...configDefaults.exclude, "**/.claude/**"],
   },
   server: {
     port: 3000,

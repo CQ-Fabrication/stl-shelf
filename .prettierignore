@@ -1,2 +1,5 @@
 # Auto-generated files
 src/routeTree.gen.ts
+
+# Agent worktrees (nested checkouts with their own generated files)
+.claude/
