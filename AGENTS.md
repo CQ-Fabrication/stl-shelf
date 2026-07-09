@@ -34,11 +34,13 @@ Database:
 - Confirm the newest migration exists in both `drizzle/*.sql` and `drizzle/meta/_journal.json` before deploy.
 - Run `bun db:migrate` locally after generating, and ensure prod deploys run `bun db:migrate` before serving traffic.
 
-MinIO CORS (first-time setup):
+MinIO CORS + bucket policy (first-time setup):
 
 - `docker exec stl-shelf-minio mc alias set local http://localhost:9000 stlshelf stlshelf_minio_dev_password`
 - `docker exec stl-shelf-minio mc admin config set local api cors_allow_origin="http://localhost:3000"`
+- `docker exec stl-shelf-minio mc anonymous set none local/stl-shelf-models`
 - `docker compose restart minio`
+- The bucket must stay private (no anonymous reads) to match production R2: all reads go through presigned URLs or `/api/download/*`. Environments bootstrapped before July 2026 had a public-read policy — the `mc anonymous set none` step fixes them.
 
 Local OAuth testing (ngrok):
 
