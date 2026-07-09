@@ -32,7 +32,6 @@ type FileData = {
   originalName: string;
   extension: string;
   size: number;
-  storageUrl: string | null;
   createdAt: Date | string;
 };
 
@@ -169,7 +168,10 @@ export const SourceFilesSection = ({
                       extension: file.extension,
                       createdAt: file.createdAt,
                     });
-                    const imageUrl = category === "image" ? file.storageUrl : null;
+                    const imageUrl =
+                      category === "image"
+                        ? `/api/download/file/${file.id}?disposition=inline`
+                        : null;
 
                     return (
                       <div
