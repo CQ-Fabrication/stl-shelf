@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/ui/logo";
 import { authClient } from "@/lib/auth-client";
+import { resetAuthGuardCache } from "@/lib/auth-guard-queries";
 
 type AcceptStatus = "idle" | "processing" | "failed";
 
@@ -22,6 +24,7 @@ export const Route = createFileRoute("/accept-invitation")({
 function AcceptInvitationPage() {
   const { invitationId } = Route.useSearch();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: session, isPending } = authClient.useSession();
   const [status, setStatus] = useState<AcceptStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,6 +48,7 @@ function AcceptInvitationPage() {
 
           if (message.toLowerCase().includes("already")) {
             toast.info("Invitation already accepted");
+            resetAuthGuardCache(queryClient);
             await navigate({ to: "/library" });
             return;
           }
@@ -54,6 +58,7 @@ function AcceptInvitationPage() {
         }
 
         toast.success("Invitation accepted");
+        resetAuthGuardCache(queryClient);
         await navigate({ to: "/library" });
       } catch (error) {
         if (cancelled) return;
@@ -69,7 +74,7 @@ function AcceptInvitationPage() {
     return () => {
       cancelled = true;
     };
-  }, [invitationId, navigate, session?.user]);
+  }, [invitationId, navigate, queryClient, session?.user]);
 
   if (!invitationId) {
     return (

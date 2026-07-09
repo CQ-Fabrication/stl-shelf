@@ -29,6 +29,18 @@ export const Route = createFileRoute("/models/$modelId")({
   head: () => ({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
+  // Fire-and-forget: warms the detail queries during hover/touch preloads
+  // without blocking the navigation; the components read them via useQuery.
+  loader: ({ context, params }) => {
+    void context.queryClient.prefetchQuery({
+      queryKey: ["model", params.modelId],
+      queryFn: () => getModel({ data: { id: params.modelId } }),
+    });
+    void context.queryClient.prefetchQuery({
+      queryKey: ["model", params.modelId, "versions"],
+      queryFn: () => getModelVersions({ data: { modelId: params.modelId } }),
+    });
+  },
   component: ModelDetailComponent,
 });
 

@@ -82,6 +82,7 @@ export const ModelFilesPanel = ({ modelId, versionId }: ModelFilesPanelProps) =>
           <SourceFilesSection
             files={files ?? []}
             hasThumbnail={!!activeVersion.thumbnailUrl}
+            modelId={modelId}
             onFilesChanged={() => refetch()}
             versionId={activeVersion.id}
           />

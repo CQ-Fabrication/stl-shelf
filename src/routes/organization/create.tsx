@@ -1,4 +1,5 @@
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertCircle, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -9,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import { resetAuthGuardCache } from "@/lib/auth-guard-queries";
 
 export const Route = createFileRoute("/organization/create")({
   head: () => ({
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/organization/create")({
 
 function CreateOrganizationPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -132,6 +135,7 @@ function CreateOrganizationPage() {
     toast.success("Organization created successfully");
     setIsCreating(false);
 
+    resetAuthGuardCache(queryClient);
     await navigate({ to: "/library" });
   }
 

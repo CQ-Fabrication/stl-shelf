@@ -198,6 +198,7 @@ export const ModelPreviewCard = ({ modelId, versionId }: ModelPreviewCardProps) 
                   key={activeFile.id}
                   modelId={modelId}
                   onSnapshot={shouldCaptureSnapshot ? handleSnapshot : undefined}
+                  posterUrl={activeVersion.thumbnailUrl}
                   url={activeFile.storageUrl}
                   version={activeVersion.version}
                 />

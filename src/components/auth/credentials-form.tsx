@@ -1,4 +1,5 @@
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
@@ -8,6 +9,7 @@ import { Turnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { resetAuthGuardCache } from "@/lib/auth-guard-queries";
 import type { AuthClient } from "@/lib/auth-client";
 import { trackFormSubmit } from "@/lib/openpanel/client-events";
 import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
@@ -19,6 +21,7 @@ type CredentialsFormProps = {
 
 export function CredentialsForm({ auth, invitationId }: CredentialsFormProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const { client } = useOpenPanelClient();
 
@@ -58,6 +61,7 @@ export function CredentialsForm({ auth, invitationId }: CredentialsFormProps) {
 
         trackFormSubmit(client, "login_credentials", { success: true });
         toast.success("Welcome back!");
+        resetAuthGuardCache(queryClient);
         await navigate({ to: "/library" });
       } catch (error) {
         const errorMessage =
