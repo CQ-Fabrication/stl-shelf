@@ -190,11 +190,11 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
       <CardContent className="flex flex-grow flex-col">
         {/* Thumbnail preview - clean, no overlays */}
         <div className="mb-3">
-          <div className="aspect-video overflow-hidden rounded-md bg-muted transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
+          <div className="aspect-video overflow-hidden rounded-md bg-muted p-2 transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
             {model.thumbnailUrl ? (
               <img
                 alt={`Preview of ${model.name}`}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
                 height={360}
                 loading="lazy"
                 src={model.thumbnailUrl}
