@@ -15,7 +15,6 @@ import {
   getCompletenessStatus,
 } from "@/lib/files/completeness";
 import { getFileSizeLimit, formatBytes } from "@/lib/files/limits";
-import { canEditModel, type Role } from "@/lib/permissions";
 import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { assertWriteAllowed } from "@/server/services/billing/retention.service";
@@ -37,35 +36,6 @@ const removeVersionThumbnailSchema = z.object({
 const getVersionCompletenessSchema = z.object({
   versionId: z.string().uuid(),
 });
-
-// Mirrors models.ts canEditModel gating: admins can edit any model in the org,
-// members only their own. Resolves the owning model from a version id.
-async function assertCanEditVersionModel(
-  versionId: string,
-  context: AuthenticatedContext,
-): Promise<void> {
-  const [model] = await db
-    .select({ ownerId: models.ownerId })
-    .from(modelVersions)
-    .innerJoin(models, eq(models.id, modelVersions.modelId))
-    .where(
-      and(
-        eq(modelVersions.id, versionId),
-        eq(models.organizationId, context.organizationId),
-        isNull(models.deletedAt),
-      ),
-    )
-    .limit(1);
-
-  if (!model) {
-    throw new Error("Model not found");
-  }
-
-  const isOwnModel = model.ownerId === context.userId;
-  if (!canEditModel(context.memberRole as Role, isOwnModel)) {
-    throw new Error("You don't have permission to edit this model");
-  }
-}
 
 export const addFileToVersion = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => {
@@ -315,7 +285,7 @@ export const replaceVersionThumbnail = createServerFn({ method: "POST" })
           accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
         });
 
-        await assertCanEditVersionModel(data.versionId, context);
+        await assertCanEditModelOfVersion(data.versionId, context);
 
         const validation = validatePreviewImage(data.image);
         if (!validation.ok) {
@@ -381,7 +351,7 @@ export const removeVersionThumbnail = createServerFn({ method: "POST" })
           accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
         });
 
-        await assertCanEditVersionModel(data.versionId, context);
+        await assertCanEditModelOfVersion(data.versionId, context);
 
         const result = await modelFileService.removeVersionThumbnail({
           versionId: data.versionId,

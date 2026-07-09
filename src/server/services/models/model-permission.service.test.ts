@@ -18,10 +18,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import {
-  assertCanEditModelOfFile,
-  assertCanEditModelOfVersion,
-} from "./model-permission.service";
+import { assertCanEditModelOfFile, assertCanEditModelOfVersion } from "./model-permission.service";
 
 const ORG = "org_1";
 const OWNER_ID = "user_owner";
