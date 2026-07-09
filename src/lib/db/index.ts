@@ -16,6 +16,7 @@ import {
   verification as authVerification,
 } from "./schema/auth";
 import {
+  modelFileEvents,
   modelFiles,
   modelFilesRelations,
   models,
@@ -61,6 +62,7 @@ export const schema = {
   models,
   modelVersions,
   modelFiles,
+  modelFileEvents,
   printProfiles,
   tags,
   tagTypes,

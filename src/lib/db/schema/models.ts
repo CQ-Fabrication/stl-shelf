@@ -140,6 +140,34 @@ export const modelFiles = pgTable(
   ],
 );
 
+// Append-only audit trail for hard-deleted model files. Intentionally has no
+// foreign keys: tombstones must survive cascade deletes of files, versions,
+// models, and organizations.
+export const modelFileEvents = pgTable(
+  "model_file_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    event: text("event").notNull(),
+    fileId: uuid("file_id").notNull(),
+    versionId: uuid("version_id").notNull(),
+    modelId: uuid("model_id").notNull(),
+    organizationId: text("organization_id").notNull(),
+    filename: text("filename").notNull(),
+    originalName: text("original_name").notNull(),
+    extension: text("extension").notNull(),
+    size: integer("size").notNull(),
+    storageKey: text("storage_key").notNull(),
+    actorId: text("actor_id").notNull(),
+    ipAddress: text("ip_address"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("model_file_events_org_idx").on(table.organizationId),
+    index("model_file_events_file_idx").on(table.fileId),
+    index("model_file_events_storage_key_idx").on(table.storageKey),
+  ],
+);
+
 export const tagTypes = pgTable(
   "tag_types",
   {

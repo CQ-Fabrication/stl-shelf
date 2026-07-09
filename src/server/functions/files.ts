@@ -258,6 +258,8 @@ export const removeFileFromVersion = createServerFn({ method: "POST" })
         const result = await modelFileService.removeFileFromVersion({
           fileId: data.fileId,
           organizationId: context.organizationId,
+          userId: context.userId,
+          ipAddress: context.ipAddress,
         });
 
         logAuditEvent("model.file_removed", {

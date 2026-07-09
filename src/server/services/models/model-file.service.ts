@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
+import { modelFileEvents, modelFiles, models, modelVersions } from "@/lib/db/schema/models";
 import {
   type CompletenessCategory,
   canAddToCategory,
@@ -55,6 +55,8 @@ export type AddFileToVersionResult = {
 export type RemoveFileFromVersionInput = {
   fileId: string;
   organizationId: string;
+  userId: string;
+  ipAddress?: string | null;
 };
 
 export class ModelFileService {
@@ -247,7 +249,25 @@ export class ModelFileService {
       console.error("Failed to delete file from storage:", err);
     });
 
-    await db.delete(modelFiles).where(eq(modelFiles.id, input.fileId));
+    // Tombstone in the same transaction as the delete: a removed file must
+    // always leave a queryable trace of what was deleted, by whom, and when.
+    await db.transaction(async (tx) => {
+      await tx.insert(modelFileEvents).values({
+        event: "removed",
+        fileId: file.id,
+        versionId: file.versionId,
+        modelId: file.version.model.id,
+        organizationId: input.organizationId,
+        filename: file.filename,
+        originalName: file.originalName,
+        extension: file.extension,
+        size: file.size,
+        storageKey: file.storageKey,
+        actorId: input.userId,
+        ipAddress: input.ipAddress ?? null,
+      });
+      await tx.delete(modelFiles).where(eq(modelFiles.id, input.fileId));
+    });
 
     const timestamp = new Date();
 
