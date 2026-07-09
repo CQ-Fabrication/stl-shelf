@@ -1,4 +1,4 @@
-import type { Sql } from "postgres";
+import type { Sql, TransactionSql } from "postgres";
 
 /**
  * Custom migration runner core, used by scripts/migrate.ts.
@@ -81,25 +81,31 @@ async function applyMigration(sql: Sql, migration: MigrationFile): Promise<void>
   if (runsOutsideTransaction(migration)) {
     // CONCURRENTLY forbids a surrounding transaction, so every statement runs
     // in autocommit mode with no rollback on failure. The migration guidelines
-    // require such migrations to be fully idempotent (IF NOT EXISTS / IF EXISTS).
+    // require such migrations to be fully idempotent (IF NOT EXISTS / IF EXISTS),
+    // which also makes the rerun safe if the bookkeeping insert below fails.
     for (const statement of statements) {
       await sql.unsafe(statement);
     }
+    await recordMigration(sql, migration);
     return;
   }
 
+  // DDL and bookkeeping commit atomically: if the record insert fails, the
+  // whole migration rolls back and the next start can rerun it cleanly —
+  // otherwise a committed CREATE TABLE would be retried and crash the boot.
   await sql.begin(async (tx) => {
     for (const statement of statements) {
       await tx.unsafe(statement);
     }
+    await recordMigration(tx, migration);
   });
 }
 
-async function recordMigration(sql: Sql, migration: MigrationFile): Promise<void> {
-  await sql`
-    INSERT INTO "drizzle"."__drizzle_migrations" (hash, created_at)
-    VALUES (${migration.hash}, ${migration.whenMs})
-  `;
+async function recordMigration(sql: Sql | TransactionSql, migration: MigrationFile): Promise<void> {
+  await sql.unsafe(
+    'INSERT INTO "drizzle"."__drizzle_migrations" (hash, created_at) VALUES ($1, $2)',
+    [migration.hash, migration.whenMs],
+  );
 }
 
 export interface MigrateResult {
@@ -125,7 +131,6 @@ export async function runMigrations(
       : "in transaction";
     log(`[migrate] applying ${migration.tag} (${mode})`);
     await applyMigration(sql, migration);
-    await recordMigration(sql, migration);
   }
 
   return { applied: pending.map((migration) => migration.tag) };
