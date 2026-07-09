@@ -3,6 +3,7 @@ import { Calendar, HardDrive, ImageIcon, PenLine } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PreviewImageManager } from "@/components/model-detail/preview-image-manager";
 import { TagEditor } from "@/components/model-detail/tag-editor";
 import { formatDate, formatFileSize } from "@/utils/formatters";
 import { getModel, getModelTags, getModelVersions } from "@/server/functions/models";
@@ -59,22 +60,18 @@ export const ModelInfoCard = ({ modelId, versionId }: ModelInfoCardProps) => {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Thumbnail Preview */}
-        {activeVersion?.thumbnailUrl && (
+        {activeVersion && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium text-sm">Preview</span>
             </div>
-            <div className="overflow-hidden rounded-lg border">
-              <img
-                alt={`Preview of ${model.name}`}
-                className="aspect-video w-full object-cover"
-                height={360}
-                loading="lazy"
-                src={activeVersion.thumbnailUrl}
-                width={640}
-              />
-            </div>
+            <PreviewImageManager
+              modelId={modelId}
+              modelName={model.name}
+              thumbnailUrl={activeVersion.thumbnailUrl ?? null}
+              versionId={activeVersion.id}
+            />
           </div>
         )}
 
