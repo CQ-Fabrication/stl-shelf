@@ -110,12 +110,19 @@ export class TagService {
     });
   }
 
-  async removeTagsFromModel(modelId: string, tagNames: string[]): Promise<void> {
+  async removeTagsFromModel(
+    modelId: string,
+    tagNames: string[],
+    organizationId: string,
+  ): Promise<void> {
     if (tagNames.length === 0) {
       return;
     }
 
-    const tagData = await db.select({ id: tags.id }).from(tags).where(inArray(tags.name, tagNames));
+    const tagData = await db
+      .select({ id: tags.id })
+      .from(tags)
+      .where(and(eq(tags.organizationId, organizationId), inArray(tags.name, tagNames)));
 
     const tagIds = tagData.map((tag) => tag.id);
 
