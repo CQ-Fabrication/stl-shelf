@@ -40,6 +40,7 @@ type SourceFilesSectionProps = {
   versionId: string;
   files: FileData[];
   hasThumbnail: boolean;
+  canEdit: boolean;
   onFilesChanged: () => void;
 };
 
@@ -48,6 +49,7 @@ export const SourceFilesSection = ({
   versionId,
   files,
   hasThumbnail,
+  canEdit,
   onFilesChanged,
 }: SourceFilesSectionProps) => {
   const queryClient = useQueryClient();
@@ -209,7 +211,7 @@ export const SourceFilesSection = ({
                         <span className="text-muted-foreground text-xs">
                           {formatFileSize(file.size)}
                         </span>
-                        {removal.allowed && (
+                        {canEdit && removal.allowed && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -240,15 +242,17 @@ export const SourceFilesSection = ({
       )}
 
       {/* Add Files Section */}
-      <AddFilesSection
-        completenessOptions={completenessOptions}
-        files={completenessFiles}
-        onAddFile={handleAddFile}
-        status={completenessStatus}
-      />
+      {canEdit && (
+        <AddFilesSection
+          completenessOptions={completenessOptions}
+          files={completenessFiles}
+          onAddFile={handleAddFile}
+          status={completenessStatus}
+        />
+      )}
 
       {/* Add File Sheet */}
-      {addFileCategory && (
+      {canEdit && addFileCategory && (
         <AddFileSheet
           category={addFileCategory}
           onOpenChange={(open) => !open && setAddFileCategory(null)}
