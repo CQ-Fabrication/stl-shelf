@@ -41,6 +41,7 @@ import {
   recomputeThumbnailKey,
   removedFileWasThumbnailSource,
   selectThumbnailCandidate,
+  validatePreviewImage,
   validateSnapshot,
 } from "./thumbnail.service";
 
@@ -130,6 +131,41 @@ describe("validateSnapshot", () => {
 
   it("rejects a png over the 2MB limit", () => {
     const result = validateSnapshot(snapshotFile("image/png", 2 * 1024 * 1024 + 1));
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("validatePreviewImage", () => {
+  const imageFile = (type: string, size: number): File => ({ type, size }) as unknown as File;
+
+  it("accepts a jpeg and maps it to the jpg extension", () => {
+    expect(validatePreviewImage(imageFile("image/jpeg", 1000))).toEqual({
+      ok: true,
+      extension: "jpg",
+    });
+  });
+
+  it("accepts a png", () => {
+    expect(validatePreviewImage(imageFile("image/png", 1000))).toEqual({
+      ok: true,
+      extension: "png",
+    });
+  });
+
+  it("accepts a webp exactly at the 10MB limit", () => {
+    expect(validatePreviewImage(imageFile("image/webp", 10 * 1024 * 1024))).toEqual({
+      ok: true,
+      extension: "webp",
+    });
+  });
+
+  it("rejects an unsupported type", () => {
+    const result = validatePreviewImage(imageFile("image/gif", 1000));
+    expect(result.ok).toBe(false);
+  });
+
+  it("rejects an image over the 10MB limit", () => {
+    const result = validatePreviewImage(imageFile("image/png", 10 * 1024 * 1024 + 1));
     expect(result.ok).toBe(false);
   });
 });

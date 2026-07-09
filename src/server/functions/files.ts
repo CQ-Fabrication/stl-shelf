@@ -19,10 +19,14 @@ import type { AuthenticatedContext } from "@/server/middleware/auth";
 import { authMiddleware } from "@/server/middleware/auth";
 import { assertWriteAllowed } from "@/server/services/billing/retention.service";
 import { modelFileService } from "@/server/services/models/model-file.service";
-import { validateSnapshot } from "@/server/services/models/thumbnail.service";
+import { validatePreviewImage, validateSnapshot } from "@/server/services/models/thumbnail.service";
 
 const removeFileFromVersionSchema = z.object({
   fileId: z.string().uuid(),
+});
+
+const removeVersionThumbnailSchema = z.object({
+  versionId: z.string().uuid(),
 });
 
 const getVersionCompletenessSchema = z.object({
@@ -221,6 +225,143 @@ export const setGeneratedThumbnail = createServerFn({ method: "POST" })
           };
           captureServerException(error, errorContext);
           logErrorEvent("error.file.thumbnail_generation_failed", {
+            ...errorContext,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
+    },
+  );
+
+export const replaceVersionThumbnail = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => {
+    if (!(input instanceof FormData)) {
+      throw new Error("Expected FormData");
+    }
+    const versionId = input.get("versionId") as string;
+    const image = input.get("image") as File | null;
+
+    if (!versionId) {
+      throw new Error("Version ID is required");
+    }
+
+    if (!image) {
+      throw new Error("Image is required");
+    }
+
+    return { versionId, image };
+  })
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: { versionId: string; image: File };
+      context: AuthenticatedContext;
+    }) => {
+      try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
+        const validation = validatePreviewImage(data.image);
+        if (!validation.ok) {
+          throw new Error(validation.reason);
+        }
+
+        const result = await modelFileService.replaceVersionThumbnail({
+          versionId: data.versionId,
+          organizationId: context.organizationId,
+          image: data.image,
+          extension: validation.extension,
+        });
+
+        logAuditEvent("model.thumbnail_replaced", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          versionId: data.versionId,
+          ipAddress: context.ipAddress,
+        });
+
+        return result;
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          const errorContext = {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            versionId: data.versionId,
+            ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.file.thumbnail_replace_failed", {
+            ...errorContext,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
+    },
+  );
+
+export const removeVersionThumbnail = createServerFn({ method: "POST" })
+  .inputValidator(zodValidator(removeVersionThumbnailSchema))
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof removeVersionThumbnailSchema>;
+      context: AuthenticatedContext;
+    }) => {
+      try {
+        const org = await db.query.organization.findFirst({
+          where: eq(organization.id, context.organizationId),
+        });
+
+        if (!org) {
+          throw new Error("Organization not found");
+        }
+
+        assertWriteAllowed({
+          graceDeadline: org.graceDeadline,
+          accountDeletionDeadline: org.accountDeletionDeadline ?? context.accountDeletionDeadline,
+        });
+
+        const result = await modelFileService.removeVersionThumbnail({
+          versionId: data.versionId,
+          organizationId: context.organizationId,
+        });
+
+        logAuditEvent("model.thumbnail_removed", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          versionId: data.versionId,
+          ipAddress: context.ipAddress,
+        });
+
+        return result;
+      } catch (error) {
+        if (shouldLogServerError(error)) {
+          const errorContext = {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            versionId: data.versionId,
+            ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.file.thumbnail_remove_failed", {
             ...errorContext,
             ...getErrorDetails(error),
           });

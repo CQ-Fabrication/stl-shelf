@@ -365,6 +365,104 @@ export class ModelFileService {
     return { success: true, skipped: false };
   }
 
+  /**
+   * Replace a version's thumbnail with an explicitly uploaded preview image.
+   * Overwrites the `artifacts/preview.<ext>` slot unconditionally (this is a
+   * deliberate user action, unlike passive snapshots) and bumps updatedAt on
+   * both the version and the model so the library reflects the change.
+   */
+  async replaceVersionThumbnail(input: {
+    versionId: string;
+    organizationId: string;
+    image: File;
+    extension: string;
+  }): Promise<{ success: true; thumbnailPath: string }> {
+    const version = await db.query.modelVersions.findFirst({
+      where: eq(modelVersions.id, input.versionId),
+      with: {
+        model: {
+          columns: { id: true, organizationId: true },
+        },
+      },
+    });
+
+    if (!version || version.model.organizationId !== input.organizationId) {
+      throw new Error("Version not found or access denied");
+    }
+
+    const storageKey = storageService.generateStorageKey({
+      organizationId: input.organizationId,
+      modelId: version.model.id,
+      version: version.version,
+      filename: `preview.${input.extension}`,
+      kind: "artifact",
+    });
+
+    await storageService.uploadFile({
+      key: storageKey,
+      file: input.image,
+      contentType: input.image.type,
+    });
+
+    const timestamp = new Date();
+
+    await db
+      .update(modelVersions)
+      .set({ thumbnailPath: storageKey, updatedAt: timestamp })
+      .where(eq(modelVersions.id, input.versionId));
+
+    await db.update(models).set({ updatedAt: timestamp }).where(eq(models.id, version.model.id));
+
+    return { success: true, thumbnailPath: storageKey };
+  }
+
+  /**
+   * Clear a version's explicit thumbnail and fall back to an auto-derived one.
+   * Recomputes from the version's remaining files (image → 3MF preview → null);
+   * a null result leaves the version with no thumbnail so the viewer can
+   * regenerate a snapshot on the next visit. Explicit action → bump updatedAt.
+   */
+  async removeVersionThumbnail(input: {
+    versionId: string;
+    organizationId: string;
+  }): Promise<{ success: true; thumbnailPath: string | null }> {
+    const version = await db.query.modelVersions.findFirst({
+      where: eq(modelVersions.id, input.versionId),
+      with: {
+        model: {
+          columns: { id: true, organizationId: true },
+        },
+      },
+    });
+
+    if (!version || version.model.organizationId !== input.organizationId) {
+      throw new Error("Version not found or access denied");
+    }
+
+    const files = await db.query.modelFiles.findMany({
+      where: eq(modelFiles.versionId, input.versionId),
+      columns: { extension: true, storageKey: true },
+    });
+
+    const thumbnailKey = await recomputeThumbnailKey({
+      files,
+      organizationId: input.organizationId,
+      modelId: version.model.id,
+      version: version.version,
+    });
+
+    const timestamp = new Date();
+
+    await db
+      .update(modelVersions)
+      .set({ thumbnailPath: thumbnailKey, updatedAt: timestamp })
+      .where(eq(modelVersions.id, input.versionId));
+
+    await db.update(models).set({ updatedAt: timestamp }).where(eq(models.id, version.model.id));
+
+    return { success: true, thumbnailPath: thumbnailKey };
+  }
+
   async getVersionFiles(versionId: string) {
     return db.query.modelFiles.findMany({
       where: eq(modelFiles.versionId, versionId),
