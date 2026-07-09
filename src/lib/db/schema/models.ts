@@ -125,6 +125,9 @@ export const modelFiles = pgTable(
       processed: boolean;
       processedAt?: string;
       processingErrors?: string[];
+      uploadedAt?: string;
+      uploadedBy?: string;
+      uploadedIp?: string;
     }>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

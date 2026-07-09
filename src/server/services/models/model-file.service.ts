@@ -122,6 +122,9 @@ export class ModelFileService {
           storageUrl: storageService.getFileUrl(storageKey),
           fileMetadata: {
             processed: false,
+            uploadedAt: timestamp.toISOString(),
+            uploadedBy: input.userId,
+            uploadedIp: input.ipAddress ?? undefined,
           },
           createdAt: timestamp,
           updatedAt: timestamp,
