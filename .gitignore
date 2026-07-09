@@ -24,3 +24,6 @@ output/chrome-tests/
 
 # Yaak API collection
 yaak-collection/
+
+# Agent worktrees (nested checkouts, not part of this tree)
+.claude/worktrees/
