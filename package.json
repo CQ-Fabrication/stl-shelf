@@ -15,7 +15,7 @@
     "check-types": "tsgo --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "bun run scripts/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "for f in drizzle/seeds/*.sql; do psql $DATABASE_URL -f $f; done",
