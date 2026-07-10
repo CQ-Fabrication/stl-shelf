@@ -2,6 +2,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organization } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
+import { tagService } from "@/server/services/tags/tag.service";
 
 type DeleteModelInput = {
   modelId: string;
@@ -10,7 +11,7 @@ type DeleteModelInput = {
 
 /**
  * Soft delete a model by setting deletedAt timestamp
- * Also decrements usage counters (storage and model count)
+ * Also decrements usage counters (storage, model count, tag usage)
  */
 export async function deleteModel({
   modelId,
@@ -57,6 +58,8 @@ export async function deleteModel({
       currentStorage: sql`GREATEST(${organization.currentStorage} - ${storageToFree}, 0)`,
     })
     .where(eq(organization.id, organizationId));
+
+  await tagService.recountTagsForModel(modelId);
 
   return { deletedId: modelId };
 }
