@@ -43,23 +43,28 @@ export async function deleteModel({
 
   const storageToFree = storageResult?.totalStorage ?? 0;
 
-  await db
-    .update(models)
-    .set({
-      deletedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(models.id, modelId));
+  // Soft delete + counter updates + tag recount share one transaction so the
+  // tag row locks taken in recountTagsForModel serialize against concurrent
+  // tag edits, keeping usageCount exact under READ COMMITTED.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(models)
+      .set({
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(models.id, modelId));
 
-  await db
-    .update(organization)
-    .set({
-      currentModelCount: sql`GREATEST(${organization.currentModelCount} - 1, 0)`,
-      currentStorage: sql`GREATEST(${organization.currentStorage} - ${storageToFree}, 0)`,
-    })
-    .where(eq(organization.id, organizationId));
+    await tx
+      .update(organization)
+      .set({
+        currentModelCount: sql`GREATEST(${organization.currentModelCount} - 1, 0)`,
+        currentStorage: sql`GREATEST(${organization.currentStorage} - ${storageToFree}, 0)`,
+      })
+      .where(eq(organization.id, organizationId));
 
-  await tagService.recountTagsForModel(modelId);
+    await tagService.recountTagsForModel(modelId, tx);
+  });
 
   return { deletedId: modelId };
 }

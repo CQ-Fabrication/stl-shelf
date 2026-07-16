@@ -189,6 +189,36 @@ describe("backfill migration", () => {
   });
 });
 
+// The FOR UPDATE locks that serialize concurrent recounts can't reproduce the
+// true race here: PGlite is single-connection, so two overlapping transactions
+// can't run. These assert the locked flow still yields exact counts on the
+// serial path; the concurrent race is verified empirically against real
+// Postgres (see the PR description).
+describe("tag row locking (serial flow)", () => {
+  it("keeps counts exact across add / remove / update / soft-delete", async () => {
+    await tagService.addTagsToModel(MODEL_A, ["benchy"], ORG);
+    await tagService.addTagsToModel(MODEL_B, ["benchy"], ORG);
+    expect(await getUsageCount("benchy")).toBe(2);
+
+    await tagService.removeTagsFromModel(MODEL_A, ["benchy"], ORG);
+    expect(await getUsageCount("benchy")).toBe(1);
+
+    await tagService.updateModelTags(MODEL_A, ["benchy"], ORG);
+    expect(await getUsageCount("benchy")).toBe(2);
+
+    await db.update(models).set({ deletedAt: new Date() }).where(eq(models.id, MODEL_B));
+    await tagService.recountTagsForModel(MODEL_B);
+    expect(await getUsageCount("benchy")).toBe(1);
+  });
+
+  it("addTagsToModel opens its own transaction when none is passed", async () => {
+    await tagService.addTagsToModel(MODEL_A, ["benchy", "boat"], ORG);
+
+    expect(await getUsageCount("benchy")).toBe(1);
+    expect(await getUsageCount("boat")).toBe(1);
+  });
+});
+
 describe("modelTags links", () => {
   it("updateModelTags replaces the link set", async () => {
     await tagService.addTagsToModel(MODEL_A, ["benchy", "boat"], ORG);
