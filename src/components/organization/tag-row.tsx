@@ -15,8 +15,8 @@ import { cn } from "@/lib/utils";
 import { useUpdateTagColor, type OrgTag } from "@/hooks/use-org-tags";
 import { TagColorPicker } from "./tag-color-picker";
 import { TagDeleteDialog } from "./tag-delete-dialog";
+import { TagEditDialog } from "./tag-edit-dialog";
 import { TagMergeDialog } from "./tag-merge-dialog";
-import { TagRenameDialog } from "./tag-rename-dialog";
 
 type TagRowProps = {
   tag: OrgTag;
@@ -30,7 +30,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 export function TagRow({ tag, allTags }: TagRowProps) {
-  const [dialog, setDialog] = useState<"rename" | "merge" | "delete" | null>(null);
+  const [dialog, setDialog] = useState<"edit" | "merge" | "delete" | null>(null);
   const colorMutation = useUpdateTagColor();
   const { client } = useOpenPanelClient();
   const isOrphan = tag.usageCount === 0;
@@ -90,9 +90,9 @@ export function TagRow({ tag, allTags }: TagRowProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setDialog("rename")}>
+            <DropdownMenuItem onClick={() => setDialog("edit")}>
               <Pencil className="mr-2 h-4 w-4" />
-              Rename
+              Edit
             </DropdownMenuItem>
             <DropdownMenuItem disabled={allTags.length < 2} onClick={() => setDialog("merge")}>
               <GitMerge className="mr-2 h-4 w-4" />
@@ -106,8 +106,8 @@ export function TagRow({ tag, allTags }: TagRowProps) {
         </DropdownMenu>
       </div>
 
-      {dialog === "rename" && (
-        <TagRenameDialog onOpenChange={(open) => !open && setDialog(null)} open tag={tag} />
+      {dialog === "edit" && (
+        <TagEditDialog onOpenChange={(open) => !open && setDialog(null)} open tag={tag} />
       )}
       {dialog === "merge" && (
         <TagMergeDialog

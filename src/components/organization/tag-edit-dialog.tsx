@@ -14,26 +14,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trackTagManagerAction } from "@/lib/openpanel/client-events";
 import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
-import { useMergeTags, useRenameTag, type OrgTag } from "@/hooks/use-org-tags";
+import { useMergeTags, useRenameTag, useUpdateTagColor, type OrgTag } from "@/hooks/use-org-tags";
+import { isValidTagColor, randomTagColor, TagColorField } from "./tag-color-field";
 
-type TagRenameDialogProps = {
+type TagEditDialogProps = {
   tag: OrgTag;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-export function TagRenameDialog({ tag, open, onOpenChange }: TagRenameDialogProps) {
+export function TagEditDialog({ tag, open, onOpenChange }: TagEditDialogProps) {
   const [name, setName] = useState(tag.name);
+  // Colorless tags get a random suggestion so the field is always actionable.
+  const [color, setColor] = useState<string>(tag.color ?? randomTagColor());
   // When a rename collides with an existing tag we hold its id here and offer a
   // merge instead of surfacing a raw unique-constraint failure.
   const [collisionTargetId, setCollisionTargetId] = useState<string | null>(null);
 
   const renameMutation = useRenameTag();
+  const colorMutation = useUpdateTagColor();
   const mergeMutation = useMergeTags();
   const { client } = useOpenPanelClient();
 
   const reset = () => {
     setName(tag.name);
+    setColor(tag.color ?? randomTagColor());
     setCollisionTargetId(null);
   };
 
@@ -43,10 +48,39 @@ export function TagRenameDialog({ tag, open, onOpenChange }: TagRenameDialogProp
   };
 
   const trimmed = name.trim();
-  const collisionName = trimmed.toLowerCase();
+  const normalizedName = trimmed.toLowerCase();
+  const normalizedColor = color.trim().toLowerCase();
+  const isValidHex = isValidTagColor(color);
 
-  const handleRename = () => {
+  const nameChanged = trimmed.length > 0 && normalizedName !== tag.name.toLowerCase();
+  const colorChanged = normalizedColor !== (tag.color ?? "").toLowerCase();
+
+  const isPending = renameMutation.isPending || colorMutation.isPending || mergeMutation.isPending;
+  const isDisabled =
+    trimmed.length === 0 || (!nameChanged && !colorChanged) || !isValidHex || isPending;
+
+  const applyColorOnly = () => {
+    colorMutation.mutate(
+      { tagId: tag.id, color: normalizedColor },
+      {
+        onSuccess: () => {
+          trackTagManagerAction(client, { action: "recolor" });
+          toast.success("Tag color updated");
+          close();
+        },
+        onError: () => toast.error("Failed to update tag color"),
+      },
+    );
+  };
+
+  const handleSave = () => {
     setCollisionTargetId(null);
+
+    if (!nameChanged && colorChanged) {
+      applyColorOnly();
+      return;
+    }
+
     renameMutation.mutate(
       { tagId: tag.id, newName: trimmed },
       {
@@ -55,10 +89,32 @@ export function TagRenameDialog({ tag, open, onOpenChange }: TagRenameDialogProp
             setCollisionTargetId(result.existingTagId ?? null);
             return;
           }
-          if (result.status === "renamed") {
-            trackTagManagerAction(client, { action: "rename" });
-            toast.success(`Renamed to "${collisionName}"`);
+          if (result.status !== "renamed") {
+            close();
+            return;
           }
+
+          trackTagManagerAction(client, { action: "rename" });
+
+          if (colorChanged) {
+            colorMutation.mutate(
+              { tagId: tag.id, color: normalizedColor },
+              {
+                onSuccess: () => {
+                  trackTagManagerAction(client, { action: "recolor" });
+                  toast.success(`Renamed to "${normalizedName}" and recolored`);
+                  close();
+                },
+                onError: () => {
+                  toast.error("Renamed, but failed to update color");
+                  close();
+                },
+              },
+            );
+            return;
+          }
+
+          toast.success(`Renamed to "${normalizedName}"`);
           close();
         },
         onError: () => toast.error("Failed to rename tag"),
@@ -77,7 +133,7 @@ export function TagRenameDialog({ tag, open, onOpenChange }: TagRenameDialogProp
             modelsRelinked: result.modelsRelinked,
           });
           toast.success(
-            `Merged into "${collisionName}" — ${result.modelsRelinked} model${
+            `Merged into "${normalizedName}" — ${result.modelsRelinked} model${
               result.modelsRelinked === 1 ? "" : "s"
             } moved`,
           );
@@ -88,40 +144,39 @@ export function TagRenameDialog({ tag, open, onOpenChange }: TagRenameDialogProp
     );
   };
 
-  const isPending = renameMutation.isPending || mergeMutation.isPending;
-  const isUnchanged = trimmed.length === 0 || collisionName === tag.name.toLowerCase();
-
   return (
     <Dialog onOpenChange={(next) => (next ? onOpenChange(true) : close())} open={open}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Rename tag</DialogTitle>
+          <DialogTitle>Edit tag</DialogTitle>
           <DialogDescription>
             Names are normalized to lowercase. Renaming updates the tag everywhere it's used.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <Label htmlFor="rename-tag-input">Name</Label>
+          <Label htmlFor="edit-tag-input">Name</Label>
           <Input
-            id="rename-tag-input"
+            id="edit-tag-input"
             onChange={(e) => {
               setName(e.target.value);
               setCollisionTargetId(null);
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !isUnchanged && !collisionTargetId) {
+              if (e.key === "Enter" && !isDisabled && !collisionTargetId) {
                 e.preventDefault();
-                handleRename();
+                handleSave();
               }
             }}
             value={name}
           />
         </div>
 
+        <TagColorField id="edit-tag-color" onChange={setColor} value={color} />
+
         {collisionTargetId && (
           <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-            A tag named "{collisionName}" already exists — merge into it instead? This moves this
+            A tag named "{normalizedName}" already exists — merge into it instead? This moves this
             tag's {tag.usageCount} model{tag.usageCount === 1 ? "" : "s"} onto it and deletes "
             {tag.name}".
           </div>
@@ -137,9 +192,11 @@ export function TagRenameDialog({ tag, open, onOpenChange }: TagRenameDialogProp
               Merge instead
             </Button>
           ) : (
-            <Button disabled={isPending || isUnchanged} onClick={handleRename} type="button">
-              {renameMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Rename
+            <Button disabled={isDisabled} onClick={handleSave} type="button">
+              {(renameMutation.isPending || colorMutation.isPending) && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Save
             </Button>
           )}
         </DialogFooter>

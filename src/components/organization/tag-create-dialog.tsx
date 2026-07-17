@@ -1,4 +1,4 @@
-import { Dices, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,34 +15,12 @@ import { Label } from "@/components/ui/label";
 import { trackTagManagerAction } from "@/lib/openpanel/client-events";
 import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { useCreateTag } from "@/hooks/use-org-tags";
+import { isValidTagColor, randomTagColor, TagColorField } from "./tag-color-field";
 
 type TagCreateDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
-
-const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
-
-function hslToHex(h: number, s: number, l: number): string {
-  const sN = s / 100;
-  const lN = l / 100;
-  const a = sN * Math.min(lN, 1 - lN);
-  const channel = (n: number) => {
-    const k = (n + h / 30) % 12;
-    const value = lN - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
-    return Math.round(255 * value)
-      .toString(16)
-      .padStart(2, "0");
-  };
-  return `#${channel(0)}${channel(8)}${channel(4)}`;
-}
-
-// Random hue with fixed pleasant saturation/lightness keeps generated colors
-// usable on both themes (no near-black or blown-out results). The column is
-// nullable but we always send a color so new tags are never colorless.
-function randomTagColor(): string {
-  return hslToHex(Math.floor(Math.random() * 360), 65, 55);
-}
 
 export function TagCreateDialog({ open, onOpenChange }: TagCreateDialogProps) {
   const [name, setName] = useState("");
@@ -68,7 +46,7 @@ export function TagCreateDialog({ open, onOpenChange }: TagCreateDialogProps) {
   const trimmed = name.trim();
   const normalized = trimmed.toLowerCase();
   const normalizedColor = color.trim().toLowerCase();
-  const isValidHex = HEX_PATTERN.test(normalizedColor);
+  const isValidHex = isValidTagColor(color);
 
   const handleCreate = () => {
     setTakenName(null);
@@ -120,34 +98,7 @@ export function TagCreateDialog({ open, onOpenChange }: TagCreateDialogProps) {
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="create-tag-color">Color</Label>
-          <div className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className="h-9 w-9 shrink-0 rounded-md border border-black/10"
-              style={isValidHex ? { backgroundColor: normalizedColor } : undefined}
-            />
-            <Input
-              className="font-mono"
-              id="create-tag-color"
-              maxLength={7}
-              onChange={(e) => setColor(e.target.value)}
-              placeholder="#rrggbb"
-              value={color}
-            />
-            <Button
-              aria-label="Random color"
-              className="shrink-0"
-              onClick={() => setColor(randomTagColor())}
-              size="icon"
-              type="button"
-              variant="outline"
-            >
-              <Dices className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <TagColorField id="create-tag-color" onChange={setColor} value={color} />
 
         {takenName && (
           <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
