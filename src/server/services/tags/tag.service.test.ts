@@ -247,13 +247,11 @@ describe("modelTags links", () => {
     await tagService.updateModelTags(MODEL_A, ["calibration"], ORG);
 
     const links = await db
-      .select({ tagId: modelTags.tagId })
+      .select({ tagName: tags.name })
       .from(modelTags)
+      .innerJoin(tags, eq(tags.id, modelTags.tagId))
       .where(eq(modelTags.modelId, MODEL_A));
-    expect(links).toHaveLength(1);
-
-    const modelTagNames = await tagService.getModelTags(MODEL_A);
-    expect(modelTagNames.map((t) => t.tagName)).toEqual(["calibration"]);
+    expect(links.map((t) => t.tagName)).toEqual(["calibration"]);
   });
 });
 

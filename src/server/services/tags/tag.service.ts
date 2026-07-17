@@ -46,13 +46,6 @@ export class TagNameTakenError extends Error {
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 const normalizeTagName = (name: string): string => name.trim().toLowerCase();
-
-type ModelTagInfo = {
-  tagName: string;
-  tagColor: string | null;
-  tagId: string;
-};
-
 export class TagService {
   async getAllTags(): Promise<TagInfo[]> {
     return await db
@@ -290,18 +283,6 @@ export class TagService {
         )`,
       })
       .where(inArray(tags.id, tagIds));
-  }
-
-  async getModelTags(modelId: string): Promise<ModelTagInfo[]> {
-    return await db
-      .select({
-        tagName: tags.name,
-        tagColor: tags.color,
-        tagId: tags.id,
-      })
-      .from(modelTags)
-      .innerJoin(tags, eq(tags.id, modelTags.tagId))
-      .where(eq(modelTags.modelId, modelId));
   }
 
   /**
