@@ -59,6 +59,15 @@ export function canAccessOrgSettings(role: Role): boolean {
 }
 
 /**
+ * Check if user can manage organization tags (rename, merge, delete, recolor).
+ * These are org-wide destructive operations, so they sit in the same admin+
+ * class as canDeleteModel — members cannot reshape the shared taxonomy.
+ */
+export function canManageTags(role: Role): boolean {
+  return isAtLeast(role, "admin");
+}
+
+/**
  * Check if user can view/manage team members.
  */
 export function canManageTeam(role: Role): boolean {

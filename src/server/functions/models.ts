@@ -53,6 +53,14 @@ const getModelFilesSchema = z.object({
 
 const MAX_TAGS_PER_MODEL = 20;
 
+// Tags are unique per (organizationId, name) at the raw string level, so every
+// path that writes tags must normalize the same way before it dedupes —
+// otherwise case-variant duplicates ("PLA" vs "pla") slip past the index.
+export function normalizeTagNames(names: string[]): string[] {
+  const normalized = names.map((name) => name.trim().toLowerCase()).filter(Boolean);
+  return Array.from(new Set(normalized));
+}
+
 const updateModelTagsSchema = z.object({
   modelId: z.string().uuid(),
   tags: z.array(z.string().min(1).max(64)).max(MAX_TAGS_PER_MODEL),
@@ -266,7 +274,7 @@ export const updateModelTags = createServerFn({ method: "POST" })
     }) => {
       await assertCanEditModel(data.modelId, context);
 
-      const uniqueTags = Array.from(new Set(data.tags));
+      const uniqueTags = normalizeTagNames(data.tags);
       await tagService.updateModelTags(data.modelId, uniqueTags, context.organizationId);
 
       return { success: true };
@@ -287,7 +295,7 @@ export const addModelTag = createServerFn({ method: "POST" })
     }) => {
       await assertCanEditModel(data.modelId, context);
 
-      const tagName = data.tagName.trim().toLowerCase();
+      const [tagName] = normalizeTagNames([data.tagName]);
       if (!tagName) {
         throw new Error("Tag name is required");
       }
@@ -323,7 +331,7 @@ export const removeModelTag = createServerFn({ method: "POST" })
     }) => {
       await assertCanEditModel(data.modelId, context);
 
-      const tagName = data.tagName.trim().toLowerCase();
+      const [tagName] = normalizeTagNames([data.tagName]);
       if (!tagName) {
         throw new Error("Tag name is required");
       }
@@ -426,7 +434,7 @@ export const createModel = createServerFn({ method: "POST" })
           );
         }
 
-        const uniqueTags = Array.from(new Set(data.tags));
+        const uniqueTags = normalizeTagNames(data.tags);
 
         const result = await modelCreationService.createModel({
           organizationId: context.organizationId,

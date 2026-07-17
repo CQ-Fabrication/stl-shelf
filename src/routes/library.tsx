@@ -1,12 +1,13 @@
 import { infiniteQueryOptions } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { listModels, getAllTags, type ModelListCursor } from "@/server/functions/models";
+import { listModels, type ModelListCursor } from "@/server/functions/models";
 import { isConsentRequiredError } from "@/lib/consent-errors";
 import { ModelGrid } from "@/components/models/model-grid";
 import { SearchFilterBar } from "@/components/models/search-filter-bar";
 import { useHasModels, hasModelsQueryOptions } from "@/hooks/use-has-models";
 import { MODELS_QUERY_KEY } from "@/hooks/use-delete-model";
+import { tagsQueryOptions } from "@/hooks/use-all-tags";
 
 // Search params schema for URL state
 // Handle both string and array inputs (TanStack Router may parse [] as array)
@@ -49,12 +50,6 @@ export const modelsQueryOptions = (search?: string, tagsString?: string) => {
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 };
-
-// Query options for tags
-export const tagsQueryOptions = () => ({
-  queryKey: ["tags"],
-  queryFn: () => getAllTags(),
-});
 
 export const Route = createFileRoute("/library")({
   head: () => ({

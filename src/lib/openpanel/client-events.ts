@@ -30,6 +30,8 @@ export const ClientEvent = {
   // Model & Tags
   MODEL_CARD_CLICK: "model_card_click",
   TAG_CLICK: "tag_click",
+  TAG_MANAGER_OPENED: "tag_manager_opened",
+  TAG_MANAGER_ACTION: "tag_manager_action",
 
   // Search Friction
   SEARCH_REFINED: "search_refined",
@@ -186,6 +188,23 @@ export function trackTagClick(client: OpenPanelClient | null, tag: string, sourc
   client?.track(ClientEvent.TAG_CLICK, cleanProperties({ tag, source }));
 }
 
+export function trackTagManagerOpened(
+  client: OpenPanelClient | null,
+  context: { source: "menu" | "tab" | "deeplink" | "library" },
+) {
+  client?.track(ClientEvent.TAG_MANAGER_OPENED, cleanProperties(context));
+}
+
+export function trackTagManagerAction(
+  client: OpenPanelClient | null,
+  context: {
+    action: "create" | "rename" | "merge" | "delete" | "recolor";
+    modelsRelinked?: number;
+  },
+) {
+  client?.track(ClientEvent.TAG_MANAGER_ACTION, cleanProperties(context));
+}
+
 // ============================================================
 // Search Friction Events
 // ============================================================
@@ -266,8 +285,13 @@ export function trackFilterApplied(
   client?.track(ClientEvent.FILTER_APPLIED, { filterType, value });
 }
 
-export function trackSortChanged(client: OpenPanelClient | null, sortBy: string, order: string) {
-  client?.track(ClientEvent.SORT_CHANGED, { sortBy, order });
+export function trackSortChanged(
+  client: OpenPanelClient | null,
+  sortBy: string,
+  order: string,
+  context?: { surface?: string },
+) {
+  client?.track(ClientEvent.SORT_CHANGED, cleanProperties({ sortBy, order, ...context }));
 }
 
 // ============================================================

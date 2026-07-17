@@ -4,7 +4,7 @@ import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { member, organization, session as sessionTable } from "@/lib/db/schema/auth";
-import { isAtLeast, type Role } from "@/lib/permissions";
+import { canManageTags, isAtLeast, type Role } from "@/lib/permissions";
 import { getLiveSession } from "@/server/utils/live-session";
 
 /**
@@ -186,6 +186,7 @@ export const getMemberRoleFn = createServerFn({ method: "GET" }).handler(async (
     canAccessSettings: isAtLeast(role, "admin"),
     canAccessMembers: isAtLeast(role, "admin"),
     canAccessBilling: role === "owner",
+    canManageTags: canManageTags(role),
   };
 });
 

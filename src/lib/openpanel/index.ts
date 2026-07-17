@@ -84,6 +84,8 @@ export {
   trackFeatureInteraction,
   trackModelCardClick,
   trackTagClick,
+  trackTagManagerOpened,
+  trackTagManagerAction,
   trackSearchRefined,
   trackSearchAbandoned,
   trackFrustratedSearchSession,

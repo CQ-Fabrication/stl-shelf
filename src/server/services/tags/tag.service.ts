@@ -1,15 +1,11 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { InferInsertModel } from "drizzle-orm";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { models, modelTags, tags } from "@/lib/db/schema/models";
 
-type InsertTag = InferInsertModel<typeof tags>;
-type SelectTag = InferSelectModel<typeof tags>;
 type InsertModelTag = InferInsertModel<typeof modelTags>;
 
 type DatabaseInstance = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-type CreateTagInput = Omit<InsertTag, "id" | "usageCount" | "createdAt" | "updatedAt">;
 
 export type TagInfo = {
   name: string;
@@ -17,12 +13,40 @@ export type TagInfo = {
   usageCount: number;
 };
 
-type ModelTagInfo = {
-  tagName: string;
-  tagColor: string | null;
-  tagId: string;
+/**
+ * Full tag row for the org tag manager. Unlike TagInfo this carries the id
+ * (needed to target rename/merge/delete/color ops) and createdAt, and includes
+ * orphan tags (usageCount 0) — getAllTagsForOrganization inner-joins model_tags
+ * so it can't surface unused tags.
+ */
+export type ManagedTagInfo = {
+  id: string;
+  name: string;
+  color: string | null;
+  usageCount: number;
+  createdAt: Date;
 };
 
+/**
+ * Thrown by renameTag when another tag in the same org already owns the target
+ * name. Carries the existing tag's id so the caller can offer a merge instead
+ * of surfacing a raw unique-constraint violation. Never auto-merges.
+ */
+export class TagNameTakenError extends Error {
+  readonly code = "TAG_NAME_TAKEN" as const;
+  readonly existingTagId: string;
+
+  constructor(existingTagId: string, name: string) {
+    super(`A tag named "${name}" already exists`);
+    this.name = "TagNameTakenError";
+    this.existingTagId = existingTagId;
+  }
+}
+
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
+const TAG_NAME_MAX = 64;
+
+const normalizeTagName = (name: string): string => name.trim().toLowerCase();
 export class TagService {
   async getAllTags(): Promise<TagInfo[]> {
     return await db
@@ -32,6 +56,24 @@ export class TagService {
         usageCount: tags.usageCount,
       })
       .from(tags)
+      .orderBy(desc(tags.usageCount), asc(tags.name));
+  }
+
+  /**
+   * All tags for an org, including orphans, with ids + createdAt for the tag
+   * manager. usageCount is the denormalized column (reliable post-#50).
+   */
+  async getOrgTags(organizationId: string): Promise<ManagedTagInfo[]> {
+    return await db
+      .select({
+        id: tags.id,
+        name: tags.name,
+        color: tags.color,
+        usageCount: tags.usageCount,
+        createdAt: tags.createdAt,
+      })
+      .from(tags)
+      .where(eq(tags.organizationId, organizationId))
       .orderBy(desc(tags.usageCount), asc(tags.name));
   }
 
@@ -244,30 +286,275 @@ export class TagService {
       .where(inArray(tags.id, tagIds));
   }
 
-  async getModelTags(modelId: string): Promise<ModelTagInfo[]> {
-    return await db
-      .select({
-        tagName: tags.name,
-        tagColor: tags.color,
-        tagId: tags.id,
-      })
+  /**
+   * Count models currently linked to a tag (live count: non-deleted models
+   * only, same convention as recountTags). Used for pre-op impact counts.
+   */
+  async countModelsForTag(tagId: string, tx?: DatabaseInstance): Promise<number> {
+    const dbInstance = tx || db;
+
+    const [row] = await dbInstance
+      .select({ count: sql<number>`count(*)::int` })
       .from(modelTags)
-      .innerJoin(tags, eq(tags.id, modelTags.tagId))
-      .where(eq(modelTags.modelId, modelId));
+      .innerJoin(models, eq(models.id, modelTags.modelId))
+      .where(and(eq(modelTags.tagId, tagId), isNull(models.deletedAt)));
+
+    return row?.count ?? 0;
   }
 
-  async createTag(data: CreateTagInput): Promise<SelectTag> {
-    const [newTag] = await db.insert(tags).values(data).returning();
-
-    if (!newTag) {
-      throw new Error("Failed to create tag");
+  /**
+   * Create a brand-new tag in the org. Normalizes trim/lowercase, rejects empty
+   * names and enforces the 64-char cap (same as every other tag-write path). If
+   * a tag with that name already exists, throws TagNameTakenError (carrying its
+   * id) so the caller can surface a collision — never auto-merges. The new tag
+   * starts at usageCount 0; an optional color must be a #rrggbb hex.
+   *
+   * Only inserts one fresh row, so no other tags need locking (unlike the
+   * link-mutating paths). The duplicate pre-check mirrors renameTag's.
+   */
+  async createTag({
+    organizationId,
+    name,
+    color,
+  }: {
+    organizationId: string;
+    name: string;
+    color?: string;
+  }): Promise<ManagedTagInfo> {
+    const normalized = normalizeTagName(name);
+    if (!normalized) {
+      throw new Error("Tag name is required");
+    }
+    if (normalized.length > TAG_NAME_MAX) {
+      throw new Error(`Tag name must be at most ${TAG_NAME_MAX} characters`);
+    }
+    if (color !== undefined && !HEX_COLOR_PATTERN.test(color)) {
+      throw new Error("Invalid tag color");
     }
 
-    return newTag;
+    return await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select({ id: tags.id })
+        .from(tags)
+        .where(and(eq(tags.organizationId, organizationId), eq(tags.name, normalized)));
+
+      if (existing) {
+        throw new TagNameTakenError(existing.id, normalized);
+      }
+
+      const [created] = await tx
+        .insert(tags)
+        .values({ name: normalized, organizationId, color: color ?? null })
+        .returning({
+          id: tags.id,
+          name: tags.name,
+          color: tags.color,
+          usageCount: tags.usageCount,
+          createdAt: tags.createdAt,
+        });
+
+      if (!created) {
+        throw new Error("Failed to create tag");
+      }
+
+      return created;
+    });
   }
 
-  async deleteTag(id: string): Promise<void> {
-    await db.delete(tags).where(eq(tags.id, id));
+  /**
+   * Rename a tag within its org. Normalizes trim/lowercase. A no-op when the
+   * name is unchanged. If another tag in the org already holds the target name,
+   * throws TagNameTakenError (carrying that tag's id) so the caller can offer a
+   * merge — this never auto-merges.
+   *
+   * Renaming doesn't touch links or usageCount, so there's no recount. The row
+   * is still locked FOR UPDATE to serialize against a concurrent merge/delete
+   * of the same tag.
+   */
+  async renameTag({
+    tagId,
+    newName,
+    organizationId,
+  }: {
+    tagId: string;
+    newName: string;
+    organizationId: string;
+  }): Promise<{ status: "renamed" | "unchanged" }> {
+    const normalized = normalizeTagName(newName);
+    if (!normalized) {
+      throw new Error("Tag name is required");
+    }
+
+    return await db.transaction(async (tx) => {
+      await this.lockTags([tagId], tx);
+
+      const [current] = await tx
+        .select({ id: tags.id, name: tags.name })
+        .from(tags)
+        .where(and(eq(tags.id, tagId), eq(tags.organizationId, organizationId)));
+
+      if (!current) {
+        throw new Error("Tag not found");
+      }
+
+      if (current.name === normalized) {
+        return { status: "unchanged" };
+      }
+
+      const [existing] = await tx
+        .select({ id: tags.id })
+        .from(tags)
+        .where(and(eq(tags.organizationId, organizationId), eq(tags.name, normalized)));
+
+      if (existing) {
+        throw new TagNameTakenError(existing.id, normalized);
+      }
+
+      await tx
+        .update(tags)
+        .set({ name: normalized, updatedAt: new Date() })
+        .where(eq(tags.id, tagId));
+
+      return { status: "renamed" };
+    });
+  }
+
+  /**
+   * Merge the source tag into the target: re-point every source link onto the
+   * target (respecting the unique (model_id, tag_id) index via ON CONFLICT DO
+   * NOTHING), delete the source tag row (cascade drops its now-redundant links),
+   * and recount the target. Both tags must belong to the org and be distinct.
+   *
+   * Returns counts for the confirmation toast: how many models were relinked to
+   * the target vs. how many already carried both tags.
+   */
+  async mergeTags({
+    sourceTagId,
+    targetTagId,
+    organizationId,
+  }: {
+    sourceTagId: string;
+    targetTagId: string;
+    organizationId: string;
+  }): Promise<{ modelsRelinked: number; alreadyHadTarget: number }> {
+    if (sourceTagId === targetTagId) {
+      throw new Error("Cannot merge a tag into itself");
+    }
+
+    return await db.transaction(async (tx) => {
+      // Lock both rows (lockTags sorts by id) before mutating links/recounting.
+      await this.lockTags([sourceTagId, targetTagId], tx);
+
+      const owned = await tx
+        .select({ id: tags.id })
+        .from(tags)
+        .where(
+          and(
+            eq(tags.organizationId, organizationId),
+            inArray(tags.id, [sourceTagId, targetTagId]),
+          ),
+        );
+
+      if (owned.length !== 2) {
+        throw new Error("Tag not found");
+      }
+
+      // Compute relink vs. overlap counts up front (driver-independent, avoids
+      // relying on affected-row counts across pg/pglite).
+      const sourceLinks = await tx
+        .select({ modelId: modelTags.modelId })
+        .from(modelTags)
+        .where(eq(modelTags.tagId, sourceTagId));
+      const targetLinks = await tx
+        .select({ modelId: modelTags.modelId })
+        .from(modelTags)
+        .where(eq(modelTags.tagId, targetTagId));
+
+      const targetModelIds = new Set(targetLinks.map((link) => link.modelId));
+      const alreadyHadTarget = sourceLinks.filter((link) =>
+        targetModelIds.has(link.modelId),
+      ).length;
+      const modelsRelinked = sourceLinks.length - alreadyHadTarget;
+
+      await tx.execute(sql`
+        insert into ${modelTags} (model_id, tag_id)
+        select ${modelTags.modelId}, ${targetTagId}
+        from ${modelTags}
+        where ${modelTags.tagId} = ${sourceTagId}
+        on conflict do nothing
+      `);
+
+      // Deleting the source cascades to its model_tags rows (FK on delete cascade).
+      await tx.delete(tags).where(eq(tags.id, sourceTagId));
+
+      await this.recountTags([targetTagId], tx);
+
+      return { modelsRelinked, alreadyHadTarget };
+    });
+  }
+
+  /**
+   * Delete a tag from its org. Captures the live affected-model count before
+   * deleting so the caller can confirm ("removed from N models"). The row
+   * delete cascades to model_tags; no recount is needed (the tag is gone and
+   * other tags are untouched).
+   */
+  async deleteTag({
+    tagId,
+    organizationId,
+  }: {
+    tagId: string;
+    organizationId: string;
+  }): Promise<{ affectedModels: number }> {
+    return await db.transaction(async (tx) => {
+      await this.lockTags([tagId], tx);
+
+      const [tag] = await tx
+        .select({ id: tags.id })
+        .from(tags)
+        .where(and(eq(tags.id, tagId), eq(tags.organizationId, organizationId)));
+
+      if (!tag) {
+        throw new Error("Tag not found");
+      }
+
+      const affectedModels = await this.countModelsForTag(tagId, tx);
+
+      await tx.delete(tags).where(eq(tags.id, tagId));
+
+      return { affectedModels };
+    });
+  }
+
+  /**
+   * Update a tag's color (org-scoped). Color must be a #rrggbb hex string. No
+   * link mutation, so no lock/recount. Throws when the tag isn't in the org.
+   */
+  async updateTagColor({
+    tagId,
+    color,
+    organizationId,
+  }: {
+    tagId: string;
+    color: string;
+    organizationId: string;
+  }): Promise<void> {
+    if (!HEX_COLOR_PATTERN.test(color)) {
+      throw new Error("Invalid tag color");
+    }
+
+    await db.transaction(async (tx) => {
+      const [tag] = await tx
+        .select({ id: tags.id })
+        .from(tags)
+        .where(and(eq(tags.id, tagId), eq(tags.organizationId, organizationId)));
+
+      if (!tag) {
+        throw new Error("Tag not found");
+      }
+
+      await tx.update(tags).set({ color, updatedAt: new Date() }).where(eq(tags.id, tagId));
+    });
   }
 }
 

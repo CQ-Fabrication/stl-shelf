@@ -1,7 +1,9 @@
-import { Check, ChevronDown, Loader2, Search, Tag, Trash2, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Check, ChevronDown, Loader2, Search, Settings2, Tag, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Route } from "@/routes/library";
 import { useAllTags } from "@/hooks/use-all-tags";
+import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -140,6 +142,7 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
   }, [search.q, search.tags]);
 
   const { tags: allTags } = useAllTags();
+  const { permissions } = usePermissions();
   const selectedTags = draft.tags;
   const localSearch = draft.q;
 
@@ -339,6 +342,19 @@ export function SearchFilterBar({ className }: SearchFilterBarProps) {
                   </CommandGroup>
                 </CommandList>
               </Command>
+              {permissions?.canManageTags && (
+                <>
+                  <Separator />
+                  <Link
+                    className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+                    search={{ tab: "tags", src: "library" }}
+                    to="/organization/settings"
+                  >
+                    <Settings2 className="h-4 w-4" />
+                    Manage tags
+                  </Link>
+                </>
+              )}
             </PopoverContent>
           </Popover>
         </div>

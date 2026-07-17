@@ -13,6 +13,7 @@ export type Permissions = {
   canEditAnyModel: boolean;
   canDeleteModels: boolean;
   canManageAdmins: boolean;
+  canManageTags: boolean;
 };
 
 /**
@@ -45,6 +46,7 @@ export function usePermissions() {
         canEditAnyModel: isAtLeast(role, "admin"),
         canDeleteModels: isAtLeast(role, "admin"),
         canManageAdmins: role === "owner",
+        canManageTags: isAtLeast(role, "admin"),
       } satisfies Permissions;
     },
     enabled: Boolean(session?.user),
