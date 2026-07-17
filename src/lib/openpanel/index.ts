@@ -50,6 +50,9 @@ export {
   trackErrorEncountered,
 } from "./events";
 
+// Server revenue tracking
+export { trackRevenue, trackRefund, type CommerceProperties } from "./server";
+
 // Types
 export type {
   SubscriptionTier,
