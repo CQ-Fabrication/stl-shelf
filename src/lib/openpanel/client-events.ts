@@ -32,6 +32,7 @@ export const ClientEvent = {
   TAG_CLICK: "tag_click",
   TAG_MANAGER_OPENED: "tag_manager_opened",
   TAG_MANAGER_ACTION: "tag_manager_action",
+  ACTIVITY_VIEWED: "activity_viewed",
 
   // Search Friction
   SEARCH_REFINED: "search_refined",
@@ -203,6 +204,10 @@ export function trackTagManagerAction(
   },
 ) {
   client?.track(ClientEvent.TAG_MANAGER_ACTION, cleanProperties(context));
+}
+
+export function trackActivityViewed(client: OpenPanelClient | null) {
+  client?.track(ClientEvent.ACTIVITY_VIEWED);
 }
 
 // ============================================================

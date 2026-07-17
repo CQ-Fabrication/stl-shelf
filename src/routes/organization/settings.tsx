@@ -1,13 +1,14 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Settings, Tags } from "lucide-react";
+import { ArrowLeft, History, Settings, Tags } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OrganizationActivity } from "@/components/organization/activity-feed";
 import { OrganizationSettingsForm } from "@/components/organization/settings-form";
 import { TagManager } from "@/components/organization/tag-manager";
 import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
-import { trackTagManagerOpened } from "@/lib/openpanel/client-events";
+import { trackActivityViewed, trackTagManagerOpened } from "@/lib/openpanel/client-events";
 import { getMemberRoleFn } from "@/server/functions/auth";
 
 export const Route = createFileRoute("/organization/settings")({
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/organization/settings")({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
   }),
   validateSearch: z.object({
-    tab: z.enum(["general", "tags"]).optional(),
+    tab: z.enum(["general", "tags", "activity"]).optional(),
     src: z.enum(["menu", "library"]).optional(),
   }),
   beforeLoad: async () => {
@@ -34,22 +35,31 @@ function OrganizationSettingsPage() {
   const navigate = Route.useNavigate();
   const { client } = useOpenPanelClient();
 
-  // This route component stays mounted across tab switches (TagManager itself
-  // remounts per tab activation, so a ref there wouldn't survive). Fire the
-  // "opened" event once per visit, the first time the Tags tab is active.
+  // This route component stays mounted across tab switches (the tab bodies
+  // remount per activation, so a ref there wouldn't survive). Fire each tab's
+  // "opened"/"viewed" event once per visit, the first time it becomes active.
+  // The two guards are independent: a visit that opens both tabs fires both.
   const hasTrackedOpenRef = useRef(false);
+  const hasTrackedActivityRef = useRef(false);
   const initialTabRef = useRef(tab);
 
   useEffect(() => {
-    if (hasTrackedOpenRef.current || !client || tab !== "tags") return;
+    if (!client) return;
 
-    const source = src ?? (initialTabRef.current === "tags" ? "deeplink" : "tab");
-    trackTagManagerOpened(client, { source });
-    hasTrackedOpenRef.current = true;
+    if (!hasTrackedOpenRef.current && tab === "tags") {
+      const source = src ?? (initialTabRef.current === "tags" ? "deeplink" : "tab");
+      trackTagManagerOpened(client, { source });
+      hasTrackedOpenRef.current = true;
 
-    // Strip the attribution param so a refresh/back doesn't re-report it.
-    if (src) {
-      navigate({ search: { tab: "tags" }, replace: true });
+      // Strip the attribution param so a refresh/back doesn't re-report it.
+      if (src) {
+        navigate({ search: { tab: "tags" }, replace: true });
+      }
+    }
+
+    if (!hasTrackedActivityRef.current && tab === "activity") {
+      trackActivityViewed(client);
+      hasTrackedActivityRef.current = true;
     }
   }, [tab, src, client, navigate]);
 
@@ -69,7 +79,7 @@ function OrganizationSettingsPage() {
         className="w-full"
         onValueChange={(value) =>
           navigate({
-            search: { tab: value === "general" ? undefined : (value as "tags") },
+            search: { tab: value === "general" ? undefined : (value as "tags" | "activity") },
             replace: true,
           })
         }
@@ -84,6 +94,10 @@ function OrganizationSettingsPage() {
             <Tags className="mr-2 h-4 w-4" />
             Tags
           </TabsTrigger>
+          <TabsTrigger value="activity">
+            <History className="mr-2 h-4 w-4" />
+            Activity
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -92,6 +106,10 @@ function OrganizationSettingsPage() {
 
         <TabsContent value="tags">
           <TagManager />
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <OrganizationActivity />
         </TabsContent>
       </Tabs>
     </div>
