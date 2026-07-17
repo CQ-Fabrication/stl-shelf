@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StorageOverviewCard } from "@/components/organization/storage-overview-card";
 
 const nameSchema = z.object({
   name: z.string().min(1, "Organization name is required").max(100, "Name is too long"),
@@ -316,6 +317,9 @@ export function OrganizationSettingsForm() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Storage Overview Section */}
+      <StorageOverviewCard />
     </div>
   );
 }
