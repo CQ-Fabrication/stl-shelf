@@ -58,38 +58,33 @@ export class TagService {
     organizationId: string,
     tx?: DatabaseInstance,
   ): Promise<void> {
-    const dbInstance = tx || db;
-
-    for (const tagName of tagNames) {
-      await dbInstance
-        .insert(tags)
-        .values({
-          name: tagName,
-          organizationId,
-        })
-        .onConflictDoUpdate({
-          target: [tags.organizationId, tags.name],
-          set: {
-            usageCount: sql`${tags.usageCount} + 1`,
-            updatedAt: new Date(),
-          },
-        });
+    if (tagNames.length === 0) {
+      return;
     }
 
-    const tagData = await dbInstance
-      .select({ id: tags.id, name: tags.name })
-      .from(tags)
-      .where(and(eq(tags.organizationId, organizationId), inArray(tags.name, tagNames)));
+    const run = async (dbInstance: DatabaseInstance): Promise<void> => {
+      const tagIds = await this.upsertTagIds(tagNames, organizationId, dbInstance);
+      if (tagIds.length === 0) {
+        return;
+      }
 
-    const modelTagValues: Omit<InsertModelTag, "id" | "createdAt">[] = tagData.map(
-      (tag: { id: string; name: string }) => ({
+      // Lock the affected tags before mutating links + recounting (see lockTags).
+      await this.lockTags(tagIds, dbInstance);
+
+      const modelTagValues: Omit<InsertModelTag, "id" | "createdAt">[] = tagIds.map((tagId) => ({
         modelId,
-        tagId: tag.id,
-      }),
-    );
-
-    if (modelTagValues.length > 0) {
+        tagId,
+      }));
       await dbInstance.insert(modelTags).values(modelTagValues).onConflictDoNothing();
+      await this.recountTags(tagIds, dbInstance);
+    };
+
+    // The lock is only meaningful inside a transaction; open one when the caller
+    // didn't provide it (single-tag add from the router), reuse theirs otherwise.
+    if (tx) {
+      await run(tx);
+    } else {
+      await db.transaction(run);
     }
   }
 
@@ -99,11 +94,32 @@ export class TagService {
     organizationId: string,
   ): Promise<void> {
     await db.transaction(async (tx) => {
+      const previousLinks = await tx
+        .select({ tagId: modelTags.tagId })
+        .from(modelTags)
+        .where(eq(modelTags.modelId, modelId));
+
+      // Resolve the new tag names to ids up front so the full affected set is
+      // known before any link mutation, letting us take the locks first.
+      const newTagIds = await this.upsertTagIds(newTagNames, organizationId, tx);
+
+      const affectedTagIds = [
+        ...new Set([...previousLinks.map((link) => link.tagId), ...newTagIds]),
+      ];
+
+      // Lock the affected tags before mutating links + recounting (see lockTags).
+      await this.lockTags(affectedTagIds, tx);
+
       await tx.delete(modelTags).where(eq(modelTags.modelId, modelId));
 
-      if (newTagNames.length > 0) {
-        await this.addTagsToModel(modelId, newTagNames, organizationId, tx);
+      if (newTagIds.length > 0) {
+        await tx
+          .insert(modelTags)
+          .values(newTagIds.map((tagId) => ({ modelId, tagId })))
+          .onConflictDoNothing();
       }
+
+      await this.recountTags(affectedTagIds, tx);
 
       // Update model's updatedAt to reflect the modification
       await tx.update(models).set({ updatedAt: new Date() }).where(eq(models.id, modelId));
@@ -127,17 +143,105 @@ export class TagService {
     const tagIds = tagData.map((tag) => tag.id);
 
     if (tagIds.length > 0) {
-      await db
-        .delete(modelTags)
-        .where(and(eq(modelTags.modelId, modelId), inArray(modelTags.tagId, tagIds)));
+      await db.transaction(async (tx) => {
+        // Lock the affected tags before mutating links + recounting (see lockTags).
+        await this.lockTags(tagIds, tx);
 
-      await db
-        .update(tags)
-        .set({
-          usageCount: sql`GREATEST(${tags.usageCount} - 1, 0)`,
-        })
-        .where(inArray(tags.id, tagIds));
+        await tx
+          .delete(modelTags)
+          .where(and(eq(modelTags.modelId, modelId), inArray(modelTags.tagId, tagIds)));
+
+        await this.recountTags(tagIds, tx);
+      });
     }
+  }
+
+  /** Recount usage for all tags linked to a model (e.g. after soft delete/restore). */
+  async recountTagsForModel(modelId: string, tx?: DatabaseInstance): Promise<void> {
+    const dbInstance = tx || db;
+
+    const links = await dbInstance
+      .select({ tagId: modelTags.tagId })
+      .from(modelTags)
+      .where(eq(modelTags.modelId, modelId));
+
+    const tagIds = links.map((link) => link.tagId);
+
+    // Lock the affected tags before recounting (see lockTags). The caller runs
+    // the count-affecting mutation (models.deletedAt) inside the same tx.
+    await this.lockTags(tagIds, dbInstance);
+    await this.recountTags(tagIds, dbInstance);
+  }
+
+  /** Upsert tags by name (org-scoped) and return their ids. */
+  private async upsertTagIds(
+    tagNames: string[],
+    organizationId: string,
+    dbInstance: DatabaseInstance,
+  ): Promise<string[]> {
+    if (tagNames.length === 0) {
+      return [];
+    }
+
+    await dbInstance
+      .insert(tags)
+      .values(tagNames.map((name) => ({ name, organizationId })))
+      .onConflictDoNothing({ target: [tags.organizationId, tags.name] });
+
+    const rows = await dbInstance
+      .select({ id: tags.id })
+      .from(tags)
+      .where(and(eq(tags.organizationId, organizationId), inArray(tags.name, tagNames)));
+
+    return rows.map((row) => row.id);
+  }
+
+  /**
+   * Lock the given tag rows FOR UPDATE before mutating model_tags and recounting.
+   *
+   * usageCount is recomputed from live links inside the same transaction that
+   * mutates those links. Under READ COMMITTED a second concurrent edit touching
+   * the same tag can't see the first's uncommitted link changes, so its recount
+   * would store a stale count and reintroduce drift. Taking the row lock first
+   * makes the second transaction block until the first commits; its later
+   * recount then sees the committed truth and counts stay exact.
+   *
+   * ORDER BY id is mandatory: a single, consistent lock order across concurrent
+   * multi-tag operations prevents deadlocks.
+   */
+  private async lockTags(tagIds: string[], dbInstance: DatabaseInstance): Promise<void> {
+    if (tagIds.length === 0) {
+      return;
+    }
+
+    await dbInstance
+      .select({ id: tags.id })
+      .from(tags)
+      .where(inArray(tags.id, tagIds))
+      .orderBy(asc(tags.id))
+      .for("update");
+  }
+
+  /**
+   * usageCount is denormalized; the source of truth is model_tags joined to
+   * non-deleted models (same convention as getAllTagsForOrganization).
+   */
+  private async recountTags(tagIds: string[], dbInstance: DatabaseInstance): Promise<void> {
+    if (tagIds.length === 0) {
+      return;
+    }
+
+    await dbInstance
+      .update(tags)
+      .set({
+        usageCount: sql`(
+          select count(*)::int
+          from ${modelTags}
+          inner join ${models} on ${models.id} = ${modelTags.modelId}
+          where ${modelTags.tagId} = ${tags.id} and ${models.deletedAt} is null
+        )`,
+      })
+      .where(inArray(tags.id, tagIds));
   }
 
   async getModelTags(modelId: string): Promise<ModelTagInfo[]> {
