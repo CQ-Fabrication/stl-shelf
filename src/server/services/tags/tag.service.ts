@@ -14,6 +14,20 @@ export type TagInfo = {
 };
 
 /**
+ * Full tag row for the org tag manager. Unlike TagInfo this carries the id
+ * (needed to target rename/merge/delete/color ops) and createdAt, and includes
+ * orphan tags (usageCount 0) — getAllTagsForOrganization inner-joins model_tags
+ * so it can't surface unused tags.
+ */
+export type ManagedTagInfo = {
+  id: string;
+  name: string;
+  color: string | null;
+  usageCount: number;
+  createdAt: Date;
+};
+
+/**
  * Thrown by renameTag when another tag in the same org already owns the target
  * name. Carries the existing tag's id so the caller can offer a merge instead
  * of surfacing a raw unique-constraint violation. Never auto-merges.
@@ -48,6 +62,24 @@ export class TagService {
         usageCount: tags.usageCount,
       })
       .from(tags)
+      .orderBy(desc(tags.usageCount), asc(tags.name));
+  }
+
+  /**
+   * All tags for an org, including orphans, with ids + createdAt for the tag
+   * manager. usageCount is the denormalized column (reliable post-#50).
+   */
+  async getOrgTags(organizationId: string): Promise<ManagedTagInfo[]> {
+    return await db
+      .select({
+        id: tags.id,
+        name: tags.name,
+        color: tags.color,
+        usageCount: tags.usageCount,
+        createdAt: tags.createdAt,
+      })
+      .from(tags)
+      .where(eq(tags.organizationId, organizationId))
       .orderBy(desc(tags.usageCount), asc(tags.name));
   }
 
