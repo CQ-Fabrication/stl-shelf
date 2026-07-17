@@ -1,9 +1,10 @@
-import { Loader2, Search, Tags } from "lucide-react";
+import { Loader2, Plus, Search, Tags } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useOrgTags, type OrgTag } from "@/hooks/use-org-tags";
+import { TagCreateDialog } from "./tag-create-dialog";
 import { TagRow } from "./tag-row";
 
 // usageCount desc, then name asc — the taxonomy's "biggest first", with a
@@ -16,6 +17,7 @@ export function TagManager() {
   const { data: tags, isLoading, isError } = useOrgTags();
   const [search, setSearch] = useState("");
   const [orphansOnly, setOrphansOnly] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const allTags = useMemo(() => sortTags(tags ?? []), [tags]);
 
@@ -63,12 +65,16 @@ export function TagManager() {
       </CardHeader>
       <CardContent className="space-y-4">
         {allTags.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-12 text-center">
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
             <Tags className="h-8 w-8 text-muted-foreground" />
             <p className="font-medium text-sm">No tags yet</p>
             <p className="text-muted-foreground text-sm">
-              Tags you add to models show up here for management.
+              Create one here, or add tags to models and they'll show up for management.
             </p>
+            <Button className="mt-1" onClick={() => setCreateOpen(true)} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              New tag
+            </Button>
           </div>
         ) : (
           <>
@@ -82,10 +88,15 @@ export function TagManager() {
                   value={search}
                 />
               </div>
+              <Button className="shrink-0" onClick={() => setCreateOpen(true)} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                New tag
+              </Button>
               <Button
                 className="shrink-0"
                 disabled={orphanCount === 0}
                 onClick={() => setOrphansOnly((prev) => !prev)}
+                size="sm"
                 variant={orphansOnly ? "default" : "outline"}
               >
                 Orphans only{orphanCount > 0 ? ` (${orphanCount})` : ""}
@@ -105,6 +116,8 @@ export function TagManager() {
             )}
           </>
         )}
+
+        <TagCreateDialog onOpenChange={setCreateOpen} open={createOpen} />
       </CardContent>
     </Card>
   );

@@ -14,6 +14,14 @@ import { TagNameTakenError, tagService } from "@/server/services/tags/tag.servic
 
 const TAG_NAME_MAX = 64;
 
+const createTagSchema = z.object({
+  name: z.string().min(1).max(TAG_NAME_MAX),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Color must be a #rrggbb hex value")
+    .optional(),
+});
+
 const renameTagSchema = z.object({
   tagId: z.string().uuid(),
   newName: z.string().min(1).max(TAG_NAME_MAX),
@@ -62,6 +70,59 @@ export const getOrgTags = createServerFn({ method: "GET" })
     await assertCanManageTags(context);
     return await tagService.getOrgTags(context.organizationId);
   });
+
+// Create a tag. Returns a discriminated result so the UI can surface a name
+// collision inline instead of failing — the service never auto-merges.
+export const createTag = createServerFn({ method: "POST" })
+  .inputValidator(zodValidator(createTagSchema))
+  .middleware([authMiddleware])
+  .handler(
+    async ({
+      data,
+      context,
+    }: {
+      data: z.infer<typeof createTagSchema>;
+      context: AuthenticatedContext;
+    }) => {
+      await assertCanManageTags(context);
+
+      try {
+        const tag = await tagService.createTag({
+          organizationId: context.organizationId,
+          name: data.name,
+          color: data.color,
+        });
+
+        logAuditEvent("tag.created", {
+          organizationId: context.organizationId,
+          userId: context.userId,
+          ipAddress: context.ipAddress,
+          tagId: tag.id,
+          name: tag.name,
+        });
+
+        return { status: "created" as const, tag };
+      } catch (error) {
+        if (error instanceof TagNameTakenError) {
+          return { status: "name_taken" as const, existingTagId: error.existingTagId };
+        }
+
+        if (shouldLogServerError(error)) {
+          const errorContext = {
+            organizationId: context.organizationId,
+            userId: context.userId,
+            ipAddress: context.ipAddress,
+          };
+          captureServerException(error, errorContext);
+          logErrorEvent("error.tag.create_failed", {
+            ...errorContext,
+            ...getErrorDetails(error),
+          });
+        }
+        throw error;
+      }
+    },
+  );
 
 // Rename a tag. Returns a discriminated result so the UI can offer a merge on a
 // name collision instead of failing — the service never auto-merges.

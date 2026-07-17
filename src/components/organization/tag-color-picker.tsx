@@ -5,26 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-
-// A small, high-contrast preset palette. Users can still type any #rrggbb hex.
-const PRESET_COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#f59e0b",
-  "#eab308",
-  "#84cc16",
-  "#22c55e",
-  "#10b981",
-  "#14b8a6",
-  "#06b6d4",
-  "#3b82f6",
-  "#6366f1",
-  "#8b5cf6",
-  "#a855f7",
-  "#ec4899",
-  "#64748b",
-  "#78716c",
-] as const;
+import { PRESET_COLORS } from "./tag-colors";
 
 const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 

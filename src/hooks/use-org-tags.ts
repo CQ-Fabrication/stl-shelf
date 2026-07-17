@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { MODELS_QUERY_KEY } from "@/hooks/use-delete-model";
 import {
+  createTag,
   deleteTag,
   getOrgTags,
   mergeTags,
@@ -30,6 +31,14 @@ export function useOrgTags() {
   return useQuery({
     queryKey: ORG_TAGS_QUERY_KEY,
     queryFn: () => getOrgTags(),
+  });
+}
+
+export function useCreateTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; color?: string }) => createTag({ data: input }),
+    onSuccess: () => invalidateTagCaches(queryClient),
   });
 }
 

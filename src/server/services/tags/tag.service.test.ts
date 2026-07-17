@@ -259,6 +259,59 @@ describe("modelTags links", () => {
 // serial PGlite path. As with the locking suite above, the true concurrent race
 // can't run here (single connection); the FOR UPDATE serialization is verified
 // empirically against real Postgres per the PR #50 lock convention.
+describe("createTag", () => {
+  it("normalizes the name (trim + lowercase) and starts at usageCount 0", async () => {
+    const created = await tagService.createTag({ organizationId: ORG, name: "  NewTag  " });
+
+    expect(created.name).toBe("newtag");
+    expect(created.usageCount).toBe(0);
+    expect(await getUsageCount("newtag")).toBe(0);
+  });
+
+  it("persists an optional color", async () => {
+    const created = await tagService.createTag({
+      organizationId: ORG,
+      name: "colored",
+      color: "#ff0000",
+    });
+
+    expect(created.color).toBe("#ff0000");
+  });
+
+  it("throws TagNameTakenError carrying the existing id on a duplicate", async () => {
+    await tagService.addTagsToModel(MODEL_A, ["benchy"], ORG);
+    const benchyId = await getTagId("benchy");
+
+    await expect(
+      tagService.createTag({ organizationId: ORG, name: "BENCHY" }),
+    ).rejects.toBeInstanceOf(TagNameTakenError);
+
+    try {
+      await tagService.createTag({ organizationId: ORG, name: "benchy" });
+      expect.unreachable("expected TagNameTakenError");
+    } catch (error) {
+      expect(error).toBeInstanceOf(TagNameTakenError);
+      expect((error as TagNameTakenError).existingTagId).toBe(benchyId);
+    }
+  });
+
+  it("rejects an empty name", async () => {
+    await expect(tagService.createTag({ organizationId: ORG, name: "   " })).rejects.toThrow(
+      "Tag name is required",
+    );
+  });
+
+  it("appears in getOrgTags as an orphan with usageCount 0", async () => {
+    await tagService.createTag({ organizationId: ORG, name: "fresh" });
+
+    const rows = await tagService.getOrgTags(ORG);
+    const fresh = rows.find((r) => r.name === "fresh");
+
+    expect(fresh).toBeDefined();
+    expect(fresh?.usageCount).toBe(0);
+  });
+});
+
 describe("renameTag", () => {
   it("renames a tag and preserves its usageCount", async () => {
     await tagService.addTagsToModel(MODEL_A, ["benchy"], ORG);

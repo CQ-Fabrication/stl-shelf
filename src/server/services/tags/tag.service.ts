@@ -44,6 +44,7 @@ export class TagNameTakenError extends Error {
 }
 
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
+const TAG_NAME_MAX = 64;
 
 const normalizeTagName = (name: string): string => name.trim().toLowerCase();
 export class TagService {
@@ -299,6 +300,65 @@ export class TagService {
       .where(and(eq(modelTags.tagId, tagId), isNull(models.deletedAt)));
 
     return row?.count ?? 0;
+  }
+
+  /**
+   * Create a brand-new tag in the org. Normalizes trim/lowercase, rejects empty
+   * names and enforces the 64-char cap (same as every other tag-write path). If
+   * a tag with that name already exists, throws TagNameTakenError (carrying its
+   * id) so the caller can surface a collision — never auto-merges. The new tag
+   * starts at usageCount 0; an optional color must be a #rrggbb hex.
+   *
+   * Only inserts one fresh row, so no other tags need locking (unlike the
+   * link-mutating paths). The duplicate pre-check mirrors renameTag's.
+   */
+  async createTag({
+    organizationId,
+    name,
+    color,
+  }: {
+    organizationId: string;
+    name: string;
+    color?: string;
+  }): Promise<ManagedTagInfo> {
+    const normalized = normalizeTagName(name);
+    if (!normalized) {
+      throw new Error("Tag name is required");
+    }
+    if (normalized.length > TAG_NAME_MAX) {
+      throw new Error(`Tag name must be at most ${TAG_NAME_MAX} characters`);
+    }
+    if (color !== undefined && !HEX_COLOR_PATTERN.test(color)) {
+      throw new Error("Invalid tag color");
+    }
+
+    return await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select({ id: tags.id })
+        .from(tags)
+        .where(and(eq(tags.organizationId, organizationId), eq(tags.name, normalized)));
+
+      if (existing) {
+        throw new TagNameTakenError(existing.id, normalized);
+      }
+
+      const [created] = await tx
+        .insert(tags)
+        .values({ name: normalized, organizationId, color: color ?? null })
+        .returning({
+          id: tags.id,
+          name: tags.name,
+          color: tags.color,
+          usageCount: tags.usageCount,
+          createdAt: tags.createdAt,
+        });
+
+      if (!created) {
+        throw new Error("Failed to create tag");
+      }
+
+      return created;
+    });
   }
 
   /**
