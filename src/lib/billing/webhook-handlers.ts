@@ -1,5 +1,6 @@
 import type { WebhookCustomerStateChangedPayload } from "@polar-sh/sdk/models/components/webhookcustomerstatechangedpayload.js";
 import type { WebhookOrderPaidPayload } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
+import type { WebhookOrderRefundedPayload } from "@polar-sh/sdk/models/components/webhookorderrefundedpayload.js";
 import type { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
 import type { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
 import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
@@ -13,6 +14,13 @@ import { SubscriptionCanceledTemplate, SubscriptionGraceTemplate } from "@/lib/e
 import { formatStorage } from "@/lib/billing/utils";
 import { logAuditEvent, logErrorEvent } from "@/lib/logging";
 import { trackSubscriptionActivated, trackSubscriptionCanceled } from "@/lib/openpanel";
+import {
+  deliverAnalyticsBestEffort,
+  deliverOrderRefund,
+  deliverOrderRevenue,
+  recordPaidOrder,
+  recordRefundedOrder,
+} from "@/lib/billing/order-ledger";
 import type { SubscriptionTier } from "./config";
 import { SUBSCRIPTION_TIERS, isUnlimited, normalizeSubscriptionTier } from "./config";
 import {
@@ -37,6 +45,7 @@ function getTierFromProductId(productId: string): SubscriptionTier | undefined {
 }
 
 type BillingTrackingContext = {
+  organizationId: string;
   currentTier: SubscriptionTier;
   profile: {
     profileId: string;
@@ -44,7 +53,7 @@ type BillingTrackingContext = {
   };
 };
 
-const getTrackingContextByCustomerId = async (
+export const getTrackingContextByCustomerId = async (
   customerId: string,
 ): Promise<BillingTrackingContext | null> => {
   const org = await db.query.organization.findFirst({
@@ -68,6 +77,7 @@ const getTrackingContextByCustomerId = async (
   const currentTier = normalizeSubscriptionTier(org.subscriptionTier);
 
   return {
+    organizationId: org.id,
     currentTier,
     profile: {
       profileId: org.ownerId ?? org.id,
@@ -288,7 +298,36 @@ const sendGraceEmail = async (customerId: string, tier: SubscriptionTier, graceD
  * Webhook handler: Order paid
  * Called when a subscription is purchased or renewed
  */
-export const handleOrderPaid = async (payload: WebhookOrderPaidPayload) => {
+export const handleOrderPaid = async (payload: WebhookOrderPaidPayload): Promise<void> => {
+  const order = payload.data;
+  const tracking = await getTrackingContextByCustomerId(order.customerId);
+
+  if (tracking) {
+    const tier = order.productId ? getTierFromProductId(order.productId) : undefined;
+    await recordPaidOrder(
+      order,
+      {
+        organizationId: tracking.organizationId,
+        profileId: tracking.profile.profileId,
+        tier: tier ?? null,
+      },
+      order.createdAt,
+    );
+  } else {
+    logErrorEvent("billing.webhook.revenue_unknown_customer", {
+      customerId: order.customerId,
+      orderId: order.id,
+    });
+  }
+
+  await applyOrderPaidOrgState(payload);
+
+  if (tracking) {
+    await deliverAnalyticsBestEffort("order.paid.revenue", order.id, deliverOrderRevenue);
+  }
+};
+
+const applyOrderPaidOrgState = async (payload: WebhookOrderPaidPayload) => {
   const { data: order } = payload;
   const customerId = order.customerId;
   const productId = order.productId;
@@ -355,6 +394,46 @@ export const handleOrderPaid = async (payload: WebhookOrderPaidPayload) => {
     subscriptionId: order.subscriptionId ?? null,
     eventTimestamp: eventTimestamp.toISOString(),
   });
+};
+
+/**
+ * Webhook handler: Order refunded
+ * Called when an order is fully or partially refunded
+ */
+export const handleOrderRefunded = async (payload: WebhookOrderRefundedPayload): Promise<void> => {
+  const order = payload.data;
+  const tracking = await getTrackingContextByCustomerId(order.customerId);
+
+  if (!tracking) {
+    logErrorEvent("billing.webhook.refund_unknown_customer", {
+      customerId: order.customerId,
+      orderId: order.id,
+    });
+    return;
+  }
+
+  const tier = order.productId ? getTierFromProductId(order.productId) : undefined;
+
+  await recordRefundedOrder(
+    order,
+    {
+      organizationId: tracking.organizationId,
+      profileId: tracking.profile.profileId,
+      tier: tier ?? null,
+    },
+    payload.timestamp,
+  );
+
+  logAuditEvent("billing.order.refunded", {
+    customerId: order.customerId,
+    orderId: order.id,
+    subscriptionId: order.subscriptionId ?? null,
+    refundedAmountMinor: order.refundedAmount + order.refundedTaxAmount,
+    currency: order.currency.toLowerCase(),
+    eventTimestamp: payload.timestamp.toISOString(),
+  });
+
+  await deliverAnalyticsBestEffort("order.refunded.refund", order.id, deliverOrderRefund);
 };
 
 /**
