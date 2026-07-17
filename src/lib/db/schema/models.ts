@@ -226,25 +226,6 @@ export const modelTags = pgTable(
   ],
 );
 
-export const versionTags = pgTable(
-  "version_tags",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    versionId: uuid("version_id")
-      .notNull()
-      .references(() => modelVersions.id, { onDelete: "cascade" }),
-    tagId: uuid("tag_id")
-      .notNull()
-      .references(() => tags.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("version_tags_version_tag_idx").on(table.versionId, table.tagId),
-    index("version_tags_version_id_idx").on(table.versionId),
-    index("version_tags_tag_id_idx").on(table.tagId),
-  ],
-);
-
 // Print Profiles - multi-printer 3MF slicer file support
 export const printProfiles = pgTable(
   "print_profiles",
@@ -301,7 +282,6 @@ export const modelVersionsRelations = relations(modelVersions, ({ many, one }) =
     references: [models.id],
   }),
   files: many(modelFiles),
-  tags: many(versionTags),
   printProfiles: many(printProfiles),
 }));
 
@@ -329,7 +309,6 @@ export const printProfilesRelations = relations(printProfiles, ({ one }) => ({
 
 export const tagsRelations = relations(tags, ({ many }) => ({
   models: many(modelTags),
-  versions: many(versionTags),
 }));
 
 export const modelTagsRelations = relations(modelTags, ({ one }) => ({
@@ -339,17 +318,6 @@ export const modelTagsRelations = relations(modelTags, ({ one }) => ({
   }),
   tag: one(tags, {
     fields: [modelTags.tagId],
-    references: [tags.id],
-  }),
-}));
-
-export const versionTagsRelations = relations(versionTags, ({ one }) => ({
-  version: one(modelVersions, {
-    fields: [versionTags.versionId],
-    references: [modelVersions.id],
-  }),
-  tag: one(tags, {
-    fields: [versionTags.tagId],
     references: [tags.id],
   }),
 }));

@@ -141,6 +141,13 @@
       "when": 1784384309077,
       "tag": "0019_perfect_maverick",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784294971174,
+      "tag": "0019_goofy_speed_demon",
+      "breakpoints": true
     }
   ]
 }

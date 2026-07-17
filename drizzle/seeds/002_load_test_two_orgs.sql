@@ -391,23 +391,6 @@ seed_model_tags AS (
   WHERE mdl."organization_id" IN ('org_alpha_layerworks', 'org_helios_printforge')
   ON CONFLICT ("model_id", "tag_id") DO NOTHING
   RETURNING "id"
-),
-seed_version_tags AS (
-  INSERT INTO "version_tags" ("version_id", "tag_id", "created_at")
-  SELECT
-    v."id",
-    CASE
-      WHEN mdl."organization_id" = 'org_alpha_layerworks'
-        THEN ('6f95d111-6fdb-4e3a-98f9-' || lpad((101 + ((abs(('x' || substr(md5(mdl."slug"), 9, 8))::bit(32)::int) % 10)))::text, 12, '0'))::uuid
-      ELSE ('6f95d111-6fdb-4e3a-98f9-' || lpad((201 + ((abs(('x' || substr(md5(mdl."slug"), 9, 8))::bit(32)::int) % 10)))::text, 12, '0'))::uuid
-    END,
-    NOW() - INTERVAL '7 days'
-  FROM "model_versions" v
-  INNER JOIN "models" mdl ON mdl."id" = v."model_id"
-  WHERE mdl."organization_id" IN ('org_alpha_layerworks', 'org_helios_printforge')
-    AND v."version" = 'v1'
-  ON CONFLICT ("version_id", "tag_id") DO NOTHING
-  RETURNING "id"
 )
 SELECT
   (SELECT COUNT(*) FROM seed_users) AS users_upserted,
@@ -421,8 +404,7 @@ SELECT
   (SELECT COUNT(*) FROM helios_models) AS helios_models_inserted,
   (SELECT COUNT(*) FROM seed_versions) AS versions_inserted,
   (SELECT COUNT(*) FROM seed_files) AS files_inserted,
-  (SELECT COUNT(*) FROM seed_model_tags) AS model_tags_inserted,
-  (SELECT COUNT(*) FROM seed_version_tags) AS version_tags_inserted;
+  (SELECT COUNT(*) FROM seed_model_tags) AS model_tags_inserted;
 
 -- Keep usage counters coherent for tag-based UX tests.
 UPDATE "tags" t
