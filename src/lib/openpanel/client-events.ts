@@ -190,7 +190,7 @@ export function trackTagClick(client: OpenPanelClient | null, tag: string, sourc
 
 export function trackTagManagerOpened(
   client: OpenPanelClient | null,
-  context: { source: "menu" | "tab" | "deeplink" },
+  context: { source: "menu" | "tab" | "deeplink" | "library" },
 ) {
   client?.track(ClientEvent.TAG_MANAGER_OPENED, cleanProperties(context));
 }

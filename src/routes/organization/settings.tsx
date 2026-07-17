@@ -16,7 +16,7 @@ export const Route = createFileRoute("/organization/settings")({
   }),
   validateSearch: z.object({
     tab: z.enum(["general", "tags"]).optional(),
-    src: z.enum(["menu"]).optional(),
+    src: z.enum(["menu", "library"]).optional(),
   }),
   beforeLoad: async () => {
     // RBAC: Only admins and owners can access settings
@@ -43,12 +43,12 @@ function OrganizationSettingsPage() {
   useEffect(() => {
     if (hasTrackedOpenRef.current || !client || tab !== "tags") return;
 
-    const source = src === "menu" ? "menu" : initialTabRef.current === "tags" ? "deeplink" : "tab";
+    const source = src ?? (initialTabRef.current === "tags" ? "deeplink" : "tab");
     trackTagManagerOpened(client, { source });
     hasTrackedOpenRef.current = true;
 
-    // Strip the attribution param so a refresh/back doesn't re-report "menu".
-    if (src === "menu") {
+    // Strip the attribution param so a refresh/back doesn't re-report it.
+    if (src) {
       navigate({ search: { tab: "tags" }, replace: true });
     }
   }, [tab, src, client, navigate]);
