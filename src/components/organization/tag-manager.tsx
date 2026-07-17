@@ -1,16 +1,41 @@
-import { Loader2, Plus, Search, Tags } from "lucide-react";
+import { ArrowUpDown, Loader2, Plus, Search, Tags } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOrgTags, type OrgTag } from "@/hooks/use-org-tags";
 import { TagCreateDialog } from "./tag-create-dialog";
 import { TagRow } from "./tag-row";
 
-// usageCount desc, then name asc — the taxonomy's "biggest first", with a
-// stable alphabetical tiebreak so equal-usage tags don't reshuffle.
-function sortTags(tags: OrgTag[]): OrgTag[] {
-  return [...tags].sort((a, b) => b.usageCount - a.usageCount || a.name.localeCompare(b.name));
+type SortKey = "most_used" | "newest";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  most_used: "Most used",
+  newest: "Newest",
+};
+
+// Both orders keep an alphabetical tiebreak so equal-key tags don't reshuffle.
+// "most_used": usage desc (the taxonomy's "biggest first"); "newest": created
+// desc. createdAt arrives serialized, so normalize through Date for comparison.
+function sortTags(tags: OrgTag[], sort: SortKey): OrgTag[] {
+  return [...tags].sort((a, b) => {
+    if (sort === "newest") {
+      return (
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() ||
+        a.name.localeCompare(b.name)
+      );
+    }
+    return b.usageCount - a.usageCount || a.name.localeCompare(b.name);
+  });
 }
 
 export function TagManager() {
@@ -18,8 +43,9 @@ export function TagManager() {
   const [search, setSearch] = useState("");
   const [orphansOnly, setOrphansOnly] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [sort, setSort] = useState<SortKey>("most_used");
 
-  const allTags = useMemo(() => sortTags(tags ?? []), [tags]);
+  const allTags = useMemo(() => sortTags(tags ?? [], sort), [tags, sort]);
 
   const visibleTags = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -88,18 +114,46 @@ export function TagManager() {
                   value={search}
                 />
               </div>
-              <Button className="shrink-0" onClick={() => setCreateOpen(true)} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                New tag
-              </Button>
               <Button
                 className="shrink-0"
-                disabled={orphanCount === 0}
+                disabled={orphanCount === 0 && !orphansOnly}
                 onClick={() => setOrphansOnly((prev) => !prev)}
                 size="sm"
                 variant={orphansOnly ? "default" : "outline"}
               >
                 Orphans only{orphanCount > 0 ? ` (${orphanCount})` : ""}
+              </Button>
+              <DropdownMenu>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-label="Sort tags"
+                          className="h-8 w-8 shrink-0"
+                          size="icon"
+                          variant="outline"
+                        >
+                          <ArrowUpDown className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Sort: {SORT_LABELS[sort]}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuRadioGroup
+                    onValueChange={(value) => setSort(value as SortKey)}
+                    value={sort}
+                  >
+                    <DropdownMenuRadioItem value="most_used">Most used</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="newest">Newest</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button className="shrink-0" onClick={() => setCreateOpen(true)} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                New tag
               </Button>
             </div>
 
@@ -108,11 +162,13 @@ export function TagManager() {
                 No tags match your filters.
               </p>
             ) : (
-              <div className="space-y-2">
-                {visibleTags.map((tag) => (
-                  <TagRow allTags={allTags} key={tag.id} tag={tag} />
-                ))}
-              </div>
+              <ScrollArea viewportClassName="max-h-[55vh]">
+                <div className="space-y-2 pr-3">
+                  {visibleTags.map((tag) => (
+                    <TagRow allTags={allTags} key={tag.id} tag={tag} />
+                  ))}
+                </div>
+              </ScrollArea>
             )}
           </>
         )}

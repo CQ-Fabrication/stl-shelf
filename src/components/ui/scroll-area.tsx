@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 
 const ScrollArea = forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof ScrollAreaPrimitive.Root>
->(function ScrollArea({ className, children, ...props }, ref) {
+  React.ComponentProps<typeof ScrollAreaPrimitive.Root> & { viewportClassName?: string }
+>(function ScrollArea({ className, viewportClassName, children, ...props }, ref) {
   return (
     <ScrollAreaPrimitive.Root
       className={cn("relative", className)}
@@ -15,8 +15,15 @@ const ScrollArea = forwardRef<
       ref={ref}
       {...props}
     >
+      {/* A height cap belongs here on the viewport, not the Root: the Root has
+          overflow:visible, so a max-height on it clips nothing and content
+          spills. The viewport owns overflow:scroll, so bounding it here caps and
+          scrolls the content. */}
       <ScrollAreaPrimitive.Viewport
-        className="size-full rounded-[inherit] outline-none transition-[color,box-shadow] focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        className={cn(
+          "size-full rounded-[inherit] outline-none transition-[color,box-shadow] focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          viewportClassName,
+        )}
         data-slot="scroll-area-viewport"
       >
         {children}
