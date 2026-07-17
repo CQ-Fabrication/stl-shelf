@@ -12,6 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { trackSortChanged } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { useOrgTags, type OrgTag } from "@/hooks/use-org-tags";
 import { TagCreateDialog } from "./tag-create-dialog";
 import { TagRow } from "./tag-row";
@@ -40,6 +42,7 @@ function sortTags(tags: OrgTag[], sort: SortKey): OrgTag[] {
 
 export function TagManager() {
   const { data: tags, isLoading, isError } = useOrgTags();
+  const { client } = useOpenPanelClient();
   const [search, setSearch] = useState("");
   const [orphansOnly, setOrphansOnly] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -143,7 +146,10 @@ export function TagManager() {
                 </TooltipProvider>
                 <DropdownMenuContent align="end">
                   <DropdownMenuRadioGroup
-                    onValueChange={(value) => setSort(value as SortKey)}
+                    onValueChange={(value) => {
+                      setSort(value as SortKey);
+                      trackSortChanged(client, value, "desc", { surface: "tag_manager" });
+                    }}
                     value={sort}
                   >
                     <DropdownMenuRadioItem value="most_used">Most used</DropdownMenuRadioItem>

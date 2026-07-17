@@ -10,6 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { trackTagManagerAction } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { useDeleteTag, type OrgTag } from "@/hooks/use-org-tags";
 
 type TagDeleteDialogProps = {
@@ -20,6 +22,7 @@ type TagDeleteDialogProps = {
 
 export function TagDeleteDialog({ tag, open, onOpenChange }: TagDeleteDialogProps) {
   const deleteMutation = useDeleteTag();
+  const { client } = useOpenPanelClient();
   const inUse = tag.usageCount > 0;
 
   const handleDelete = () => {
@@ -27,6 +30,7 @@ export function TagDeleteDialog({ tag, open, onOpenChange }: TagDeleteDialogProp
       { tagId: tag.id },
       {
         onSuccess: (result) => {
+          trackTagManagerAction(client, { action: "delete" });
           toast.success(
             result.affectedModels > 0
               ? `Deleted "${tag.name}" — removed from ${result.affectedModels} model${

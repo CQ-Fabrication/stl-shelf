@@ -9,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { trackTagManagerAction } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { cn } from "@/lib/utils";
 import { useUpdateTagColor, type OrgTag } from "@/hooks/use-org-tags";
 import { TagColorPicker } from "./tag-color-picker";
@@ -30,13 +32,17 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 export function TagRow({ tag, allTags }: TagRowProps) {
   const [dialog, setDialog] = useState<"rename" | "merge" | "delete" | null>(null);
   const colorMutation = useUpdateTagColor();
+  const { client } = useOpenPanelClient();
   const isOrphan = tag.usageCount === 0;
 
   const handleColor = (color: string) => {
     colorMutation.mutate(
       { tagId: tag.id, color },
       {
-        onSuccess: () => toast.success("Tag color updated"),
+        onSuccess: () => {
+          trackTagManagerAction(client, { action: "recolor" });
+          toast.success("Tag color updated");
+        },
         onError: () => toast.error("Failed to update tag color"),
       },
     );

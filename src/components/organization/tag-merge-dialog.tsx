@@ -18,6 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { trackTagManagerAction } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { cn } from "@/lib/utils";
 import { useMergeTags, type OrgTag } from "@/hooks/use-org-tags";
 
@@ -31,6 +33,7 @@ type TagMergeDialogProps = {
 export function TagMergeDialog({ tag, allTags, open, onOpenChange }: TagMergeDialogProps) {
   const [targetId, setTargetId] = useState<string | null>(null);
   const mergeMutation = useMergeTags();
+  const { client } = useOpenPanelClient();
 
   const candidates = allTags.filter((candidate) => candidate.id !== tag.id);
   const target = candidates.find((candidate) => candidate.id === targetId) ?? null;
@@ -46,6 +49,10 @@ export function TagMergeDialog({ tag, allTags, open, onOpenChange }: TagMergeDia
       { sourceTagId: tag.id, targetTagId: target.id },
       {
         onSuccess: (result) => {
+          trackTagManagerAction(client, {
+            action: "merge",
+            modelsRelinked: result.modelsRelinked,
+          });
           toast.success(
             `Merged "${tag.name}" into "${target.name}" — ${result.modelsRelinked} model${
               result.modelsRelinked === 1 ? "" : "s"

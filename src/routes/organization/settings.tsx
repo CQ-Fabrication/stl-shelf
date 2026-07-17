@@ -1,10 +1,13 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Settings, Tags } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrganizationSettingsForm } from "@/components/organization/settings-form";
 import { TagManager } from "@/components/organization/tag-manager";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
+import { trackTagManagerOpened } from "@/lib/openpanel/client-events";
 import { getMemberRoleFn } from "@/server/functions/auth";
 
 export const Route = createFileRoute("/organization/settings")({
@@ -13,6 +16,7 @@ export const Route = createFileRoute("/organization/settings")({
   }),
   validateSearch: z.object({
     tab: z.enum(["general", "tags"]).optional(),
+    src: z.enum(["menu"]).optional(),
   }),
   beforeLoad: async () => {
     // RBAC: Only admins and owners can access settings
@@ -26,8 +30,28 @@ export const Route = createFileRoute("/organization/settings")({
 });
 
 function OrganizationSettingsPage() {
-  const { tab } = Route.useSearch();
+  const { tab, src } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const { client } = useOpenPanelClient();
+
+  // This route component stays mounted across tab switches (TagManager itself
+  // remounts per tab activation, so a ref there wouldn't survive). Fire the
+  // "opened" event once per visit, the first time the Tags tab is active.
+  const hasTrackedOpenRef = useRef(false);
+  const initialTabRef = useRef(tab);
+
+  useEffect(() => {
+    if (hasTrackedOpenRef.current || !client || tab !== "tags") return;
+
+    const source = src === "menu" ? "menu" : initialTabRef.current === "tags" ? "deeplink" : "tab";
+    trackTagManagerOpened(client, { source });
+    hasTrackedOpenRef.current = true;
+
+    // Strip the attribution param so a refresh/back doesn't re-report "menu".
+    if (src === "menu") {
+      navigate({ search: { tab: "tags" }, replace: true });
+    }
+  }, [tab, src, client, navigate]);
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">

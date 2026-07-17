@@ -163,7 +163,10 @@ export default function Header() {
                           )}
                           {permissions?.canManageTags && (
                             <DropdownMenuItem asChild>
-                              <Link search={{ tab: "tags" }} to="/organization/settings">
+                              <Link
+                                search={{ tab: "tags", src: "menu" }}
+                                to="/organization/settings"
+                              >
                                 <Tags className="mr-2 h-4 w-4" />
                                 Manage Tags
                               </Link>

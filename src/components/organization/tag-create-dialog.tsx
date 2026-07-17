@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { trackTagManagerAction } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { useCreateTag } from "@/hooks/use-org-tags";
 
 type TagCreateDialogProps = {
@@ -49,6 +51,7 @@ export function TagCreateDialog({ open, onOpenChange }: TagCreateDialogProps) {
   const [takenName, setTakenName] = useState<string | null>(null);
 
   const createMutation = useCreateTag();
+  const { client } = useOpenPanelClient();
 
   const reset = () => {
     setName("");
@@ -77,6 +80,7 @@ export function TagCreateDialog({ open, onOpenChange }: TagCreateDialogProps) {
             setTakenName(normalized);
             return;
           }
+          trackTagManagerAction(client, { action: "create" });
           toast.success(`Created "${result.tag.name}"`);
           close();
         },

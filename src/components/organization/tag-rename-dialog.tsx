@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { trackTagManagerAction } from "@/lib/openpanel/client-events";
+import { useOpenPanelClient } from "@/lib/openpanel/client-provider";
 import { useMergeTags, useRenameTag, type OrgTag } from "@/hooks/use-org-tags";
 
 type TagRenameDialogProps = {
@@ -28,6 +30,7 @@ export function TagRenameDialog({ tag, open, onOpenChange }: TagRenameDialogProp
 
   const renameMutation = useRenameTag();
   const mergeMutation = useMergeTags();
+  const { client } = useOpenPanelClient();
 
   const reset = () => {
     setName(tag.name);
@@ -53,6 +56,7 @@ export function TagRenameDialog({ tag, open, onOpenChange }: TagRenameDialogProp
             return;
           }
           if (result.status === "renamed") {
+            trackTagManagerAction(client, { action: "rename" });
             toast.success(`Renamed to "${collisionName}"`);
           }
           close();
@@ -68,6 +72,10 @@ export function TagRenameDialog({ tag, open, onOpenChange }: TagRenameDialogProp
       { sourceTagId: tag.id, targetTagId: collisionTargetId },
       {
         onSuccess: (result) => {
+          trackTagManagerAction(client, {
+            action: "merge",
+            modelsRelinked: result.modelsRelinked,
+          });
           toast.success(
             `Merged into "${collisionName}" — ${result.modelsRelinked} model${
               result.modelsRelinked === 1 ? "" : "s"
