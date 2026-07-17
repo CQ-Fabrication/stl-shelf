@@ -33,7 +33,7 @@ import { getRetentionDeadline } from "@/lib/billing/grace";
  * Server-side product ID to tier mapping
  * Uses env vars which are only available server-side
  */
-function getTierFromProductId(productId: string): SubscriptionTier | undefined {
+export function getTierFromProductId(productId: string): SubscriptionTier | undefined {
   if (env.POLAR_PRODUCT_FREE && productId === env.POLAR_PRODUCT_FREE) return "free";
   if (env.POLAR_PRODUCT_BASIC && productId === env.POLAR_PRODUCT_BASIC) return "basic";
   if (env.POLAR_PRODUCT_BASIC_MONTH && productId === env.POLAR_PRODUCT_BASIC_MONTH) return "basic";

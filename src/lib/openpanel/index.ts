@@ -51,7 +51,12 @@ export {
 } from "./events";
 
 // Server revenue tracking
-export { trackRevenue, trackRefund, type CommerceProperties } from "./server";
+export {
+  trackRevenue,
+  trackRefund,
+  isOpenPanelServerEnabled,
+  type CommerceProperties,
+} from "./server";
 
 // Types
 export type {
