@@ -1,7 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Settings, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrganizationSettingsForm } from "@/components/organization/settings-form";
+import { TagManager } from "@/components/organization/tag-manager";
 import { getMemberRoleFn } from "@/server/functions/auth";
 
 export const Route = createFileRoute("/organization/settings")({
@@ -31,7 +33,27 @@ function OrganizationSettingsPage() {
         </Button>
       </div>
       <h1 className="mb-8 font-bold text-3xl">Organization Settings</h1>
-      <OrganizationSettingsForm />
+
+      <Tabs className="w-full" defaultValue="general">
+        <TabsList className="mb-2 overflow-x-auto scrollbar-hide">
+          <TabsTrigger value="general">
+            <Settings className="mr-2 h-4 w-4" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="tags">
+            <Tags className="mr-2 h-4 w-4" />
+            Tags
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general">
+          <OrganizationSettingsForm />
+        </TabsContent>
+
+        <TabsContent value="tags">
+          <TagManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
