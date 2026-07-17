@@ -834,6 +834,8 @@ export const deleteModel = createServerFn({ method: "POST" })
         const result = await modelDeleteService.deleteModel({
           modelId: data.id,
           organizationId: context.organizationId,
+          actorId: context.userId,
+          ipAddress: context.ipAddress,
         });
 
         logAuditEvent("model.deleted", {

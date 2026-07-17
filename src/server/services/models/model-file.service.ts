@@ -225,7 +225,7 @@ export class ModelFileService {
         version: {
           with: {
             model: {
-              columns: { id: true, organizationId: true },
+              columns: { id: true, organizationId: true, name: true },
             },
           },
         },
@@ -264,6 +264,8 @@ export class ModelFileService {
         extension: file.extension,
         size: file.size,
         storageKey: file.storageKey,
+        modelName: file.version.model.name,
+        versionLabel: file.version.version,
         actorId: input.userId,
         ipAddress: input.ipAddress ?? null,
       });
