@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Settings, Tags } from "lucide-react";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrganizationSettingsForm } from "@/components/organization/settings-form";
@@ -9,6 +10,9 @@ import { getMemberRoleFn } from "@/server/functions/auth";
 export const Route = createFileRoute("/organization/settings")({
   head: () => ({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
+  }),
+  validateSearch: z.object({
+    tab: z.enum(["general", "tags"]).optional(),
   }),
   beforeLoad: async () => {
     // RBAC: Only admins and owners can access settings
@@ -22,6 +26,9 @@ export const Route = createFileRoute("/organization/settings")({
 });
 
 function OrganizationSettingsPage() {
+  const { tab } = Route.useSearch();
+  const navigate = Route.useNavigate();
+
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
       <div className="mb-6">
@@ -34,7 +41,16 @@ function OrganizationSettingsPage() {
       </div>
       <h1 className="mb-8 font-bold text-3xl">Organization Settings</h1>
 
-      <Tabs className="w-full" defaultValue="general">
+      <Tabs
+        className="w-full"
+        onValueChange={(value) =>
+          navigate({
+            search: { tab: value === "general" ? undefined : (value as "tags") },
+            replace: true,
+          })
+        }
+        value={tab ?? "general"}
+      >
         <TabsList className="mb-2 overflow-x-auto scrollbar-hide">
           <TabsTrigger value="general">
             <Settings className="mr-2 h-4 w-4" />
