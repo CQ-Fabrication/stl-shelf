@@ -5,6 +5,7 @@ import { useInView } from "react-intersection-observer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GradientAvatar } from "@/components/ui/gradient-avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrgActivity, type OrgActivityEvent } from "@/hooks/use-org-activity";
 
@@ -147,25 +148,27 @@ export function OrganizationActivity() {
             </p>
           </div>
         ) : (
-          <>
-            {events.map((event) => (
-              <ActivityRow event={event} key={event.id} />
-            ))}
-            {hasNextPage ? (
-              <div className="flex justify-center pt-2" ref={loadMoreRef}>
-                {isFetchingNextPage ? (
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Loading more…</span>
-                  </div>
-                ) : (
-                  <Button onClick={() => fetchNextPage()} size="sm" variant="outline">
-                    Load more
-                  </Button>
-                )}
-              </div>
-            ) : null}
-          </>
+          <ScrollArea viewportClassName="max-h-[55vh]">
+            <div className="space-y-3">
+              {events.map((event) => (
+                <ActivityRow event={event} key={event.id} />
+              ))}
+              {hasNextPage ? (
+                <div className="flex justify-center pt-2" ref={loadMoreRef}>
+                  {isFetchingNextPage ? (
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Loading more…</span>
+                    </div>
+                  ) : (
+                    <Button onClick={() => fetchNextPage()} size="sm" variant="outline">
+                      Load more
+                    </Button>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>
