@@ -186,16 +186,6 @@ export const modelFileEvents = pgTable(
   ],
 );
 
-export const tagTypes = pgTable(
-  "tag_types",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    name: text("name").notNull().unique(),
-    description: text("description"),
-  },
-  (table) => [uniqueIndex("tag_types_name_idx").on(table.name)],
-);
-
 export const tags = pgTable(
   "tags",
   {
@@ -204,7 +194,6 @@ export const tags = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    typeId: uuid("type_id").references(() => tagTypes.id),
     color: text("color"),
     description: text("description"),
     usageCount: integer("usage_count").notNull().default(0),
@@ -214,9 +203,7 @@ export const tags = pgTable(
   (table) => [
     uniqueIndex("tags_org_name_idx").on(table.organizationId, table.name),
     index("tags_org_idx").on(table.organizationId),
-    index("tags_type_idx").on(table.typeId),
     index("tags_usage_count_idx").on(table.usageCount),
-    index("tags_org_type_name_idx").on(table.organizationId, table.typeId, table.name),
   ],
 );
 
@@ -340,15 +327,7 @@ export const printProfilesRelations = relations(printProfiles, ({ one }) => ({
   }),
 }));
 
-export const tagTypesRelations = relations(tagTypes, ({ many }) => ({
-  tags: many(tags),
-}));
-
-export const tagsRelations = relations(tags, ({ many, one }) => ({
-  type: one(tagTypes, {
-    fields: [tags.typeId],
-    references: [tagTypes.id],
-  }),
+export const tagsRelations = relations(tags, ({ many }) => ({
   models: many(modelTags),
   versions: many(versionTags),
 }));
