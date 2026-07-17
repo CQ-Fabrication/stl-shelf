@@ -38,11 +38,13 @@ Database:
 - If a migration is ever applied out-of-band (psql), record it: `INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES (sha256-hex of the .sql file, journal "when" ms)`.
 - Deploys: `bun start` runs migrations BEFORE the server binds — a failed migration aborts startup (loud banner, exit 1) so the old container keeps serving. In Coolify the start command must be `bun start`; never run migrations as a post-deployment hook (hook failures are silent and run after new code is already live — this hid unapplied migrations 0014/0015 in prod from Jan to Jul 2026).
 
-MinIO CORS (first-time setup):
+MinIO CORS + bucket policy (first-time setup):
 
 - `docker exec stl-shelf-minio mc alias set local http://localhost:9000 stlshelf stlshelf_minio_dev_password`
 - `docker exec stl-shelf-minio mc admin config set local api cors_allow_origin="http://localhost:3000"`
+- `docker exec stl-shelf-minio mc anonymous set none local/stl-shelf-models`
 - `docker compose restart minio`
+- The bucket must stay private (no anonymous reads) to match production R2: all reads go through presigned URLs or `/api/download/*`. Environments bootstrapped before July 2026 had a public-read policy — the `mc anonymous set none` step fixes them.
 
 Local OAuth testing (ngrok):
 

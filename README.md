@@ -72,13 +72,16 @@ This starts:
 - **PostgreSQL** on port `5432`
 - **MinIO** on port `9000` (API) and `9001` (Console)
 
-### 3. Configure MinIO CORS (first time only)
+### 3. Configure MinIO CORS + bucket policy (first time only)
 
 ```bash
 docker exec stl-shelf-minio mc alias set local http://localhost:9000 stlshelf stlshelf_minio_dev_password
 docker exec stl-shelf-minio mc admin config set local api cors_allow_origin="http://localhost:3000"
+docker exec stl-shelf-minio mc anonymous set none local/stl-shelf-models
 docker compose restart minio
 ```
+
+The bucket stays private (no anonymous reads), matching production R2 — files are served via presigned URLs or the authorized `/api/download/*` routes. If your environment predates this policy, the `mc anonymous set none` command above fixes it.
 
 ### 4. Configure Environment
 

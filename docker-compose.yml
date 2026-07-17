@@ -49,7 +49,7 @@ services:
       /bin/sh -c "
       mc alias set local http://minio:9000 stlshelf stlshelf_minio_dev_password;
       mc mb --ignore-existing local/stl-shelf-models;
-      mc anonymous set download local/stl-shelf-models;
+      mc anonymous set none local/stl-shelf-models;
       echo 'MinIO setup complete!';
       "
     restart: "no"
