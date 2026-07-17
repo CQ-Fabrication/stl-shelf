@@ -17,12 +17,6 @@ export type TagInfo = {
   usageCount: number;
 };
 
-type ModelTagInfo = {
-  tagName: string;
-  tagColor: string | null;
-  tagId: string;
-};
-
 export class TagService {
   async getAllTags(): Promise<TagInfo[]> {
     return await db
@@ -242,18 +236,6 @@ export class TagService {
         )`,
       })
       .where(inArray(tags.id, tagIds));
-  }
-
-  async getModelTags(modelId: string): Promise<ModelTagInfo[]> {
-    return await db
-      .select({
-        tagName: tags.name,
-        tagColor: tags.color,
-        tagId: tags.id,
-      })
-      .from(modelTags)
-      .innerJoin(tags, eq(tags.id, modelTags.tagId))
-      .where(eq(modelTags.modelId, modelId));
   }
 
   async createTag(data: CreateTagInput): Promise<SelectTag> {
