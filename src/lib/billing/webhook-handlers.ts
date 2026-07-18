@@ -41,6 +41,7 @@ import {
   getGraceDeadlineIfOverLimit,
   getUsageSnapshotForOrganization,
 } from "@/server/services/billing/retention.service";
+import { getOrgStorageBytes } from "@/server/services/billing/storage-usage";
 import { getRetentionDeadline } from "@/lib/billing/grace";
 
 /**
@@ -78,7 +79,6 @@ export const getTrackingContextByCustomerId = async (
       ownerId: true,
       subscriptionTier: true,
       subscriptionStatus: true,
-      currentStorage: true,
       currentModelCount: true,
       currentMemberCount: true,
     },
@@ -89,6 +89,9 @@ export const getTrackingContextByCustomerId = async (
   }
 
   const currentTier = normalizeSubscriptionTier(org.subscriptionTier);
+  // Read stored bytes from the object ledger (one source of truth), not the
+  // stale organization.currentStorage cache.
+  const storageUsedBytes = await getOrgStorageBytes(org.id);
 
   return {
     organizationId: org.id,
@@ -100,7 +103,7 @@ export const getTrackingContextByCustomerId = async (
         organizationName: org.name,
         subscriptionTier: currentTier,
         subscriptionStatus: org.subscriptionStatus ?? "none",
-        storageUsedBytes: org.currentStorage ?? 0,
+        storageUsedBytes,
         modelsCount: org.currentModelCount ?? 0,
         memberCount: org.currentMemberCount ?? 1,
       },

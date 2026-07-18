@@ -430,12 +430,26 @@ class ModelDownloadService {
   /**
    * Stream files from R2 directly into archiver
    * Does NOT load entire files into memory - true streaming
+   *
+   * `wrapFileStream` lets the caller wrap each per-file storage read (e.g. a
+   * metering byte-counter for the storage→application segment) without this
+   * service knowing about metering.
    */
-  async streamFilesToArchive(archive: archiver.Archiver, files: ModelFileData[]): Promise<void> {
+  async streamFilesToArchive(
+    archive: archiver.Archiver,
+    files: ModelFileData[],
+    options: {
+      wrapFileStream?: (
+        stream: ReadableStream<Uint8Array>,
+        file: ModelFileData,
+      ) => ReadableStream<Uint8Array>;
+    } = {},
+  ): Promise<void> {
     for (const file of files) {
       try {
         // Get readable stream from R2 (not the entire file in memory)
-        const stream = await storageService.getFileStream(file.storageKey);
+        const rawStream = await storageService.getFileStream(file.storageKey);
+        const stream = options.wrapFileStream ? options.wrapFileStream(rawStream, file) : rawStream;
 
         // Convert web ReadableStream to Node.js Readable for archiver
         const nodeStream = this.webStreamToNodeStream(stream);
@@ -468,6 +482,15 @@ class ModelDownloadService {
         } catch (error) {
           this.destroy(error instanceof Error ? error : new Error(String(error)));
         }
+      },
+      // When archiver tears the node stream down (archive.abort/error), cancel
+      // the web stream too, so the storage read stops and any wrapping meter
+      // observes the abort instead of hanging unfinalized.
+      destroy(error, callback) {
+        reader
+          .cancel(error ?? undefined)
+          .catch(() => {})
+          .finally(() => callback(error));
       },
     });
   }

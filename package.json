@@ -25,7 +25,13 @@
     "retention:sweep": "bun run scripts/retention-sweep.ts",
     "thumbnails:backfill": "bun run scripts/backfill-thumbnails.ts",
     "revenue:backfill": "bun run scripts/backfill-openpanel-revenue.ts",
-    "account-deletion:sweep": "bun run scripts/account-deletion-sweep.ts"
+    "account-deletion:sweep": "bun run scripts/account-deletion-sweep.ts",
+    "metering:backfill-ledger": "bun run scripts/backfill-storage-ledger.ts",
+    "metering:snapshot": "bun run scripts/metering-snapshot.ts",
+    "metering:reconcile": "bun run scripts/metering-reconcile.ts",
+    "metering:report": "bun run scripts/metering-report.ts",
+    "metering:verify": "bun run scripts/metering-verify.ts",
+    "metering:alerts": "bun run scripts/metering-alerts.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.971.0",

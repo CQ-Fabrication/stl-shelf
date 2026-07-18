@@ -2,7 +2,7 @@ import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { user } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelTags, modelVersions, tags } from "@/lib/db/schema/models";
-import { storageService } from "@/server/services/storage";
+import { versionThumbnailUrl } from "@/lib/thumbnails";
 
 export type ModelFile = {
   id: string;
@@ -197,14 +197,11 @@ class ModelDetailService {
 
     const versionsWithPresignedUrls = await Promise.all(
       versions.map(async (version) => {
-        let thumbnailUrl: string | null = null;
-        if (version.thumbnailPath) {
-          try {
-            thumbnailUrl = await storageService.generateDownloadUrl(version.thumbnailPath);
-          } catch {
-            thumbnailUrl = null;
-          }
-        }
+        // Stable authenticated proxy URL — cacheable, metered, org-bound
+        // (presigned URLs changed per render and bypassed measurement).
+        const thumbnailUrl = version.thumbnailPath
+          ? versionThumbnailUrl(version.id, version.updatedAt)
+          : null;
 
         return {
           id: version.id,

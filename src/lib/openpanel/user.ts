@@ -23,7 +23,9 @@ export type OrganizationData = {
   name: string;
   subscriptionTier: string | null;
   subscriptionStatus: string | null;
-  currentStorage: number | null;
+  // Resolved from the object ledger (getOrgStorageBytes), NOT the stale
+  // organization.currentStorage column.
+  storageUsedBytes: number | null;
   currentModelCount: number | null;
   currentMemberCount: number | null;
 };
@@ -58,7 +60,7 @@ export function buildOpenPanelProfile(
 
       // Usage metrics
       modelsCount: org?.currentModelCount ?? 0,
-      storageUsedBytes: org?.currentStorage ?? 0,
+      storageUsedBytes: org?.storageUsedBytes ?? 0,
       memberCount: org?.currentMemberCount ?? 1,
     },
   };

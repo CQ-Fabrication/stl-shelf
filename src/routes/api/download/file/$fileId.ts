@@ -4,6 +4,10 @@ import { db, modelFiles, modelVersions, models } from "@/lib/db";
 import { shouldTrackEgressForDisposition } from "@/lib/billing/egress";
 import { storageService } from "@/server/services/storage";
 import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import {
+  deliveryKindForDisposition,
+  startDelivery,
+} from "@/server/services/metering/delivery-metering";
 import { createContentDisposition } from "@/server/utils/filename-security";
 import { getLiveSession } from "@/server/utils/live-session";
 import { crossSiteBlockedResponse, isTrustedRequestOrigin } from "@/server/utils/request-security";
@@ -65,6 +69,10 @@ export const Route = createFileRoute("/api/download/file/$fileId")({
           return new Response("File not found", { status: 404 });
         }
 
+        // ENFORCEMENT (unchanged semantics): attachment-only, pre-stream,
+        // against organization.egressBytesThisMonth. Inline previews stay
+        // exempt from enforcement — they are MEASURED below (metering ≠
+        // limiting; no new user blocking).
         if (!isInline) {
           const egress = await checkAndTrackEgress({
             organizationId,
@@ -83,10 +91,37 @@ export const Route = createFileRoute("/api/download/file/$fileId")({
           }
         }
 
-        const stream = await storageService.getFileStream(file.storageKey);
+        // MEASUREMENT: two segments, two rollup rows — storage→app (free
+        // same-zone) and app→browser (server egress). Never summed.
+        const deliveryKind = deliveryKindForDisposition(disposition);
+        const rangeRequested = request.headers.has("range");
+        const internalMeter = startDelivery({
+          organizationId,
+          deliveryKind,
+          deliveryPath: "internal_storage_to_application",
+          bytesRequested: file.size,
+          rangeRequested,
+        });
+        const proxyMeter = startDelivery({
+          organizationId,
+          deliveryKind,
+          deliveryPath: "application_proxy",
+          bytesRequested: file.size,
+          rangeRequested,
+        });
+
+        let stream: ReadableStream<Uint8Array>;
+        try {
+          stream = await storageService.getFileStream(file.storageKey);
+        } catch (error) {
+          await internalMeter.finalize("failed");
+          await proxyMeter.finalize("failed");
+          throw error;
+        }
+
         const filename = file.originalName || "download";
 
-        return new Response(stream, {
+        return new Response(proxyMeter.wrapStream(internalMeter.wrapStream(stream)), {
           headers: {
             "Content-Type": file.mimeType || "application/octet-stream",
             "Content-Disposition": createContentDisposition(

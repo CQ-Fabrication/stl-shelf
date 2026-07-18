@@ -22,6 +22,7 @@ import { authMiddleware } from "@/server/middleware/auth";
 import { polarService } from "@/server/services/billing/polar.service";
 import { getEgressUsageSnapshot, getEgressLimits } from "@/server/services/billing/egress.service";
 import { enforceRetentionForOrganization } from "@/server/services/billing/retention.service";
+import { getOrgStorageBytes } from "@/server/services/billing/storage-usage";
 import { getErrorDetails, logErrorEvent } from "@/lib/logging";
 import { handleCustomerStateChanged } from "@/lib/billing/webhook-handlers";
 import type { WebhookCustomerStateChangedPayload } from "@polar-sh/sdk/models/components/webhookcustomerstatechangedpayload.js";
@@ -120,8 +121,9 @@ export const getSubscription = createServerFn({ method: "GET" })
       modelCountLimit: org.modelCountLimit,
       memberLimit: org.memberLimit,
 
-      // Current usage
-      currentStorage: org.currentStorage,
+      // Current usage — read from the object ledger (one source of truth), not
+      // the stale organization.currentStorage cache.
+      currentStorage: await getOrgStorageBytes(org.id),
       currentModelCount: org.currentModelCount,
       currentMemberCount: org.currentMemberCount,
 
@@ -338,7 +340,7 @@ export const createCheckout = createServerFn({ method: "POST" })
           name: org.name,
           subscriptionTier: org.subscriptionTier,
           subscriptionStatus: org.subscriptionStatus,
-          currentStorage: org.currentStorage,
+          storageUsedBytes: await getOrgStorageBytes(org.id),
           currentModelCount: org.currentModelCount,
           currentMemberCount: org.currentMemberCount,
         });

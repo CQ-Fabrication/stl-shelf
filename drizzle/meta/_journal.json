@@ -155,6 +155,13 @@
       "when": 1784385704194,
       "tag": "0021_perpetual_blockbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1784387068321,
+      "tag": "0022_woozy_thaddeus_ross",
+      "breakpoints": true
     }
   ]
 }

@@ -67,6 +67,8 @@ import { Route as ApiV1UploadRouteImport } from './routes/api/v1/upload'
 import { Route as ApiV1ModelsRouteImport } from './routes/api/v1/models'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiV1ModelsModelIdRouteImport } from './routes/api/v1/models.$modelId'
+import { Route as ApiThumbnailsVersionVersionIdRouteImport } from './routes/api/thumbnails/version/$versionId'
+import { Route as ApiThumbnailsPrintProfileProfileIdRouteImport } from './routes/api/thumbnails/print-profile/$profileId'
 import { Route as ApiDownloadPrintProfileProfileIdRouteImport } from './routes/api/download/print-profile/$profileId'
 import { Route as ApiDownloadFileFileIdRouteImport } from './routes/api/download/file/$fileId'
 import { Route as ApiV1ModelsModelIdVersionsRouteImport } from './routes/api/v1/models.$modelId.versions'
@@ -383,6 +385,18 @@ const ApiV1ModelsModelIdRoute = ApiV1ModelsModelIdRouteImport.update({
   path: '/$modelId',
   getParentRoute: () => ApiV1ModelsRoute,
 } as any)
+const ApiThumbnailsVersionVersionIdRoute =
+  ApiThumbnailsVersionVersionIdRouteImport.update({
+    id: '/api/thumbnails/version/$versionId',
+    path: '/api/thumbnails/version/$versionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiThumbnailsPrintProfileProfileIdRoute =
+  ApiThumbnailsPrintProfileProfileIdRouteImport.update({
+    id: '/api/thumbnails/print-profile/$profileId',
+    path: '/api/thumbnails/print-profile/$profileId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiDownloadPrintProfileProfileIdRoute =
   ApiDownloadPrintProfileProfileIdRouteImport.update({
     id: '/api/download/print-profile/$profileId',
@@ -473,6 +487,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/upload': typeof ApiV1UploadRoute
   '/api/download/file/$fileId': typeof ApiDownloadFileFileIdRoute
   '/api/download/print-profile/$profileId': typeof ApiDownloadPrintProfileProfileIdRoute
+  '/api/thumbnails/print-profile/$profileId': typeof ApiThumbnailsPrintProfileProfileIdRoute
+  '/api/thumbnails/version/$versionId': typeof ApiThumbnailsVersionVersionIdRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
@@ -538,6 +554,8 @@ export interface FileRoutesByTo {
   '/api/v1/upload': typeof ApiV1UploadRoute
   '/api/download/file/$fileId': typeof ApiDownloadFileFileIdRoute
   '/api/download/print-profile/$profileId': typeof ApiDownloadPrintProfileProfileIdRoute
+  '/api/thumbnails/print-profile/$profileId': typeof ApiThumbnailsPrintProfileProfileIdRoute
+  '/api/thumbnails/version/$versionId': typeof ApiThumbnailsVersionVersionIdRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
@@ -604,6 +622,8 @@ export interface FileRoutesById {
   '/api/v1/upload': typeof ApiV1UploadRoute
   '/api/download/file/$fileId': typeof ApiDownloadFileFileIdRoute
   '/api/download/print-profile/$profileId': typeof ApiDownloadPrintProfileProfileIdRoute
+  '/api/thumbnails/print-profile/$profileId': typeof ApiThumbnailsPrintProfileProfileIdRoute
+  '/api/thumbnails/version/$versionId': typeof ApiThumbnailsVersionVersionIdRoute
   '/api/v1/models/$modelId': typeof ApiV1ModelsModelIdRouteWithChildren
   '/api/download/version/$versionId/zip': typeof ApiDownloadVersionVersionIdZipRoute
   '/api/v1/models/$modelId/versions': typeof ApiV1ModelsModelIdVersionsRoute
@@ -671,6 +691,8 @@ export interface FileRouteTypes {
     | '/api/v1/upload'
     | '/api/download/file/$fileId'
     | '/api/download/print-profile/$profileId'
+    | '/api/thumbnails/print-profile/$profileId'
+    | '/api/thumbnails/version/$versionId'
     | '/api/v1/models/$modelId'
     | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
@@ -736,6 +758,8 @@ export interface FileRouteTypes {
     | '/api/v1/upload'
     | '/api/download/file/$fileId'
     | '/api/download/print-profile/$profileId'
+    | '/api/thumbnails/print-profile/$profileId'
+    | '/api/thumbnails/version/$versionId'
     | '/api/v1/models/$modelId'
     | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
@@ -801,6 +825,8 @@ export interface FileRouteTypes {
     | '/api/v1/upload'
     | '/api/download/file/$fileId'
     | '/api/download/print-profile/$profileId'
+    | '/api/thumbnails/print-profile/$profileId'
+    | '/api/thumbnails/version/$versionId'
     | '/api/v1/models/$modelId'
     | '/api/download/version/$versionId/zip'
     | '/api/v1/models/$modelId/versions'
@@ -867,6 +893,8 @@ export interface RootRouteChildren {
   ApiV1UploadRoute: typeof ApiV1UploadRoute
   ApiDownloadFileFileIdRoute: typeof ApiDownloadFileFileIdRoute
   ApiDownloadPrintProfileProfileIdRoute: typeof ApiDownloadPrintProfileProfileIdRoute
+  ApiThumbnailsPrintProfileProfileIdRoute: typeof ApiThumbnailsPrintProfileProfileIdRoute
+  ApiThumbnailsVersionVersionIdRoute: typeof ApiThumbnailsVersionVersionIdRoute
   ApiDownloadVersionVersionIdZipRoute: typeof ApiDownloadVersionVersionIdZipRoute
 }
 
@@ -1278,6 +1306,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ModelsModelIdRouteImport
       parentRoute: typeof ApiV1ModelsRoute
     }
+    '/api/thumbnails/version/$versionId': {
+      id: '/api/thumbnails/version/$versionId'
+      path: '/api/thumbnails/version/$versionId'
+      fullPath: '/api/thumbnails/version/$versionId'
+      preLoaderRoute: typeof ApiThumbnailsVersionVersionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/thumbnails/print-profile/$profileId': {
+      id: '/api/thumbnails/print-profile/$profileId'
+      path: '/api/thumbnails/print-profile/$profileId'
+      fullPath: '/api/thumbnails/print-profile/$profileId'
+      preLoaderRoute: typeof ApiThumbnailsPrintProfileProfileIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/download/print-profile/$profileId': {
       id: '/api/download/print-profile/$profileId'
       path: '/api/download/print-profile/$profileId'
@@ -1404,6 +1446,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1UploadRoute: ApiV1UploadRoute,
   ApiDownloadFileFileIdRoute: ApiDownloadFileFileIdRoute,
   ApiDownloadPrintProfileProfileIdRoute: ApiDownloadPrintProfileProfileIdRoute,
+  ApiThumbnailsPrintProfileProfileIdRoute:
+    ApiThumbnailsPrintProfileProfileIdRoute,
+  ApiThumbnailsVersionVersionIdRoute: ApiThumbnailsVersionVersionIdRoute,
   ApiDownloadVersionVersionIdZipRoute: ApiDownloadVersionVersionIdZipRoute,
 }
 export const routeTree = rootRouteImport

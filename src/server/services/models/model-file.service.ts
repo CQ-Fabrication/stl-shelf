@@ -383,6 +383,13 @@ export class ModelFileService {
 
     // Passive snapshot from merely viewing the model: don't bump updatedAt on the
     // version or the model, or browsing the library would reorder it (sorted by updated_at).
+    //
+    // This is the deliberate EXCEPTION to the "explicit thumbnail mutation bumps
+    // updatedAt (so the `v` cache-bust key changes)" rule: this transition is
+    // strictly null -> set, so there is no previously-cached thumbnail image to
+    // bust — the thumbnail URL simply appears for the first time. Every path that
+    // CHANGES an existing thumbnail (replaceVersionThumbnail, removeVersionThumbnail,
+    // add/remove-file recompute) does bump updatedAt.
     await db
       .update(modelVersions)
       .set({ thumbnailPath: storageKey })

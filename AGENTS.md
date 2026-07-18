@@ -44,7 +44,7 @@ MinIO CORS + bucket policy (first-time setup):
 - `docker exec stl-shelf-minio mc admin config set local api cors_allow_origin="http://localhost:3000"`
 - `docker exec stl-shelf-minio mc anonymous set none local/stl-shelf-models`
 - `docker compose restart minio`
-- The bucket must stay private (no anonymous reads) to match production R2: all reads go through presigned URLs or `/api/download/*`. Environments bootstrapped before July 2026 had a public-read policy — the `mc anonymous set none` step fixes them.
+- The bucket must stay private (no anonymous reads) to match the production object storage: all reads go through presigned URLs or `/api/download/*`. Environments bootstrapped before July 2026 had a public-read policy — the `mc anonymous set none` step fixes them.
 
 Local OAuth testing (ngrok):
 

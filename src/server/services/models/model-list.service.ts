@@ -2,7 +2,7 @@ import { and, desc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { user } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelTags, modelVersions, tags } from "@/lib/db/schema/models";
-import { storageService } from "@/server/services/storage";
+import { versionThumbnailUrl } from "@/lib/thumbnails";
 
 export type ListModelsInput = {
   organizationId: string;
@@ -132,6 +132,13 @@ export async function listModels({
         AND mv.version = models.current_version
         LIMIT 1
       )`,
+      currentVersionId: sql<string | null>`(
+        SELECT mv.id
+        FROM ${modelVersions} mv
+        WHERE mv.model_id = models.id
+        AND mv.version = models.current_version
+        LIMIT 1
+      )`,
       hasModelFile: sql<boolean>`(
         SELECT EXISTS(
           SELECT 1 FROM ${modelVersions} mv
@@ -177,48 +184,47 @@ export async function listModels({
         }
       : null;
 
-  const modelList = await Promise.all(
-    items.map(async (row) => {
-      let thumbnailUrl: string | null = null;
-      if (row.thumbnailPath) {
-        try {
-          thumbnailUrl = await storageService.generateDownloadUrl(row.thumbnailPath);
-        } catch {
-          thumbnailUrl = null;
-        }
-      }
+  const modelList = items.map((row) => {
+    // Stable authenticated proxy URL — cacheable, metered, org-bound
+    // (presigned URLs changed per render and bypassed measurement). The `v`
+    // cache-bust key uses the MODEL's updatedAt: every explicit mutation of the
+    // current version's thumbnail (replace/remove/file add-remove) also bumps
+    // the model's updatedAt, and the list only ever shows the current version.
+    const thumbnailUrl =
+      row.thumbnailPath && row.currentVersionId
+        ? versionThumbnailUrl(row.currentVersionId, row.updatedAt)
+        : null;
 
-      const hasModel = row.hasModelFile ?? false;
-      const hasSlicer = row.hasSlicerFile ?? false;
-      // Image can be either in model_files OR as a thumbnail on the version
-      const hasImage = (row.hasImageFile ?? false) || !!row.thumbnailPath;
+    const hasModel = row.hasModelFile ?? false;
+    const hasSlicer = row.hasSlicerFile ?? false;
+    // Image can be either in model_files OR as a thumbnail on the version
+    const hasImage = (row.hasImageFile ?? false) || !!row.thumbnailPath;
 
-      return {
-        id: row.id,
-        slug: row.slug,
-        name: row.name,
-        description: row.description,
-        currentVersion: row.currentVersion,
-        fileCount: row.fileCount ?? 0,
-        totalSize: Number(row.totalSize ?? 0),
-        tags: row.tags ?? [],
-        thumbnailUrl,
-        owner: {
-          id: row.ownerId,
-          name: row.ownerName,
-          image: row.ownerImage,
-        },
-        createdAt: row.createdAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-        completeness: {
-          hasModel,
-          hasSlicer,
-          hasImage,
-          isComplete: hasModel && hasSlicer && hasImage,
-        },
-      };
-    }),
-  );
+    return {
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      description: row.description,
+      currentVersion: row.currentVersion,
+      fileCount: row.fileCount ?? 0,
+      totalSize: Number(row.totalSize ?? 0),
+      tags: row.tags ?? [],
+      thumbnailUrl,
+      owner: {
+        id: row.ownerId,
+        name: row.ownerName,
+        image: row.ownerImage,
+      },
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      completeness: {
+        hasModel,
+        hasSlicer,
+        hasImage,
+        isComplete: hasModel && hasSlicer && hasImage,
+      },
+    };
+  });
 
   return {
     models: modelList,

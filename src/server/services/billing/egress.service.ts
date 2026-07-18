@@ -13,6 +13,7 @@ import {
   shouldTriggerSoftEgressWarning,
 } from "@/lib/billing/egress";
 import { getTierConfig, normalizeSubscriptionTier } from "@/lib/billing/config";
+import { getOrgStorageBytes } from "@/server/services/billing/storage-usage";
 import { formatStorage } from "@/lib/billing/utils";
 import { BandwidthUsageAlertTemplate } from "@/lib/email";
 import { env } from "@/lib/env";
@@ -155,7 +156,9 @@ export const checkAndTrackEgress = async (params: {
   const currentBytes = shouldReset ? 0 : Number(org.egressBytesThisMonth ?? 0);
   const currentDownloads = shouldReset ? 0 : (org.egressDownloadsThisMonth ?? 0);
 
-  const storageBytes = Number(org.currentStorage ?? 0);
+  // Read stored bytes from the object ledger (one source of truth), not the
+  // stale organization.currentStorage cache.
+  const storageBytes = await getOrgStorageBytes(params.organizationId);
   const normalizedTier = normalizeSubscriptionTier(org.subscriptionTier);
   const tierConfig = getTierConfig(normalizedTier);
   const configuredStorageLimit = Number(org.storageLimit ?? tierConfig.storageLimit ?? 0);

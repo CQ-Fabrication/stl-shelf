@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { organization } from "@/lib/db/schema/auth";
 import { modelDownloadService } from "@/server/services/models/model-download.service";
 import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import { startDelivery } from "@/server/services/metering/delivery-metering";
 import { createContentDisposition } from "@/server/utils/filename-security";
 import { getLiveSession } from "@/server/utils/live-session";
 import { crossSiteBlockedResponse, isTrustedRequestOrigin } from "@/server/utils/request-security";
@@ -71,6 +72,10 @@ export const Route = createFileRoute("/api/download/version/$versionId/zip")({
           return new Response("No files in this version", { status: 404 });
         }
 
+        // ENFORCEMENT (unchanged semantics): pre-stream, on the UNCOMPRESSED
+        // sum — the compressed size cannot be known before streaming, so the
+        // enforcement metric intentionally differs from the measured truth
+        // (real compressed bytes, recorded below by the proxy meter).
         const totalBytes = versionInfo.files.reduce((sum, file) => sum + file.size, 0);
         const egress = await checkAndTrackEgress({
           organizationId,
@@ -109,9 +114,29 @@ export const Route = createFileRoute("/api/download/version/$versionId/zip")({
           writer.abort(err);
         });
 
+        // MEASUREMENT — two structurally different segments, never summed:
+        // per-file storage→app reads (uncompressed in, free same-zone) and the
+        // compressed app→browser ZIP stream (real server egress bytes).
+        const proxyMeter = startDelivery({
+          organizationId,
+          deliveryKind: "version_zip",
+          deliveryPath: "application_proxy",
+          // Compressed size is unknown before streaming.
+          bytesRequested: 0,
+          rangeRequested: request.headers.has("range"),
+        });
+
         // 5. Stream files from R2 into archive (non-blocking)
         modelDownloadService
-          .streamFilesToArchive(archive, versionInfo.files)
+          .streamFilesToArchive(archive, versionInfo.files, {
+            wrapFileStream: (stream, file) =>
+              startDelivery({
+                organizationId,
+                deliveryKind: "version_zip",
+                deliveryPath: "internal_storage_to_application",
+                bytesRequested: file.size,
+              }).wrapStream(stream),
+          })
           .then(() => archive.finalize())
           .catch((err) => {
             console.error("Stream error:", err);
@@ -121,7 +146,7 @@ export const Route = createFileRoute("/api/download/version/$versionId/zip")({
         // 6. Return streaming response with download headers
         const filename = `${versionInfo.modelSlug}-v${versionInfo.versionNumber}.zip`;
 
-        return new Response(readable, {
+        return new Response(proxyMeter.wrapStream(readable), {
           headers: {
             "Content-Type": "application/zip",
             "Content-Disposition": createContentDisposition("attachment", filename, "download.zip"),
