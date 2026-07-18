@@ -67,7 +67,7 @@ async function getOrderRow(id = ORDER_ID) {
 beforeAll(async () => {
   const fs = await import("node:fs/promises");
   const migration = await fs.readFile(
-    new URL("../../../drizzle/0018_round_corsair.sql", import.meta.url),
+    new URL("../../../drizzle/0019_perfect_maverick.sql", import.meta.url),
     "utf8",
   );
   for (const statement of migration.split("--> statement-breakpoint")) {
