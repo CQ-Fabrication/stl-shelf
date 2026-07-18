@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { PricingUnavailable } from "@/components/pricing/pricing-unavailable";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useSubscription } from "@/hooks/use-subscription";
 import { getAddonPricing } from "@/server/functions/pricing";
@@ -13,6 +14,7 @@ const formatPrice = (price: { amount: number; currency: string }) =>
 export const StorageAddonsCard = () => {
   const { subscription, isLoading } = useSubscription();
   const { openPortal, isLoading: isPortalLoading } = useCustomerPortal();
+  const queryClient = useQueryClient();
   const { data: addonPricing } = useQuery({
     queryKey: ["billing", "addon-pricing"],
     queryFn: () => getAddonPricing(),
@@ -22,6 +24,9 @@ export const StorageAddonsCard = () => {
   const isOwner = subscription?.isOwner ?? false;
   const isDisabled = isLoading || isPortalLoading || !isOwner;
   const storagePacks = (addonPricing?.addons ?? []).filter((addon) => addon.kind === "storage");
+  const packsUnavailable =
+    addonPricing !== undefined &&
+    (storagePacks.length === 0 || storagePacks.some((addon) => addon.unavailable));
 
   return (
     <section className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
@@ -38,22 +43,29 @@ export const StorageAddonsCard = () => {
         </Button>
       </div>
 
-      {storagePacks.length > 0 && (
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {storagePacks.map((addon) => (
-            <div
-              className="rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm"
-              key={addon.slug}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{addon.label}</span>
-                {addon.price && (
-                  <span className="text-muted-foreground">{formatPrice(addon.price)}/month</span>
-                )}
+      {packsUnavailable ? (
+        <PricingUnavailable
+          className="mt-4"
+          onRetry={() => queryClient.invalidateQueries({ queryKey: ["billing", "addon-pricing"] })}
+        />
+      ) : (
+        storagePacks.length > 0 && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {storagePacks.map((addon) => (
+              <div
+                className="rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm"
+                key={addon.slug}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{addon.label}</span>
+                  {addon.price && (
+                    <span className="text-muted-foreground">{formatPrice(addon.price)}/month</span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
 
       {!isOwner && (

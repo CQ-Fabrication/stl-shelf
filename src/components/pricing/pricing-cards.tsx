@@ -1,11 +1,13 @@
+import { useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { BILLING_INTERVALS, type BillingInterval } from "@/lib/billing/config";
 import { cn } from "@/lib/utils";
 import type { PublicPricingResponse } from "@/server/functions/pricing";
 import { PricingCard } from "./pricing-card";
 import { PricingIntervalToggle } from "./pricing-interval-toggle";
+import { PricingUnavailable } from "./pricing-unavailable";
 import {
-  buildPricingTiers,
+  buildPricingDisplay,
   defaultVisibleSlugs,
   type PricingTier,
   type TierSlug,
@@ -28,11 +30,12 @@ export function PricingCards({
   renderCta,
   className,
 }: PricingCardsProps) {
+  const router = useRouter();
   const [internalInterval, setInternalInterval] = useState<BillingInterval>(BILLING_INTERVALS[0]);
   const resolvedInterval = billingInterval ?? internalInterval;
   const handleIntervalChange = onIntervalChange ?? setInternalInterval;
-  const tiers = useMemo(
-    () => buildPricingTiers(pricing, visibleSlugs, resolvedInterval),
+  const { tiers, paidUnavailable } = useMemo(
+    () => buildPricingDisplay(pricing, visibleSlugs, resolvedInterval),
     [pricing, resolvedInterval, visibleSlugs],
   );
 
@@ -49,6 +52,12 @@ export function PricingCards({
         {tiers.map((tier) => (
           <PricingCard key={tier.slug} tier={tier} renderCta={renderCta} />
         ))}
+        {paidUnavailable && (
+          <PricingUnavailable
+            className="md:col-span-1 lg:col-span-2"
+            onRetry={() => router.invalidate()}
+          />
+        )}
       </div>
     </div>
   );

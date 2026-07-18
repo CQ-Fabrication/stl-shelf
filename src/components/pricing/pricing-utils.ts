@@ -1,6 +1,5 @@
 import {
   SUBSCRIPTION_TIERS,
-  getTierPrice,
   type BillingInterval,
   type SubscriptionTier,
 } from "@/lib/billing/config";
@@ -19,6 +18,12 @@ export type PricingTier = {
   features: string[];
   cta: string;
   highlighted?: boolean;
+};
+
+export type PricingDisplay = {
+  tiers: PricingTier[];
+  /** true = one or more visible paid tiers have no Polar price; hide them and show an error block */
+  paidUnavailable: boolean;
 };
 
 type TierUiConfig = {
@@ -53,8 +58,6 @@ const tierUiConfig: Record<TierSlug, TierUiConfig> = {
   },
 };
 
-const tierOrder: TierSlug[] = ["free", "basic", "pro"];
-
 export const defaultVisibleSlugs: TierSlug[] = ["free", "basic", "pro"];
 
 const formatPeriod = (interval: BillingInterval | null, intervalCount: number | null) => {
@@ -73,75 +76,70 @@ const formatPrice = (amountInCents: number, currency: string) => {
   }).format(amountInCents / 100);
 };
 
-const buildFallbackTier = (slug: TierSlug, interval: BillingInterval): PricingTier => {
-  const config = SUBSCRIPTION_TIERS[slug];
-  const ui = tierUiConfig[slug];
-  const priceValue = getTierPrice(slug, interval);
-  const price = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: priceValue % 1 === 0 ? 0 : 2,
-  }).format(priceValue);
-
+// The Free tier is always displayable without Polar: it costs $0 by definition.
+const buildFreeCard = (): PricingTier => {
+  const ui = tierUiConfig.free;
   return {
-    slug,
+    slug: "free",
     name: ui.name,
-    price,
-    period: priceValue === 0 ? "forever" : interval === "year" ? "/year" : "/month",
+    price: "$0",
+    period: "forever",
     description: ui.description,
     badge: ui.badge,
     badgeVariant: ui.badgeVariant,
     highlighted: ui.highlighted,
-    features: config.features,
+    features: SUBSCRIPTION_TIERS.free.features,
     cta: ui.cta,
   };
 };
 
-const fallbackBySlug: Record<TierSlug, PricingTier> = tierOrder.reduce(
-  (acc, slug) => {
-    acc[slug] = buildFallbackTier(slug, "month");
-    return acc;
-  },
-  {} as Record<TierSlug, PricingTier>,
-);
+/**
+ * Build the tier cards to display. Paid tier prices must come from Polar
+ * (fresh or last-known-good, resolved server-side): if any visible paid tier
+ * has no price for the selected interval, all paid cards are hidden and
+ * `paidUnavailable` tells the caller to render one error block instead.
+ */
+export const buildPricingDisplay = (
+  pricing: PublicPricingResponse | null | undefined,
+  visibleSlugs: TierSlug[] = defaultVisibleSlugs,
+  interval: BillingInterval = "month",
+): PricingDisplay => {
+  const allowed = new Set(visibleSlugs);
+  const freeTiers = allowed.has("free") ? [buildFreeCard()] : [];
+  const visiblePaidSlugs = (["basic", "pro"] as const).filter((slug) => allowed.has(slug));
 
-const buildPricingTiersFromPricing = (
-  pricing: PublicPricingResponse,
-  interval: BillingInterval,
-): PricingTier[] => {
-  return pricing.tiers.map((tier) => {
-    const slug = tier.slug as TierSlug;
-    const ui = tierUiConfig[slug] ?? tierUiConfig.free;
-    const fallbackTier = fallbackBySlug[slug] ?? fallbackBySlug.free;
-    const priceData = tier.prices[interval];
-    const priceAmount = priceData?.amount ?? 0;
-    const currency = priceData?.currency || "USD";
-    const price = formatPrice(priceAmount, currency);
+  if (visiblePaidSlugs.length === 0) {
+    return { tiers: freeTiers, paidUnavailable: false };
+  }
 
-    return {
+  if (!pricing?.tiers?.length) {
+    return { tiers: freeTiers, paidUnavailable: true };
+  }
+
+  const paidCards: PricingTier[] = [];
+
+  for (const slug of visiblePaidSlugs) {
+    const tier = pricing.tiers.find((entry) => entry.slug === slug);
+    const priceData = tier?.prices[interval];
+
+    if (!tier || !priceData) {
+      return { tiers: freeTiers, paidUnavailable: true };
+    }
+
+    const ui = tierUiConfig[slug];
+    paidCards.push({
       slug,
       name: ui.name,
-      price,
-      period: formatPeriod(priceData?.interval ?? null, priceData?.intervalCount ?? null),
+      price: formatPrice(priceData.amount, priceData.currency || "USD"),
+      period: formatPeriod(priceData.interval, priceData.intervalCount),
       description: ui.description,
       badge: ui.badge,
       badgeVariant: ui.badgeVariant,
       highlighted: ui.highlighted,
-      features: tier.benefits.length ? tier.benefits : fallbackTier.features,
+      features: tier.benefits.length ? tier.benefits : SUBSCRIPTION_TIERS[slug].features,
       cta: ui.cta,
-    } satisfies PricingTier;
-  });
-};
+    });
+  }
 
-export const buildPricingTiers = (
-  pricing: PublicPricingResponse | null | undefined,
-  visibleSlugs: TierSlug[] = defaultVisibleSlugs,
-  interval: BillingInterval = "month",
-): PricingTier[] => {
-  const allowed = new Set(visibleSlugs);
-  const tiers = pricing?.tiers?.length
-    ? buildPricingTiersFromPricing(pricing, interval)
-    : tierOrder.map((slug) => buildFallbackTier(slug, interval));
-
-  return tiers.filter((tier) => allowed.has(tier.slug));
+  return { tiers: [...freeTiers, ...paidCards], paidUnavailable: false };
 };
