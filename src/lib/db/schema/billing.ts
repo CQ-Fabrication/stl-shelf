@@ -112,3 +112,34 @@ export type AccountDeletionRun = typeof accountDeletionRuns.$inferSelect;
 export type NewAccountDeletionRun = typeof accountDeletionRuns.$inferInsert;
 export type AccountDeletionRunItem = typeof accountDeletionRunItems.$inferSelect;
 export type NewAccountDeletionRunItem = typeof accountDeletionRunItems.$inferInsert;
+
+export const billingOrder = pgTable(
+  "billing_order",
+  {
+    polarOrderId: text("polar_order_id").primaryKey(),
+    organizationId: text("organization_id").notNull(),
+    profileId: text("profile_id").notNull(),
+    amountMinor: integer("amount_minor").notNull(),
+    totalAmountMinor: integer("total_amount_minor").notNull(),
+    taxAmountMinor: integer("tax_amount_minor").notNull(),
+    currency: text("currency").notNull(),
+    productId: text("product_id"),
+    subscriptionId: text("subscription_id"),
+    billingReason: text("billing_reason").notNull(),
+    tier: text("tier"),
+    revenueState: text("revenue_state").notNull().default("pending"), // pending|processing|completed
+    revenueTrackedAt: timestamp("revenue_tracked_at", { withTimezone: true }),
+    refundedAmountMinor: integer("refunded_amount_minor").notNull().default(0),
+    refundTrackedAmountMinor: integer("refund_tracked_amount_minor").notNull().default(0),
+    refundAnalyticsState: text("refund_analytics_state").notNull().default("not_applicable"), // not_applicable|pending|processing|completed
+    refundTrackedAt: timestamp("refund_tracked_at", { withTimezone: true }),
+    paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
+    refundedAt: timestamp("refunded_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("billing_order_organization_id_idx").on(table.organizationId)],
+);
+
+export type BillingOrder = typeof billingOrder.$inferSelect;
+export type NewBillingOrder = typeof billingOrder.$inferInsert;

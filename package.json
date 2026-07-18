@@ -24,6 +24,7 @@
     "generate:md": "bun run scripts/generate-marketing-md.ts",
     "retention:sweep": "bun run scripts/retention-sweep.ts",
     "thumbnails:backfill": "bun run scripts/backfill-thumbnails.ts",
+    "revenue:backfill": "bun run scripts/backfill-openpanel-revenue.ts",
     "account-deletion:sweep": "bun run scripts/account-deletion-sweep.ts"
   },
   "dependencies": {

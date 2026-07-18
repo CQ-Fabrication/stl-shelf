@@ -12,6 +12,7 @@ import { z } from "zod";
 import {
   handleCustomerStateChanged,
   handleOrderPaid,
+  handleOrderRefunded,
   handleSubscriptionCanceled,
   handleSubscriptionCreated,
   handleSubscriptionRevoked,
@@ -383,6 +384,7 @@ export const auth = betterAuth({
           secret: env.POLAR_WEBHOOK_SECRET,
           onPayload: recordWebhookPayload,
           onOrderPaid: handleOrderPaid,
+          onOrderRefunded: handleOrderRefunded,
           onSubscriptionCreated: handleSubscriptionCreated,
           onSubscriptionCanceled: handleSubscriptionCanceled,
           onSubscriptionRevoked: handleSubscriptionRevoked,

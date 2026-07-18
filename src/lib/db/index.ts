@@ -42,6 +42,7 @@ import {
   userAnnouncementReadsRelations,
 } from "./schema/announcements";
 import {
+  billingOrder,
   billingRetentionRunItems,
   billingRetentionRuns,
   billingWebhookEvents,
@@ -79,6 +80,7 @@ export const schema = {
   billingRetentionRunItems,
   accountDeletionRuns,
   accountDeletionRunItems,
+  billingOrder,
   // Consent
   legalDocuments,
   consentAudit,
