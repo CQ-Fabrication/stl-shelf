@@ -199,7 +199,9 @@ class ModelDetailService {
       versions.map(async (version) => {
         // Stable authenticated proxy URL — cacheable, metered, org-bound
         // (presigned URLs changed per render and bypassed measurement).
-        const thumbnailUrl = version.thumbnailPath ? versionThumbnailUrl(version.id) : null;
+        const thumbnailUrl = version.thumbnailPath
+          ? versionThumbnailUrl(version.id, version.updatedAt)
+          : null;
 
         return {
           id: version.id,

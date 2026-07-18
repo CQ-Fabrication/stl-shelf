@@ -408,7 +408,9 @@ describe("consumer services emit proxy URLs (no presigned)", () => {
     const withThumb = versions.find((version) => version.id === VERSION_A);
     const withoutThumb = versions.find((version) => version.id === VERSION_NO_THUMB);
 
-    expect(withThumb?.thumbnailUrl).toBe(`/api/thumbnails/version/${VERSION_A}`);
+    expect(withThumb?.thumbnailUrl).toMatch(
+      new RegExp(`^/api/thumbnails/version/${VERSION_A}\\?v=\\d+$`),
+    );
     expect(withoutThumb?.thumbnailUrl).toBeNull();
   });
 
@@ -416,12 +418,33 @@ describe("consumer services emit proxy URLs (no presigned)", () => {
     const { models: list } = await modelListService.listModels({ organizationId: ORG_A });
     const modelA = list.find((model) => model.id === MODEL_A);
 
-    expect(modelA?.thumbnailUrl).toBe(`/api/thumbnails/version/${VERSION_A}`);
+    expect(modelA?.thumbnailUrl).toMatch(
+      new RegExp(`^/api/thumbnails/version/${VERSION_A}\\?v=\\d+$`),
+    );
   });
 
   it("listProfiles returns /api/thumbnails/print-profile/... URLs", async () => {
     const profiles = await printProfileService.listProfiles(VERSION_A, ORG_A);
     expect(profiles).toHaveLength(1);
-    expect(profiles[0]?.thumbnailUrl).toBe(`/api/thumbnails/print-profile/${PROFILE_A}`);
+    expect(profiles[0]?.thumbnailUrl).toMatch(
+      new RegExp(`^/api/thumbnails/print-profile/${PROFILE_A}\\?v=\\d+$`),
+    );
+  });
+
+  it("cache-busts the version thumbnail URL when the row's updatedAt changes", async () => {
+    const before = await modelDetailService.getModelVersions(MODEL_A, ORG_A);
+    const urlBefore = before.find((version) => version.id === VERSION_A)?.thumbnailUrl;
+
+    // Simulate a thumbnail replace bumping updatedAt.
+    await db.execute(
+      sql`update "model_versions" set "updated_at" = now() + interval '1 hour' where "id" = ${VERSION_A}`,
+    );
+
+    const after = await modelDetailService.getModelVersions(MODEL_A, ORG_A);
+    const urlAfter = after.find((version) => version.id === VERSION_A)?.thumbnailUrl;
+
+    expect(urlBefore).toBeDefined();
+    expect(urlAfter).toBeDefined();
+    expect(urlAfter).not.toBe(urlBefore);
   });
 });

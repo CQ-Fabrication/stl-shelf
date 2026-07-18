@@ -186,9 +186,14 @@ export async function listModels({
 
   const modelList = items.map((row) => {
     // Stable authenticated proxy URL — cacheable, metered, org-bound
-    // (presigned URLs changed per render and bypassed measurement).
+    // (presigned URLs changed per render and bypassed measurement). The `v`
+    // cache-bust key uses the MODEL's updatedAt: every explicit mutation of the
+    // current version's thumbnail (replace/remove/file add-remove) also bumps
+    // the model's updatedAt, and the list only ever shows the current version.
     const thumbnailUrl =
-      row.thumbnailPath && row.currentVersionId ? versionThumbnailUrl(row.currentVersionId) : null;
+      row.thumbnailPath && row.currentVersionId
+        ? versionThumbnailUrl(row.currentVersionId, row.updatedAt)
+        : null;
 
     const hasModel = row.hasModelFile ?? false;
     const hasSlicer = row.hasSlicerFile ?? false;

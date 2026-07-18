@@ -230,7 +230,9 @@ class PrintProfileService {
     // (presigned URLs changed per render and bypassed measurement).
     return profiles.map((profile) => ({
       ...profile,
-      thumbnailUrl: profile.thumbnailPath ? printProfileThumbnailUrl(profile.id) : null,
+      thumbnailUrl: profile.thumbnailPath
+        ? printProfileThumbnailUrl(profile.id, profile.updatedAt)
+        : null,
     }));
   }
 
