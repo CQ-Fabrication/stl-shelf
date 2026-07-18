@@ -166,6 +166,34 @@ describe("buildMonthlyReport", () => {
     );
   });
 
+  it("counts an empty sampled hour (null-org zero row) as sampled with zero TB-h", async () => {
+    // The hourly job always writes a null-org zero row so an empty hour is a
+    // MEASURED zero, not an unsampled gap.
+    await snapshot(null, "2026-07-10T10:00:00Z", 0);
+
+    const report = await buildMonthlyReport("2026-07");
+
+    expect(report.snapshotCoverage.hoursSampled).toBe(1);
+    expect(report.usage.storageTbh).toBe(0);
+    expect(report.attribution.unattributed.storageTbh).toBe(0);
+  });
+
+  it("averages an org's TB-h across sampled hours, contributing zero for hours it has no row", async () => {
+    // Both hours are sampled (the null-org marker keeps hour2 on the books even
+    // though the org dropped to zero); the org only has a row in hour1.
+    await snapshot(ORG, "2026-07-10T10:00:00Z", 2 * TB);
+    await snapshot(null, "2026-07-10T10:00:00Z", 0);
+    await snapshot(null, "2026-07-10T11:00:00Z", 0);
+
+    const report = await buildMonthlyReport("2026-07");
+
+    expect(report.snapshotCoverage.hoursSampled).toBe(2);
+    // 2 TB present in 1 of 2 sampled hours → averaged over both (halved), then
+    // scaled to the full month: (2 TB / 2 h) * 744 h = 744 TB-h. NOT 1488
+    // (which is what scaling from hour1 alone would give).
+    expect(report.usage.storageTbh).toBeCloseTo(744, 6);
+  });
+
   it("keeps egress paths separate and labels attribution as analytical", async () => {
     await snapshot(ORG, "2026-07-10T10:00:00Z", 2 * TB);
     await snapshot(null, "2026-07-10T10:00:00Z", 0.5 * TB);

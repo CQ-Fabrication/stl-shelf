@@ -96,6 +96,22 @@ describe("runHourlySnapshot", () => {
     expect(Number(unattributed?.logicalBytes)).toBe(50_000);
   });
 
+  it("records a null-org zero row when the ledger is empty, marking the hour sampled", async () => {
+    await db.execute(sql`delete from "storage_objects"`);
+
+    const summary = await runHourlySnapshot(at);
+    expect(summary.organizations).toBe(0);
+    expect(summary.totalObjects).toBe(0);
+
+    const rows = await db.select().from(storageHourlySnapshots);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.organizationId).toBeNull();
+    expect(Number(rows[0]?.logicalBytes)).toBe(0);
+    expect(Number(rows[0]?.billableBytes)).toBe(0);
+    expect(Number(rows[0]?.objectCount)).toBe(0);
+    expect(rows[0]?.source).toBe("ledger");
+  });
+
   it("is idempotent within the hour: re-run upserts the same rows", async () => {
     await runHourlySnapshot(at);
     await runHourlySnapshot(new Date("2026-07-18T11:59:59.000Z"));

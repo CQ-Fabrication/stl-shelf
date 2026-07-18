@@ -85,6 +85,24 @@ export async function upsertSnapshotRows(
   }
 }
 
+/**
+ * Guarantee a single `organizationId = null` row for the hour.
+ *
+ * That null-org row is the "hour sampled" marker the monthly report counts via
+ * DISTINCT snapshot_hour. Without it, an hour whose ledger has no unattributed
+ * objects AND drops to zero live rows (empty bucket, or every org emptied)
+ * would write NO rows at all — the report would then treat the hour as
+ * UNSAMPLED and mis-scale every org's TB-hours from a smaller denominator,
+ * instead of recording a measured zero. When unattributed bytes exist the row
+ * carries them (its normal meaning); otherwise it is an explicit zero.
+ */
+export function withAggregateRow(groups: SnapshotGroup[]): SnapshotGroup[] {
+  if (groups.some((group) => group.organizationId === null)) {
+    return groups;
+  }
+  return [...groups, { organizationId: null, logicalBytes: 0, billableBytes: 0, objectCount: 0 }];
+}
+
 export async function runHourlySnapshot(now = new Date()): Promise<{
   snapshotHour: string;
   organizations: number;
@@ -94,7 +112,7 @@ export async function runHourlySnapshot(now = new Date()): Promise<{
 }> {
   return withMeteringRun("hourly_snapshot", async () => {
     const snapshotHour = truncateToUtcHour(now);
-    const groups = await computeLedgerGroups();
+    const groups = withAggregateRow(await computeLedgerGroups());
     await upsertSnapshotRows(snapshotHour, "ledger", groups, false);
 
     return {
