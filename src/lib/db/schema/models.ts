@@ -186,16 +186,6 @@ export const modelFileEvents = pgTable(
   ],
 );
 
-export const tagTypes = pgTable(
-  "tag_types",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    name: text("name").notNull().unique(),
-    description: text("description"),
-  },
-  (table) => [uniqueIndex("tag_types_name_idx").on(table.name)],
-);
-
 export const tags = pgTable(
   "tags",
   {
@@ -204,7 +194,6 @@ export const tags = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    typeId: uuid("type_id").references(() => tagTypes.id),
     color: text("color"),
     description: text("description"),
     usageCount: integer("usage_count").notNull().default(0),
@@ -214,9 +203,7 @@ export const tags = pgTable(
   (table) => [
     uniqueIndex("tags_org_name_idx").on(table.organizationId, table.name),
     index("tags_org_idx").on(table.organizationId),
-    index("tags_type_idx").on(table.typeId),
     index("tags_usage_count_idx").on(table.usageCount),
-    index("tags_org_type_name_idx").on(table.organizationId, table.typeId, table.name),
   ],
 );
 
@@ -236,25 +223,6 @@ export const modelTags = pgTable(
     uniqueIndex("model_tags_model_tag_idx").on(table.modelId, table.tagId),
     index("model_tags_model_id_idx").on(table.modelId),
     index("model_tags_tag_id_idx").on(table.tagId),
-  ],
-);
-
-export const versionTags = pgTable(
-  "version_tags",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    versionId: uuid("version_id")
-      .notNull()
-      .references(() => modelVersions.id, { onDelete: "cascade" }),
-    tagId: uuid("tag_id")
-      .notNull()
-      .references(() => tags.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("version_tags_version_tag_idx").on(table.versionId, table.tagId),
-    index("version_tags_version_id_idx").on(table.versionId),
-    index("version_tags_tag_id_idx").on(table.tagId),
   ],
 );
 
@@ -314,7 +282,6 @@ export const modelVersionsRelations = relations(modelVersions, ({ many, one }) =
     references: [models.id],
   }),
   files: many(modelFiles),
-  tags: many(versionTags),
   printProfiles: many(printProfiles),
 }));
 
@@ -340,17 +307,8 @@ export const printProfilesRelations = relations(printProfiles, ({ one }) => ({
   }),
 }));
 
-export const tagTypesRelations = relations(tagTypes, ({ many }) => ({
-  tags: many(tags),
-}));
-
-export const tagsRelations = relations(tags, ({ many, one }) => ({
-  type: one(tagTypes, {
-    fields: [tags.typeId],
-    references: [tagTypes.id],
-  }),
+export const tagsRelations = relations(tags, ({ many }) => ({
   models: many(modelTags),
-  versions: many(versionTags),
 }));
 
 export const modelTagsRelations = relations(modelTags, ({ one }) => ({
@@ -360,17 +318,6 @@ export const modelTagsRelations = relations(modelTags, ({ one }) => ({
   }),
   tag: one(tags, {
     fields: [modelTags.tagId],
-    references: [tags.id],
-  }),
-}));
-
-export const versionTagsRelations = relations(versionTags, ({ one }) => ({
-  version: one(modelVersions, {
-    fields: [versionTags.versionId],
-    references: [modelVersions.id],
-  }),
-  tag: one(tags, {
-    fields: [versionTags.tagId],
     references: [tags.id],
   }),
 }));

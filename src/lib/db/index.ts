@@ -29,10 +29,6 @@ import {
   printProfilesRelations,
   tags,
   tagsRelations,
-  tagTypes,
-  tagTypesRelations,
-  versionTags,
-  versionTagsRelations,
 } from "./schema/models";
 import { apiKeys, apiKeysRelations } from "./schema/api-keys";
 import {
@@ -66,9 +62,7 @@ export const schema = {
   modelFileEvents,
   printProfiles,
   tags,
-  tagTypes,
   modelTags,
-  versionTags,
   // API Keys
   apiKeys,
   // Announcements
@@ -91,9 +85,7 @@ export const schema = {
   modelFilesRelations,
   printProfilesRelations,
   tagsRelations,
-  tagTypesRelations,
   modelTagsRelations,
-  versionTagsRelations,
   apiKeysRelations,
   announcementsRelations,
   userAnnouncementReadsRelations,
