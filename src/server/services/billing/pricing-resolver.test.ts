@@ -6,7 +6,7 @@ vi.mock("@/server/services/billing/polar.service", () => ({ polarService: {} }))
 vi.mock("@/lib/logging", () => ({ logErrorEvent: vi.fn() }));
 
 import { logErrorEvent } from "@/lib/logging";
-import { resolveAddonPricingItems, resolveWithLastKnown } from "./pricing";
+import { resolveAddonPricingItems, resolveWithLastKnown } from "./pricing-resolver";
 
 const PRICE = { amount: 499, currency: "USD" };
 
