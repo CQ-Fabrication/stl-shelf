@@ -57,6 +57,19 @@ export type ObjectKind = (typeof OBJECT_KINDS)[number];
 export const STORAGE_SNAPSHOT_SOURCES = ["ledger", "reconciliation"] as const;
 export type StorageSnapshotSource = (typeof STORAGE_SNAPSHOT_SOURCES)[number];
 
+/** `metering_runs.job_kind` — which periodic metering job a run row belongs to. */
+export const METERING_JOB_KINDS = [
+  "hourly_snapshot",
+  "reconciliation",
+  "monthly_report",
+  "verify",
+] as const;
+export type MeteringJobKind = (typeof METERING_JOB_KINDS)[number];
+
+/** `metering_runs.status` lifecycle. */
+export const METERING_RUN_STATUSES = ["running", "completed", "failed"] as const;
+export type MeteringRunStatus = (typeof METERING_RUN_STATUSES)[number];
+
 /** Hetzner bills a 64 KB floor per stored object. */
 export const MIN_BILLABLE_OBJECT_BYTES = 65_536;
 

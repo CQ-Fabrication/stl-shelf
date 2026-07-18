@@ -3,6 +3,7 @@ import {
   boolean,
   date,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -120,4 +121,26 @@ export const storageObjects = pgTable(
     index("storage_objects_org_idx").on(table.organizationId),
     index("storage_objects_org_deleted_idx").on(table.organizationId, table.deletedAt),
   ],
+);
+
+/**
+ * Bookkeeping for metering jobs (snapshot / reconciliation / report / verify).
+ * Mirrors the retention-run pattern: one row per run, `status` transitions
+ * running → completed | failed, free-form `details` for job-specific summaries
+ * (drift counts, snapshot totals, ...). Enables gap detection: "which hourly
+ * snapshot run never happened" is answerable from this table alone.
+ */
+export const meteringRuns = pgTable(
+  "metering_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // MeteringJobKind union (src/lib/metering/types.ts)
+    jobKind: text("job_kind").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    // "running" | "completed" | "failed"
+    status: text("status").notNull().default("running"),
+    details: jsonb("details").$type<Record<string, unknown>>(),
+  },
+  (table) => [index("metering_runs_kind_started_idx").on(table.jobKind, table.startedAt)],
 );

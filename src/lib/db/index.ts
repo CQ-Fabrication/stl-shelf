@@ -54,7 +54,12 @@ import {
   userConsents,
   userConsentsRelations,
 } from "./schema/consent";
-import { egressDailyRollups, storageHourlySnapshots, storageObjects } from "./schema/metering";
+import {
+  egressDailyRollups,
+  meteringRuns,
+  storageHourlySnapshots,
+  storageObjects,
+} from "./schema/metering";
 
 export const schema = {
   // Models
@@ -84,6 +89,7 @@ export const schema = {
   userConsents,
   // Metering
   egressDailyRollups,
+  meteringRuns,
   storageHourlySnapshots,
   storageObjects,
   // Relations
