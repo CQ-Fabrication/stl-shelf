@@ -25,7 +25,8 @@
     "retention:sweep": "bun run scripts/retention-sweep.ts",
     "thumbnails:backfill": "bun run scripts/backfill-thumbnails.ts",
     "revenue:backfill": "bun run scripts/backfill-openpanel-revenue.ts",
-    "account-deletion:sweep": "bun run scripts/account-deletion-sweep.ts"
+    "account-deletion:sweep": "bun run scripts/account-deletion-sweep.ts",
+    "metering:backfill-ledger": "bun run scripts/backfill-storage-ledger.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.971.0",

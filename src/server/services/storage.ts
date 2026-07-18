@@ -11,6 +11,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "@/lib/env";
 import { captureServerException } from "@/lib/error-tracking.server";
 import { getErrorDetails, logErrorEvent } from "@/lib/logging";
+import { recordObjectDeletion, recordObjectUpsert } from "@/server/services/metering/object-ledger";
 
 const DEFAULT_LIST_LIMIT = 1000;
 const DEFAULT_EXPIRES_IN_MINUTES = 60;
@@ -101,6 +102,9 @@ export class StorageService {
           Metadata: options.metadata,
         }),
       );
+
+      // Object ledger (metering): best-effort, awaited, never fails the upload.
+      await recordObjectUpsert({ storageKey: options.key, sizeBytes: size });
 
       return {
         key: options.key,
@@ -343,6 +347,9 @@ export class StorageService {
           Key: key,
         }),
       );
+
+      // Object ledger (metering): best-effort, awaited, never fails the delete.
+      await recordObjectDeletion([key]);
     } catch (error) {
       throw new Error(
         `Failed to delete file: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -377,6 +384,10 @@ export class StorageService {
           key: e.Key || "",
           error: e.Message || "Unknown error",
         })) || [];
+
+      // Object ledger (metering): only mark keys the bucket actually deleted.
+      // Best-effort, awaited, never fails the delete.
+      await recordObjectDeletion(deleted.filter((key) => key.length > 0));
 
       return { deleted, failed };
     } catch (error) {
