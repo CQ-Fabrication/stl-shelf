@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db, modelFiles, modelVersions, models, printProfiles } from "@/lib/db";
 import { storageService } from "@/server/services/storage";
 import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import { startDelivery } from "@/server/services/metering/delivery-metering";
 import { createContentDisposition } from "@/server/utils/filename-security";
 import { getLiveSession } from "@/server/utils/live-session";
 import { crossSiteBlockedResponse, isTrustedRequestOrigin } from "@/server/utils/request-security";
@@ -58,6 +59,8 @@ export const Route = createFileRoute("/api/download/print-profile/$profileId")({
           return new Response("Profile not found", { status: 404 });
         }
 
+        // ENFORCEMENT (unchanged semantics): pre-stream, against
+        // organization.egressBytesThisMonth. Measurement happens below.
         const egress = await checkAndTrackEgress({
           organizationId,
           bytes: profile.size,
@@ -74,10 +77,35 @@ export const Route = createFileRoute("/api/download/print-profile/$profileId")({
           );
         }
 
-        const stream = await storageService.getFileStream(profile.storageKey);
+        // MEASUREMENT: two segments, two rollup rows (see delivery-metering).
+        const rangeRequested = request.headers.has("range");
+        const internalMeter = startDelivery({
+          organizationId,
+          deliveryKind: "print_profile",
+          deliveryPath: "internal_storage_to_application",
+          bytesRequested: profile.size,
+          rangeRequested,
+        });
+        const proxyMeter = startDelivery({
+          organizationId,
+          deliveryKind: "print_profile",
+          deliveryPath: "application_proxy",
+          bytesRequested: profile.size,
+          rangeRequested,
+        });
+
+        let stream: ReadableStream<Uint8Array>;
+        try {
+          stream = await storageService.getFileStream(profile.storageKey);
+        } catch (error) {
+          await internalMeter.finalize("failed");
+          await proxyMeter.finalize("failed");
+          throw error;
+        }
+
         const filename = profile.originalName || "profile";
 
-        return new Response(stream, {
+        return new Response(proxyMeter.wrapStream(internalMeter.wrapStream(stream)), {
           headers: {
             "Content-Type": profile.mimeType || "application/octet-stream",
             "Content-Disposition": createContentDisposition("attachment", filename, "profile"),

@@ -30,6 +30,12 @@ export type DeliveryKind = (typeof DELIVERY_KINDS)[number];
  * Object-Storage→app hop; `object_storage_direct` is a presigned OS→browser
  * transfer; `application_proxy` is app→browser; `unattributed` is anything we
  * cannot pin to an organization. Mirrors spec Fase 2.
+ *
+ * ESTIMATE-grade caveat: `object_storage_direct` rows are issuance-observed
+ * only (requestsStarted/bytesRequested at presigned-URL generation). Hetzner
+ * provides no per-bucket access logs or usage API, so the actual transfer is
+ * unverifiable — never present these rows as measured egress. All other paths
+ * are measured on-the-wire by the delivery metering service.
  */
 export const DELIVERY_PATHS = [
   "object_storage_direct",

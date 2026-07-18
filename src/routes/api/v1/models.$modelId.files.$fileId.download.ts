@@ -4,6 +4,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import { validateApiKey, hasScope } from "@/server/middleware/api-key";
 import { storageService } from "@/server/services/storage";
 import { checkAndTrackEgress } from "@/server/services/billing/egress.service";
+import { recordPresignedIssuance } from "@/server/services/metering/delivery-metering";
 import { checkRateLimit, getClientIp } from "@/server/utils/rate-limit";
 
 const RATE_LIMIT = { windowMs: 60_000, max: 120 };
@@ -96,6 +97,16 @@ export const Route = createFileRoute("/api/v1/models/$modelId/files/$fileId/down
 
           // Generate signed download URL (short expiry)
           const downloadUrl = await storageService.generateDownloadUrl(file.storageKey, 5);
+
+          // MEASUREMENT (estimate-grade): record the ISSUANCE only —
+          // requestsStarted + bytesRequested. The direct OS→browser transfer
+          // is unverifiable (no Hetzner access logs), so completed/served stay
+          // 0. Enforcement above (issuance-time checkAndTrackEgress) unchanged.
+          await recordPresignedIssuance({
+            organizationId: validation.organizationId,
+            deliveryKind: "api_download",
+            bytesRequested: file.size,
+          });
 
           return Response.json({
             downloadUrl,
