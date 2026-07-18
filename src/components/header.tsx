@@ -1,6 +1,16 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
-import { Check, CreditCard, LogOut, Plus, Settings, Tags, User, Users } from "lucide-react";
+import {
+  Check,
+  CreditCard,
+  History,
+  LogOut,
+  Plus,
+  Settings,
+  Tags,
+  User,
+  Users,
+} from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
@@ -169,6 +179,17 @@ export default function Header() {
                               >
                                 <Tags className="mr-2 h-4 w-4" />
                                 Manage Tags
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
+                          {permissions?.canAccessSettings && (
+                            <DropdownMenuItem asChild>
+                              <Link
+                                search={{ tab: "activity", src: "menu" }}
+                                to="/organization/settings"
+                              >
+                                <History className="mr-2 h-4 w-4" />
+                                Activity
                               </Link>
                             </DropdownMenuItem>
                           )}

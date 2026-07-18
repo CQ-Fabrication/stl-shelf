@@ -206,8 +206,11 @@ export function trackTagManagerAction(
   client?.track(ClientEvent.TAG_MANAGER_ACTION, cleanProperties(context));
 }
 
-export function trackActivityViewed(client: OpenPanelClient | null) {
-  client?.track(ClientEvent.ACTIVITY_VIEWED);
+export function trackActivityViewed(
+  client: OpenPanelClient | null,
+  context: { source: "menu" | "tab" | "deeplink" },
+) {
+  client?.track(ClientEvent.ACTIVITY_VIEWED, cleanProperties(context));
 }
 
 // ============================================================

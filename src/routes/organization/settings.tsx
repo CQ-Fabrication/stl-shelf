@@ -50,16 +50,18 @@ function OrganizationSettingsPage() {
       const source = src ?? (initialTabRef.current === "tags" ? "deeplink" : "tab");
       trackTagManagerOpened(client, { source });
       hasTrackedOpenRef.current = true;
-
-      // Strip the attribution param so a refresh/back doesn't re-report it.
-      if (src) {
-        navigate({ search: { tab: "tags" }, replace: true });
-      }
     }
 
     if (!hasTrackedActivityRef.current && tab === "activity") {
-      trackActivityViewed(client);
+      const source =
+        src === "menu" ? "menu" : initialTabRef.current === "activity" ? "deeplink" : "tab";
+      trackActivityViewed(client, { source });
       hasTrackedActivityRef.current = true;
+    }
+
+    // Strip the attribution param so a refresh/back doesn't re-report it.
+    if (src && (tab === "tags" || tab === "activity")) {
+      navigate({ search: { tab }, replace: true });
     }
   }, [tab, src, client, navigate]);
 
