@@ -217,8 +217,17 @@ const resolveEffectiveLimits = async (organizationId: string, tier: Subscription
 /**
  * Apply an add-on subscription lifecycle event (created / order / canceled /
  * revoked). Does NOT touch subscriptionTier/subscriptionId - those describe the
- * TIER subscription. Idempotent via the add-on row (keyed polarSubscriptionId)
- * and the org watermark.
+ * TIER subscription.
+ *
+ * Ordering is PER SUBSCRIPTION (via the add-on row's lastEventAt), NOT the
+ * org-level billingLastWebhookAt: tier and add-on subscriptions are independent
+ * webhook streams, so a newer tier event advancing the org watermark must not
+ * stale-drop a delayed add-on event (worst case an add-on revoke, which would
+ * otherwise keep granting forever). After the (possibly skipped) row write, the
+ * org's effective limits are recomputed from the CURRENT rows and written
+ * unconditionally - that is derived from committed state, so it is correct
+ * regardless of event ordering. It deliberately does NOT advance
+ * billingLastWebhookAt (that watermark belongs to org-state/tier updates).
  */
 const applyAddonSubscriptionEvent = async ({
   customerId,
@@ -247,42 +256,33 @@ const applyAddonSubscriptionEvent = async ({
     return;
   }
 
-  if (org.billingLastWebhookAt && org.billingLastWebhookAt >= eventTimestamp) {
-    logStaleWebhook({
-      eventType,
-      customerId,
-      eventTimestamp,
-      lastAppliedAt: org.billingLastWebhookAt,
-    });
-    return;
-  }
+  const applied =
+    status === "active"
+      ? await upsertActiveAddon({
+          organizationId: org.id,
+          polarSubscriptionId,
+          productId,
+          addon,
+          eventTimestamp,
+        })
+      : await setAddonStatus(polarSubscriptionId, status, eventTimestamp);
 
-  if (status === "active") {
-    await upsertActiveAddon({ organizationId: org.id, polarSubscriptionId, productId, addon });
-  } else {
-    await setAddonStatus(polarSubscriptionId, status);
-  }
-
+  // Recompute effective limits from the current add-on rows and write them
+  // unconditionally (see the ordering note above).
   const tier = normalizeSubscriptionTier(org.subscriptionTier);
   const limits = await resolveEffectiveLimits(org.id, tier);
 
-  const updateStatus = await applyOrganizationUpdateFromWebhook({
-    customerId,
-    eventTimestamp,
-    changes: {
+  await db
+    .update(organization)
+    .set({
       storageLimit: limits.storageLimit,
       modelCountLimit: limits.modelCountLimit,
       memberLimit: limits.memberLimit,
-    },
-  });
+    })
+    .where(eq(organization.id, org.id));
 
-  if (updateStatus.status === "stale") {
-    logStaleWebhook({
-      eventType,
-      customerId,
-      eventTimestamp,
-      lastAppliedAt: updateStatus.lastAppliedAt,
-    });
+  if (!applied) {
+    logStaleWebhook({ eventType, customerId, eventTimestamp, lastAppliedAt: null });
     return;
   }
 
@@ -847,10 +847,12 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
     getTierFromProductId(subscription.productId) ??
     (org.subscriptionTier as SubscriptionTier) ??
     "free";
-  const graceDeadline = await getGraceDeadlineIfOverLimit(org.id);
   // Tier reverts to free, but any add-on subscriptions that are still active
-  // keep their grants (computed honestly from the rows).
+  // keep their grants (computed honestly from the rows). Grace is judged
+  // against those SAME effective limits so an org with a paid storage add-on
+  // is not wrongly forced read-only.
   const limits = await resolveEffectiveLimits(org.id, "free");
+  const graceDeadline = await getGraceDeadlineIfOverLimit(org.id, limits);
 
   const [updatedOrg] = await db
     .update(organization)
@@ -971,7 +973,7 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
 
   // Reconcile add-on rows against the full present set: activate present ones,
   // revoke rows whose subscription is no longer reported.
-  await reconcileOrgAddons(org.id, addonSubs);
+  await reconcileOrgAddons(org.id, addonSubs, eventTimestamp);
 
   // Pick the winning tier sub: when multiple tier subs are active, the highest
   // tier wins.
@@ -1032,10 +1034,11 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
   }
 
   // No tier subscription: fall back to free, but keep any still-active add-on
-  // grants (computed honestly from the reconciled rows).
-  const graceDeadline = await getGraceDeadlineIfOverLimit(org.id);
+  // grants (computed honestly from the reconciled rows). Grace is judged
+  // against those SAME effective limits.
   const previousTier = normalizeSubscriptionTier(org.subscriptionTier);
   const limits = await resolveEffectiveLimits(org.id, "free");
+  const graceDeadline = await getGraceDeadlineIfOverLimit(org.id, limits);
 
   const [updatedOrg] = await db
     .update(organization)

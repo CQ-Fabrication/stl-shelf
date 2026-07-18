@@ -48,13 +48,29 @@ export const getUsageSnapshotForOrganization = async (
   };
 };
 
-const isOverFreeLimits = (snapshot: UsageSnapshot) => {
-  const freeTier = SUBSCRIPTION_TIERS.free;
+/**
+ * The subset of effective limits an over-limit check cares about. Effective
+ * limits (tier + active add-on grants) structurally satisfy this, so callers
+ * can pass computeEffectiveLimits(...) directly.
+ */
+export type OverLimitCheck = {
+  storageLimit: number;
+  modelCountLimit: number;
+};
+
+const FREE_LIMITS: OverLimitCheck = {
+  storageLimit: SUBSCRIPTION_TIERS.free.storageLimit,
+  modelCountLimit: SUBSCRIPTION_TIERS.free.modelCountLimit,
+};
+
+const isOverLimits = (snapshot: UsageSnapshot, limits: OverLimitCheck) => {
   const overModels =
-    !isUnlimited(freeTier.modelCountLimit) && snapshot.modelCount > freeTier.modelCountLimit;
-  const overStorage = snapshot.storageBytes > freeTier.storageLimit;
+    !isUnlimited(limits.modelCountLimit) && snapshot.modelCount > limits.modelCountLimit;
+  const overStorage = snapshot.storageBytes > limits.storageLimit;
   return overModels || overStorage;
 };
+
+const isOverFreeLimits = (snapshot: UsageSnapshot) => isOverLimits(snapshot, FREE_LIMITS);
 
 const listModelsWithSizes = async (organizationId: string) => {
   const rows = await db
@@ -111,9 +127,18 @@ const deleteModelStorage = async (modelId: string) => {
   }
 };
 
-export const getGraceDeadlineIfOverLimit = async (organizationId: string) => {
+/**
+ * Grace deadline if the org is over its effective limits. Defaults to free-tier
+ * limits (existing callers unchanged), but on a tier revoke the org may still
+ * hold active add-on grants, so callers pass computeEffectiveLimits("free",
+ * grants) to avoid wrongly putting a paid-add-on org into grace.
+ */
+export const getGraceDeadlineIfOverLimit = async (
+  organizationId: string,
+  limits: OverLimitCheck = FREE_LIMITS,
+) => {
   const snapshot = await getUsageSnapshotForOrganization(organizationId);
-  if (!isOverFreeLimits(snapshot)) {
+  if (!isOverLimits(snapshot, limits)) {
     return null;
   }
 

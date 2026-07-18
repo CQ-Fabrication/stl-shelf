@@ -163,6 +163,11 @@ export const organizationAddons = pgTable(
     grantBytes: bigint("grant_bytes", { mode: "number" }),
     grantSeats: integer("grant_seats"),
     status: text("status").notNull().default("active"),
+    // Per-subscription ordering watermark. Add-on subscriptions are an
+    // independent webhook stream from the tier subscription, so they cannot
+    // rely on the org-level billingLastWebhookAt: a newer tier event would
+    // stale-drop a delayed add-on event. We order add-on writes per row.
+    lastEventAt: timestamp("last_event_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

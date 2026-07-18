@@ -1,5 +1,5 @@
 {
-  "id": "7439db73-179c-436f-ad9d-23ad2299df93",
+  "id": "6180d693-9951-4e60-96f3-00253b34557a",
   "prevId": "3ea7954e-3b86-48bf-b40d-3a0e7e92fc60",
   "version": "7",
   "dialect": "postgresql",
@@ -1939,6 +1939,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'active'"
+        },
+        "last_event_at": {
+          "name": "last_event_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

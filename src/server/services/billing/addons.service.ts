@@ -1,4 +1,4 @@
-import { and, eq, inArray, notInArray } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, notInArray, or } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organizationAddons } from "@/lib/db/schema/billing";
 import type { AddonKind, BillingAddon, SubscriptionTier } from "@/lib/billing/config";
@@ -82,26 +82,45 @@ export async function getActiveAddonGrants(organizationId: string): Promise<Acti
   }));
 }
 
+/**
+ * Per-subscription ordering guard: only apply an event that is strictly newer
+ * than what this row last saw. Add-on subscriptions are an independent webhook
+ * stream from the tier subscription, so a shared org-level watermark would
+ * stale-drop a delayed add-on event; we order each add-on row on its own.
+ */
+const isNewerEvent = (eventTimestamp: Date) =>
+  or(isNull(organizationAddons.lastEventAt), lt(organizationAddons.lastEventAt, eventTimestamp));
+
 type AddonUpsertInput = {
   organizationId: string;
   polarSubscriptionId: string;
   productId: string;
   addon: BillingAddon;
+  eventTimestamp: Date;
+  /**
+   * When true (customer.state_changed reconcile, which carries the full truth),
+   * override the row regardless of its lastEventAt ordering. Single-event
+   * webhook writes leave this false so a stale event cannot clobber a newer one.
+   */
+  force?: boolean;
 };
 
 /**
  * Idempotently record an add-on subscription as active. Keyed by
  * polarSubscriptionId, so webhook re-delivery of the same subscription never
- * double-grants.
+ * double-grants. Returns true when the row was actually written (inserted or
+ * updated), false when skipped as stale by the per-subscription guard.
  */
 export async function upsertActiveAddon({
   organizationId,
   polarSubscriptionId,
   productId,
   addon,
-}: AddonUpsertInput): Promise<void> {
+  eventTimestamp,
+  force = false,
+}: AddonUpsertInput): Promise<boolean> {
   const now = new Date();
-  await db
+  const [row] = await db
     .insert(organizationAddons)
     .values({
       organizationId,
@@ -112,6 +131,7 @@ export async function upsertActiveAddon({
       grantBytes: addon.grantBytes,
       grantSeats: addon.grantSeats,
       status: "active",
+      lastEventAt: eventTimestamp,
       updatedAt: now,
     })
     .onConflictDoUpdate({
@@ -124,29 +144,38 @@ export async function upsertActiveAddon({
         grantBytes: addon.grantBytes,
         grantSeats: addon.grantSeats,
         status: "active",
+        lastEventAt: eventTimestamp,
         updatedAt: now,
       },
-    });
+      setWhere: force ? undefined : isNewerEvent(eventTimestamp),
+    })
+    .returning({ id: organizationAddons.id });
+
+  return row !== undefined;
 }
 
 /**
- * Mark an add-on subscription canceled or revoked. Returns the affected row
- * (org + slug) so the caller can recompute limits and emit an audit event.
+ * Mark an add-on subscription canceled or revoked. Returns true when the row
+ * was actually written, false when skipped as stale by the per-subscription
+ * guard (or when no matching row exists).
  */
 export async function setAddonStatus(
   polarSubscriptionId: string,
   status: "canceled" | "revoked",
-): Promise<{ organizationId: string; addonSlug: string } | undefined> {
+  eventTimestamp: Date,
+): Promise<boolean> {
   const [row] = await db
     .update(organizationAddons)
-    .set({ status, updatedAt: new Date() })
-    .where(eq(organizationAddons.polarSubscriptionId, polarSubscriptionId))
-    .returning({
-      organizationId: organizationAddons.organizationId,
-      addonSlug: organizationAddons.addonSlug,
-    });
+    .set({ status, lastEventAt: eventTimestamp, updatedAt: new Date() })
+    .where(
+      and(
+        eq(organizationAddons.polarSubscriptionId, polarSubscriptionId),
+        isNewerEvent(eventTimestamp),
+      ),
+    )
+    .returning({ id: organizationAddons.id });
 
-  return row;
+  return row !== undefined;
 }
 
 export type PresentAddon = {
@@ -159,10 +188,15 @@ export type PresentAddon = {
  * Reconcile the org's add-on rows against the full set of add-on subscriptions
  * reported by a customer.state_changed event: upsert every present one as
  * active, and mark every previously-active row that is now absent as revoked.
+ *
+ * customer.state_changed is the full-truth snapshot, so it overrides rows
+ * regardless of their per-subscription lastEventAt and stamps that watermark to
+ * the state event's timestamp on every touched row.
  */
 export async function reconcileOrgAddons(
   organizationId: string,
   present: PresentAddon[],
+  eventTimestamp: Date,
 ): Promise<void> {
   for (const item of present) {
     await upsertActiveAddon({
@@ -170,6 +204,8 @@ export async function reconcileOrgAddons(
       polarSubscriptionId: item.polarSubscriptionId,
       productId: item.productId,
       addon: item.addon,
+      eventTimestamp,
+      force: true,
     });
   }
 
@@ -177,7 +213,7 @@ export async function reconcileOrgAddons(
 
   await db
     .update(organizationAddons)
-    .set({ status: "revoked", updatedAt: new Date() })
+    .set({ status: "revoked", lastEventAt: eventTimestamp, updatedAt: new Date() })
     .where(
       and(
         eq(organizationAddons.organizationId, organizationId),

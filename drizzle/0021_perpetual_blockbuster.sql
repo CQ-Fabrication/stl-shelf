@@ -8,6 +8,7 @@ CREATE TABLE "organization_addons" (
 	"grant_bytes" bigint,
 	"grant_seats" integer,
 	"status" text DEFAULT 'active' NOT NULL,
+	"last_event_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "organization_addons_polar_subscription_id_unique" UNIQUE("polar_subscription_id")

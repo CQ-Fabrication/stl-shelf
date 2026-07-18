@@ -37,11 +37,18 @@ async function createSchema(): Promise<void> {
       "grant_bytes" bigint,
       "grant_seats" integer,
       "status" text not null default 'active',
+      "last_event_at" timestamptz,
       "created_at" timestamptz not null default now(),
       "updated_at" timestamptz not null default now()
     )
   `);
 }
+
+// Monotonic event timestamps: each call is strictly newer than the last, so the
+// per-subscription ordering guard applies the write. Tests that exercise
+// staleness pass explicit out-of-order values instead.
+let clock = 0;
+const nextTs = () => new Date(Date.UTC(2026, 0, 1) + clock++ * 1000);
 
 async function rowCount(): Promise<number> {
   const rows = await db.select({ id: organizationAddons.id }).from(organizationAddons);
@@ -105,6 +112,7 @@ describe("add-on rows", () => {
       polarSubscriptionId: "sub_storage_1",
       productId: "prod_storage_100",
       addon: BILLING_ADDONS.storage_100gb,
+      eventTimestamp: nextTs(),
     });
 
     const grants = await getActiveAddonGrants(ORG);
@@ -118,12 +126,14 @@ describe("add-on rows", () => {
       polarSubscriptionId: "sub_tb_1",
       productId: "prod_tb",
       addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: nextTs(),
     });
     await upsertActiveAddon({
       organizationId: ORG,
       polarSubscriptionId: "sub_tb_2",
       productId: "prod_tb",
       addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: nextTs(),
     });
 
     expect(await rowCount()).toBe(2);
@@ -138,6 +148,7 @@ describe("add-on rows", () => {
         polarSubscriptionId: "sub_dupe",
         productId: "prod_tb",
         addon: BILLING_ADDONS.storage_1tb,
+        eventTimestamp: nextTs(),
       });
     }
 
@@ -152,11 +163,12 @@ describe("add-on rows", () => {
       polarSubscriptionId: "sub_revoke",
       productId: "prod_500",
       addon: BILLING_ADDONS.storage_500gb,
+      eventTimestamp: nextTs(),
     });
     expect((await getActiveAddonGrants(ORG)).length).toBe(1);
 
-    const affected = await setAddonStatus("sub_revoke", "revoked");
-    expect(affected).toEqual({ organizationId: ORG, addonSlug: "storage_500gb" });
+    const applied = await setAddonStatus("sub_revoke", "revoked", nextTs());
+    expect(applied).toBe(true);
 
     const limits = computeEffectiveLimits("free", await getActiveAddonGrants(ORG));
     expect(limits.storageLimit).toBe(SUBSCRIPTION_TIERS.free.storageLimit);
@@ -168,15 +180,16 @@ describe("add-on rows", () => {
       polarSubscriptionId: "sub_cancel",
       productId: "prod_100",
       addon: BILLING_ADDONS.storage_100gb,
+      eventTimestamp: nextTs(),
     });
 
     // Canceled = cancellation scheduled; access continues until revoked.
-    await setAddonStatus("sub_cancel", "canceled");
+    await setAddonStatus("sub_cancel", "canceled", nextTs());
     const canceledLimits = computeEffectiveLimits("free", await getActiveAddonGrants(ORG));
     expect(canceledLimits.storageLimit).toBe(SUBSCRIPTION_TIERS.free.storageLimit + 100 * GIB);
 
     // Revoked = access actually ended; the grant stops.
-    await setAddonStatus("sub_cancel", "revoked");
+    await setAddonStatus("sub_cancel", "revoked", nextTs());
     const revokedLimits = computeEffectiveLimits("free", await getActiveAddonGrants(ORG));
     expect(revokedLimits.storageLimit).toBe(SUBSCRIPTION_TIERS.free.storageLimit);
   });
@@ -187,12 +200,92 @@ describe("add-on rows", () => {
       polarSubscriptionId: "sub_canceled_gone",
       productId: "prod_100",
       addon: BILLING_ADDONS.storage_100gb,
+      eventTimestamp: nextTs(),
     });
-    await setAddonStatus("sub_canceled_gone", "canceled");
+    await setAddonStatus("sub_canceled_gone", "canceled", nextTs());
     expect((await getActiveAddonGrants(ORG)).length).toBe(1);
 
-    await reconcileOrgAddons(ORG, []);
+    await reconcileOrgAddons(ORG, [], nextTs());
 
+    expect((await getActiveAddonGrants(ORG)).length).toBe(0);
+  });
+});
+
+describe("per-subscription event ordering (org watermark decoupling)", () => {
+  // Codex P1-1: tier and add-on subscriptions are independent webhook streams.
+  // A newer tier event advances the ORG watermark, but add-on writes must be
+  // ordered on the add-on row's own lastEventAt, not the org watermark — so a
+  // delayed add-on revoke still lands.
+  it("applies a delayed add-on revoke even though a later tier event advanced the org watermark", async () => {
+    // Add-on created at T0 (row.lastEventAt = T0).
+    const t0 = nextTs();
+    await upsertActiveAddon({
+      organizationId: ORG,
+      polarSubscriptionId: "sub_delayed",
+      productId: "prod_tb",
+      addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: t0,
+    });
+    expect((await getActiveAddonGrants(ORG)).length).toBe(1);
+
+    // A tier webhook fires at T2 and advances the org-level billingLastWebhookAt
+    // (org state, not the add-on row). The revoke below carries T1 with
+    // T0 < T1 < T2: older than the org watermark, newer than the add-on row.
+    const t1 = nextTs(); // T1
+    nextTs(); // T2 (the tier event's timestamp — not consulted for add-on writes)
+
+    const applied = await setAddonStatus("sub_delayed", "revoked", t1);
+    expect(applied).toBe(true);
+
+    // Grant is gone: the add-on no longer keeps granting forever.
+    const limits = computeEffectiveLimits("free", await getActiveAddonGrants(ORG));
+    expect(limits.storageLimit).toBe(SUBSCRIPTION_TIERS.free.storageLimit);
+  });
+
+  it("skips an add-on event older than the row's own lastEventAt (per-subscription staleness)", async () => {
+    const tNew = new Date(Date.UTC(2026, 5, 1));
+    const tOld = new Date(Date.UTC(2026, 0, 1));
+
+    // Row's lastEventAt advanced to tNew.
+    await upsertActiveAddon({
+      organizationId: ORG,
+      polarSubscriptionId: "sub_stale",
+      productId: "prod_tb",
+      addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: tNew,
+    });
+
+    // A revoke that predates the row is stale → skipped, grant survives.
+    const applied = await setAddonStatus("sub_stale", "revoked", tOld);
+    expect(applied).toBe(false);
+
+    const limits = computeEffectiveLimits("free", await getActiveAddonGrants(ORG));
+    expect(limits.storageLimit).toBe(SUBSCRIPTION_TIERS.free.storageLimit + 1024 * GIB);
+  });
+
+  it("skips a stale upsert that would otherwise re-activate a revoked add-on", async () => {
+    const tNew = new Date(Date.UTC(2026, 5, 1));
+    const tOld = new Date(Date.UTC(2026, 0, 1));
+
+    await upsertActiveAddon({
+      organizationId: ORG,
+      polarSubscriptionId: "sub_reactivate",
+      productId: "prod_tb",
+      addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: tNew,
+    });
+    await setAddonStatus("sub_reactivate", "revoked", new Date(Date.UTC(2026, 6, 1)));
+    expect((await getActiveAddonGrants(ORG)).length).toBe(0);
+
+    // A delayed "created" (active) with an old timestamp must not resurrect it.
+    const applied = await upsertActiveAddon({
+      organizationId: ORG,
+      polarSubscriptionId: "sub_reactivate",
+      productId: "prod_tb",
+      addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: tOld,
+    });
+    expect(applied).toBe(false);
     expect((await getActiveAddonGrants(ORG)).length).toBe(0);
   });
 });
@@ -205,23 +298,33 @@ describe("reconcileOrgAddons (customer.state_changed)", () => {
       polarSubscriptionId: "sub_keep",
       productId: "prod_tb",
       addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: nextTs(),
     });
     await upsertActiveAddon({
       organizationId: ORG,
       polarSubscriptionId: "sub_gone",
       productId: "prod_100",
       addon: BILLING_ADDONS.storage_100gb,
+      eventTimestamp: nextTs(),
     });
 
     // State reports only sub_keep still present, plus a brand-new sub_new.
-    await reconcileOrgAddons(ORG, [
-      { polarSubscriptionId: "sub_keep", productId: "prod_tb", addon: BILLING_ADDONS.storage_1tb },
-      {
-        polarSubscriptionId: "sub_new",
-        productId: "prod_seat",
-        addon: BILLING_ADDONS.seat_single,
-      },
-    ]);
+    await reconcileOrgAddons(
+      ORG,
+      [
+        {
+          polarSubscriptionId: "sub_keep",
+          productId: "prod_tb",
+          addon: BILLING_ADDONS.storage_1tb,
+        },
+        {
+          polarSubscriptionId: "sub_new",
+          productId: "prod_seat",
+          addon: BILLING_ADDONS.seat_single,
+        },
+      ],
+      nextTs(),
+    );
 
     const grants = await getActiveAddonGrants(ORG);
     // sub_keep (1 TB storage) + sub_new (1 seat) survive; sub_gone revoked.
@@ -237,9 +340,10 @@ describe("reconcileOrgAddons (customer.state_changed)", () => {
       polarSubscriptionId: "sub_a",
       productId: "prod_tb",
       addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: nextTs(),
     });
 
-    await reconcileOrgAddons(ORG, []);
+    await reconcileOrgAddons(ORG, [], nextTs());
 
     expect((await getActiveAddonGrants(ORG)).length).toBe(0);
   });
@@ -251,14 +355,35 @@ describe("reconcileOrgAddons (customer.state_changed)", () => {
       polarSubscriptionId: "sub_tb",
       productId: "prod_tb",
       addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: nextTs(),
     });
 
     // Reconcile keeps it (still present), tier falls to free.
-    await reconcileOrgAddons(ORG, [
-      { polarSubscriptionId: "sub_tb", productId: "prod_tb", addon: BILLING_ADDONS.storage_1tb },
-    ]);
+    await reconcileOrgAddons(
+      ORG,
+      [{ polarSubscriptionId: "sub_tb", productId: "prod_tb", addon: BILLING_ADDONS.storage_1tb }],
+      nextTs(),
+    );
 
     const limits = computeEffectiveLimits("free", await getActiveAddonGrants(ORG));
     expect(limits.storageLimit).toBe(SUBSCRIPTION_TIERS.free.storageLimit + 1024 * GIB);
+  });
+
+  it("overrides rows regardless of lastEventAt (full-truth snapshot wins over per-row staleness)", async () => {
+    // Row's lastEventAt is far in the future.
+    const tFuture = new Date(Date.UTC(2027, 0, 1));
+    await upsertActiveAddon({
+      organizationId: ORG,
+      polarSubscriptionId: "sub_future",
+      productId: "prod_tb",
+      addon: BILLING_ADDONS.storage_1tb,
+      eventTimestamp: tFuture,
+    });
+    expect((await getActiveAddonGrants(ORG)).length).toBe(1);
+
+    // A reconcile with an OLDER timestamp that reports the sub as absent still
+    // revokes it — state_changed is the full truth and overrides per-row order.
+    await reconcileOrgAddons(ORG, [], new Date(Date.UTC(2026, 0, 1)));
+    expect((await getActiveAddonGrants(ORG)).length).toBe(0);
   });
 });
