@@ -135,3 +135,72 @@ export const getTierPrice = (tier: SubscriptionTier, interval: BillingInterval) 
   const config = SUBSCRIPTION_TIERS[tier];
   return interval === "year" ? config.priceYearly : config.priceMonthly;
 };
+
+/**
+ * Billing add-ons - single source of truth (client-safe).
+ *
+ * Add-ons stack on top of a tier: storage packs raise the storage limit,
+ * seat packs raise the member limit. Polar product IDs are NOT here - they
+ * are resolved server-side only in `./addons` to keep them out of the client
+ * bundle.
+ */
+const GIB = 1_073_741_824; // 1024^3 bytes, matching SUBSCRIPTION_TIERS units
+
+export type AddonKind = "storage" | "seats";
+
+export type BillingAddon = {
+  slug: string;
+  kind: AddonKind;
+  /** Bytes granted (storage add-ons only) */
+  grantBytes: number | null;
+  /** Seats granted (seat add-ons only) */
+  grantSeats: number | null;
+  /** Monthly price in USD, or null when not published for display */
+  priceMonthly: number | null;
+  label: string;
+};
+
+export const BILLING_ADDONS = {
+  storage_100gb: {
+    slug: "storage_100gb",
+    kind: "storage",
+    grantBytes: 100 * GIB,
+    grantSeats: null,
+    priceMonthly: 4.99,
+    label: "+100 GB storage",
+  },
+  storage_500gb: {
+    slug: "storage_500gb",
+    kind: "storage",
+    grantBytes: 500 * GIB,
+    grantSeats: null,
+    priceMonthly: 20.99,
+    label: "+500 GB storage",
+  },
+  storage_1tb: {
+    slug: "storage_1tb",
+    kind: "storage",
+    grantBytes: 1024 * GIB,
+    grantSeats: null,
+    priceMonthly: 35.99,
+    label: "+1 TB storage",
+  },
+  seat_single: {
+    slug: "seat_single",
+    kind: "seats",
+    grantBytes: null,
+    grantSeats: 1,
+    priceMonthly: null,
+    label: "+1 seat",
+  },
+  seats_pack: {
+    slug: "seats_pack",
+    kind: "seats",
+    grantBytes: null,
+    grantSeats: 5,
+    priceMonthly: null,
+    label: "+5 seats",
+  },
+} as const satisfies Record<string, BillingAddon>;
+
+export type AddonSlug = keyof typeof BILLING_ADDONS;

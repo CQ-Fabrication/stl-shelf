@@ -64,6 +64,12 @@ export const env = createEnv({
     POLAR_PRODUCT_PRO: z.string().optional(),
     POLAR_PRODUCT_PRO_MONTH: z.string().optional(),
     POLAR_PRODUCT_PRO_YEAR: z.string().optional(),
+    // Polar.sh billing add-ons (storage packs + extra seats)
+    POLAR_PRODUCT_STORAGE_100_GB: z.string().optional(),
+    POLAR_PRODUCT_STORAGE_500_GB: z.string().optional(),
+    POLAR_PRODUCT_STORAGE_1_TB: z.string().optional(),
+    POLAR_PRODUCT_SEATS_PACK: z.string().optional(),
+    POLAR_PRODUCT_SEAT_SINGLE: z.string().optional(),
 
     // OpenPanel Analytics
     OPENPANEL_CLIENT_ID: z.string().min(1),

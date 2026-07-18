@@ -143,3 +143,31 @@ export const billingOrder = pgTable(
 
 export type BillingOrder = typeof billingOrder.$inferSelect;
 export type NewBillingOrder = typeof billingOrder.$inferInsert;
+
+/**
+ * Billing add-ons: one row per active Polar add-on subscription (storage packs,
+ * extra seats). Keyed by polarSubscriptionId so webhook re-delivery is
+ * idempotent. Grants stack on top of the tier limits via computeEffectiveLimits.
+ */
+export const organizationAddons = pgTable(
+  "organization_addons",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    polarSubscriptionId: text("polar_subscription_id").notNull().unique(),
+    productId: text("product_id").notNull(),
+    addonSlug: text("addon_slug").notNull(),
+    kind: text("kind").notNull(),
+    grantBytes: bigint("grant_bytes", { mode: "number" }),
+    grantSeats: integer("grant_seats"),
+    status: text("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("organization_addons_org_idx").on(table.organizationId)],
+);
+
+export type OrganizationAddon = typeof organizationAddons.$inferSelect;
+export type NewOrganizationAddon = typeof organizationAddons.$inferInsert;
