@@ -1,6 +1,16 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
-import { Check, CreditCard, LogOut, Plus, Settings, Tags, User, Users } from "lucide-react";
+import {
+  Check,
+  CreditCard,
+  History,
+  LogOut,
+  Plus,
+  Settings,
+  Tags,
+  User,
+  Users,
+} from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
@@ -47,7 +57,10 @@ export default function Header() {
       const org = organizations?.find((o) => o.id === orgId);
       if (org) {
         toast.success(`Switched to ${org.name}`);
-        await queryClient.invalidateQueries({ queryKey: ["organizations"] });
+        // Org-scoped queries use constant keys (activity, tags, models, ...) and rely
+        // on the server session for scoping — after an org switch every cached page
+        // belongs to the previous org, so drop the whole cache, not just ["organizations"].
+        await queryClient.invalidateQueries();
         await router.invalidate();
       }
     } catch (error) {
@@ -169,6 +182,17 @@ export default function Header() {
                               >
                                 <Tags className="mr-2 h-4 w-4" />
                                 Manage Tags
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
+                          {permissions?.canAccessSettings && (
+                            <DropdownMenuItem asChild>
+                              <Link
+                                search={{ tab: "activity", src: "menu" }}
+                                to="/organization/settings"
+                              >
+                                <History className="mr-2 h-4 w-4" />
+                                Activity
                               </Link>
                             </DropdownMenuItem>
                           )}

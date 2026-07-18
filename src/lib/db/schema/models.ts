@@ -165,6 +165,10 @@ export const modelFileEvents = pgTable(
     extension: text("extension").notNull(),
     size: integer("size").notNull(),
     storageKey: text("storage_key").notNull(),
+    // Denormalized labels for rendering deleted-entity events without a live
+    // join. Nullable for backcompat: pre-existing "removed" rows have them null.
+    modelName: text("model_name"),
+    versionLabel: text("version_label"),
     actorId: text("actor_id").notNull(),
     ipAddress: text("ip_address"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -173,6 +177,12 @@ export const modelFileEvents = pgTable(
     index("model_file_events_org_idx").on(table.organizationId),
     index("model_file_events_file_idx").on(table.fileId),
     index("model_file_events_storage_key_idx").on(table.storageKey),
+    // Keyset feed: reverse-chron scan scoped to an org (activity view).
+    index("model_file_events_org_created_idx").on(
+      table.organizationId,
+      table.createdAt.desc(),
+      table.id.desc(),
+    ),
   ],
 );
 

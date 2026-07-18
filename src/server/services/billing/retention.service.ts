@@ -207,6 +207,8 @@ export const enforceRetentionForOrganization = async (
       await modelDeleteService.deleteModel({
         modelId: model.id,
         organizationId,
+        actorId: "system:retention",
+        ipAddress: null,
       });
       deletedModelIds.push(model.id);
       deletedBytes += Number(model.size ?? 0);

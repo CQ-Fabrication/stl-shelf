@@ -127,6 +127,13 @@
       "when": 1783612522986,
       "tag": "0017_tag_usage_count_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784281268267,
+      "tag": "0018_nosy_spot",
+      "breakpoints": true
     }
   ]
 }

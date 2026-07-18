@@ -1,8 +1,28 @@
-import { eq, isNotNull } from "drizzle-orm";
+import { eq, isNotNull, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organization } from "@/lib/db/schema/auth";
 import { billingRetentionRunItems, billingRetentionRuns } from "@/lib/db/schema/billing";
+import { modelFileEvents } from "@/lib/db/schema/models";
 import { enforceRetentionForOrganization } from "@/server/services/billing/retention.service";
+
+// Tombstones are an audit trail, not a permanent ledger: prune destructive-event
+// rows past this horizon so the shared Postgres stays small by construction
+// (see the scope guardrail on modelFileEvents).
+const EVENT_RETENTION_MONTHS = 24;
+
+const pruneModelFileEvents = async () => {
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - EVENT_RETENTION_MONTHS);
+
+  const deleted = await db
+    .delete(modelFileEvents)
+    .where(lt(modelFileEvents.createdAt, cutoff))
+    .returning({ id: modelFileEvents.id });
+
+  console.log(
+    `[retention] model_file_events pruned=${deleted.length} olderThan=${cutoff.toISOString()}`,
+  );
+};
 
 const runSweep = async () => {
   const [run] = await db
@@ -64,6 +84,8 @@ const runSweep = async () => {
     console.log(
       `[retention] sweep done: cleaned=${cleaned} deletedModels=${deletedModels} deletedBytes=${deletedBytes}`,
     );
+
+    await pruneModelFileEvents();
   } catch (error) {
     await db
       .update(billingRetentionRuns)
