@@ -1,6 +1,7 @@
 import type { Order } from "@polar-sh/sdk/models/components/order.js";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { billingOrder, db } from "@/lib/db";
+import { logErrorEvent } from "@/lib/logging";
 import { trackRefund, trackRevenue } from "@/lib/openpanel";
 
 export type OrderTrackingContext = {
@@ -132,6 +133,34 @@ export const recordRefundedOrder = async (
   }
 };
 
+/**
+ * Completion writes live behind this object so tests can inject persistence
+ * failures (property calls are interceptable; direct module-internal calls
+ * are not). Production code never overrides it.
+ */
+export const ledgerPersistence = {
+  async completeRevenue(orderId: string) {
+    await db
+      .update(billingOrder)
+      .set({ revenueState: "completed", revenueTrackedAt: new Date(), updatedAt: new Date() })
+      .where(eq(billingOrder.polarOrderId, orderId));
+  },
+  async completeRefund(orderId: string, trackedMinor: number) {
+    // If a newer webhook raised refunded_amount_minor while this delivery was
+    // in flight, re-arm the row instead of completing it: the remaining delta
+    // must be claimable by the next delivery (Codex P2).
+    await db
+      .update(billingOrder)
+      .set({
+        refundAnalyticsState: sql`CASE WHEN ${billingOrder.refundedAmountMinor} > ${trackedMinor} THEN 'pending' ELSE 'completed' END`,
+        refundTrackedAmountMinor: trackedMinor,
+        refundTrackedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(billingOrder.polarOrderId, orderId));
+  },
+};
+
 export const deliverOrderRevenue = async (orderId: string) => {
   // Claim the row: pending -> processing atomically. Zero rows returned means
   // it was already delivered or is in-flight elsewhere, so this is a no-op.
@@ -152,6 +181,7 @@ export const deliverOrderRevenue = async (orderId: string) => {
     return;
   }
 
+  let sent = false;
   try {
     const result = await trackRevenue(claimed.amountMinor, {
       profileId: claimed.profileId,
@@ -167,10 +197,8 @@ export const deliverOrderRevenue = async (orderId: string) => {
     });
 
     if (result === "sent") {
-      await db
-        .update(billingOrder)
-        .set({ revenueState: "completed", revenueTrackedAt: new Date(), updatedAt: new Date() })
-        .where(eq(billingOrder.polarOrderId, orderId));
+      sent = true;
+      await ledgerPersistence.completeRevenue(orderId);
       return;
     }
 
@@ -184,6 +212,17 @@ export const deliverOrderRevenue = async (orderId: string) => {
       `[billing analytics] revenue delivery skipped for order ${orderId} — OpenPanel not configured; left pending for retry.`,
     );
   } catch (error) {
+    if (sent) {
+      // The event was accepted by OpenPanel; only persisting "completed"
+      // failed. Re-arming to pending would re-send and double-count (Codex
+      // P2), so leave the row in "processing" (never auto-reclaimed) and
+      // surface it for manual reconciliation.
+      logErrorEvent("billing.revenue.completion_persist_failed", {
+        orderId,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
     await db
       .update(billingOrder)
       .set({ revenueState: "pending", updatedAt: new Date() })
@@ -208,17 +247,11 @@ export const deliverOrderRefund = async (orderId: string) => {
   // Nothing new to report: mark completed and sync the tracked amount so the
   // columns don't drift apart.
   if (deltaMinor <= 0 || !claimed.refundedAt) {
-    await db
-      .update(billingOrder)
-      .set({
-        refundAnalyticsState: "completed",
-        refundTrackedAmountMinor: claimed.refundedAmountMinor,
-        updatedAt: new Date(),
-      })
-      .where(eq(billingOrder.polarOrderId, orderId));
+    await ledgerPersistence.completeRefund(orderId, claimed.refundedAmountMinor);
     return;
   }
 
+  let sent = false;
   try {
     const result = await trackRefund(deltaMinor, {
       profileId: claimed.profileId,
@@ -234,15 +267,8 @@ export const deliverOrderRefund = async (orderId: string) => {
     });
 
     if (result === "sent") {
-      await db
-        .update(billingOrder)
-        .set({
-          refundAnalyticsState: "completed",
-          refundTrackedAmountMinor: claimed.refundedAmountMinor,
-          refundTrackedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(billingOrder.polarOrderId, orderId));
+      sent = true;
+      await ledgerPersistence.completeRefund(orderId, claimed.refundedAmountMinor);
       return;
     }
 
@@ -256,6 +282,17 @@ export const deliverOrderRefund = async (orderId: string) => {
       `[billing analytics] refund delivery skipped for order ${orderId} — OpenPanel not configured; left pending for retry.`,
     );
   } catch (error) {
+    if (sent) {
+      // Same rationale as revenue: the refund delta was already delivered;
+      // re-arming to pending would re-send it and double-count. Leave the row
+      // in "processing" (never auto-reclaimed) and surface it for manual
+      // reconciliation.
+      logErrorEvent("billing.refund.completion_persist_failed", {
+        orderId,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
     // Reset to pending without touching refundTrackedAmountMinor; the delta
     // recomputes on retry.
     await db

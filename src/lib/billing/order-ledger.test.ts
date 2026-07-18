@@ -23,6 +23,7 @@ import { trackRefund, trackRevenue } from "@/lib/openpanel";
 import {
   deliverOrderRefund,
   deliverOrderRevenue,
+  ledgerPersistence,
   type OrderTrackingContext,
   recordPaidOrder,
   recordRefundedOrder,
@@ -200,5 +201,54 @@ describe("deliverOrderRefund", () => {
 
     await deliverOrderRefund(ORDER_ID);
     expect(trackRefundMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-arms the refund row when the refunded amount grows during an in-flight delivery", async () => {
+    await recordPaidOrder(makeOrder({ totalAmount: 1000 }), CTX, new Date());
+    await recordRefundedOrder(makeOrder({ refundedAmount: 500 }), CTX, new Date());
+
+    // While the first delta (500) is in flight, a later webhook raises the
+    // refunded amount to 1000. recordRefundedOrder's processing guard means it
+    // only bumps the amount without touching the state.
+    trackRefundMock.mockImplementationOnce(async () => {
+      await recordRefundedOrder(makeOrder({ refundedAmount: 1000 }), CTX, new Date());
+      return "sent";
+    });
+
+    await deliverOrderRefund(ORDER_ID);
+    let row = await getOrderRow();
+    expect(row?.refundAnalyticsState).toBe("pending");
+    expect(row?.refundTrackedAmountMinor).toBe(500);
+
+    trackRefundMock.mockResolvedValueOnce("sent");
+    await deliverOrderRefund(ORDER_ID);
+    row = await getOrderRow();
+    expect(row?.refundAnalyticsState).toBe("completed");
+    expect(row?.refundTrackedAmountMinor).toBe(1000);
+
+    // Two deliveries, 500 each — sums to the full refund, no overshoot.
+    expect(trackRefundMock).toHaveBeenCalledTimes(2);
+    expect(trackRefundMock.mock.calls[0]?.[0]).toBe(500);
+    expect(trackRefundMock.mock.calls[1]?.[0]).toBe(500);
+  });
+
+  it("does not re-send revenue when only the completion persist fails", async () => {
+    await recordPaidOrder(makeOrder(), CTX, new Date());
+    trackRevenueMock.mockResolvedValue("sent");
+    const persistSpy = vi
+      .spyOn(ledgerPersistence, "completeRevenue")
+      .mockRejectedValueOnce(new Error("db down"));
+
+    // Event delivered, completion persist failed: no throw, row stays
+    // "processing" so nothing ever re-claims it automatically.
+    await expect(deliverOrderRevenue(ORDER_ID)).resolves.toBeUndefined();
+    let row = await getOrderRow();
+    expect(row?.revenueState).toBe("processing");
+
+    // A retry is a no-op: the row is not pending, so no second send.
+    await deliverOrderRevenue(ORDER_ID);
+    expect(trackRevenueMock).toHaveBeenCalledTimes(1);
+
+    persistSpy.mockRestore();
   });
 });
