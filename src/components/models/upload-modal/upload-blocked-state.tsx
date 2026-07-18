@@ -4,11 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCheckout } from "@/hooks/use-checkout";
+import { usePublicPricing } from "@/hooks/use-public-pricing";
 import type { UploadLimitsResult } from "@/hooks/use-upload-limits";
 import {
   SUBSCRIPTION_TIERS,
   getProductSlugForTier,
-  getTierPrice,
   type BillingInterval,
   type SubscriptionTier,
 } from "@/lib/billing/config";
@@ -30,8 +30,16 @@ const getRecommendedTier = (currentTier: SubscriptionTier): SubscriptionTier => 
   return currentTier;
 };
 
+const formatMonthlyPrice = (amountInCents: number, currency: string) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: amountInCents % 100 === 0 ? 0 : 2,
+  }).format(amountInCents / 100);
+
 export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps) {
   const { startCheckout, loadingProductSlug, isLoading } = useCheckout();
+  const { pricing } = usePublicPricing();
   const recommendedTier = getRecommendedTier(limits.tier);
   const billingInterval: BillingInterval = "month";
 
@@ -113,6 +121,13 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
             actionLabel = "Current Plan";
           }
 
+          // Price must come from Polar (fresh or last-known-good). When it is
+          // unavailable the block itself stays - it explains the limit - and
+          // only the price figure is omitted.
+          const priceData = pricing?.tiers.find((tier) => tier.slug === tierKey)?.prices[
+            billingInterval
+          ];
+
           return (
             <Card
               key={tierKey}
@@ -131,10 +146,12 @@ export function UploadBlockedState({ limits, onClose }: UploadBlockedStateProps)
 
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">{config.name}</CardTitle>
-                <p className="font-bold text-2xl">
-                  ${getTierPrice(tierKey, billingInterval)}
-                  <span className="font-normal text-muted-foreground text-sm">/mo</span>
-                </p>
+                {priceData && (
+                  <p className="font-bold text-2xl">
+                    {formatMonthlyPrice(priceData.amount, priceData.currency || "USD")}
+                    <span className="font-normal text-muted-foreground text-sm">/mo</span>
+                  </p>
+                )}
               </CardHeader>
 
               <CardContent className="space-y-3">

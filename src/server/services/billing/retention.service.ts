@@ -1,6 +1,10 @@
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
-import { SUBSCRIPTION_TIERS, isUnlimited } from "@/lib/billing/config";
+import { SUBSCRIPTION_TIERS, isUnlimited, normalizeSubscriptionTier } from "@/lib/billing/config";
 import { getRetentionDeadline, getGraceDeadline } from "@/lib/billing/grace";
+import {
+  computeEffectiveLimits,
+  getActiveAddonGrants,
+} from "@/server/services/billing/addons.service";
 import { db } from "@/lib/db";
 import { organization } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
@@ -48,12 +52,41 @@ export const getUsageSnapshotForOrganization = async (
   };
 };
 
-const isOverFreeLimits = (snapshot: UsageSnapshot) => {
-  const freeTier = SUBSCRIPTION_TIERS.free;
+/**
+ * The subset of effective limits an over-limit check cares about. Effective
+ * limits (tier + active add-on grants) structurally satisfy this, so callers
+ * can pass computeEffectiveLimits(...) directly.
+ */
+export type OverLimitCheck = {
+  storageLimit: number;
+  modelCountLimit: number;
+};
+
+const FREE_LIMITS: OverLimitCheck = {
+  storageLimit: SUBSCRIPTION_TIERS.free.storageLimit,
+  modelCountLimit: SUBSCRIPTION_TIERS.free.modelCountLimit,
+};
+
+const isOverLimits = (snapshot: UsageSnapshot, limits: OverLimitCheck) => {
   const overModels =
-    !isUnlimited(freeTier.modelCountLimit) && snapshot.modelCount > freeTier.modelCountLimit;
-  const overStorage = snapshot.storageBytes > freeTier.storageLimit;
+    !isUnlimited(limits.modelCountLimit) && snapshot.modelCount > limits.modelCountLimit;
+  const overStorage = snapshot.storageBytes > limits.storageLimit;
   return overModels || overStorage;
+};
+
+/**
+ * Effective limits the retention sweep must respect: the org's CURRENT tier
+ * plus its active add-on grants. An org whose tier was revoked to free but that
+ * still pays for a storage add-on must not have its models deleted down to bare
+ * free limits. With no add-ons on the free tier this is exactly FREE_LIMITS.
+ */
+const getEffectiveLimitsForOrganization = async (
+  organizationId: string,
+  subscriptionTier: string | null,
+): Promise<OverLimitCheck> => {
+  const tier = normalizeSubscriptionTier(subscriptionTier);
+  const grants = await getActiveAddonGrants(organizationId);
+  return computeEffectiveLimits(tier, grants);
 };
 
 const listModelsWithSizes = async (organizationId: string) => {
@@ -111,9 +144,18 @@ const deleteModelStorage = async (modelId: string) => {
   }
 };
 
-export const getGraceDeadlineIfOverLimit = async (organizationId: string) => {
+/**
+ * Grace deadline if the org is over its effective limits. Defaults to free-tier
+ * limits (existing callers unchanged), but on a tier revoke the org may still
+ * hold active add-on grants, so callers pass computeEffectiveLimits("free",
+ * grants) to avoid wrongly putting a paid-add-on org into grace.
+ */
+export const getGraceDeadlineIfOverLimit = async (
+  organizationId: string,
+  limits: OverLimitCheck = FREE_LIMITS,
+) => {
   const snapshot = await getUsageSnapshotForOrganization(organizationId);
-  if (!isOverFreeLimits(snapshot)) {
+  if (!isOverLimits(snapshot, limits)) {
     return null;
   }
 
@@ -159,6 +201,7 @@ export const enforceRetentionForOrganization = async (
 ): Promise<RetentionResult> => {
   const org = await db.query.organization.findFirst({
     where: eq(organization.id, organizationId),
+    columns: { graceDeadline: true, subscriptionTier: true },
   });
 
   if (!org?.graceDeadline) {
@@ -177,8 +220,10 @@ export const enforceRetentionForOrganization = async (
     };
   }
 
+  const limits = await getEffectiveLimitsForOrganization(organizationId, org.subscriptionTier);
+
   const snapshot = await getUsageSnapshotForOrganization(organizationId);
-  if (!isOverFreeLimits(snapshot)) {
+  if (!isOverLimits(snapshot, limits)) {
     await clearGraceDeadline(organizationId);
     return {
       status: "cleanup_skipped",
@@ -193,12 +238,11 @@ export const enforceRetentionForOrganization = async (
   let remainingModels = snapshot.modelCount;
   let deletedBytes = 0;
   const deletedModelIds: string[] = [];
-  const freeTier = SUBSCRIPTION_TIERS.free;
 
   for (const model of modelsToDelete) {
-    const overStorage = remainingStorage > freeTier.storageLimit;
+    const overStorage = remainingStorage > limits.storageLimit;
     const overModels =
-      !isUnlimited(freeTier.modelCountLimit) && remainingModels > freeTier.modelCountLimit;
+      !isUnlimited(limits.modelCountLimit) && remainingModels > limits.modelCountLimit;
 
     if (!overStorage && !overModels) break;
 
@@ -224,7 +268,7 @@ export const enforceRetentionForOrganization = async (
   }
 
   const updatedSnapshot = await getUsageSnapshotForOrganization(organizationId);
-  const withinLimits = !isOverFreeLimits(updatedSnapshot);
+  const withinLimits = !isOverLimits(updatedSnapshot, limits);
 
   await db
     .update(organization)

@@ -1,13 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { and, count, eq, isNull, sum } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, sum } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { member, organization } from "@/lib/db/schema/auth";
+import { organizationAddons } from "@/lib/db/schema/billing";
 import { modelFiles, models, modelVersions } from "@/lib/db/schema/models";
 import { env } from "@/lib/env";
-import type { SubscriptionTier } from "@/lib/billing/config";
+import type { AddonKind, AddonSlug, SubscriptionTier } from "@/lib/billing/config";
 import {
+  BILLING_ADDONS,
   SUBSCRIPTION_PRODUCT_SLUG_OPTIONS,
   getTierConfig,
   getTierFromProductSlug,
@@ -81,12 +83,37 @@ export const getSubscription = createServerFn({ method: "GET" })
     const tier = (org.subscriptionTier as SubscriptionTier) ?? "free";
     const tierConfig = getTierConfig(tier);
 
+    // Still-granting add-ons ("canceled" keeps granting until revoked).
+    const addonRows = await db
+      .select({
+        id: organizationAddons.id,
+        addonSlug: organizationAddons.addonSlug,
+        kind: organizationAddons.kind,
+        status: organizationAddons.status,
+      })
+      .from(organizationAddons)
+      .where(
+        and(
+          eq(organizationAddons.organizationId, org.id),
+          inArray(organizationAddons.status, ["active", "canceled"]),
+        ),
+      );
+
+    const addons = addonRows.map((row) => ({
+      id: row.id,
+      slug: row.addonSlug,
+      label: BILLING_ADDONS[row.addonSlug as AddonSlug]?.label ?? row.addonSlug,
+      kind: row.kind as AddonKind,
+      status: row.status as "active" | "canceled",
+    }));
+
     return {
       tier,
       status: org.subscriptionStatus,
       isOwner: org.ownerId === context.session.user.id,
       periodEnd: org.subscriptionPeriodEnd?.toISOString() ?? null,
       cancelAtPeriodEnd: org.subscriptionCancelAtPeriodEnd ?? false,
+      addons,
 
       // Limits
       storageLimit: org.storageLimit,

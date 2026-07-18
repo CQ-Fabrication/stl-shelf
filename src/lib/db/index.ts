@@ -44,6 +44,7 @@ import {
   billingWebhookEvents,
   accountDeletionRunItems,
   accountDeletionRuns,
+  organizationAddons,
 } from "./schema/billing";
 import {
   legalDocuments,
@@ -75,6 +76,7 @@ export const schema = {
   accountDeletionRuns,
   accountDeletionRunItems,
   billingOrder,
+  organizationAddons,
   // Consent
   legalDocuments,
   consentAudit,

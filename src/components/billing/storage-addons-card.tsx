@@ -1,20 +1,32 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { PricingUnavailable } from "@/components/pricing/pricing-unavailable";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useSubscription } from "@/hooks/use-subscription";
+import { getAddonPricing } from "@/server/functions/pricing";
 
-const STORAGE_ADDONS = [
-  { label: "+100 GB", price: "$4.99" },
-  { label: "+500 GB", price: "$20.99" },
-  { label: "+1 TB", price: "$35.99" },
-];
+const formatPrice = (price: { amount: number; currency: string }) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: price.currency,
+  }).format(price.amount / 100);
 
 export const StorageAddonsCard = () => {
   const { subscription, isLoading } = useSubscription();
   const { openPortal, isLoading: isPortalLoading } = useCustomerPortal();
+  const queryClient = useQueryClient();
+  const { data: addonPricing } = useQuery({
+    queryKey: ["billing", "addon-pricing"],
+    queryFn: () => getAddonPricing(),
+  });
   const isPro = subscription?.tier === "pro";
   if (isLoading || !isPro) return null;
   const isOwner = subscription?.isOwner ?? false;
   const isDisabled = isLoading || isPortalLoading || !isOwner;
+  const storagePacks = (addonPricing?.addons ?? []).filter((addon) => addon.kind === "storage");
+  const packsUnavailable =
+    addonPricing !== undefined &&
+    (storagePacks.length === 0 || storagePacks.some((addon) => addon.unavailable));
 
   return (
     <section className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
@@ -31,19 +43,30 @@ export const StorageAddonsCard = () => {
         </Button>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        {STORAGE_ADDONS.map((addon) => (
-          <div
-            className="rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm"
-            key={addon.label}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-medium">{addon.label}</span>
-              <span className="text-muted-foreground">{addon.price}/month</span>
-            </div>
+      {packsUnavailable ? (
+        <PricingUnavailable
+          className="mt-4"
+          onRetry={() => queryClient.invalidateQueries({ queryKey: ["billing", "addon-pricing"] })}
+        />
+      ) : (
+        storagePacks.length > 0 && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {storagePacks.map((addon) => (
+              <div
+                className="rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-sm"
+                key={addon.slug}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{addon.label}</span>
+                  {addon.price && (
+                    <span className="text-muted-foreground">{formatPrice(addon.price)}/month</span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )
+      )}
 
       {!isOwner && (
         <p className="mt-3 text-xs text-muted-foreground">
