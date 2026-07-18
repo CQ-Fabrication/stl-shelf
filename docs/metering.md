@@ -77,6 +77,27 @@ at the month-end rate, not split).
 
 Exit code 1 when any check is out of tolerance; purely informational.
 
+### `bun metering:alerts` (daily)
+
+Informational month-to-date checks against the current cost config — nothing
+blocks users, nothing touches enforcement. Fired alerts go to stdout and to
+`metering.alert.<kind>` log events; exit code 1 when any alert fires (a signal
+for schedulers). Thresholds live in one config object
+(`DEFAULT_ALERT_THRESHOLDS` in `src/server/services/metering/alerts.ts`).
+
+Checks: included-quota consumption at 50/75/90/100% (both raw share of the
+monthly allowance and pace against the allowance accrued so far — "on pace to
+exceed" vs "already exceeded"); anomalous daily bucket growth (default 3× the
+trailing 7-day mean); orgs whose monthly egress exceeds 10× their stored
+bytes; unattributed bytes above 5% of the bucket or any unattributed egress;
+ledger vs latest reconciliation drift beyond 2%; and — optionally — comparison
+with operator-supplied provider figures (`--provider-storage-tbh=`,
+`--provider-egress-tb=`, read manually from the invoice/console since no usage
+API exists) within the 2% tolerance.
+
+Idempotent and stateless: re-running just re-evaluates. A skipped day needs no
+recovery.
+
 ## Reconciling a month against the provider invoice
 
 1. Run `metering:reconcile --apply`, then `metering:verify --month=<M>` — fix
