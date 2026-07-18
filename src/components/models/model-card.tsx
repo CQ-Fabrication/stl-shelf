@@ -39,6 +39,7 @@ type ModelCardProps = {
     totalSize: number;
     tags: string[];
     thumbnailUrl: string | null;
+    thumbnailIsPhoto: boolean;
     owner: {
       id: string;
       name: string;
@@ -190,11 +191,15 @@ const ModelCard = memo(({ model, searchQuery }: ModelCardProps) => {
       <CardContent className="flex flex-grow flex-col">
         {/* Thumbnail preview - clean, no overlays */}
         <div className="mb-3">
-          <div className="aspect-video overflow-hidden rounded-md bg-muted p-2 transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
+          <div className="aspect-video overflow-hidden rounded-md bg-muted transition-all group-hover:bg-gradient-to-br group-hover:from-muted/80 group-hover:to-brand/5">
             {model.thumbnailUrl ? (
               <img
                 alt={`Preview of ${model.name}`}
-                className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                className={cn(
+                  "h-full w-full transition-transform duration-300 group-hover:scale-105",
+                  // User photos fill the frame; derived renders stay uncropped.
+                  model.thumbnailIsPhoto ? "object-cover" : "object-contain p-2",
+                )}
                 height={360}
                 loading="lazy"
                 src={model.thumbnailUrl}

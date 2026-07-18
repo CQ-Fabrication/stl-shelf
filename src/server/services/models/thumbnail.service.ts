@@ -112,6 +112,21 @@ export function isAutoThumbnail(thumbnailPath: string | null): boolean {
 }
 
 /**
+ * True when the thumbnail is a user-provided photo (explicit `preview.<ext>`
+ * upload or an image file's own storageKey) as opposed to a derived render
+ * (3MF-extracted or viewer-generated). Photos can be displayed cropped
+ * (object-cover); renders must stay uncropped (object-contain).
+ */
+export function isPhotoThumbnail(thumbnailPath: string | null): boolean {
+  if (!thumbnailPath) {
+    return false;
+  }
+
+  const filename = thumbnailPath.split("/").pop() ?? thumbnailPath;
+  return filename !== EXTRACTED_THUMBNAIL_FILENAME && filename !== GENERATED_THUMBNAIL_FILENAME;
+}
+
+/**
  * Whether a removed file is the source of the current thumbnail:
  * for images the thumbnail key equals the file's storageKey; for 3MF the thumbnail is its
  * extracted preview.

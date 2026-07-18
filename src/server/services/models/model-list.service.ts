@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { user } from "@/lib/db/schema/auth";
 import { modelFiles, models, modelTags, modelVersions, tags } from "@/lib/db/schema/models";
 import { versionThumbnailUrl } from "@/lib/thumbnails";
+import { isPhotoThumbnail } from "@/server/services/models/thumbnail.service";
 
 export type ListModelsInput = {
   organizationId: string;
@@ -33,6 +34,7 @@ export type ModelListItem = {
   totalSize: number;
   tags: string[];
   thumbnailUrl: string | null;
+  thumbnailIsPhoto: boolean;
   owner: ModelOwner;
   createdAt: string;
   updatedAt: string;
@@ -210,6 +212,7 @@ export async function listModels({
       totalSize: Number(row.totalSize ?? 0),
       tags: row.tags ?? [],
       thumbnailUrl,
+      thumbnailIsPhoto: isPhotoThumbnail(row.thumbnailPath),
       owner: {
         id: row.ownerId,
         name: row.ownerName,
