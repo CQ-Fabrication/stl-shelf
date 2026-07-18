@@ -1,5 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
-import { BILLING_INTERVALS, SUBSCRIPTION_TIERS, type BillingInterval } from "@/lib/billing/config";
+import {
+  type AddonKind,
+  type AddonSlug,
+  BILLING_ADDONS,
+  BILLING_INTERVALS,
+  SUBSCRIPTION_TIERS,
+  type BillingInterval,
+} from "@/lib/billing/config";
+import { getProductIdForAddonSlug } from "@/lib/billing/addons";
 import { env } from "@/lib/env";
 import { polarService } from "@/server/services/billing/polar.service";
 
@@ -225,5 +233,84 @@ export const getPublicPricing = createServerFn({ method: "GET" }).handler(
 
       return response;
     }
+  },
+);
+
+export type AddonPricing = {
+  slug: AddonSlug;
+  kind: AddonKind;
+  label: string;
+  /** Price in minor units (cents); null when neither Polar nor a fallback has one */
+  price: { amount: number; currency: string } | null;
+};
+
+export type AddonPricingResponse = {
+  updatedAt: string;
+  source: "polar" | "fallback";
+  addons: AddonPricing[];
+};
+
+let cachedAddonPricing: { data: AddonPricingResponse | null; expiresAt: number } = {
+  data: null,
+  expiresAt: 0,
+};
+
+const ADDON_SLUGS = Object.keys(BILLING_ADDONS) as AddonSlug[];
+
+function buildFallbackAddonPrice(slug: AddonSlug): AddonPricing["price"] {
+  const fallback = BILLING_ADDONS[slug].fallbackPriceMonthly;
+  if (fallback === null) return null;
+  return { amount: Math.round(fallback * 100), currency: "USD" };
+}
+
+// Add-on pricing, fetched live from Polar (static catalog prices are only a
+// fallback). Seat add-ons have no static fallback: price is null when the
+// Polar fetch fails or the product id is unset.
+export const getAddonPricing = createServerFn({ method: "GET" }).handler(
+  async (): Promise<AddonPricingResponse> => {
+    const now = Date.now();
+    if (cachedAddonPricing.data && cachedAddonPricing.expiresAt > now) {
+      return cachedAddonPricing.data;
+    }
+
+    let anyLivePrice = false;
+
+    const addons = await Promise.all(
+      ADDON_SLUGS.map(async (slug): Promise<AddonPricing> => {
+        const config = BILLING_ADDONS[slug];
+        const base = { slug, kind: config.kind, label: config.label };
+        const productId = getProductIdForAddonSlug(slug);
+
+        if (productId) {
+          try {
+            const product = await polarService.getProduct(productId);
+            const price = extractPrice({
+              prices: product.prices as Array<Record<string, unknown>>,
+            });
+            if (price) {
+              anyLivePrice = true;
+              return { ...base, price };
+            }
+          } catch (error) {
+            console.warn(`Failed to load Polar price for add-on ${slug}, using fallback:`, error);
+          }
+        }
+
+        return { ...base, price: buildFallbackAddonPrice(slug) };
+      }),
+    );
+
+    const response: AddonPricingResponse = {
+      updatedAt: new Date().toISOString(),
+      source: anyLivePrice ? "polar" : "fallback",
+      addons,
+    };
+
+    cachedAddonPricing = {
+      data: response,
+      expiresAt: now + CACHE_TTL_MS,
+    };
+
+    return response;
   },
 );

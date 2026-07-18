@@ -1,5 +1,5 @@
 import { env } from "@/lib/env";
-import { BILLING_ADDONS, type BillingAddon } from "./config";
+import { type AddonSlug, BILLING_ADDONS, type BillingAddon } from "./config";
 
 /**
  * Server-side product ID to add-on mapping.
@@ -25,4 +25,20 @@ export function getAddonFromProductId(productId: string): BillingAddon | undefin
     return BILLING_ADDONS.seats_pack;
   }
   return undefined;
+}
+
+/** Reverse mapping: add-on slug to its Polar product id (server-only). */
+export function getProductIdForAddonSlug(slug: AddonSlug): string | undefined {
+  switch (slug) {
+    case "storage_100gb":
+      return env.POLAR_PRODUCT_STORAGE_100_GB;
+    case "storage_500gb":
+      return env.POLAR_PRODUCT_STORAGE_500_GB;
+    case "storage_1tb":
+      return env.POLAR_PRODUCT_STORAGE_1_TB;
+    case "seat_single":
+      return env.POLAR_PRODUCT_SEAT_SINGLE;
+    case "seats_pack":
+      return env.POLAR_PRODUCT_SEATS_PACK;
+  }
 }

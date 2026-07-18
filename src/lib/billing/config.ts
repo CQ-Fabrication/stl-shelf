@@ -155,8 +155,11 @@ export type BillingAddon = {
   grantBytes: number | null;
   /** Seats granted (seat add-ons only) */
   grantSeats: number | null;
-  /** Monthly price in USD, or null when not published for display */
-  priceMonthly: number | null;
+  /**
+   * FALLBACK monthly price in USD, used only when the live Polar price cannot
+   * be fetched (see getAddonPricing). null = no fallback; omit the price.
+   */
+  fallbackPriceMonthly: number | null;
   label: string;
 };
 
@@ -166,7 +169,7 @@ export const BILLING_ADDONS = {
     kind: "storage",
     grantBytes: 100 * GIB,
     grantSeats: null,
-    priceMonthly: 4.99,
+    fallbackPriceMonthly: 4.99,
     label: "+100 GB storage",
   },
   storage_500gb: {
@@ -174,7 +177,7 @@ export const BILLING_ADDONS = {
     kind: "storage",
     grantBytes: 500 * GIB,
     grantSeats: null,
-    priceMonthly: 20.99,
+    fallbackPriceMonthly: 20.99,
     label: "+500 GB storage",
   },
   storage_1tb: {
@@ -182,7 +185,7 @@ export const BILLING_ADDONS = {
     kind: "storage",
     grantBytes: 1024 * GIB,
     grantSeats: null,
-    priceMonthly: 35.99,
+    fallbackPriceMonthly: 35.99,
     label: "+1 TB storage",
   },
   seat_single: {
@@ -190,7 +193,7 @@ export const BILLING_ADDONS = {
     kind: "seats",
     grantBytes: null,
     grantSeats: 1,
-    priceMonthly: null,
+    fallbackPriceMonthly: null,
     label: "+1 seat",
   },
   seats_pack: {
@@ -198,7 +201,7 @@ export const BILLING_ADDONS = {
     kind: "seats",
     grantBytes: null,
     grantSeats: 5,
-    priceMonthly: null,
+    fallbackPriceMonthly: null,
     label: "+5 seats",
   },
 } as const satisfies Record<string, BillingAddon>;

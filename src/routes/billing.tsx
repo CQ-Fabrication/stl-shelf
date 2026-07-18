@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { ActiveAddonsCard } from "@/components/billing/active-addons-card";
 import { PlanSelector } from "@/components/billing/plan-selector";
 import { StorageAddonsCard } from "@/components/billing/storage-addons-card";
 import { SubscriptionStatusCard } from "@/components/billing/subscription-status-card";
@@ -67,6 +68,7 @@ function BillingPage() {
               </div>
             </div>
             <SubscriptionStatusCard />
+            <ActiveAddonsCard />
             <StorageAddonsCard />
           </section>
 
