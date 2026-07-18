@@ -21,8 +21,22 @@ import {
   recordPaidOrder,
   recordRefundedOrder,
 } from "@/lib/billing/order-ledger";
-import type { SubscriptionTier } from "./config";
-import { SUBSCRIPTION_TIERS, isUnlimited, normalizeSubscriptionTier } from "./config";
+import type { BillingAddon, SubscriptionTier } from "./config";
+import {
+  SUBSCRIPTION_TIER_ORDER,
+  SUBSCRIPTION_TIERS,
+  isUnlimited,
+  normalizeSubscriptionTier,
+} from "./config";
+import { getAddonFromProductId } from "./addons";
+import {
+  computeEffectiveLimits,
+  getActiveAddonGrants,
+  type PresentAddon,
+  reconcileOrgAddons,
+  setAddonStatus,
+  upsertActiveAddon,
+} from "@/server/services/billing/addons.service";
 import {
   getGraceDeadlineIfOverLimit,
   getUsageSnapshotForOrganization,
@@ -168,6 +182,115 @@ const logStaleWebhook = ({
     customerId,
     eventTimestamp: eventTimestamp.toISOString(),
     lastAppliedAt: lastAppliedAt?.toISOString() ?? null,
+  });
+};
+
+type OrgBillingContext = {
+  id: string;
+  subscriptionTier: string | null;
+  billingLastWebhookAt: Date | null;
+};
+
+const getOrgBillingContext = async (customerId: string): Promise<OrgBillingContext | null> => {
+  const org = await db.query.organization.findFirst({
+    where: eq(organization.polarCustomerId, customerId),
+    columns: {
+      id: true,
+      subscriptionTier: true,
+      billingLastWebhookAt: true,
+    },
+  });
+
+  return org ?? null;
+};
+
+/**
+ * Effective limits for a tier, folding in the org's currently-active add-on
+ * grants. With no add-ons this returns exactly the tier config, so tier-only
+ * customers are unaffected.
+ */
+const resolveEffectiveLimits = async (organizationId: string, tier: SubscriptionTier) => {
+  const grants = await getActiveAddonGrants(organizationId);
+  return computeEffectiveLimits(tier, grants);
+};
+
+/**
+ * Apply an add-on subscription lifecycle event (created / order / canceled /
+ * revoked). Does NOT touch subscriptionTier/subscriptionId - those describe the
+ * TIER subscription. Idempotent via the add-on row (keyed polarSubscriptionId)
+ * and the org watermark.
+ */
+const applyAddonSubscriptionEvent = async ({
+  customerId,
+  polarSubscriptionId,
+  productId,
+  addon,
+  status,
+  eventType,
+  eventTimestamp,
+}: {
+  customerId: string;
+  polarSubscriptionId: string;
+  productId: string;
+  addon: BillingAddon;
+  status: "active" | "canceled" | "revoked";
+  eventType: string;
+  eventTimestamp: Date;
+}): Promise<void> => {
+  const org = await getOrgBillingContext(customerId);
+
+  if (!org) {
+    logErrorEvent("billing.webhook.unknown_customer", {
+      customerId,
+      subscriptionId: polarSubscriptionId,
+    });
+    return;
+  }
+
+  if (org.billingLastWebhookAt && org.billingLastWebhookAt >= eventTimestamp) {
+    logStaleWebhook({
+      eventType,
+      customerId,
+      eventTimestamp,
+      lastAppliedAt: org.billingLastWebhookAt,
+    });
+    return;
+  }
+
+  if (status === "active") {
+    await upsertActiveAddon({ organizationId: org.id, polarSubscriptionId, productId, addon });
+  } else {
+    await setAddonStatus(polarSubscriptionId, status);
+  }
+
+  const tier = normalizeSubscriptionTier(org.subscriptionTier);
+  const limits = await resolveEffectiveLimits(org.id, tier);
+
+  const updateStatus = await applyOrganizationUpdateFromWebhook({
+    customerId,
+    eventTimestamp,
+    changes: {
+      storageLimit: limits.storageLimit,
+      modelCountLimit: limits.modelCountLimit,
+      memberLimit: limits.memberLimit,
+    },
+  });
+
+  if (updateStatus.status === "stale") {
+    logStaleWebhook({
+      eventType,
+      customerId,
+      eventTimestamp,
+      lastAppliedAt: updateStatus.lastAppliedAt,
+    });
+    return;
+  }
+
+  logAuditEvent(status === "active" ? "billing.addon.applied" : "billing.addon.removed", {
+    organizationId: org.id,
+    addonSlug: addon.slug,
+    polarSubscriptionId,
+    eventTimestamp: eventTimestamp.toISOString(),
   });
 };
 
@@ -341,6 +464,30 @@ const applyOrderPaidOrgState = async (payload: WebhookOrderPaidPayload) => {
     return;
   }
 
+  const addon = getAddonFromProductId(productId);
+
+  if (addon) {
+    if (!order.subscriptionId) {
+      logErrorEvent("billing.webhook.addon_missing_subscription", {
+        customerId,
+        productId,
+        orderId: order.id,
+      });
+      return;
+    }
+
+    await applyAddonSubscriptionEvent({
+      customerId,
+      polarSubscriptionId: order.subscriptionId,
+      productId,
+      addon,
+      status: "active",
+      eventType: payload.type,
+      eventTimestamp,
+    });
+    return;
+  }
+
   const tier = getTierFromProductId(productId);
 
   if (!tier) {
@@ -352,7 +499,17 @@ const applyOrderPaidOrgState = async (payload: WebhookOrderPaidPayload) => {
     return;
   }
 
-  const tierConfig = SUBSCRIPTION_TIERS[tier];
+  const org = await getOrgBillingContext(customerId);
+
+  if (!org) {
+    logErrorEvent("billing.webhook.unknown_customer", {
+      customerId,
+      orderId: order.id,
+    });
+    return;
+  }
+
+  const limits = await resolveEffectiveLimits(org.id, tier);
 
   const updateStatus = await applyOrganizationUpdateFromWebhook({
     customerId,
@@ -361,9 +518,9 @@ const applyOrderPaidOrgState = async (payload: WebhookOrderPaidPayload) => {
       subscriptionTier: tier,
       subscriptionStatus: "active",
       subscriptionId: order.subscriptionId ?? null,
-      storageLimit: tierConfig.storageLimit,
-      modelCountLimit: tierConfig.modelCountLimit,
-      memberLimit: tierConfig.maxMembers,
+      storageLimit: limits.storageLimit,
+      modelCountLimit: limits.modelCountLimit,
+      memberLimit: limits.memberLimit,
       subscriptionPeriodEnd: null,
       subscriptionCancelAtPeriodEnd: false,
       graceDeadline: null,
@@ -446,6 +603,21 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
   const eventTimestamp = payload.timestamp;
   const trackingBefore = await getTrackingContextByCustomerId(customerId);
 
+  const addon = getAddonFromProductId(productId);
+
+  if (addon) {
+    await applyAddonSubscriptionEvent({
+      customerId,
+      polarSubscriptionId: subscription.id,
+      productId,
+      addon,
+      status: "active",
+      eventType: payload.type,
+      eventTimestamp,
+    });
+    return;
+  }
+
   const tier = getTierFromProductId(productId);
 
   if (!tier) {
@@ -457,7 +629,17 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
     return;
   }
 
-  const tierConfig = SUBSCRIPTION_TIERS[tier];
+  const org = await getOrgBillingContext(customerId);
+
+  if (!org) {
+    logErrorEvent("billing.webhook.unknown_customer", {
+      customerId,
+      subscriptionId: subscription.id,
+    });
+    return;
+  }
+
+  const limits = await resolveEffectiveLimits(org.id, tier);
 
   const updateStatus = await applyOrganizationUpdateFromWebhook({
     customerId,
@@ -466,9 +648,9 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
       subscriptionTier: tier,
       subscriptionStatus: subscription.status,
       subscriptionId: subscription.id,
-      storageLimit: tierConfig.storageLimit,
-      modelCountLimit: tierConfig.modelCountLimit,
-      memberLimit: tierConfig.maxMembers,
+      storageLimit: limits.storageLimit,
+      modelCountLimit: limits.modelCountLimit,
+      memberLimit: limits.memberLimit,
       subscriptionPeriodEnd: subscription.currentPeriodEnd ?? subscription.endsAt ?? null,
       subscriptionCancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
       graceDeadline: null,
@@ -519,8 +701,24 @@ export const handleSubscriptionCreated = async (payload: WebhookSubscriptionCrea
 export const handleSubscriptionCanceled = async (payload: WebhookSubscriptionCanceledPayload) => {
   const { data: subscription } = payload;
   const customerId = subscription.customerId;
-  const tier = getTierFromProductId(subscription.productId);
   const eventTimestamp = payload.timestamp;
+
+  const addon = getAddonFromProductId(subscription.productId);
+
+  if (addon) {
+    await applyAddonSubscriptionEvent({
+      customerId,
+      polarSubscriptionId: subscription.id,
+      productId: subscription.productId,
+      addon,
+      status: "canceled",
+      eventType: payload.type,
+      eventTimestamp,
+    });
+    return;
+  }
+
+  const tier = getTierFromProductId(subscription.productId);
   const trackingBefore = await getTrackingContextByCustomerId(customerId);
 
   const updateStatus = await applyOrganizationUpdateFromWebhook({
@@ -591,7 +789,22 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
   const { data: subscription } = payload;
   const customerId = subscription.customerId;
   const eventTimestamp = payload.timestamp;
-  const freeTier = SUBSCRIPTION_TIERS.free;
+
+  const addon = getAddonFromProductId(subscription.productId);
+
+  if (addon) {
+    await applyAddonSubscriptionEvent({
+      customerId,
+      polarSubscriptionId: subscription.id,
+      productId: subscription.productId,
+      addon,
+      status: "revoked",
+      eventType: payload.type,
+      eventTimestamp,
+    });
+    return;
+  }
+
   const trackingBefore = await getTrackingContextByCustomerId(customerId);
 
   const org = await db.query.organization.findFirst({
@@ -626,6 +839,9 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
     (org.subscriptionTier as SubscriptionTier) ??
     "free";
   const graceDeadline = await getGraceDeadlineIfOverLimit(org.id);
+  // Tier reverts to free, but any add-on subscriptions that are still active
+  // keep their grants (computed honestly from the rows).
+  const limits = await resolveEffectiveLimits(org.id, "free");
 
   const [updatedOrg] = await db
     .update(organization)
@@ -633,9 +849,9 @@ export const handleSubscriptionRevoked = async (payload: WebhookSubscriptionRevo
       subscriptionTier: "free",
       subscriptionStatus: "active",
       subscriptionId: null,
-      storageLimit: freeTier.storageLimit,
-      modelCountLimit: freeTier.modelCountLimit,
-      memberLimit: freeTier.maxMembers,
+      storageLimit: limits.storageLimit,
+      modelCountLimit: limits.modelCountLimit,
+      memberLimit: limits.memberLimit,
       subscriptionPeriodEnd: null,
       subscriptionCancelAtPeriodEnd: false,
       graceDeadline,
@@ -703,149 +919,173 @@ export const handleCustomerStateChanged = async (payload: WebhookCustomerStateCh
 
   const activeSubscriptions = customerState.activeSubscriptions ?? [];
 
-  if (activeSubscriptions.length > 0) {
-    const sub = activeSubscriptions[0];
-    if (!sub) return;
+  // Partition active subscriptions into TIER subs and ADD-ON subs. The previous
+  // implementation looked at activeSubscriptions[0] only - with a tier sub plus
+  // add-on subs, array order decided which sub was "the" subscription, silently
+  // corrupting limits. We now classify every sub explicitly.
+  type TierSub = { sub: (typeof activeSubscriptions)[number]; tier: SubscriptionTier };
+  const tierSubs: TierSub[] = [];
+  const addonSubs: PresentAddon[] = [];
 
+  for (const sub of activeSubscriptions) {
     const tier = getTierFromProductId(sub.productId);
-
     if (tier) {
-      const tierConfig = SUBSCRIPTION_TIERS[tier];
-
-      const updateStatus = await applyOrganizationUpdateFromWebhook({
-        customerId,
-        eventTimestamp,
-        changes: {
-          subscriptionTier: tier,
-          subscriptionStatus: sub.status,
-          subscriptionId: sub.id,
-          storageLimit: tierConfig.storageLimit,
-          modelCountLimit: tierConfig.modelCountLimit,
-          memberLimit: tierConfig.maxMembers,
-          subscriptionPeriodEnd: sub.currentPeriodEnd ?? sub.endsAt ?? null,
-          subscriptionCancelAtPeriodEnd: sub.cancelAtPeriodEnd,
-          graceDeadline: null,
-        },
-      });
-
-      if (updateStatus.status === "missing") {
-        logErrorEvent("billing.webhook.unknown_customer", {
-          customerId,
-          subscriptionId: sub.id,
-        });
-        return;
-      }
-
-      if (updateStatus.status === "stale") {
-        logStaleWebhook({
-          eventType: payload.type,
-          customerId,
-          eventTimestamp,
-          lastAppliedAt: updateStatus.lastAppliedAt,
-        });
-        return;
-      }
-
-      logAuditEvent("billing.subscription.synced", {
-        customerId,
-        tier,
-        status: sub.status,
-        subscriptionId: sub.id,
-        eventTimestamp: eventTimestamp.toISOString(),
-      });
+      tierSubs.push({ sub, tier });
+      continue;
     }
-  } else {
-    const freeTier = SUBSCRIPTION_TIERS.free;
+    const addon = getAddonFromProductId(sub.productId);
+    if (addon) {
+      addonSubs.push({ polarSubscriptionId: sub.id, productId: sub.productId, addon });
+    }
+    // Unknown products are ignored (they neither set a tier nor grant add-ons).
+  }
 
-    const org = await db.query.organization.findFirst({
-      where: eq(organization.polarCustomerId, customerId),
-      columns: {
-        id: true,
-        subscriptionTier: true,
-        billingLastWebhookAt: true,
+  const org = await getOrgBillingContext(customerId);
+
+  if (!org) {
+    logErrorEvent("billing.webhook.unknown_customer", {
+      customerId,
+      subscriptionId: null,
+    });
+    return;
+  }
+
+  if (org.billingLastWebhookAt && org.billingLastWebhookAt >= eventTimestamp) {
+    logStaleWebhook({
+      eventType: payload.type,
+      customerId,
+      eventTimestamp,
+      lastAppliedAt: org.billingLastWebhookAt,
+    });
+    return;
+  }
+
+  // Reconcile add-on rows against the full present set: activate present ones,
+  // revoke rows whose subscription is no longer reported.
+  await reconcileOrgAddons(org.id, addonSubs);
+
+  // Pick the winning tier sub: when multiple tier subs are active, the highest
+  // tier wins.
+  const chosen = tierSubs.reduce<TierSub | undefined>((best, current) => {
+    if (!best) return current;
+    return SUBSCRIPTION_TIER_ORDER.indexOf(current.tier) >
+      SUBSCRIPTION_TIER_ORDER.indexOf(best.tier)
+      ? current
+      : best;
+  }, undefined);
+
+  if (chosen) {
+    const { sub, tier } = chosen;
+    const limits = await resolveEffectiveLimits(org.id, tier);
+
+    const updateStatus = await applyOrganizationUpdateFromWebhook({
+      customerId,
+      eventTimestamp,
+      changes: {
+        subscriptionTier: tier,
+        subscriptionStatus: sub.status,
+        subscriptionId: sub.id,
+        storageLimit: limits.storageLimit,
+        modelCountLimit: limits.modelCountLimit,
+        memberLimit: limits.memberLimit,
+        subscriptionPeriodEnd: sub.currentPeriodEnd ?? sub.endsAt ?? null,
+        subscriptionCancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+        graceDeadline: null,
       },
     });
 
-    if (!org) {
+    if (updateStatus.status === "missing") {
       logErrorEvent("billing.webhook.unknown_customer", {
         customerId,
-        subscriptionId: null,
+        subscriptionId: sub.id,
       });
       return;
     }
 
-    if (org.billingLastWebhookAt && org.billingLastWebhookAt >= eventTimestamp) {
+    if (updateStatus.status === "stale") {
       logStaleWebhook({
         eventType: payload.type,
         customerId,
         eventTimestamp,
-        lastAppliedAt: org.billingLastWebhookAt,
+        lastAppliedAt: updateStatus.lastAppliedAt,
       });
       return;
-    }
-
-    const graceDeadline = await getGraceDeadlineIfOverLimit(org.id);
-    const previousTier = (org.subscriptionTier as SubscriptionTier) ?? "free";
-
-    const [updatedOrg] = await db
-      .update(organization)
-      .set({
-        subscriptionTier: "free",
-        subscriptionStatus: "active",
-        subscriptionId: null,
-        storageLimit: freeTier.storageLimit,
-        modelCountLimit: freeTier.modelCountLimit,
-        memberLimit: freeTier.maxMembers,
-        subscriptionPeriodEnd: null,
-        subscriptionCancelAtPeriodEnd: false,
-        graceDeadline,
-        billingLastWebhookAt: eventTimestamp,
-      })
-      .where(
-        and(
-          eq(organization.id, org.id),
-          or(
-            isNull(organization.billingLastWebhookAt),
-            lt(organization.billingLastWebhookAt, eventTimestamp),
-          ),
-        ),
-      )
-      .returning({ id: organization.id });
-
-    if (!updatedOrg) {
-      const latestOrg = await db.query.organization.findFirst({
-        where: eq(organization.id, org.id),
-        columns: {
-          billingLastWebhookAt: true,
-        },
-      });
-
-      logStaleWebhook({
-        eventType: payload.type,
-        customerId,
-        eventTimestamp,
-        lastAppliedAt: latestOrg?.billingLastWebhookAt ?? null,
-      });
-      return;
-    }
-
-    if (graceDeadline) {
-      try {
-        await sendGraceEmail(customerId, previousTier, graceDeadline);
-      } catch (error) {
-        logErrorEvent("billing.email.grace_failed", {
-          customerId,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
     }
 
     logAuditEvent("billing.subscription.synced", {
       customerId,
-      tier: "free",
-      status: "active",
-      subscriptionId: null,
+      tier,
+      status: sub.status,
+      subscriptionId: sub.id,
       eventTimestamp: eventTimestamp.toISOString(),
     });
+    return;
   }
+
+  // No tier subscription: fall back to free, but keep any still-active add-on
+  // grants (computed honestly from the reconciled rows).
+  const graceDeadline = await getGraceDeadlineIfOverLimit(org.id);
+  const previousTier = normalizeSubscriptionTier(org.subscriptionTier);
+  const limits = await resolveEffectiveLimits(org.id, "free");
+
+  const [updatedOrg] = await db
+    .update(organization)
+    .set({
+      subscriptionTier: "free",
+      subscriptionStatus: "active",
+      subscriptionId: null,
+      storageLimit: limits.storageLimit,
+      modelCountLimit: limits.modelCountLimit,
+      memberLimit: limits.memberLimit,
+      subscriptionPeriodEnd: null,
+      subscriptionCancelAtPeriodEnd: false,
+      graceDeadline,
+      billingLastWebhookAt: eventTimestamp,
+    })
+    .where(
+      and(
+        eq(organization.id, org.id),
+        or(
+          isNull(organization.billingLastWebhookAt),
+          lt(organization.billingLastWebhookAt, eventTimestamp),
+        ),
+      ),
+    )
+    .returning({ id: organization.id });
+
+  if (!updatedOrg) {
+    const latestOrg = await db.query.organization.findFirst({
+      where: eq(organization.id, org.id),
+      columns: {
+        billingLastWebhookAt: true,
+      },
+    });
+
+    logStaleWebhook({
+      eventType: payload.type,
+      customerId,
+      eventTimestamp,
+      lastAppliedAt: latestOrg?.billingLastWebhookAt ?? null,
+    });
+    return;
+  }
+
+  if (graceDeadline) {
+    try {
+      await sendGraceEmail(customerId, previousTier, graceDeadline);
+    } catch (error) {
+      logErrorEvent("billing.email.grace_failed", {
+        customerId,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  logAuditEvent("billing.subscription.synced", {
+    customerId,
+    tier: "free",
+    status: "active",
+    subscriptionId: null,
+    eventTimestamp: eventTimestamp.toISOString(),
+  });
 };
