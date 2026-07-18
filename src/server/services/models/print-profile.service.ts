@@ -10,6 +10,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { modelFiles, modelVersions, printProfiles } from "@/lib/db/schema/models";
 import { slugify } from "@/lib/slug";
+import { printProfileThumbnailUrl } from "@/lib/thumbnails";
 import { storageService } from "@/server/services/storage";
 import {
   isConflict,
@@ -225,15 +226,12 @@ class PrintProfileService {
       orderBy: (profiles, { asc }) => [asc(profiles.printerName)],
     });
 
-    // Generate thumbnail URLs for profiles that have thumbnails
-    return Promise.all(
-      profiles.map(async (profile) => ({
-        ...profile,
-        thumbnailUrl: profile.thumbnailPath
-          ? await storageService.generateDownloadUrl(profile.thumbnailPath, 60)
-          : null,
-      })),
-    );
+    // Stable authenticated proxy URLs — cacheable, metered, org-bound
+    // (presigned URLs changed per render and bypassed measurement).
+    return profiles.map((profile) => ({
+      ...profile,
+      thumbnailUrl: profile.thumbnailPath ? printProfileThumbnailUrl(profile.id) : null,
+    }));
   }
 
   /**

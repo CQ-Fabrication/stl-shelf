@@ -247,8 +247,14 @@ export class StorageService {
   /**
    * Get file as a readable stream for efficient streaming (e.g., ZIP creation)
    * Does NOT load entire file into memory
+   *
+   * `range` is an HTTP Range value (e.g. `bytes=0-1023`) passed straight to
+   * S3 GetObject — the returned stream then carries only that byte span.
    */
-  async getFileStream(key: string): Promise<ReadableStream<Uint8Array>> {
+  async getFileStream(
+    key: string,
+    options: { range?: string } = {},
+  ): Promise<ReadableStream<Uint8Array>> {
     const bucketName = this.bucket;
 
     try {
@@ -256,6 +262,7 @@ export class StorageService {
         new GetObjectCommand({
           Bucket: bucketName,
           Key: key,
+          Range: options.range,
         }),
       );
 
