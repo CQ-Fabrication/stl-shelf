@@ -57,7 +57,10 @@ export default function Header() {
       const org = organizations?.find((o) => o.id === orgId);
       if (org) {
         toast.success(`Switched to ${org.name}`);
-        await queryClient.invalidateQueries({ queryKey: ["organizations"] });
+        // Org-scoped queries use constant keys (activity, tags, models, ...) and rely
+        // on the server session for scoping — after an org switch every cached page
+        // belongs to the previous org, so drop the whole cache, not just ["organizations"].
+        await queryClient.invalidateQueries();
         await router.invalidate();
       }
     } catch (error) {
