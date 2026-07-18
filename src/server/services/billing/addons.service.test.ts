@@ -162,7 +162,7 @@ describe("add-on rows", () => {
     expect(limits.storageLimit).toBe(SUBSCRIPTION_TIERS.free.storageLimit);
   });
 
-  it("drops the grant when the add-on subscription is canceled", async () => {
+  it("keeps granting while canceled (until period end), then drops on revoke", async () => {
     await upsertActiveAddon({
       organizationId: ORG,
       polarSubscriptionId: "sub_cancel",
@@ -170,7 +170,29 @@ describe("add-on rows", () => {
       addon: BILLING_ADDONS.storage_100gb,
     });
 
+    // Canceled = cancellation scheduled; access continues until revoked.
     await setAddonStatus("sub_cancel", "canceled");
+    const canceledLimits = computeEffectiveLimits("free", await getActiveAddonGrants(ORG));
+    expect(canceledLimits.storageLimit).toBe(SUBSCRIPTION_TIERS.free.storageLimit + 100 * GIB);
+
+    // Revoked = access actually ended; the grant stops.
+    await setAddonStatus("sub_cancel", "revoked");
+    const revokedLimits = computeEffectiveLimits("free", await getActiveAddonGrants(ORG));
+    expect(revokedLimits.storageLimit).toBe(SUBSCRIPTION_TIERS.free.storageLimit);
+  });
+
+  it("reconcile revokes a canceled-but-granting add-on that is absent from customer state", async () => {
+    await upsertActiveAddon({
+      organizationId: ORG,
+      polarSubscriptionId: "sub_canceled_gone",
+      productId: "prod_100",
+      addon: BILLING_ADDONS.storage_100gb,
+    });
+    await setAddonStatus("sub_canceled_gone", "canceled");
+    expect((await getActiveAddonGrants(ORG)).length).toBe(1);
+
+    await reconcileOrgAddons(ORG, []);
+
     expect((await getActiveAddonGrants(ORG)).length).toBe(0);
   });
 });

@@ -1,4 +1,4 @@
-import { and, eq, notInArray } from "drizzle-orm";
+import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { organizationAddons } from "@/lib/db/schema/billing";
 import type { AddonKind, BillingAddon, SubscriptionTier } from "@/lib/billing/config";
@@ -52,7 +52,14 @@ export function computeEffectiveLimits(
   };
 }
 
-/** Read the org's currently-granting (status = "active") add-ons. */
+/**
+ * Read the org's currently-granting add-ons.
+ *
+ * "canceled" still grants: Polar fires subscription.canceled when a
+ * cancellation is SCHEDULED (cancelAtPeriodEnd) and subscription.revoked when
+ * access actually ends - mirroring how tier subscriptions behave here. Only
+ * "revoked" stops granting.
+ */
 export async function getActiveAddonGrants(organizationId: string): Promise<ActiveAddonGrant[]> {
   const rows = await db
     .select({
@@ -64,7 +71,7 @@ export async function getActiveAddonGrants(organizationId: string): Promise<Acti
     .where(
       and(
         eq(organizationAddons.organizationId, organizationId),
-        eq(organizationAddons.status, "active"),
+        inArray(organizationAddons.status, ["active", "canceled"]),
       ),
     );
 
@@ -174,7 +181,7 @@ export async function reconcileOrgAddons(
     .where(
       and(
         eq(organizationAddons.organizationId, organizationId),
-        eq(organizationAddons.status, "active"),
+        inArray(organizationAddons.status, ["active", "canceled"]),
         ...(presentIds.length > 0
           ? [notInArray(organizationAddons.polarSubscriptionId, presentIds)]
           : []),

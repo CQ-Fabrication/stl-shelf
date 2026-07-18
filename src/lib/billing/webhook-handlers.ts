@@ -286,7 +286,16 @@ const applyAddonSubscriptionEvent = async ({
     return;
   }
 
-  logAuditEvent(status === "active" ? "billing.addon.applied" : "billing.addon.removed", {
+  // "canceled" keeps granting until revoked (period-end semantics), so only
+  // "revoked" is an actual removal.
+  const auditEvent =
+    status === "active"
+      ? "billing.addon.applied"
+      : status === "canceled"
+        ? "billing.addon.canceled"
+        : "billing.addon.removed";
+
+  logAuditEvent(auditEvent, {
     organizationId: org.id,
     addonSlug: addon.slug,
     polarSubscriptionId,
