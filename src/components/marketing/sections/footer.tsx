@@ -16,7 +16,7 @@ const navLinks = [
   { label: "FAQ", href: "/#faq", isExternal: false },
   { label: "Pricing", href: "/pricing", isExternal: false },
   { label: "About", href: "/about", isExternal: false },
-  { label: "Contact", href: "mailto:hello@stl-shelf.com", isExternal: true },
+  { label: "Contact", href: "mailto:hello@cqfabrication.com", isExternal: true },
 ];
 
 const socialLinks = [
