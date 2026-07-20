@@ -36,6 +36,20 @@ describe("splitInternalPath", () => {
       search: { q: "benchy boat" },
     });
   });
+
+  it("preserves repeated keys as arrays (Codex P2 regression)", () => {
+    expect(splitInternalPath("/library?tags=pla&tags=petg&tags=abs")).toEqual({
+      pathname: "/library",
+      search: { tags: ["pla", "petg", "abs"] },
+    });
+  });
+
+  it("keeps single keys as strings alongside repeated ones", () => {
+    expect(splitInternalPath("/library?q=benchy&tags=pla&tags=petg")).toEqual({
+      pathname: "/library",
+      search: { q: "benchy", tags: ["pla", "petg"] },
+    });
+  });
 });
 
 describe("resolveCtaAction", () => {

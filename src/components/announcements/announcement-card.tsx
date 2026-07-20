@@ -62,21 +62,34 @@ function parseCtaUrl(url: string): { type: "internal" | "external"; path: string
   return { type: "internal", path: url };
 }
 
+type SearchParams = Record<string, string | string[]>;
+
 /**
  * Split an internal path into pathname + search params.
  * router.navigate() matches `to` against route paths literally, so a query
  * string left inside it ("/settings?tab=x") matches nothing and 404s.
+ * Repeated keys ("?tags=a&tags=b") become arrays — routes like /library
+ * accept both and would silently lose filters if duplicates collapsed.
  */
 export function splitInternalPath(path: string): {
   pathname: string;
-  search: Record<string, string> | undefined;
+  search: SearchParams | undefined;
 } {
   const queryIndex = path.indexOf("?");
   if (queryIndex === -1) {
     return { pathname: path, search: undefined };
   }
-  const params = new URLSearchParams(path.slice(queryIndex + 1));
-  const search = Object.fromEntries(params);
+  const search: SearchParams = {};
+  for (const [key, value] of new URLSearchParams(path.slice(queryIndex + 1))) {
+    const existing = search[key];
+    if (existing === undefined) {
+      search[key] = value;
+    } else if (Array.isArray(existing)) {
+      existing.push(value);
+    } else {
+      search[key] = [existing, value];
+    }
+  }
   return {
     pathname: path.slice(0, queryIndex),
     search: Object.keys(search).length > 0 ? search : undefined,
@@ -84,7 +97,7 @@ export function splitInternalPath(path: string): {
 }
 
 export type CtaAction =
-  | { kind: "internal"; to: string; search?: Record<string, string> }
+  | { kind: "internal"; to: string; search?: SearchParams }
   | { kind: "external"; url: string };
 
 /**
