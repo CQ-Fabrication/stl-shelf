@@ -225,14 +225,12 @@ function AboutPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button variant="default" size="lg" asChild>
-                  <a href="mailto:hello@stl-shelf.com" className="inline-flex items-center gap-2">
+                  <a
+                    href="mailto:hello@cqfabrication.com"
+                    className="inline-flex items-center gap-2"
+                  >
                     <Mail className="h-4 w-4" />
-                    hello@stl-shelf.com
-                  </a>
-                </Button>
-                <Button variant="outline" size="lg" asChild>
-                  <a href="mailto:support@stl-shelf.com" className="inline-flex items-center gap-2">
-                    Need help? support@stl-shelf.com
+                    hello@cqfabrication.com
                   </a>
                 </Button>
               </div>

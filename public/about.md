@@ -19,8 +19,7 @@ It is built for makers, hobbyists, design iterators, digital hoarders, and small
 
 ## Contact
 
-- hello@stl-shelf.com
-- support@stl-shelf.com
+- hello@cqfabrication.com
 
 ## Related links
 
