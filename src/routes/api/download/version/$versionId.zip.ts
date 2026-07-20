@@ -1,4 +1,5 @@
 import archiver from "archiver";
+import { unauthorizedResponse } from "@/server/utils/unauthorized-response";
 import { createFileRoute } from "@tanstack/react-router";
 import { eq } from "drizzle-orm";
 import { isTierAtLeast } from "@/lib/billing/config";
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/api/download/version/$versionId/zip")({
         const session = await getLiveSession(request.headers);
 
         if (!session?.session?.activeOrganizationId) {
-          return new Response("Unauthorized", { status: 401 });
+          return unauthorizedResponse(request);
         }
 
         const { versionId } = params;

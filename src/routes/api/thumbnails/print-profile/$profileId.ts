@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { unauthorizedResponse } from "@/server/utils/unauthorized-response";
 import {
   resolvePrintProfileThumbnailKey,
   serveThumbnail,
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/api/thumbnails/print-profile/$profileId")
         const session = await getLiveSession(request.headers);
 
         if (!session?.session?.activeOrganizationId) {
-          return new Response("Unauthorized", { status: 401 });
+          return unauthorizedResponse(request);
         }
 
         const organizationId = session.session.activeOrganizationId;
