@@ -62,6 +62,45 @@ function parseCtaUrl(url: string): { type: "internal" | "external"; path: string
   return { type: "internal", path: url };
 }
 
+/**
+ * Split an internal path into pathname + search params.
+ * router.navigate() matches `to` against route paths literally, so a query
+ * string left inside it ("/settings?tab=x") matches nothing and 404s.
+ */
+export function splitInternalPath(path: string): {
+  pathname: string;
+  search: Record<string, string> | undefined;
+} {
+  const queryIndex = path.indexOf("?");
+  if (queryIndex === -1) {
+    return { pathname: path, search: undefined };
+  }
+  const params = new URLSearchParams(path.slice(queryIndex + 1));
+  const search = Object.fromEntries(params);
+  return {
+    pathname: path.slice(0, queryIndex),
+    search: Object.keys(search).length > 0 ? search : undefined,
+  };
+}
+
+export type CtaAction =
+  | { kind: "internal"; to: string; search?: Record<string, string> }
+  | { kind: "external"; url: string };
+
+/**
+ * Resolve a stored CTA URL into the concrete action the click handler runs.
+ * External URLs are kept whole (query included); internal paths are split so
+ * the router receives pathname and search separately.
+ */
+export function resolveCtaAction(url: string): CtaAction {
+  const { type, path } = parseCtaUrl(url);
+  if (type === "external") {
+    return { kind: "external", url: path };
+  }
+  const { pathname, search } = splitInternalPath(path);
+  return { kind: "internal", to: pathname, ...(search ? { search } : {}) };
+}
+
 export function AnnouncementCard({
   id,
   title,
@@ -79,7 +118,7 @@ export function AnnouncementCard({
   function handleCtaClick() {
     if (!ctaUrl) return;
 
-    const { type, path } = parseCtaUrl(ctaUrl);
+    const action = resolveCtaAction(ctaUrl);
 
     // Track CTA click in OpenPanel
     trackCtaClick(client, ctaLabel ?? "Learn more", {
@@ -90,10 +129,10 @@ export function AnnouncementCard({
     // Mark as read when CTA is clicked
     onCtaClick?.(id);
 
-    if (type === "internal") {
-      router.navigate({ to: path });
+    if (action.kind === "internal") {
+      router.navigate({ to: action.to, ...(action.search ? { search: action.search } : {}) });
     } else {
-      window.open(path, "_blank", "noopener,noreferrer");
+      window.open(action.url, "_blank", "noopener,noreferrer");
     }
   }
 
