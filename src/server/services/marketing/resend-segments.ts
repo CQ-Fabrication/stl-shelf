@@ -1,7 +1,11 @@
 import { Resend } from "resend";
 import { env } from "@/lib/env";
 import { logErrorEvent } from "@/lib/logging";
-import { isResendAlreadyExistsError, runResendRateLimited } from "@/server/services/resend/retry";
+import {
+  isResendAlreadyExistsError,
+  isResendNotFoundError,
+  runResendRateLimited,
+} from "@/server/services/resend/retry";
 
 type ResendContactInput = {
   email: string;
@@ -107,12 +111,50 @@ const removeFromSegment = async (resend: Resend, email: string, segmentId?: stri
   const { error } = await runResendRateLimited(() =>
     resend.contacts.segments.remove({ email, segmentId }),
   );
-  if (error) {
+  if (error && !isResendNotFoundError(error)) {
     logErrorEvent("resend.segment.remove_failed", {
       email,
       segmentId,
       errorMessage: error.message,
     });
+  }
+};
+
+export const removeResendContact = async ({ email }: { email: string }) => {
+  const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+
+  if (!resend) {
+    if (env.NODE_ENV === "development") {
+      console.warn("[Resend] Missing RESEND_API_KEY; skipping contact removal.");
+    }
+    return;
+  }
+
+  try {
+    // Segment removal first: if the contact delete below fails, the user has
+    // still stopped receiving broadcasts.
+    await removeFromSegment(resend, email, env.RESEND_SEGMENT_USERS);
+    await removeFromSegment(resend, email, env.RESEND_SEGMENT_MARKETING_OPT_IN);
+
+    const { error } = await runResendRateLimited(() => resend.contacts.remove({ email }));
+
+    if (error && !isResendNotFoundError(error)) {
+      logErrorEvent("resend.contact.remove_failed", {
+        email,
+        errorMessage: error.message,
+      });
+      if (env.NODE_ENV === "development") {
+        console.warn("[Resend] Unable to remove contact:", { email, error: error.message });
+      }
+    }
+  } catch (error) {
+    logErrorEvent("resend.contact.remove_failed", {
+      email,
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+    });
+    if (env.NODE_ENV === "development") {
+      console.error("[Resend] Contact removal failed:", error);
+    }
   }
 };
 

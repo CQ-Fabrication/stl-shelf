@@ -6,6 +6,7 @@ import { accountDeletionRunItems, accountDeletionRuns } from "@/lib/db/schema/bi
 import { models } from "@/lib/db/schema/models";
 import { logAuditEvent, logErrorEvent } from "@/lib/logging";
 import { sendAccountDeletionCompletedEmail } from "@/server/services/account-deletion-email.service";
+import { removeResendContact } from "@/server/services/marketing/resend-segments";
 import { polarService } from "@/server/services/billing/polar.service";
 import { storageService } from "@/server/services/storage";
 
@@ -130,6 +131,12 @@ const softDeleteUser = async (params: { userId: string; deletedAt: Date }) => {
       })
       .where(eq(user.id, userId));
   });
+
+  // The DB email is now anonymized; drop the real address from Resend too so
+  // deleted users stop receiving broadcasts. Never fails the deletion.
+  if (userRow.email) {
+    await removeResendContact({ email: userRow.email });
+  }
 
   return { changed: true as const, email: userRow.email };
 };

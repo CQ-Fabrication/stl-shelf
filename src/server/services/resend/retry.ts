@@ -91,6 +91,15 @@ export const isResendAlreadyExistsError = (error: ErrorResponse | null | undefin
   );
 };
 
+export const isResendNotFoundError = (error: ErrorResponse | null | undefined): boolean => {
+  if (!error) return false;
+  if (error.statusCode === 404) return true;
+
+  if (`${error.name}`.toLowerCase() === "not_found") return true;
+
+  return error.message.toLowerCase().includes("not found");
+};
+
 export const runResendWithRetry = async <T>(
   operation: () => Promise<ResendResponse<T>>,
   options?: {

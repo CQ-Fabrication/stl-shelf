@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ErrorResponse } from "resend";
-import { isResendAlreadyExistsError, isResendRateLimitError, runResendWithRetry } from "./retry";
+import {
+  isResendAlreadyExistsError,
+  isResendNotFoundError,
+  isResendRateLimitError,
+  runResendWithRetry,
+} from "./retry";
 
 const asError = (value: Partial<ErrorResponse>): ErrorResponse =>
   ({
@@ -51,5 +56,23 @@ describe("resend retry helpers", () => {
       message: "Conflict",
     });
     expect(isResendAlreadyExistsError(error)).toBe(true);
+  });
+
+  it("recognizes missing contacts via HTTP status or error code", () => {
+    expect(
+      isResendNotFoundError(
+        asError({ name: "application_error", statusCode: 404, message: "Not Found" }),
+      ),
+    ).toBe(true);
+    expect(
+      isResendNotFoundError(
+        asError({ name: "not_found", statusCode: 422, message: "Contact not found" }),
+      ),
+    ).toBe(true);
+    expect(
+      isResendNotFoundError(
+        asError({ name: "application_error", statusCode: 500, message: "boom" }),
+      ),
+    ).toBe(false);
   });
 });
