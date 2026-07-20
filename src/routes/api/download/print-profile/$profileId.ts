@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { unauthorizedResponse } from "@/server/utils/unauthorized-response";
 import { and, eq } from "drizzle-orm";
 import { db, modelFiles, modelVersions, models, printProfiles } from "@/lib/db";
 import { storageService } from "@/server/services/storage";
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/api/download/print-profile/$profileId")({
         const session = await getLiveSession(request.headers);
 
         if (!session?.session?.activeOrganizationId) {
-          return new Response("Unauthorized", { status: 401 });
+          return unauthorizedResponse(request);
         }
 
         const organizationId = session.session.activeOrganizationId;

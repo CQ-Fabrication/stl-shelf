@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { unauthorizedResponse } from "@/server/utils/unauthorized-response";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, modelFiles, modelVersions, models } from "@/lib/db";
 import { shouldTrackEgressForDisposition } from "@/lib/billing/egress";
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/api/download/file/$fileId")({
         const session = await getLiveSession(request.headers);
 
         if (!session?.session?.activeOrganizationId) {
-          return new Response("Unauthorized", { status: 401 });
+          return unauthorizedResponse(request);
         }
 
         const organizationId = session.session.activeOrganizationId;
